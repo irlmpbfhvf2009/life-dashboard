@@ -1,27 +1,30 @@
 ---
-description: 用台股投資角度對雷達榜做八面向深度分析+評分，寫出 public/analysis.json
+description: 用台股投資角度對雷達榜做八面向深度分析+評分，寫出 stock-radar/public/analysis.json
 ---
 
 用**台股投資角度**分析指定股票，從基本面、估值面、籌碼面、技術面、產業趨勢、事件面、預期差與風險面分析。
 **不要直接叫使用者買或賣**，而是列出偏多理由、偏空理由、關鍵觀察指標，以及什麼情況下看法會轉弱。
-產出格式固定（見下方 JSON schema），寫入 `public/analysis.json` 供網頁顯示。
+產出格式固定（見下方 JSON schema），寫入 `stock-radar/public/analysis.json` 供網頁顯示。
 
 ## 0. 開始前：先更新資料 + 讀教訓
-1. 先執行 `git pull`，取得 GitHub Actions 當天最新的 `result.json`（含 deep 深度數據）。
-2. **若有 `LESSONS.md`（由 `/review-failures` 累積的失敗教訓）就讀它**，分析時套用這些避坑原則（例如某些訊號型態命中率低就降評、提醒風險），讓系統從過去失敗中學習、逐步提高命中率。
+1. 先執行 `git pull`，取得 GitHub Actions 當天最新的 `stock-radar/public/result.json`（含 deep 深度數據）。
+2. **若有 `stock-radar/LESSONS.md`（由 `/review-failures` 累積的失敗教訓）就讀它**，分析時套用這些避坑原則（例如某些訊號型態命中率低就降評、提醒風險），讓系統從過去失敗中學習、逐步提高命中率。
+3. `macro`（費半/台積電ADR/那斯達克/S&P500/VIX/台股加權）數值直接讀 `stock-radar/public/market.json`（由 `market_overview.py` 每日產生）填入 schema 的 `macro` 陣列。
+
+> 註：本流程已從獨立的 stock-radar 專案整合進此 monorepo，所有資料/腳本在 `stock-radar/` 子資料夾，每日掃描由 `.github/workflows/stock_scan.yml` 自動執行。AI 八面向分析（本指令）仍由 Claude 訂閱手動跑、不進 CI（避免付費 API）。
 
 ## 分析哪些檔（重點：跳過近期已分析，省額度）
-讀 `public/result.json` 的 `stocks`（已依 `composite_score` 排序）。預設取**前 5 檔**為候選；
+讀 `stock-radar/public/result.json` 的 `stocks`（已依 `composite_score` 排序）。預設取**前 5 檔**為候選；
 可在指令參數指定，例如 `/analyze-stocks 8` 取前 8 檔、`/analyze-stocks 2330 2454` 指定代號。
 
 **深度分析不適合每天重做**（財報每季更新、產業趨勢以週/月計）。因此：
-1. 先讀 `public/analysis_archive.json`，看每個候選的 `analyzed_at`。
+1. 先讀 `stock-radar/public/analysis_archive.json`，看每個候選的 `analyzed_at`。
 2. **新鮮度門檻 14 天**（可在指令說「freshness 7」改天數）：
    - 距今 **< 14 天**＝仍新鮮 → **跳過，不重新分析**，直接沿用存檔內容。
    - 距今 **≥ 14 天**、或**該檔剛公布財報**、或**存檔沒有**＝ 重新分析。
 3. 強制重做：指令加 `force`（例如 `/analyze-stocks 2330 force`）忽略新鮮度一律重分析。
 4. 開頭先回報：「候選 N 檔，跳過 X 檔（14 天內已分析），新分析 Y 檔」。
-5. `public/analysis.json` 的 `stocks` 要**涵蓋全部候選**（新分析的用新結果，跳過的沿用存檔），每檔都帶 `analyzed_at`，網頁才能完整顯示並標示日期/過期。
+5. `stock-radar/public/analysis.json` 的 `stocks` 要**涵蓋全部候選**（新分析的用新結果，跳過的沿用存檔），每檔都帶 `analyzed_at`，網頁才能完整顯示並標示日期/過期。
 
 每檔 result.json 已含：技術面（價/RSI/四均線）、籌碼（外資/投信張數）、fundamentals（EPS/PE/PB/殖利率/三率/負債）、sentiment（融資增減/券資比）、industry（產業別/族群強弱/排名）。
 **前 10 檔另有 `deep` 精確數據（深度數據管線預抓）**——優先用它，不用再上網挖數字：
@@ -64,7 +67,7 @@ description: 用台股投資角度對雷達榜做八面向深度分析+評分，
 - 不直接建議買賣；用偏多/偏空理由與觀察指標讓使用者自行判斷。
 - 每欄位務實精簡；detail 各段 2~4 句。
 
-## 寫出 `public/analysis.json`（schema）
+## 寫出 `stock-radar/public/analysis.json`（schema）
 ```json
 {
   "updated_at": "YYYY-MM-DD HH:MM",
@@ -109,6 +112,11 @@ description: 用台股投資角度對雷達榜做八面向深度分析+評分，
 ```
 
 ## 收尾（自動更新網站）
-1. 把本次每檔（加 `analyzed_at`＝今日）合併進 `public/analysis_archive.json` 的 `stocks`（以 code 為鍵，保留最新）。
-2. **自動推上線**：執行 `git add public/analysis.json public/analysis_archive.json && git commit -m "AI 八面向分析 <日期>：<代號清單>" && git push`。若 push 被拒（遠端有更新），先 `git pull --rebase` 再 push。
-3. 完成後回報：分析了哪幾檔、跳過哪幾檔、總評分數，並告知已推上線、Vercel 稍後重新部署。
+1. 把本次每檔（加 `analyzed_at`＝今日）合併進 `stock-radar/public/analysis_archive.json` 的 `stocks`（以 code 為鍵，保留最新）。
+2. **自動推上線**：執行 `git add stock-radar/public/analysis.json stock-radar/public/analysis_archive.json && git commit -m "AI 八面向分析 <日期>：<代號清單>" && git push`。若 push 被拒（遠端有更新），先 `git pull --rebase` 再 push。
+3. 完成後回報：分析了哪幾檔、跳過哪幾檔、總評分數。
+
+> 📌 此專案的前端（Personal Intelligence Studio）在執行階段直接從 GitHub raw 讀取
+> `stock-radar/public/*.json`，所以**只要 push 成功，網站約 1 分鐘內自動顯示新分析，
+> 不需要重新部署前端**（前端是 prebuilt 部署，資料更新與前端部署解耦）。
+> 線上頁面：AI 實驗室 → AI 股票研究 → 今日 AI 精選。
