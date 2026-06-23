@@ -1,0 +1,88 @@
+import type { Component } from 'vue'
+import {
+  LayoutDashboard,
+  LayoutGrid,
+  Sparkles,
+  HeartPulse,
+  Wallet,
+  FlaskConical,
+  Library,
+  FolderGit2,
+  NotebookPen,
+  Repeat,
+  Target,
+  Scale,
+  UtensilsCrossed,
+  LineChart,
+  Bot,
+  GraduationCap,
+  BookOpen,
+  Bookmark,
+  FileText,
+} from 'lucide-vue-next'
+
+export type AppStatus = 'ACTIVE' | 'BETA' | 'DRAFT'
+export type AppCategory = 'LIFE' | 'HEALTH' | 'FINANCE' | 'AI' | 'KNOWLEDGE' | 'PORTFOLIO'
+
+export interface NavGroup {
+  key: string
+  label: string
+  icon: Component
+  to: string
+}
+
+export interface StudioApp {
+  key: string
+  name: string
+  description: string
+  category: AppCategory
+  status: AppStatus
+  icon: Component
+  to: string
+  lastUsed?: string // ISO date, optional
+}
+
+/** Top-level sidebar — only big categories, never individual tools. */
+export const navGroups: NavGroup[] = [
+  { key: 'overview', label: '總覽', icon: LayoutDashboard, to: '/' },
+  { key: 'apps', label: '工具中心', icon: LayoutGrid, to: '/apps' },
+  { key: 'life', label: '生活管理', icon: Sparkles, to: '/life' },
+  { key: 'health', label: '健康減脂', icon: HeartPulse, to: '/health' },
+  { key: 'finance', label: '財務分析', icon: Wallet, to: '/finance' },
+  { key: 'ai', label: 'AI 實驗室', icon: FlaskConical, to: '/ai' },
+  { key: 'knowledge', label: '知識庫', icon: Library, to: '/knowledge' },
+  { key: 'portfolio', label: '作品展示', icon: FolderGit2, to: '/portfolio' },
+]
+
+export const categoryMeta: Record<AppCategory, { label: string; tint: string }> = {
+  LIFE: { label: '生活管理', tint: 'text-violet-600 bg-violet-50' },
+  HEALTH: { label: '健康減脂', tint: 'text-emerald-600 bg-emerald-50' },
+  FINANCE: { label: '財務分析', tint: 'text-amber-600 bg-amber-50' },
+  AI: { label: 'AI 實驗室', tint: 'text-brand-600 bg-brand-50' },
+  KNOWLEDGE: { label: '知識庫', tint: 'text-sky-600 bg-sky-50' },
+  PORTFOLIO: { label: '作品展示', tint: 'text-rose-600 bg-rose-50' },
+}
+
+export const statusMeta: Record<AppStatus, { label: string; cls: string }> = {
+  ACTIVE: { label: '已上線', cls: 'badge-green' },
+  BETA: { label: 'Beta', cls: 'badge-amber' },
+  DRAFT: { label: '開發中', cls: 'badge-gray' },
+}
+
+/** All studio apps, surfaced in the App Center. */
+export const studioApps: StudioApp[] = [
+  { key: 'life-log', name: '生活紀錄', description: '用時間軸記錄每天發生的事', category: 'LIFE', status: 'ACTIVE', icon: Sparkles, to: '/life', lastUsed: '2026-06-23' },
+  { key: 'journal', name: '日記', description: '專注的寫作空間與心情標籤', category: 'LIFE', status: 'BETA', icon: NotebookPen, to: '/life', lastUsed: '2026-06-22' },
+  { key: 'habits', name: '習慣追蹤', description: '每日打卡、連續天數與完成率', category: 'LIFE', status: 'ACTIVE', icon: Repeat, to: '/life' },
+  { key: 'goals', name: '目標管理', description: '年度與月目標、進度追蹤', category: 'LIFE', status: 'DRAFT', icon: Target, to: '/life' },
+  { key: 'weight', name: '減脂管理', description: '體重趨勢、目標與達成進度', category: 'HEALTH', status: 'ACTIVE', icon: Scale, to: '/health', lastUsed: '2026-06-24' },
+  { key: 'food', name: '飲食 / 斷食', description: '飲食紀錄與斷食時間追蹤', category: 'HEALTH', status: 'BETA', icon: UtensilsCrossed, to: '/health' },
+  { key: 'finance', name: '記帳', description: '收支分類、月度統計與趨勢', category: 'FINANCE', status: 'ACTIVE', icon: Wallet, to: '/finance', lastUsed: '2026-06-23' },
+  { key: 'stock-ai', name: 'AI 股票研究模型', description: '研究與模擬分析（非投資建議）', category: 'AI', status: 'BETA', icon: LineChart, to: '/ai/stock', lastUsed: '2026-06-21' },
+  { key: 'english-ai', name: 'AI 英文教練', description: '練習對話與寫作回饋', category: 'AI', status: 'DRAFT', icon: GraduationCap, to: '/ai' },
+  { key: 'data-lab', name: '資料分析工具', description: '上傳資料、快速洞察', category: 'AI', status: 'DRAFT', icon: Bot, to: '/ai' },
+  { key: 'notes', name: '筆記', description: '結構化筆記與知識庫', category: 'KNOWLEDGE', status: 'ACTIVE', icon: BookOpen, to: '/knowledge' },
+  { key: 'resources', name: '資源庫', description: '收藏連結與常用工具', category: 'KNOWLEDGE', status: 'DRAFT', icon: Bookmark, to: '/knowledge' },
+  { key: 'projects', name: '作品集', description: '專案作品與技術棧展示', category: 'PORTFOLIO', status: 'ACTIVE', icon: FolderGit2, to: '/portfolio' },
+  { key: 'case-studies', name: '案例研究', description: '深入的專案案例與成果', category: 'PORTFOLIO', status: 'DRAFT', icon: FileText, to: '/portfolio' },
+]
