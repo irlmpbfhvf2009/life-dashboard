@@ -102,3 +102,58 @@ export interface ArchiveData {
   updated_at: string
   stocks: Record<string, AnalysisStock>
 }
+
+// ---- Radar board (result.json) — the daily quantitative selection ----
+export type Ohlc = [string, number, number, number, number] // date, o, h, l, c
+
+export interface ChipInfo {
+  date?: string
+  big1000_pct?: number | null
+  big400_pct?: number | null
+  retail_pct?: number | null
+  big1000_chg_1w?: number | null
+  trend?: string
+}
+
+export interface IndustryInfo {
+  name?: string
+  avg_change_pct?: number
+  market_avg_pct?: number
+  rank?: number
+  total?: number
+  peers?: number
+  strength?: string
+}
+
+export interface RadarStock {
+  code: string
+  name: string
+  price: number
+  change_pct: number
+  volume_ratio: number
+  rsi: number
+  ma5: number
+  ma20: number
+  ma60: number
+  ma240: number
+  foreign_lots: number
+  trust_lots: number
+  ret_20d: number
+  ret_60d: number
+  rs_20d: number
+  rs_60d: number
+  qualified: boolean
+  matched: string[]
+  ohlc: Ohlc[]
+  score?: number
+  composite_score?: number
+  sentiment?: { margin_change_pct?: number; short_margin_ratio?: number; flags?: string[] }
+  industry?: IndustryInfo
+  chip?: ChipInfo
+}
+
+export interface ResultData {
+  updated_at: string
+  total: number
+  stocks: RadarStock[]
+}

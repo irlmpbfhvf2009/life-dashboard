@@ -1,10 +1,23 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { ChevronDown, TrendingUp, TrendingDown, Target, ShieldAlert } from 'lucide-vue-next'
+import { ChevronDown, TrendingUp, TrendingDown, Target, ShieldAlert, Eye, LogOut, FileText } from 'lucide-vue-next'
 import type { AnalysisStock, ScoreKey } from '@/types/stock'
 
 const props = defineProps<{ stock: AnalysisStock; defaultOpen?: boolean }>()
 const open = ref(props.defaultOpen ?? false)
+const detailOpen = ref(false)
+
+// Long-form 8-dimension detail (the `detail` object) labels.
+const DETAIL: { key: string; label: string }[] = [
+  { key: 'financials', label: '基本面（8季）' },
+  { key: 'valuation', label: '估值面' },
+  { key: 'chips', label: '籌碼面' },
+  { key: 'technical', label: '技術面' },
+  { key: 'industry', label: '產業趨勢' },
+  { key: 'news', label: '重大新聞' },
+  { key: 'expectation', label: '預期差' },
+  { key: 'risks', label: '風險逐項' },
+]
 
 const DIMS: { key: ScoreKey; label: string }[] = [
   { key: 'fundamental', label: '基本面' },
@@ -92,16 +105,36 @@ function totalCls(total: number) {
           </div>
         </div>
 
+        <!-- Key metrics -->
+        <div v-if="stock.key_metrics?.length" class="surface-muted p-3.5">
+          <p class="mb-2 flex items-center gap-1.5 text-sm font-semibold text-ink-700">
+            <Eye class="h-4 w-4 text-brand-500" /> 關鍵觀察指標
+          </p>
+          <ul class="flex flex-wrap gap-1.5">
+            <li v-for="(m, i) in stock.key_metrics" :key="i" class="badge-gray">{{ m }}</li>
+          </ul>
+        </div>
+
         <!-- Trade plan -->
         <div v-if="stock.trade_plan" class="surface-muted p-3.5">
           <p class="mb-2.5 flex items-center gap-1.5 text-sm font-semibold text-ink-700">
-            <Target class="h-4 w-4 text-brand-500" /> 交易計畫（僅供研究，非建議）
+            <Target class="h-4 w-4 text-brand-500" /> 操作參考（非保證進出場點，僅供研究）
           </p>
           <dl class="grid gap-2 text-sm sm:grid-cols-3">
-            <div><dt class="text-2xs text-ink-400">買進區間</dt><dd class="text-ink-700">{{ stock.trade_plan.buy_zone }}</dd></div>
-            <div><dt class="text-2xs text-ink-400">停利</dt><dd class="text-ink-700">{{ stock.trade_plan.take_profit }}</dd></div>
-            <div><dt class="text-2xs text-ink-400">停損</dt><dd class="text-ink-700">{{ stock.trade_plan.stop_loss }}</dd></div>
+            <div><dt class="text-2xs text-ink-400">參考買進區間</dt><dd class="text-ink-700">{{ stock.trade_plan.buy_zone }}</dd></div>
+            <div><dt class="text-2xs text-ink-400">參考停利</dt><dd class="text-ink-700">{{ stock.trade_plan.take_profit }}</dd></div>
+            <div><dt class="text-2xs text-ink-400">參考停損</dt><dd class="text-ink-700">{{ stock.trade_plan.stop_loss }}</dd></div>
           </dl>
+          <div v-if="stock.trade_plan.exit_signals?.length" class="mt-3 border-t border-ink-200 pt-2.5">
+            <p class="mb-1.5 flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-wide text-ink-500">
+              <LogOut class="h-3.5 w-3.5" /> 出場訊號（發生即考慮出場）
+            </p>
+            <ul class="space-y-1">
+              <li v-for="(e, i) in stock.trade_plan.exit_signals" :key="i" class="flex gap-2 text-sm text-ink-600">
+                <span class="text-ink-400">•</span>{{ e }}
+              </li>
+            </ul>
+          </div>
         </div>
 
         <!-- Turn bearish if -->
@@ -111,6 +144,22 @@ function totalCls(total: number) {
             <p class="text-2xs font-semibold uppercase tracking-wide text-amber-600">轉空訊號</p>
             <p class="text-sm text-ink-600">{{ stock.turn_bearish_if.join('、') }}</p>
           </div>
+        </div>
+
+        <!-- Full long-form 8-dimension analysis -->
+        <div v-if="stock.detail">
+          <button class="flex w-full items-center justify-between rounded-xl border border-ink-200 px-3.5 py-2.5 text-sm font-medium text-ink-700 transition-colors hover:bg-ink-50" @click="detailOpen = !detailOpen">
+            <span class="flex items-center gap-1.5"><FileText class="h-4 w-4 text-brand-500" /> 展開完整八面向分析</span>
+            <ChevronDown class="h-4 w-4 text-ink-400 transition-transform" :class="{ 'rotate-180': detailOpen }" />
+          </button>
+          <Transition name="expand">
+            <div v-if="detailOpen" class="mt-3 space-y-3">
+              <div v-for="d in DETAIL" :key="d.key" v-show="stock.detail?.[d.key]" class="surface-muted p-3.5">
+                <p class="eyebrow mb-1.5">{{ d.label }}</p>
+                <p class="text-sm leading-relaxed text-ink-600">{{ stock.detail?.[d.key] }}</p>
+              </div>
+            </div>
+          </Transition>
         </div>
 
         <p class="text-2xs text-ink-400">分析日：{{ stock.analyzed_at }}</p>

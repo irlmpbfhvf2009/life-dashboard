@@ -6,7 +6,7 @@ import '@/components/charts/registerCharts'
 
 const props = withDefaults(
   defineProps<{
-    title: string
+    title?: string
     labels: string[]
     data: number[]
     color?: string
@@ -50,7 +50,7 @@ const options: ChartOptions<'line'> = {
 
 <template>
   <div class="card p-5">
-    <h3 class="section-title mb-4">{{ title }}</h3>
+    <h3 v-if="title" class="section-title mb-4">{{ title }}</h3>
     <div class="relative h-40">
       <Line :data="chartData" :options="options" />
     </div>

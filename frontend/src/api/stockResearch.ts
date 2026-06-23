@@ -1,4 +1,4 @@
-import type { AnalysisData, PerformanceData, ArchiveData } from '@/types/stock'
+import type { AnalysisData, PerformanceData, ArchiveData, ResultData } from '@/types/stock'
 
 // The AI stock-research pipeline (Python scan + scoring + tracking) lives in
 // this repo under /stock-radar and a GitHub Action commits fresh JSON daily.
@@ -20,4 +20,5 @@ export const stockResearchApi = {
   analysis: () => getJson<AnalysisData>('analysis.json'),
   performance: () => getJson<PerformanceData>('ai_performance.json'),
   archive: () => getJson<ArchiveData>('analysis_archive.json'),
+  result: () => getJson<ResultData>('result.json'),
 }

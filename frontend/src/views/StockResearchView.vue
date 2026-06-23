@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { ArrowLeft, ShieldAlert, Bot, RefreshCw, Globe, Target, History, ListChecks } from 'lucide-vue-next'
+import { ArrowLeft, ShieldAlert, Bot, RefreshCw, Globe, Target, History, ListChecks, Radar } from 'lucide-vue-next'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import SectionCard from '@/components/ui/SectionCard.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
@@ -9,17 +9,21 @@ import ErrorState from '@/components/ui/ErrorState.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import StockAnalysisCard from '@/components/stock/StockAnalysisCard.vue'
 import StockTrackTable from '@/components/stock/StockTrackTable.vue'
+import RadarStockCard from '@/components/stock/RadarStockCard.vue'
 import { stockResearchApi } from '@/api/stockResearch'
-import type { AnalysisData, PerformanceData, ArchiveData } from '@/types/stock'
+import { twPriceClass } from '@/utils/format'
+import type { AnalysisData, PerformanceData, ArchiveData, ResultData } from '@/types/stock'
 
 const analysis = ref<AnalysisData | null>(null)
 const performance = ref<PerformanceData | null>(null)
 const archive = ref<ArchiveData | null>(null)
+const radar = ref<ResultData | null>(null)
 
 const loading = ref(true)
 const error = ref<string | null>(null)
-const tab = ref<'current' | 'track' | 'archive'>('current')
+const tab = ref<'current' | 'radar' | 'track' | 'archive'>('current')
 const archiveLoading = ref(false)
+const radarLoading = ref(false)
 
 async function load() {
   loading.value = true
@@ -48,6 +52,19 @@ async function openArchive() {
   }
 }
 
+async function openRadar() {
+  tab.value = 'radar'
+  if (radar.value || radarLoading.value) return
+  radarLoading.value = true
+  try {
+    radar.value = await stockResearchApi.result()
+  } catch (e) {
+    error.value = (e as Error).message
+  } finally {
+    radarLoading.value = false
+  }
+}
+
 const archiveList = computed(() =>
   archive.value
     ? Object.values(archive.value.stocks).sort((a, b) => (a.analyzed_at < b.analyzed_at ? 1 : -1))
@@ -65,10 +82,17 @@ const overviewBlocks = computed(() =>
 )
 
 const tabs = computed(() => [
-  { key: 'current' as const, label: '今日分析', icon: Bot, count: analysis.value?.stocks.length },
+  { key: 'current' as const, label: 'AI 分析', icon: Bot, count: analysis.value?.stocks.length },
+  { key: 'radar' as const, label: '雷達選股', icon: Radar, count: radar.value?.stocks.length },
   { key: 'track' as const, label: 'AI 預判追蹤', icon: ListChecks, count: performance.value?.detail?.length },
   { key: 'archive' as const, label: '過往分析', icon: History, count: undefined },
 ])
+
+function onTab(key: 'current' | 'radar' | 'track' | 'archive') {
+  if (key === 'archive') openArchive()
+  else if (key === 'radar') openRadar()
+  else tab.value = key
+}
 
 onMounted(load)
 </script>
@@ -127,7 +151,7 @@ onMounted(load)
             <Globe class="h-3.5 w-3.5 text-ink-400" />
             <span class="text-xs text-ink-500">{{ m.name }}</span>
             <span class="text-sm font-semibold text-ink-800 tabular-nums">{{ m.value.toLocaleString() }}</span>
-            <span class="text-2xs font-semibold tabular-nums" :class="m.change_pct >= 0 ? 'text-emerald-600' : 'text-rose-600'">
+            <span class="text-2xs font-semibold tabular-nums" :class="twPriceClass(m.change_pct)">
               {{ m.change_pct >= 0 ? '+' : '' }}{{ m.change_pct }}%
             </span>
           </div>
@@ -163,16 +187,28 @@ onMounted(load)
             :key="t.key"
             class="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors"
             :class="tab === t.key ? 'bg-brand-600 text-white' : 'border border-ink-200 bg-surface text-ink-600 hover:bg-ink-100'"
-            @click="t.key === 'archive' ? openArchive() : (tab = t.key)"
+            @click="onTab(t.key)"
           >
             <component :is="t.icon" class="h-4 w-4" />
             {{ t.label }}<span v-if="t.count != null" class="opacity-70">（{{ t.count }}）</span>
           </button>
         </div>
 
-        <!-- Today -->
+        <!-- AI analysis -->
         <div v-if="tab === 'current'" class="space-y-3">
           <StockAnalysisCard v-for="(s, i) in analysis.stocks" :key="s.code" :stock="s" :default-open="i === 0" />
+        </div>
+
+        <!-- Radar board -->
+        <div v-else-if="tab === 'radar'">
+          <p class="mb-3 text-sm text-ink-500">
+            每日量化選股榜：技術面 + 籌碼面 + 相對強弱篩出的強勢標的，依多因子綜合分排序<span v-if="radar"> · 更新於 {{ radar.updated_at }}</span>。
+          </p>
+          <LoadingState v-if="radarLoading" label="正在載入雷達清單…" />
+          <EmptyState v-else-if="!radar?.stocks.length" title="今日無符合條件的標的" />
+          <div v-else class="space-y-3">
+            <RadarStockCard v-for="(s, i) in radar.stocks" :key="s.code" :stock="s" :default-open="i === 0" />
+          </div>
         </div>
 
         <!-- Track record -->

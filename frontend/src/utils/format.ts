@@ -43,6 +43,15 @@ export function todayISO(): string {
   return new Date(d.getTime() - tz).toISOString().slice(0, 10)
 }
 
+/**
+ * Taiwan stock-market colour convention: 漲(up)=red, 跌(down)=green.
+ * Returns a Tailwind text-colour class for a numeric change/return.
+ */
+export function twPriceClass(n: number | null | undefined): string {
+  if (n == null || n === 0) return 'text-ink-500'
+  return n > 0 ? 'text-rose-600' : 'text-emerald-600'
+}
+
 export const MOOD_EMOJI: Record<number, string> = {
   1: '😞',
   2: '🙁',

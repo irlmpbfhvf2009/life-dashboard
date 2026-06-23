@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { TrackDetail } from '@/types/stock'
+import { twPriceClass } from '@/utils/format'
 
 const props = defineProps<{ rows: TrackDetail[]; windows: number[] }>()
 
@@ -48,15 +49,14 @@ function maxGain(r: TrackDetail): number | null {
             <td class="px-4 py-3 text-right tabular-nums">
               <template v-if="currentPrice(r) != null">
                 <span class="text-ink-800">{{ currentPrice(r)!.toFixed(2) }}</span>
-                <span class="ml-1 text-2xs font-semibold"
-                  :class="(r.last_return_pct ?? 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'">
+                <span class="ml-1 text-2xs font-semibold" :class="twPriceClass(r.last_return_pct)">
                   ({{ (r.last_return_pct ?? 0) >= 0 ? '+' : '' }}{{ r.last_return_pct?.toFixed(1) }}%)
                 </span>
               </template>
               <span v-else class="text-ink-300">—</span>
             </td>
             <td class="px-4 py-3 text-right">
-              <span v-if="maxGain(r) != null" class="font-semibold text-emerald-600">
+              <span v-if="maxGain(r) != null" class="font-semibold text-rose-600">
                 +{{ maxGain(r)!.toFixed(1) }}%
               </span>
               <span v-else class="text-ink-300">—</span>
