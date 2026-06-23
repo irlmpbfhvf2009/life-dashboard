@@ -29,6 +29,16 @@ export const dashboardApi = {
   get: () => request<DashboardData>(() => http.get('/api/dashboard')),
 }
 
+// ---- Wallet (server-authoritative game coins) ----
+export interface WalletDto { coins: number; lastBonusDate: string | null; claimedToday: boolean }
+export interface GrantResult { granted: number; balance: number }
+export const walletApi = {
+  get: () => request<WalletDto>(() => http.get('/api/wallet')),
+  dailyBonus: () => request<GrantResult>(() => http.post('/api/wallet/daily-bonus')),
+  completion: (body: { progress: number; level: number }) =>
+    request<GrantResult>(() => http.post('/api/wallet/completion', body)),
+}
+
 // ---- Usage (owner-only free-tier bar) ----
 export const usageApi = {
   get: () => request<UsageData>(() => http.get('/api/usage')),

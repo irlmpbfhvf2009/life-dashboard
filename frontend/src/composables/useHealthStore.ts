@@ -7,21 +7,11 @@ import { useAuthStore } from '@/stores/auth'
 import type { HealthProfile, HealthPlan, HealthLog } from '@/data/health'
 import { generatePlan, initialLog, computeMetrics } from '@/utils/healthPlan'
 
-export interface Wallet {
-  coins: number
-  lastBonusDate: string // last date the +50 daily bonus was claimed
-  rewardDate: string // date the completion reward was last settled
-  rewardPaid: number // coins already paid for today's completion
-}
 interface Persisted {
   profile: HealthProfile
   plan: HealthPlan
   log: HealthLog
-  wallet: Wallet
 }
-
-const todayStr = () => new Date().toISOString().slice(0, 10)
-const freshWallet = (): Wallet => ({ coins: 0, lastBonusDate: '', rewardDate: '', rewardPaid: 0 })
 
 const storageKey = (uid: string) => `health:${uid}`
 
@@ -53,7 +43,6 @@ function load(uid: string) {
     if (parsed?.profile && !parsed.profile.accessory) {
       parsed.profile.accessory = 'none'
     }
-    if (parsed && !parsed.wallet) parsed.wallet = freshWallet()
     state.data = parsed
   } catch {
     state.data = null
@@ -84,33 +73,8 @@ export function useHealthStore() {
   /** Complete onboarding: build the plan and a fresh zero-state daily log. */
   function onboard(p: HealthProfile) {
     const newPlan = generatePlan(p)
-    state.data = { profile: p, plan: newPlan, log: initialLog(p, newPlan), wallet: freshWallet() }
+    state.data = { profile: p, plan: newPlan, log: initialLog(p, newPlan) }
     persist()
-  }
-
-  const coins = computed(() => state.data?.wallet.coins ?? 0)
-
-  /** Grant the once-per-day +50 login bonus. Returns the amount granted. */
-  function claimDailyBonus(): number {
-    if (!state.data) return 0
-    const w = state.data.wallet
-    if (w.lastBonusDate === todayStr()) return 0
-    w.lastBonusDate = todayStr()
-    w.coins += 50
-    persist()
-    return 50
-  }
-
-  /** Settle today's completion reward (完美=lv×10, ≥70%=lv×5). Pays only the
-   *  difference vs what's already paid today. Returns coins granted now. */
-  function settleReward(progress: number, level: number): number {
-    if (!state.data) return 0
-    const w = state.data.wallet
-    if (w.rewardDate !== todayStr()) { w.rewardDate = todayStr(); w.rewardPaid = 0 }
-    const target = progress >= 1 ? level * 10 : progress >= 0.7 ? level * 5 : 0
-    const grant = Math.max(0, target - w.rewardPaid)
-    if (grant > 0) { w.coins += grant; w.rewardPaid = target; persist() }
-    return grant
   }
 
   /** Edit the profile later: regenerate the plan & water goal, keep the log. */
@@ -135,5 +99,5 @@ export function useHealthStore() {
     state.data = null
   }
 
-  return { isOnboarded, profile, plan, log, coins, onboard, updateProfile, update, reset, claimDailyBonus, settleReward }
+  return { isOnboarded, profile, plan, log, onboard, updateProfile, update, reset }
 }

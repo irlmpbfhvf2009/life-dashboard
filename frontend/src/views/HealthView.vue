@@ -15,6 +15,7 @@ import WaterTracker from '@/components/health/WaterTracker.vue'
 import GrowPanel from '@/components/health/GrowPanel.vue'
 import FitnessPanel from '@/components/health/FitnessPanel.vue'
 import { useHealthStore } from '@/composables/useHealthStore'
+import { useWallet } from '@/composables/useWallet'
 import { eatingWindow } from '@/utils/healthPlan'
 import { workoutPresets, MEAL_SHARE, type OtterMood, type HealthProfile, type MealKey, type FastingPlan } from '@/data/health'
 import type { AccessoryKey } from '@/data/accessories'
@@ -36,7 +37,7 @@ function onSetupComplete(p: HealthProfile) {
   if (store.isOnboarded.value) store.updateProfile(p)
   else store.onboard(p)
   editing.value = false
-  if (wasNew) claimDaily()
+  if (wasNew) claimDailyBonus()
 }
 function resetAll() {
   if (window.confirm(t('health.reset.confirm'))) store.reset()
@@ -91,8 +92,9 @@ function flash(msg: string) {
   clearTimeout(toastTimer)
   toastTimer = setTimeout(() => (toastMsg.value = ''), 2800)
 }
-function rewardCheck() {
-  const g = store.settleReward(dayProgress.value, log.value?.level ?? 1)
+const { claimDaily: walletClaimDaily, settle: walletSettle } = useWallet()
+async function rewardCheck() {
+  const g = await walletSettle(dayProgress.value, Math.min(100, log.value?.level ?? 1))
   if (g > 0) flash(t('health.coin.reward', { n: g }))
 }
 function awardXp(amount: number) {
@@ -108,13 +110,13 @@ function awardXp(amount: number) {
   })
   const after = log.value?.level ?? 1
   if (after > before && profile.value) flash(`${profile.value.companionName} ${t('health.hero.level')}${after} 🎉`)
-  rewardCheck()
+  if (amount > 0) rewardCheck() // only server-settle on progress-increasing actions
 }
-function claimDaily() {
-  const g = store.claimDailyBonus()
+async function claimDailyBonus() {
+  const g = await walletClaimDaily()
   if (g > 0) flash(t('health.coin.daily', { n: g }))
 }
-onMounted(() => { if (store.isOnboarded.value) claimDaily() })
+onMounted(() => { if (store.isOnboarded.value) claimDailyBonus() })
 
 // ---- Handlers ----
 function toggleHabit(id: number) {
