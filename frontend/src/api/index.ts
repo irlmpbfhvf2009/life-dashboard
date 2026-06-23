@@ -11,6 +11,7 @@ import type {
   Todo,
   TodoPriority,
   TodoStatus,
+  UsageData,
   UserProfile,
   WeightRecord,
   WeightStats,
@@ -26,6 +27,11 @@ export const userApi = {
 // ---- Dashboard ----
 export const dashboardApi = {
   get: () => request<DashboardData>(() => http.get('/api/dashboard')),
+}
+
+// ---- Usage (owner-only free-tier bar) ----
+export const usageApi = {
+  get: () => request<UsageData>(() => http.get('/api/usage')),
 }
 
 // ---- Todos ----

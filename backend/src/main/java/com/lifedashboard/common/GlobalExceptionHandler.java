@@ -1,5 +1,6 @@
 package com.lifedashboard.common;
 
+import com.lifedashboard.common.exception.ForbiddenException;
 import com.lifedashboard.common.exception.ResourceNotFoundException;
 import com.lifedashboard.common.exception.UnauthorizedException;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<ApiResponse<Void>> handleUnauthorized(UnauthorizedException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ApiResponse<Void>> handleForbidden(ForbiddenException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(ex.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

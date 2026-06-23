@@ -159,5 +159,10 @@ export default {
     photoUrl: '頭像網址',
     saveChanges: '儲存變更',
     updated: '個人資料已更新',
+    usageTitle: '免費額度用量（僅供參考）',
+    usageRequests: '本月 API 請求數',
+    usageOf: '／ {limit}（Cloud Run 免費額度）',
+    usageGuard: '✅ 費用守門員已啟用：每月花費超過預算會自動關閉計費、停止服務。',
+    usageDisclaimer: '此數字由本服務自行統計，僅供參考；實際帳單以 Google Cloud 主控台為準。',
   },
 }

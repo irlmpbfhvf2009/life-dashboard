@@ -97,6 +97,13 @@ export interface Note {
   updatedAt: string
 }
 
+export interface UsageData {
+  month: string
+  requests: number
+  freeRequestLimit: number
+  budgetNote: string
+}
+
 export interface DashboardData {
   todayTodoCount: number
   todayDoneCount: number

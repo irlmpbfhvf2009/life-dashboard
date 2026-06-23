@@ -1,0 +1,10 @@
+{
+  "name": "billing-guard",
+  "version": "1.0.0",
+  "description": "Disables project billing when a Cloud Billing budget is exceeded.",
+  "main": "index.js",
+  "dependencies": {
+    "@google-cloud/functions-framework": "^3.4.0",
+    "@google-cloud/billing": "^4.1.0"
+  }
+}

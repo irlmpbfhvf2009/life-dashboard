@@ -159,5 +159,10 @@ export default {
     photoUrl: 'Photo URL',
     saveChanges: 'Save changes',
     updated: 'Profile updated',
+    usageTitle: 'Free-tier usage (for reference)',
+    usageRequests: 'API requests this month',
+    usageOf: '/ {limit} (Cloud Run free tier)',
+    usageGuard: '✅ Billing guard active: billing auto-disables and the service stops if monthly cost exceeds the budget.',
+    usageDisclaimer: 'This number is tracked by the app itself and is approximate; the Google Cloud console is the source of truth.',
   },
 }

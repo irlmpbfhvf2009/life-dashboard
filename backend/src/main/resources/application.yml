@@ -37,6 +37,9 @@ app:
     service-account-json: ${FIREBASE_SERVICE_ACCOUNT_JSON:}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  # Optional: restrict owner-only endpoints (e.g. /api/usage) to this email.
+  # Leave blank to allow any authenticated user (local dev).
+  owner-email: ${OWNER_EMAIL:}
 
 management:
   endpoints:
