@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { moodApi } from '@/api'
 import { useAsync } from '@/composables/useAsync'
 import type { MoodRecord, MoodStats } from '@/types'
@@ -11,6 +12,7 @@ import StatCard from '@/components/ui/StatCard.vue'
 import BarChart from '@/components/charts/BarChart.vue'
 import { formatDate, todayISO, MOOD_EMOJI } from '@/utils/format'
 
+const { t } = useI18n()
 const emptyStats: MoodStats = { count: 0, average: null, distribution: {}, points: [] }
 
 const { data: stats, loading: statsLoading, error: statsError, run: loadStats } =
@@ -46,7 +48,7 @@ async function add() {
 }
 
 async function remove(rec: MoodRecord) {
-  if (!confirm('Delete this entry?')) return
+  if (!confirm(t('common.confirmDeleteEntry'))) return
   await moodApi.remove(rec.id)
   await refreshAll()
 }
@@ -65,15 +67,15 @@ const chart = computed(() => ({
 
 <template>
   <div>
-    <PageHeader title="Mood" subtitle="How are you feeling?" />
+    <PageHeader :title="$t('moods.title')" :subtitle="$t('moods.subtitle')" />
 
     <form class="card mb-6 flex flex-wrap items-end gap-4 p-4" @submit.prevent="add">
       <div>
-        <label class="label">Date</label>
+        <label class="label">{{ $t('common.date') }}</label>
         <input v-model="form.date" type="date" class="input w-40" />
       </div>
       <div>
-        <label class="label">Mood</label>
+        <label class="label">{{ $t('moods.mood') }}</label>
         <div class="flex gap-1">
           <button
             v-for="s in [1, 2, 3, 4, 5]"
@@ -88,38 +90,38 @@ const chart = computed(() => ({
         </div>
       </div>
       <div class="min-w-[12rem] flex-1">
-        <label class="label">Note</label>
-        <input v-model="form.note" class="input" placeholder="Optional" />
+        <label class="label">{{ $t('common.note') }}</label>
+        <input v-model="form.note" class="input" :placeholder="$t('common.optional')" />
       </div>
       <button type="submit" class="btn-primary" :disabled="saving">
-        {{ saving ? 'Saving…' : 'Add' }}
+        {{ saving ? $t('common.saving') : $t('common.add') }}
       </button>
       <p v-if="formError" class="w-full text-sm text-red-600">{{ formError }}</p>
     </form>
 
     <div class="card mb-6 p-5">
-      <h3 class="mb-4 text-sm font-semibold text-slate-700">Last 30 days</h3>
+      <h3 class="mb-4 text-sm font-semibold text-slate-700">{{ $t('moods.last30') }}</h3>
       <LoadingSpinner v-if="statsLoading" />
       <ErrorState v-else-if="statsError" :message="statsError" @retry="loadStats" />
       <template v-else>
         <div class="mb-4 grid grid-cols-2 gap-3">
-          <StatCard label="Entries" :value="stats.count" />
+          <StatCard :label="$t('moods.entries')" :value="stats.count" />
           <StatCard
-            label="Average mood"
+            :label="$t('moods.avgMood')"
             :value="stats.average != null ? stats.average.toFixed(1) : '—'"
             accent="green"
           />
         </div>
         <BarChart v-if="stats.count" :data="chart" />
-        <EmptyState v-else title="No mood data" description="Log your mood to see the distribution." />
+        <EmptyState v-else :title="$t('moods.noData')" :description="$t('moods.noDataDesc')" />
       </template>
     </div>
 
     <div class="card p-5">
-      <h3 class="mb-4 text-sm font-semibold text-slate-700">History</h3>
+      <h3 class="mb-4 text-sm font-semibold text-slate-700">{{ $t('common.history') }}</h3>
       <LoadingSpinner v-if="listLoading" />
       <ErrorState v-else-if="listError" :message="listError" @retry="loadList" />
-      <EmptyState v-else-if="!list.length" title="No entries yet" />
+      <EmptyState v-else-if="!list.length" :title="$t('common.noEntries')" />
       <ul v-else class="divide-y divide-slate-100">
         <li v-for="rec in list" :key="rec.id" class="flex items-center gap-3 py-3 text-sm">
           <span class="text-2xl">{{ MOOD_EMOJI[rec.moodScore] }}</span>

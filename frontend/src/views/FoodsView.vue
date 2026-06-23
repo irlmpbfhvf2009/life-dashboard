@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { foodApi } from '@/api'
 import { useAsync } from '@/composables/useAsync'
 import type { FoodRecord, MealType } from '@/types'
@@ -9,6 +10,7 @@ import ErrorState from '@/components/ui/ErrorState.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import { formatDate, todayISO } from '@/utils/format'
 
+const { t } = useI18n()
 const { data: foods, loading, error, run } = useAsync<FoodRecord[]>(foodApi.list, [])
 
 const saving = ref(false)
@@ -24,7 +26,7 @@ onMounted(run)
 
 async function add() {
   if (!form.foodText.trim()) {
-    formError.value = 'Food is required'
+    formError.value = t('foods.foodRequired')
     return
   }
   saving.value = true
@@ -47,7 +49,7 @@ async function add() {
 }
 
 async function remove(rec: FoodRecord) {
-  if (!confirm('Delete this entry?')) return
+  if (!confirm(t('common.confirmDeleteEntry'))) return
   await foodApi.remove(rec.id)
   await run()
 }
@@ -62,39 +64,39 @@ const mealClass: Record<MealType, string> = {
 
 <template>
   <div>
-    <PageHeader title="Food" subtitle="Log what you eat" />
+    <PageHeader :title="$t('foods.title')" :subtitle="$t('foods.subtitle')" />
 
     <form class="card mb-6 flex flex-wrap items-end gap-3 p-4" @submit.prevent="add">
       <div>
-        <label class="label">Date</label>
+        <label class="label">{{ $t('common.date') }}</label>
         <input v-model="form.date" type="date" class="input w-40" />
       </div>
       <div>
-        <label class="label">Meal</label>
+        <label class="label">{{ $t('foods.meal') }}</label>
         <select v-model="form.mealType" class="input w-36">
-          <option value="BREAKFAST">Breakfast</option>
-          <option value="LUNCH">Lunch</option>
-          <option value="DINNER">Dinner</option>
-          <option value="SNACK">Snack</option>
+          <option value="BREAKFAST">{{ $t('meal.BREAKFAST') }}</option>
+          <option value="LUNCH">{{ $t('meal.LUNCH') }}</option>
+          <option value="DINNER">{{ $t('meal.DINNER') }}</option>
+          <option value="SNACK">{{ $t('meal.SNACK') }}</option>
         </select>
       </div>
       <div class="min-w-[14rem] flex-1">
-        <label class="label">Food</label>
-        <input v-model="form.foodText" class="input" placeholder="e.g. Chicken salad" />
+        <label class="label">{{ $t('foods.food') }}</label>
+        <input v-model="form.foodText" class="input" :placeholder="$t('foods.foodPlaceholder')" />
       </div>
       <button type="submit" class="btn-primary" :disabled="saving">
-        {{ saving ? 'Saving…' : 'Add' }}
+        {{ saving ? $t('common.saving') : $t('common.add') }}
       </button>
       <p v-if="formError" class="w-full text-sm text-red-600">{{ formError }}</p>
     </form>
 
     <LoadingSpinner v-if="loading" />
     <ErrorState v-else-if="error" :message="error" @retry="run" />
-    <EmptyState v-else-if="!foods.length" title="No food logged" description="Add your first meal." />
+    <EmptyState v-else-if="!foods.length" :title="$t('foods.empty')" :description="$t('foods.emptyDesc')" />
 
     <ul v-else class="space-y-2">
       <li v-for="rec in foods" :key="rec.id" class="card flex items-center gap-3 p-4 text-sm">
-        <span class="badge" :class="mealClass[rec.mealType]">{{ rec.mealType }}</span>
+        <span class="badge" :class="mealClass[rec.mealType]">{{ $t('meal.' + rec.mealType) }}</span>
         <div class="min-w-0 flex-1">
           <p class="truncate font-medium text-slate-800">{{ rec.foodText }}</p>
           <p v-if="rec.note" class="truncate text-xs text-slate-500">{{ rec.note }}</p>

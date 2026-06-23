@@ -1,5 +1,5 @@
 <script setup lang="ts">
-withDefaults(defineProps<{ label?: string }>(), { label: 'Loading…' })
+defineProps<{ label?: string }>()
 </script>
 
 <template>
@@ -9,6 +9,6 @@ withDefaults(defineProps<{ label?: string }>(), { label: 'Loading…' })
       <path class="opacity-75" fill="currentColor"
         d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z" />
     </svg>
-    <span class="text-sm">{{ label }}</span>
+    <span class="text-sm">{{ label || $t('common.loading') }}</span>
   </div>
 </template>

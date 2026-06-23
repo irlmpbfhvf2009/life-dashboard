@@ -2,20 +2,22 @@
 import { ref } from 'vue'
 import { RouterView, RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher.vue'
 
 const auth = useAuthStore()
 const router = useRouter()
 const sidebarOpen = ref(false)
 
+// `name` matches both the route name and the i18n key under `nav.*`.
 const nav = [
-  { name: 'dashboard', label: 'Dashboard', icon: '📊' },
-  { name: 'todos', label: 'Todos', icon: '✅' },
-  { name: 'weights', label: 'Weight', icon: '⚖️' },
-  { name: 'foods', label: 'Food', icon: '🍽️' },
-  { name: 'expenses', label: 'Expenses', icon: '💰' },
-  { name: 'moods', label: 'Mood', icon: '🙂' },
-  { name: 'notes', label: 'Notes', icon: '📝' },
-  { name: 'settings', label: 'Settings', icon: '⚙️' },
+  { name: 'dashboard', icon: '📊' },
+  { name: 'todos', icon: '✅' },
+  { name: 'weights', icon: '⚖️' },
+  { name: 'foods', icon: '🍽️' },
+  { name: 'expenses', icon: '💰' },
+  { name: 'moods', icon: '🙂' },
+  { name: 'notes', icon: '📝' },
+  { name: 'settings', icon: '⚙️' },
 ]
 
 async function logout() {
@@ -52,7 +54,7 @@ async function logout() {
           @click="sidebarOpen = false"
         >
           <span>{{ item.icon }}</span>
-          {{ item.label }}
+          {{ $t('nav.' + item.name) }}
         </RouterLink>
       </nav>
     </aside>
@@ -62,6 +64,7 @@ async function logout() {
       <header class="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 bg-white/80 px-4 backdrop-blur lg:px-8">
         <button class="text-slate-500 lg:hidden" @click="sidebarOpen = true">☰</button>
         <div class="ml-auto flex items-center gap-3">
+          <LanguageSwitcher />
           <div class="flex items-center gap-2">
             <img
               v-if="auth.photoUrl"
@@ -75,7 +78,7 @@ async function logout() {
             </div>
             <span class="hidden text-sm font-medium text-slate-700 sm:block">{{ auth.displayName }}</span>
           </div>
-          <button class="btn-secondary" @click="logout">Sign out</button>
+          <button class="btn-secondary" @click="logout">{{ $t('common.signOut') }}</button>
         </div>
       </header>
 

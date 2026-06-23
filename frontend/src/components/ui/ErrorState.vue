@@ -11,6 +11,6 @@ defineEmits<{ retry: [] }>()
       <line x1="12" y1="16" x2="12.01" y2="16" />
     </svg>
     <p class="text-sm text-red-600">{{ message }}</p>
-    <button class="btn-secondary" @click="$emit('retry')">Retry</button>
+    <button class="btn-secondary" @click="$emit('retry')">{{ $t('common.retry') }}</button>
   </div>
 </template>

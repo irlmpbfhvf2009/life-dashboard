@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { noteApi } from '@/api'
 import { useAsync } from '@/composables/useAsync'
 import type { Note } from '@/types'
@@ -10,6 +11,7 @@ import EmptyState from '@/components/ui/EmptyState.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import { formatDateTime } from '@/utils/format'
 
+const { t } = useI18n()
 const { data: notes, loading, error, run } = useAsync<Note[]>(noteApi.list, [])
 
 const showModal = ref(false)
@@ -38,7 +40,7 @@ function openEdit(note: Note) {
 
 async function save() {
   if (!form.title.trim()) {
-    formError.value = 'Title is required'
+    formError.value = t('notes.titleRequired')
     return
   }
   saving.value = true
@@ -59,7 +61,7 @@ async function save() {
 }
 
 async function remove(note: Note) {
-  if (!confirm(`Delete "${note.title}"?`)) return
+  if (!confirm(t('common.confirmDeleteNamed', { name: note.title }))) return
   await noteApi.remove(note.id)
   await run()
 }
@@ -67,15 +69,15 @@ async function remove(note: Note) {
 
 <template>
   <div>
-    <PageHeader title="Notes" subtitle="Quick thoughts and reminders">
+    <PageHeader :title="$t('notes.title')" :subtitle="$t('notes.subtitle')">
       <template #actions>
-        <button class="btn-primary" @click="openCreate">+ New note</button>
+        <button class="btn-primary" @click="openCreate">+ {{ $t('notes.newNote') }}</button>
       </template>
     </PageHeader>
 
     <LoadingSpinner v-if="loading" />
     <ErrorState v-else-if="error" :message="error" @retry="run" />
-    <EmptyState v-else-if="!notes.length" title="No notes yet" description="Create your first note." />
+    <EmptyState v-else-if="!notes.length" :title="$t('notes.empty')" :description="$t('notes.emptyDesc')" />
 
     <div v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <div
@@ -91,25 +93,25 @@ async function remove(note: Note) {
           </div>
         </div>
         <p class="flex-1 whitespace-pre-wrap text-sm text-slate-600">{{ note.content }}</p>
-        <p class="mt-3 text-xs text-slate-400">Updated {{ formatDateTime(note.updatedAt) }}</p>
+        <p class="mt-3 text-xs text-slate-400">{{ $t('notes.updatedAt', { time: formatDateTime(note.updatedAt) }) }}</p>
       </div>
     </div>
 
-    <BaseModal :open="showModal" :title="editingId ? 'Edit note' : 'New note'" @close="showModal = false">
+    <BaseModal :open="showModal" :title="editingId ? $t('notes.editNote') : $t('notes.newNote')" @close="showModal = false">
       <form class="space-y-4" @submit.prevent="save">
         <div>
-          <label class="label">Title</label>
-          <input v-model="form.title" class="input" placeholder="Note title" />
+          <label class="label">{{ $t('notes.titleLabel') }}</label>
+          <input v-model="form.title" class="input" :placeholder="$t('notes.titlePlaceholder')" />
         </div>
         <div>
-          <label class="label">Content</label>
-          <textarea v-model="form.content" class="input" rows="6" placeholder="Write something…" />
+          <label class="label">{{ $t('notes.content') }}</label>
+          <textarea v-model="form.content" class="input" rows="6" :placeholder="$t('notes.contentPlaceholder')" />
         </div>
         <p v-if="formError" class="text-sm text-red-600">{{ formError }}</p>
         <div class="flex justify-end gap-2">
-          <button type="button" class="btn-secondary" @click="showModal = false">Cancel</button>
+          <button type="button" class="btn-secondary" @click="showModal = false">{{ $t('common.cancel') }}</button>
           <button type="submit" class="btn-primary" :disabled="saving">
-            {{ saving ? 'Saving…' : 'Save' }}
+            {{ saving ? $t('common.saving') : $t('common.save') }}
           </button>
         </div>
       </form>

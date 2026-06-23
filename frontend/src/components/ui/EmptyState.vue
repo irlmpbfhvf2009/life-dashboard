@@ -1,8 +1,5 @@
 <script setup lang="ts">
-withDefaults(defineProps<{ title?: string; description?: string }>(), {
-  title: 'Nothing here yet',
-  description: 'Add your first entry to get started.',
-})
+defineProps<{ title?: string; description?: string }>()
 </script>
 
 <template>
@@ -11,8 +8,8 @@ withDefaults(defineProps<{ title?: string; description?: string }>(), {
       <rect x="3" y="3" width="18" height="18" rx="2" />
       <path d="M3 9h18M9 21V9" />
     </svg>
-    <p class="text-sm font-medium text-slate-600">{{ title }}</p>
-    <p class="max-w-xs text-xs text-slate-400">{{ description }}</p>
+    <p class="text-sm font-medium text-slate-600">{{ title || $t('common.emptyTitle') }}</p>
+    <p class="max-w-xs text-xs text-slate-400">{{ description || $t('common.emptyDesc') }}</p>
     <slot />
   </div>
 </template>

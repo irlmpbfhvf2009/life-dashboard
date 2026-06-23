@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher.vue'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -23,13 +24,16 @@ async function signIn() {
 </script>
 
 <template>
-  <div class="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-50 via-slate-50 to-white p-4">
+  <div class="relative flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-50 via-slate-50 to-white p-4">
+    <div class="absolute right-4 top-4">
+      <LanguageSwitcher />
+    </div>
     <div class="card w-full max-w-md p-8 text-center">
       <div class="mb-6 flex flex-col items-center gap-2">
         <span class="text-4xl">🌿</span>
-        <h1 class="text-2xl font-bold text-slate-800">Life Dashboard</h1>
+        <h1 class="text-2xl font-bold text-slate-800">{{ $t('login.title') }}</h1>
         <p class="text-sm text-slate-500">
-          Track todos, weight, food, expenses, mood and notes — all in one private place.
+          {{ $t('login.subtitle') }}
         </p>
       </div>
 
@@ -44,7 +48,7 @@ async function signIn() {
           <path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84z"/>
           <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15A11 11 0 0 0 12 1 11 11 0 0 0 2.18 7.06l3.66 2.84C6.71 7.3 9.14 5.38 12 5.38z"/>
         </svg>
-        <span>{{ submitting ? 'Signing in…' : 'Continue with Google' }}</span>
+        <span>{{ submitting ? $t('login.signingIn') : $t('login.continueGoogle') }}</span>
       </button>
 
       <p v-if="auth.error" class="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
@@ -52,7 +56,7 @@ async function signIn() {
       </p>
 
       <p class="mt-6 text-xs text-slate-400">
-        Your data is private to your account and never shared with other users.
+        {{ $t('login.privacy') }}
       </p>
     </div>
   </div>

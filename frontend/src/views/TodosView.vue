@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { todoApi } from '@/api'
 import { useAsync } from '@/composables/useAsync'
 import type { Todo, TodoPriority, TodoStatus } from '@/types'
@@ -10,6 +11,7 @@ import EmptyState from '@/components/ui/EmptyState.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import { formatDate } from '@/utils/format'
 
+const { t } = useI18n()
 const filter = ref<TodoStatus | ''>('')
 const { data: todos, loading, error, run } = useAsync<Todo[]>(
   () => todoApi.list(filter.value || undefined),
@@ -44,7 +46,7 @@ function openCreate() {
 
 async function create() {
   if (!form.title.trim()) {
-    formError.value = 'Title is required'
+    formError.value = t('todos.titleRequired')
     return
   }
   saving.value = true
@@ -72,7 +74,7 @@ async function toggle(todo: Todo) {
 }
 
 async function remove(todo: Todo) {
-  if (!confirm(`Delete "${todo.title}"?`)) return
+  if (!confirm(t('common.confirmDeleteNamed', { name: todo.title }))) return
   await todoApi.remove(todo.id)
   await run()
 }
@@ -86,21 +88,21 @@ const priorityClass: Record<TodoPriority, string> = {
 
 <template>
   <div>
-    <PageHeader title="Todos" subtitle="Stay on top of your tasks">
+    <PageHeader :title="$t('todos.title')" :subtitle="$t('todos.subtitle')">
       <template #actions>
-        <button class="btn-primary" @click="openCreate">+ New todo</button>
+        <button class="btn-primary" @click="openCreate">+ {{ $t('todos.newTodo') }}</button>
       </template>
     </PageHeader>
 
     <div class="mb-4 flex gap-2">
       <button
-        v-for="f in [{ v: '', l: 'All' }, { v: 'TODO', l: 'Active' }, { v: 'DONE', l: 'Done' }]"
+        v-for="f in [{ v: '', l: 'all' }, { v: 'TODO', l: 'active' }, { v: 'DONE', l: 'done' }]"
         :key="f.v"
         class="rounded-full px-3 py-1 text-sm"
         :class="filter === f.v ? 'bg-brand-600 text-white' : 'bg-white text-slate-600 border border-slate-200'"
         @click="setFilter(f.v as TodoStatus | '')"
       >
-        {{ f.l }}
+        {{ $t('todos.' + f.l) }}
       </button>
     </div>
 
@@ -108,8 +110,8 @@ const priorityClass: Record<TodoPriority, string> = {
     <ErrorState v-else-if="error" :message="error" @retry="run" />
     <EmptyState
       v-else-if="!todos.length"
-      title="No todos"
-      description="Create your first task to get going."
+      :title="$t('todos.empty')"
+      :description="$t('todos.emptyDesc')"
     />
 
     <ul v-else class="space-y-2">
@@ -136,40 +138,40 @@ const priorityClass: Record<TodoPriority, string> = {
         <span v-if="todo.dueDate" class="hidden text-xs text-slate-400 sm:block">
           {{ formatDate(todo.dueDate) }}
         </span>
-        <span class="badge" :class="priorityClass[todo.priority]">{{ todo.priority }}</span>
+        <span class="badge" :class="priorityClass[todo.priority]">{{ $t('priority.' + todo.priority) }}</span>
         <button class="text-slate-300 hover:text-red-500" @click="remove(todo)">🗑</button>
       </li>
     </ul>
 
-    <BaseModal :open="showModal" title="New todo" @close="showModal = false">
+    <BaseModal :open="showModal" :title="$t('todos.newTodo')" @close="showModal = false">
       <form class="space-y-4" @submit.prevent="create">
         <div>
-          <label class="label">Title</label>
-          <input v-model="form.title" class="input" placeholder="What needs doing?" />
+          <label class="label">{{ $t('todos.titleLabel') }}</label>
+          <input v-model="form.title" class="input" :placeholder="$t('todos.titlePlaceholder')" />
         </div>
         <div>
-          <label class="label">Description</label>
+          <label class="label">{{ $t('todos.descLabel') }}</label>
           <textarea v-model="form.description" class="input" rows="2" />
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="label">Priority</label>
+            <label class="label">{{ $t('todos.priority') }}</label>
             <select v-model="form.priority" class="input">
-              <option value="LOW">Low</option>
-              <option value="MEDIUM">Medium</option>
-              <option value="HIGH">High</option>
+              <option value="LOW">{{ $t('priority.LOW') }}</option>
+              <option value="MEDIUM">{{ $t('priority.MEDIUM') }}</option>
+              <option value="HIGH">{{ $t('priority.HIGH') }}</option>
             </select>
           </div>
           <div>
-            <label class="label">Due date</label>
+            <label class="label">{{ $t('todos.dueDate') }}</label>
             <input v-model="form.dueDate" type="date" class="input" />
           </div>
         </div>
         <p v-if="formError" class="text-sm text-red-600">{{ formError }}</p>
         <div class="flex justify-end gap-2">
-          <button type="button" class="btn-secondary" @click="showModal = false">Cancel</button>
+          <button type="button" class="btn-secondary" @click="showModal = false">{{ $t('common.cancel') }}</button>
           <button type="submit" class="btn-primary" :disabled="saving">
-            {{ saving ? 'Saving…' : 'Create' }}
+            {{ saving ? $t('common.saving') : $t('common.create') }}
           </button>
         </div>
       </form>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { weightApi } from '@/api'
 import { useAsync } from '@/composables/useAsync'
 import type { WeightRecord, WeightStats } from '@/types'
@@ -11,6 +12,7 @@ import StatCard from '@/components/ui/StatCard.vue'
 import LineChart from '@/components/charts/LineChart.vue'
 import { formatDate, todayISO } from '@/utils/format'
 
+const { t } = useI18n()
 const range = ref<'7d' | '30d' | '90d'>('30d')
 
 const emptyStats: WeightStats = {
@@ -49,7 +51,7 @@ async function refreshAll() {
 async function add() {
   const w = Number(form.weight)
   if (!form.date || !w || w <= 0) {
-    formError.value = 'Enter a valid date and weight'
+    formError.value = t('weights.invalidInput')
     return
   }
   saving.value = true
@@ -67,7 +69,7 @@ async function add() {
 }
 
 async function remove(rec: WeightRecord) {
-  if (!confirm('Delete this entry?')) return
+  if (!confirm(t('common.confirmDeleteEntry'))) return
   await weightApi.remove(rec.id)
   await refreshAll()
 }
@@ -90,24 +92,24 @@ const chart = computed(() => ({
 
 <template>
   <div>
-    <PageHeader title="Weight" subtitle="Track your weight over time" />
+    <PageHeader :title="$t('weights.title')" :subtitle="$t('weights.subtitle')" />
 
     <!-- Add form -->
     <form class="card mb-6 flex flex-wrap items-end gap-3 p-4" @submit.prevent="add">
       <div>
-        <label class="label">Date</label>
+        <label class="label">{{ $t('common.date') }}</label>
         <input v-model="form.date" type="date" class="input w-40" />
       </div>
       <div>
-        <label class="label">Weight (kg)</label>
+        <label class="label">{{ $t('weights.weightKg') }}</label>
         <input v-model="form.weight" type="number" step="0.1" min="0" class="input w-32" placeholder="70.5" />
       </div>
       <div class="min-w-[12rem] flex-1">
-        <label class="label">Note</label>
-        <input v-model="form.note" class="input" placeholder="Optional" />
+        <label class="label">{{ $t('common.note') }}</label>
+        <input v-model="form.note" class="input" :placeholder="$t('common.optional')" />
       </div>
       <button type="submit" class="btn-primary" :disabled="saving">
-        {{ saving ? 'Saving…' : 'Add' }}
+        {{ saving ? $t('common.saving') : $t('common.add') }}
       </button>
       <p v-if="formError" class="w-full text-sm text-red-600">{{ formError }}</p>
     </form>
@@ -115,7 +117,7 @@ const chart = computed(() => ({
     <!-- Range + chart -->
     <div class="card mb-6 p-5">
       <div class="mb-4 flex items-center justify-between">
-        <h3 class="text-sm font-semibold text-slate-700">Trend</h3>
+        <h3 class="text-sm font-semibold text-slate-700">{{ $t('weights.trend') }}</h3>
         <div class="flex gap-1">
           <button
             v-for="r in ['7d', '30d', '90d']"
@@ -133,26 +135,26 @@ const chart = computed(() => ({
       <ErrorState v-else-if="statsError" :message="statsError" @retry="loadStats" />
       <template v-else>
         <div class="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatCard label="Average" :value="stats.average != null ? `${stats.average} kg` : '—'" />
-          <StatCard label="Min" :value="stats.min != null ? `${stats.min} kg` : '—'" accent="green" />
-          <StatCard label="Max" :value="stats.max != null ? `${stats.max} kg` : '—'" accent="amber" />
+          <StatCard :label="$t('weights.average')" :value="stats.average != null ? `${stats.average} kg` : '—'" />
+          <StatCard :label="$t('weights.min')" :value="stats.min != null ? `${stats.min} kg` : '—'" accent="green" />
+          <StatCard :label="$t('weights.max')" :value="stats.max != null ? `${stats.max} kg` : '—'" accent="amber" />
           <StatCard
-            label="Change"
+            :label="$t('weights.change')"
             :value="stats.change != null ? `${stats.change > 0 ? '+' : ''}${stats.change} kg` : '—'"
             :accent="stats.change != null && stats.change > 0 ? 'rose' : 'green'"
           />
         </div>
         <LineChart v-if="stats.points.length" :data="chart" />
-        <EmptyState v-else title="No data in range" description="Add a weight entry to see the chart." />
+        <EmptyState v-else :title="$t('weights.noRangeData')" :description="$t('weights.noRangeDataDesc')" />
       </template>
     </div>
 
     <!-- History -->
     <div class="card p-5">
-      <h3 class="mb-4 text-sm font-semibold text-slate-700">History</h3>
+      <h3 class="mb-4 text-sm font-semibold text-slate-700">{{ $t('common.history') }}</h3>
       <LoadingSpinner v-if="listLoading" />
       <ErrorState v-else-if="listError" :message="listError" @retry="loadList" />
-      <EmptyState v-else-if="!list.length" title="No entries yet" />
+      <EmptyState v-else-if="!list.length" :title="$t('common.noEntries')" />
       <ul v-else class="divide-y divide-slate-100">
         <li v-for="rec in list" :key="rec.id" class="flex items-center gap-3 py-3 text-sm">
           <span class="w-28 text-slate-400">{{ formatDate(rec.date) }}</span>
