@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { ArrowLeft, ShieldAlert, Bot, RefreshCw, Globe, Target, History, ListChecks, Radar } from 'lucide-vue-next'
+import { ArrowLeft, ShieldAlert, Bot, RefreshCw, Globe, Target, History, ListChecks, Radar, Sparkles } from 'lucide-vue-next'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import SectionCard from '@/components/ui/SectionCard.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
@@ -10,9 +10,10 @@ import EmptyState from '@/components/ui/EmptyState.vue'
 import StockAnalysisCard from '@/components/stock/StockAnalysisCard.vue'
 import StockTrackTable from '@/components/stock/StockTrackTable.vue'
 import RadarStockCard from '@/components/stock/RadarStockCard.vue'
+import AiPickCard from '@/components/stock/AiPickCard.vue'
 import { stockResearchApi } from '@/api/stockResearch'
 import { twPriceClass } from '@/utils/format'
-import type { AnalysisData, PerformanceData, ArchiveData, ResultData } from '@/types/stock'
+import type { AnalysisData, PerformanceData, ArchiveData, ResultData, RadarStock } from '@/types/stock'
 
 const analysis = ref<AnalysisData | null>(null)
 const performance = ref<PerformanceData | null>(null)
@@ -23,21 +24,41 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const tab = ref<'current' | 'radar' | 'track' | 'archive'>('current')
 const archiveLoading = ref(false)
-const radarLoading = ref(false)
 
 async function load() {
   loading.value = true
   error.value = null
   try {
-    const [a, p] = await Promise.all([stockResearchApi.analysis(), stockResearchApi.performance()])
+    const [a, p, r] = await Promise.all([
+      stockResearchApi.analysis(),
+      stockResearchApi.performance(),
+      stockResearchApi.result(),
+    ])
     analysis.value = a
     performance.value = p
+    radar.value = r
   } catch (e) {
     error.value = (e as Error).message
   } finally {
     loading.value = false
   }
 }
+
+// Merge AI analysis with its radar/quote data by stock code.
+const radarByCode = computed<Record<string, RadarStock>>(() => {
+  const map: Record<string, RadarStock> = {}
+  radar.value?.stocks.forEach((s) => (map[s.code] = s))
+  return map
+})
+const aiPicks = computed(() =>
+  (analysis.value?.stocks ?? []).map((ai) => ({ ai, radar: radarByCode.value[ai.code] })),
+)
+// Whether the current AI hit-rate sample is still small.
+const smallSample = computed(() => {
+  const m = performance.value?.summary
+  if (!m) return false
+  return Math.max(...Object.values(m).map((w) => w.matured)) < 10
+})
 
 async function openArchive() {
   tab.value = 'archive'
@@ -49,19 +70,6 @@ async function openArchive() {
     error.value = (e as Error).message
   } finally {
     archiveLoading.value = false
-  }
-}
-
-async function openRadar() {
-  tab.value = 'radar'
-  if (radar.value || radarLoading.value) return
-  radarLoading.value = true
-  try {
-    radar.value = await stockResearchApi.result()
-  } catch (e) {
-    error.value = (e as Error).message
-  } finally {
-    radarLoading.value = false
   }
 }
 
@@ -82,7 +90,7 @@ const overviewBlocks = computed(() =>
 )
 
 const tabs = computed(() => [
-  { key: 'current' as const, label: 'AI 分析', icon: Bot, count: analysis.value?.stocks.length },
+  { key: 'current' as const, label: '今日 AI 精選', icon: Sparkles, count: analysis.value?.stocks.length },
   { key: 'radar' as const, label: '雷達選股', icon: Radar, count: radar.value?.stocks.length },
   { key: 'track' as const, label: 'AI 預判追蹤', icon: ListChecks, count: performance.value?.detail?.length },
   { key: 'archive' as const, label: '過往分析', icon: History, count: undefined },
@@ -90,7 +98,6 @@ const tabs = computed(() => [
 
 function onTab(key: 'current' | 'radar' | 'track' | 'archive') {
   if (key === 'archive') openArchive()
-  else if (key === 'radar') openRadar()
   else tab.value = key
 }
 
@@ -124,7 +131,10 @@ onMounted(load)
     <div v-else-if="analysis" class="space-y-8">
       <!-- Performance -->
       <section v-if="performance">
-        <p class="eyebrow mb-3">命中率績效</p>
+        <div class="mb-3 flex flex-wrap items-center gap-2">
+          <p class="eyebrow">命中率績效</p>
+          <span v-if="smallSample" class="badge-amber">樣本仍少，僅供參考</span>
+        </div>
         <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <div v-for="w in performance.windows" :key="w" class="card p-5">
             <p class="text-2xs text-ink-400">{{ w }} 日命中率</p>
@@ -132,15 +142,18 @@ onMounted(load)
               {{ performance.summary[String(w)]?.hit_rate_pct ?? '—' }}<span class="text-base text-ink-400">%</span>
             </p>
             <p class="mt-1.5 text-2xs text-ink-400">
-              命中 {{ performance.summary[String(w)]?.hits }}/{{ performance.summary[String(w)]?.matured }}・最大漲幅均值 {{ performance.summary[String(w)]?.avg_max_return_pct ?? '—' }}%
+              已到期 {{ performance.summary[String(w)]?.matured }} 筆中命中 {{ performance.summary[String(w)]?.hits }}・進行中 {{ performance.summary[String(w)]?.in_progress }}
             </p>
           </div>
           <div class="card flex flex-col justify-center gap-1 p-5">
             <p class="flex items-center gap-1.5 text-2xs text-ink-400"><Target class="h-3.5 w-3.5" /> 命中定義</p>
-            <p class="text-sm font-semibold text-ink-800">盤中曾漲 ≥ {{ performance.target_pct }}%</p>
+            <p class="text-sm font-semibold text-ink-800">N 日內盤中曾漲 ≥ {{ performance.target_pct }}%</p>
             <p class="text-2xs text-ink-400">只計 AI 評分 ≥ {{ performance.ai_pick_min }}/40 的看好標的</p>
           </div>
         </div>
+        <p class="mt-2.5 text-2xs leading-relaxed text-ink-400">
+          命中率只計算「已到期」樣本（5 日視窗約需一週、20 日約一個月才到期），未到期的標的列入「進行中」、不影響分母。同一檔若在 5 日內命中，10/20 日視窗亦同步計命中，故三欄常一致。樣本累積越多、數字越可信。
+        </p>
       </section>
 
       <!-- Macro -->
@@ -194,9 +207,11 @@ onMounted(load)
           </button>
         </div>
 
-        <!-- AI analysis -->
-        <div v-if="tab === 'current'" class="space-y-3">
-          <StockAnalysisCard v-for="(s, i) in analysis.stocks" :key="s.code" :stock="s" :default-open="i === 0" />
+        <!-- Today's AI picks (merged quote + AI analysis) -->
+        <div v-if="tab === 'current'" class="space-y-4">
+          <p class="text-sm text-ink-500">綜合分最高、且已做 AI 八面向分析的標的（附 K 線、技術、籌碼、基本面與操作參考）。</p>
+          <EmptyState v-if="!aiPicks.length" title="尚無 AI 精選" description="等下次 AI 分析更新。" />
+          <AiPickCard v-for="p in aiPicks" :key="p.ai.code" :ai="p.ai" :radar="p.radar" />
         </div>
 
         <!-- Radar board -->
@@ -204,8 +219,7 @@ onMounted(load)
           <p class="mb-3 text-sm text-ink-500">
             每日量化選股榜：技術面 + 籌碼面 + 相對強弱篩出的強勢標的，依多因子綜合分排序<span v-if="radar"> · 更新於 {{ radar.updated_at }}</span>。
           </p>
-          <LoadingState v-if="radarLoading" label="正在載入雷達清單…" />
-          <EmptyState v-else-if="!radar?.stocks.length" title="今日無符合條件的標的" />
+          <EmptyState v-if="!radar?.stocks.length" title="今日無符合條件的標的" />
           <div v-else class="space-y-3">
             <RadarStockCard v-for="(s, i) in radar.stocks" :key="s.code" :stock="s" :default-open="i === 0" />
           </div>

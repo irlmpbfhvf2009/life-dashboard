@@ -147,9 +147,25 @@ export interface RadarStock {
   ohlc: Ohlc[]
   score?: number
   composite_score?: number
-  sentiment?: { margin_change_pct?: number; short_margin_ratio?: number; flags?: string[] }
+  sentiment?: {
+    margin_balance?: number
+    margin_change_pct?: number
+    short_margin_ratio?: number
+    flags?: string[]
+  }
   industry?: IndustryInfo
   chip?: ChipInfo
+  fundamentals?: {
+    eps?: number
+    gross_margin?: number
+    net_margin?: number
+    debt_ratio?: number
+    roe_approx?: number
+    tags?: string[]
+  }
+  deep?: {
+    valuation_5y?: { pe_now?: number; pb_now?: number; yield_now?: number; verdict?: string }
+  }
 }
 
 export interface ResultData {
