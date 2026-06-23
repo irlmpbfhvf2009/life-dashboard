@@ -6,7 +6,7 @@ import {
 } from 'lucide-vue-next'
 import type { AnalysisStock, RadarStock, ScoreKey } from '@/types/stock'
 import CandleChart from './CandleChart.vue'
-import { twPriceClass } from '@/utils/format'
+import { twPriceClass, highlightTerms } from '@/utils/format'
 
 defineProps<{ ai: AnalysisStock; radar?: RadarStock }>()
 const detailOpen = ref(false)
@@ -144,7 +144,7 @@ function compositeCls(v?: number) {
           <div class="h-1.5 w-full overflow-hidden rounded-full bg-ink-100">
             <div class="h-full rounded-full" :class="barColor(ai.scores[d.key]!.score)" :style="{ width: (ai.scores[d.key]!.score / 5) * 100 + '%' }" />
           </div>
-          <p class="mt-1 text-xs leading-relaxed text-ink-500">{{ ai.scores[d.key]?.note }}</p>
+          <p class="mt-1 text-xs leading-relaxed text-ink-500" v-html="highlightTerms(ai.scores[d.key]?.note)" />
         </div>
       </div>
 
@@ -203,7 +203,7 @@ function compositeCls(v?: number) {
         <div v-if="detailOpen" class="mt-3 space-y-3">
           <div v-for="d in DETAIL" :key="d.key" v-show="ai.detail?.[d.key]" class="surface p-3.5">
             <p class="eyebrow mb-1.5">{{ d.label }}</p>
-            <p class="text-sm leading-relaxed text-ink-600">{{ ai.detail?.[d.key] }}</p>
+            <p class="text-sm leading-relaxed text-ink-600" v-html="highlightTerms(ai.detail?.[d.key])" />
           </div>
         </div>
       </div>

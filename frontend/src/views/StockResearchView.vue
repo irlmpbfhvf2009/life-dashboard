@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { ArrowLeft, ShieldAlert, Bot, RefreshCw, Globe, Target, History, ListChecks, Radar, Sparkles } from 'lucide-vue-next'
+import {
+  ArrowLeft, ShieldAlert, Bot, RefreshCw, Globe, Target, History, ListChecks, Radar, Sparkles,
+  Activity, Zap, Gauge, Compass,
+} from 'lucide-vue-next'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import SectionCard from '@/components/ui/SectionCard.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
@@ -12,7 +15,7 @@ import StockTrackTable from '@/components/stock/StockTrackTable.vue'
 import RadarStockCard from '@/components/stock/RadarStockCard.vue'
 import AiPickCard from '@/components/stock/AiPickCard.vue'
 import { stockResearchApi } from '@/api/stockResearch'
-import { twPriceClass } from '@/utils/format'
+import { twPriceClass, highlightTerms } from '@/utils/format'
 import type { AnalysisData, PerformanceData, ArchiveData, ResultData, RadarStock } from '@/types/stock'
 
 const analysis = ref<AnalysisData | null>(null)
@@ -79,12 +82,22 @@ const archiveList = computed(() =>
     : [],
 )
 
-const overviewBlocks = computed(() =>
+const toneMap: Record<string, { card: string; icon: string; label: string }> = {
+  sky: { card: 'border-sky-500/20 bg-sky-500/5', icon: 'bg-sky-500/10 text-sky-600 dark:text-sky-400', label: 'text-sky-600 dark:text-sky-400' },
+  violet: { card: 'border-violet-500/20 bg-violet-500/5', icon: 'bg-violet-500/10 text-violet-600 dark:text-violet-400', label: 'text-violet-600 dark:text-violet-400' },
+  amber: { card: 'border-amber-500/20 bg-amber-500/5', icon: 'bg-amber-500/10 text-amber-600 dark:text-amber-400', label: 'text-amber-600 dark:text-amber-400' },
+  brand: { card: 'border-brand-500/20 bg-brand-500/5', icon: 'bg-brand-500/10 text-brand-600 dark:text-brand-300', label: 'text-brand-600 dark:text-brand-300' },
+  emerald: { card: 'border-emerald-500/20 bg-emerald-500/5', icon: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400', label: 'text-emerald-600 dark:text-emerald-400' },
+}
+
+const overviewItems = computed(() =>
   analysis.value
     ? [
-        { label: '短線', text: analysis.value.overview.short_term },
-        { label: '中線', text: analysis.value.overview.mid_term },
-        { label: '長線', text: analysis.value.overview.long_term },
+        { label: '國際盤勢', text: analysis.value.overview.international_summary, tone: 'sky', icon: Globe, wide: true },
+        { label: '市場情緒', text: analysis.value.overview.market_sentiment, tone: 'violet', icon: Activity, wide: true },
+        { label: '短線', text: analysis.value.overview.short_term, tone: 'amber', icon: Zap, wide: false },
+        { label: '中線', text: analysis.value.overview.mid_term, tone: 'brand', icon: Gauge, wide: false },
+        { label: '長線', text: analysis.value.overview.long_term, tone: 'emerald', icon: Compass, wide: false },
       ]
     : [],
 )
@@ -175,18 +188,35 @@ onMounted(load)
       <SectionCard title="市場總覽" :icon="Bot">
         <template #action><span class="text-2xs text-ink-400">{{ analysis.model }} · {{ analysis.updated_at }}</span></template>
         <div class="space-y-4">
-          <div class="surface-muted p-4">
-            <p class="eyebrow mb-1.5">國際盤勢</p>
-            <p class="text-sm leading-relaxed text-ink-600">{{ analysis.overview.international_summary }}</p>
+          <div
+            v-for="item in overviewItems.filter((i) => i.wide)"
+            :key="item.label"
+            class="rounded-xl border p-4"
+            :class="toneMap[item.tone].card"
+          >
+            <p class="mb-2 flex items-center gap-2 text-sm font-semibold" :class="toneMap[item.tone].label">
+              <span class="flex h-6 w-6 items-center justify-center rounded-lg" :class="toneMap[item.tone].icon">
+                <component :is="item.icon" class="h-3.5 w-3.5" :stroke-width="2.25" />
+              </span>
+              {{ item.label }}
+            </p>
+            <p class="text-sm leading-relaxed text-ink-700" v-html="highlightTerms(item.text)" />
           </div>
-          <div class="surface-muted p-4">
-            <p class="eyebrow mb-1.5">市場情緒</p>
-            <p class="text-sm leading-relaxed text-ink-600">{{ analysis.overview.market_sentiment }}</p>
-          </div>
+
           <div class="grid gap-4 sm:grid-cols-3">
-            <div v-for="b in overviewBlocks" :key="b.label" class="surface-muted p-4">
-              <p class="eyebrow mb-1.5">{{ b.label }}</p>
-              <p class="text-sm leading-relaxed text-ink-600">{{ b.text }}</p>
+            <div
+              v-for="item in overviewItems.filter((i) => !i.wide)"
+              :key="item.label"
+              class="rounded-xl border p-4"
+              :class="toneMap[item.tone].card"
+            >
+              <p class="mb-2 flex items-center gap-2 text-sm font-semibold" :class="toneMap[item.tone].label">
+                <span class="flex h-6 w-6 items-center justify-center rounded-lg" :class="toneMap[item.tone].icon">
+                  <component :is="item.icon" class="h-3.5 w-3.5" :stroke-width="2.25" />
+                </span>
+                {{ item.label }}
+              </p>
+              <p class="text-sm leading-relaxed text-ink-700" v-html="highlightTerms(item.text)" />
             </div>
           </div>
         </div>

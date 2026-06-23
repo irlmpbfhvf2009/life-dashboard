@@ -43,6 +43,26 @@ export function todayISO(): string {
   return new Date(d.getTime() - tz).toISOString().slice(0, 10)
 }
 
+// Sentiment keyword highlighting for AI commentary. Uses indigo (positive) and
+// amber (caution) — deliberately NOT red/green so it never clashes with the
+// price up/down convention. Returns safe HTML (base text is escaped first).
+const POSITIVE_TERMS = ['改善', '轉機', '轉盈', '超預期', '利多', '回升', '跳升', '轉強', '成長', '強勢', '突破']
+const CAUTION_TERMS = ['惡化', '過熱', '乖離', '拋物線', '追高', '偏貴', '轉弱', '賣壓', '過大', '風險', '套牢']
+
+export function highlightTerms(text: string | null | undefined): string {
+  if (!text) return ''
+  const esc = text.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c] ?? c)
+  const all = [...POSITIVE_TERMS, ...CAUTION_TERMS]
+  const pos = new Set(POSITIVE_TERMS)
+  const re = new RegExp(`(${all.join('|')})`, 'g')
+  return esc.replace(re, (m) => {
+    const cls = pos.has(m)
+      ? 'font-semibold text-brand-600 dark:text-brand-300'
+      : 'font-semibold text-amber-600 dark:text-amber-400'
+    return `<span class="${cls}">${m}</span>`
+  })
+}
+
 /**
  * Taiwan stock-market colour convention: 漲(up)=red, 跌(down)=green.
  * Returns a Tailwind text-colour class for a numeric change/return.
