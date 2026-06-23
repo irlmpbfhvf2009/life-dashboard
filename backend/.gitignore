@@ -1,0 +1,14 @@
+target/
+!.mvn/wrapper/maven-wrapper.jar
+.env
+.env.local
+*.log
+
+# Service account keys must never be committed
+*-service-account*.json
+serviceAccount*.json
+
+# Editor
+.idea/
+.vscode/
+*.iml

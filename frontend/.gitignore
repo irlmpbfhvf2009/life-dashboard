@@ -1,0 +1,17 @@
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# vue-tsc (-b composite build) emitted artifacts
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
+.env
+.env.local
+.env.*.local
+
+# Editor
+.vscode/
+.idea/
+*.log
