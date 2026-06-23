@@ -1,0 +1,85 @@
+name: 每日台股潛力股掃描
+
+# 收盤後台灣時間 15:40（UTC 07:40）週一至週五自動執行。全程免費，不碰付費 API。
+on:
+  schedule:
+    - cron: "40 7 * * 1-5"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    working-directory: stock-radar
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 設定 Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: stock-radar/scripts/requirements.txt
+
+      - name: 安裝依賴
+        run: pip install -r scripts/requirements.txt
+
+      - name: 國際盤收盤指數
+        run: python scripts/market_overview.py
+
+      - name: 選股掃描
+        run: python scripts/scan.py
+
+      - name: 基本面/估值（FinMind）
+        env:
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+        run: python scripts/fundamentals.py
+
+      - name: 多因子綜合評分
+        run: python scripts/composite_score.py
+
+      - name: 情緒/資金面
+        run: python scripts/sentiment.py
+
+      - name: 產業前景
+        run: python scripts/industry.py
+
+      - name: 深度數據（供 AI 分析）
+        env:
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+        run: python scripts/deepdata.py
+
+      - name: 集保大戶籌碼
+        run: python scripts/chip_dispersion.py
+
+      - name: 命中率追蹤
+        run: python scripts/track.py
+
+      - name: AI 選股命中率追蹤
+        run: python scripts/ai_track.py
+
+      # AI 波段分析（analysis.json）改本機用 Claude 訂閱手動執行，CI 只跑免費資料層。
+
+      - name: 設定 git 身份
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+
+      - name: Commit 並推送（有變更才執行）
+        run: |
+          git add public/result.json public/analysis.json public/universe.json public/analysis_archive.json public/picks_history.json public/performance.json public/fundamentals.json public/ai_performance.json public/chip_history.json public/market.json
+          if git diff --staged --quiet; then
+            echo "無變更，略過"
+          else
+            git commit -m "🤖 自動更新選股/評分/資金面/命中率 $(date +'%Y-%m-%d')"
+            git push
+          fi

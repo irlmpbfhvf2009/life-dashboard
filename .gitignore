@@ -8,6 +8,12 @@ serviceAccount*.json
 # Local deploy / run logs
 *.log
 
+# Python (stock-radar pipeline)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
 # OS / editor
 .DS_Store
 Thumbs.db

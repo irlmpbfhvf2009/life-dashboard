@@ -67,6 +67,26 @@ export interface PerfWindow {
   expectancy_pct: number | null
 }
 
+export interface TrackWindow {
+  max_return_pct: number | null
+  end_return_pct: number | null
+  hit: boolean
+  days_to_hit: number | null
+  status: string // "open" | "hit" | ...
+}
+
+export interface TrackDetail {
+  date: string
+  code: string
+  name: string
+  total_score: number
+  scores: Record<string, string> // dimension -> verdict
+  entry_price: number
+  windows: Record<string, TrackWindow>
+  last_return_pct: number | null
+  status_overall: string
+}
+
 export interface PerformanceData {
   updated_at: string
   windows: number[]
@@ -75,6 +95,7 @@ export interface PerformanceData {
   note: string
   benchmark_name: string
   summary: Record<string, PerfWindow>
+  detail?: TrackDetail[]
 }
 
 export interface ArchiveData {

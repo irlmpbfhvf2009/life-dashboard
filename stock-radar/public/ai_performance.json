@@ -1,0 +1,494 @@
+{
+  "updated_at": "2026-06-23 15:51",
+  "windows": [
+    5,
+    10,
+    20
+  ],
+  "target_pct": 5.0,
+  "ai_pick_min": 28.0,
+  "note": "只計 AI 評分 total_score>=28/40 的『AI 看好標的』。命中＝AI 分析日後 N 個交易日內盤中曾漲≥5%；命中率只計已到期樣本。",
+  "benchmark_name": "0050 台灣50",
+  "summary": {
+    "5": {
+      "window_days": 5,
+      "matured": 5,
+      "hits": 5,
+      "misses": 0,
+      "hit_rate_pct": 100.0,
+      "avg_days_to_target": 1.8,
+      "in_progress": 4,
+      "avg_win_pct": 5.0,
+      "avg_loss_pct": null,
+      "avg_max_return_pct": 16.55,
+      "expectancy_pct": 5.0
+    },
+    "10": {
+      "window_days": 10,
+      "matured": 5,
+      "hits": 5,
+      "misses": 0,
+      "hit_rate_pct": 100.0,
+      "avg_days_to_target": 1.8,
+      "in_progress": 4,
+      "avg_win_pct": 5.0,
+      "avg_loss_pct": null,
+      "avg_max_return_pct": 16.55,
+      "expectancy_pct": 5.0
+    },
+    "20": {
+      "window_days": 20,
+      "matured": 5,
+      "hits": 5,
+      "misses": 0,
+      "hit_rate_pct": 100.0,
+      "avg_days_to_target": 1.8,
+      "in_progress": 4,
+      "avg_win_pct": 5.0,
+      "avg_loss_pct": null,
+      "avg_max_return_pct": 16.55,
+      "expectancy_pct": 5.0
+    }
+  },
+  "benchmark": {
+    "5": {
+      "window_days": 5,
+      "matured": 2,
+      "hits": 2,
+      "misses": 0,
+      "hit_rate_pct": 100.0,
+      "avg_days_to_target": 3.0,
+      "in_progress": 1,
+      "avg_win_pct": 5.0,
+      "avg_loss_pct": null,
+      "avg_max_return_pct": 5.99,
+      "expectancy_pct": 5.0
+    },
+    "10": {
+      "window_days": 10,
+      "matured": 2,
+      "hits": 2,
+      "misses": 0,
+      "hit_rate_pct": 100.0,
+      "avg_days_to_target": 3.0,
+      "in_progress": 1,
+      "avg_win_pct": 5.0,
+      "avg_loss_pct": null,
+      "avg_max_return_pct": 5.99,
+      "expectancy_pct": 5.0
+    },
+    "20": {
+      "window_days": 20,
+      "matured": 2,
+      "hits": 2,
+      "misses": 0,
+      "hit_rate_pct": 100.0,
+      "avg_days_to_target": 3.0,
+      "in_progress": 1,
+      "avg_win_pct": 5.0,
+      "avg_loss_pct": null,
+      "avg_max_return_pct": 5.99,
+      "expectancy_pct": 5.0
+    }
+  },
+  "detail": [
+    {
+      "date": "2026-06-23",
+      "code": "2337",
+      "name": "旺宏",
+      "total_score": 32.0,
+      "scores": {
+        "fundamental": "改善",
+        "valuation": "合理",
+        "chips": "偏多",
+        "technical": "多頭",
+        "industry": "成長",
+        "catalyst": "有利多",
+        "expectation": "超預期",
+        "risk": "中"
+      },
+      "entry_price": 172.0,
+      "windows": {},
+      "last_return_pct": null,
+      "status_overall": "pending"
+    },
+    {
+      "date": "2026-06-20",
+      "code": "9958",
+      "name": "世紀鋼",
+      "total_score": 28.0,
+      "scores": {
+        "fundamental": "改善",
+        "valuation": "便宜",
+        "chips": "中性",
+        "technical": "盤整",
+        "industry": "持平",
+        "catalyst": "有利多",
+        "expectation": "超預期",
+        "risk": "中"
+      },
+      "entry_price": 120.0,
+      "windows": {
+        "5": {
+          "max_return_pct": 0.83,
+          "end_return_pct": -3.33,
+          "hit": false,
+          "days_to_hit": null,
+          "status": "open"
+        },
+        "10": {
+          "max_return_pct": 0.83,
+          "end_return_pct": -3.33,
+          "hit": false,
+          "days_to_hit": null,
+          "status": "open"
+        },
+        "20": {
+          "max_return_pct": 0.83,
+          "end_return_pct": -3.33,
+          "hit": false,
+          "days_to_hit": null,
+          "status": "open"
+        }
+      },
+      "last_return_pct": -3.33,
+      "status_overall": "evaluated"
+    },
+    {
+      "date": "2026-06-20",
+      "code": "2049",
+      "name": "上銀",
+      "total_score": 29.0,
+      "scores": {
+        "fundamental": "改善",
+        "valuation": "偏貴",
+        "chips": "偏多",
+        "technical": "盤整",
+        "industry": "成長",
+        "catalyst": "有利多",
+        "expectation": "超預期",
+        "risk": "中"
+      },
+      "entry_price": 343.5,
+      "windows": {
+        "5": {
+          "max_return_pct": 2.33,
+          "end_return_pct": -1.31,
+          "hit": false,
+          "days_to_hit": null,
+          "status": "open"
+        },
+        "10": {
+          "max_return_pct": 2.33,
+          "end_return_pct": -1.31,
+          "hit": false,
+          "days_to_hit": null,
+          "status": "open"
+        },
+        "20": {
+          "max_return_pct": 2.33,
+          "end_return_pct": -1.31,
+          "hit": false,
+          "days_to_hit": null,
+          "status": "open"
+        }
+      },
+      "last_return_pct": -1.31,
+      "status_overall": "evaluated"
+    },
+    {
+      "date": "2026-06-18",
+      "code": "6257",
+      "name": "矽格",
+      "total_score": 29.0,
+      "scores": {
+        "fundamental": "改善",
+        "valuation": "合理",
+        "chips": "中性",
+        "technical": "多頭",
+        "industry": "成長",
+        "catalyst": "有利多",
+        "expectation": "超預期",
+        "risk": "中"
+      },
+      "entry_price": 235.0,
+      "windows": {
+        "5": {
+          "max_return_pct": 7.45,
+          "end_return_pct": 0.85,
+          "hit": true,
+          "days_to_hit": 1,
+          "status": "hit"
+        },
+        "10": {
+          "max_return_pct": 7.45,
+          "end_return_pct": 0.85,
+          "hit": true,
+          "days_to_hit": 1,
+          "status": "hit"
+        },
+        "20": {
+          "max_return_pct": 7.45,
+          "end_return_pct": 0.85,
+          "hit": true,
+          "days_to_hit": 1,
+          "status": "hit"
+        }
+      },
+      "last_return_pct": 0.85,
+      "status_overall": "evaluated"
+    },
+    {
+      "date": "2026-06-18",
+      "code": "2880",
+      "name": "華南金",
+      "total_score": 28.0,
+      "scores": {
+        "fundamental": "改善",
+        "valuation": "合理",
+        "chips": "偏多",
+        "technical": "多頭",
+        "industry": "持平",
+        "catalyst": "有利多",
+        "expectation": "符合預期",
+        "risk": "低"
+      },
+      "entry_price": 38.35,
+      "windows": {
+        "5": {
+          "max_return_pct": 0.39,
+          "end_return_pct": -2.09,
+          "hit": false,
+          "days_to_hit": null,
+          "status": "open"
+        },
+        "10": {
+          "max_return_pct": 0.39,
+          "end_return_pct": -2.09,
+          "hit": false,
+          "days_to_hit": null,
+          "status": "open"
+        },
+        "20": {
+          "max_return_pct": 0.39,
+          "end_return_pct": -2.09,
+          "hit": false,
+          "days_to_hit": null,
+          "status": "open"
+        }
+      },
+      "last_return_pct": -2.09,
+      "status_overall": "evaluated"
+    },
+    {
+      "date": "2026-06-17",
+      "code": "6209",
+      "name": "今國光",
+      "total_score": 28.0,
+      "scores": {
+        "fundamental": "改善",
+        "valuation": "合理",
+        "chips": "偏空",
+        "technical": "多頭",
+        "industry": "成長",
+        "catalyst": "有利多",
+        "expectation": "超預期",
+        "risk": "中"
+      },
+      "entry_price": 95.7,
+      "windows": {
+        "5": {
+          "max_return_pct": 5.54,
+          "end_return_pct": -5.64,
+          "hit": true,
+          "days_to_hit": 2,
+          "status": "hit"
+        },
+        "10": {
+          "max_return_pct": 5.54,
+          "end_return_pct": -5.64,
+          "hit": true,
+          "days_to_hit": 2,
+          "status": "hit"
+        },
+        "20": {
+          "max_return_pct": 5.54,
+          "end_return_pct": -5.64,
+          "hit": true,
+          "days_to_hit": 2,
+          "status": "hit"
+        }
+      },
+      "last_return_pct": -5.64,
+      "status_overall": "evaluated"
+    },
+    {
+      "date": "2026-06-16",
+      "code": "8150",
+      "name": "南茂",
+      "total_score": 32.0,
+      "scores": {
+        "fundamental": "改善",
+        "valuation": "合理",
+        "chips": "偏多",
+        "technical": "多頭",
+        "industry": "成長",
+        "catalyst": "有利多",
+        "expectation": "超預期",
+        "risk": "中"
+      },
+      "entry_price": 94.6,
+      "windows": {
+        "5": {
+          "max_return_pct": 20.51,
+          "end_return_pct": 12.58,
+          "hit": true,
+          "days_to_hit": 2,
+          "status": "hit"
+        },
+        "10": {
+          "max_return_pct": 20.51,
+          "end_return_pct": 12.58,
+          "hit": true,
+          "days_to_hit": 2,
+          "status": "hit"
+        },
+        "20": {
+          "max_return_pct": 20.51,
+          "end_return_pct": 12.58,
+          "hit": true,
+          "days_to_hit": 2,
+          "status": "hit"
+        }
+      },
+      "last_return_pct": 12.58,
+      "status_overall": "evaluated"
+    },
+    {
+      "date": "2026-06-16",
+      "code": "8131",
+      "name": "福懋科",
+      "total_score": 30.0,
+      "scores": {
+        "fundamental": "改善",
+        "valuation": "便宜",
+        "chips": "偏多",
+        "technical": "盤整",
+        "industry": "成長",
+        "catalyst": "有利多",
+        "expectation": "超預期",
+        "risk": "中"
+      },
+      "entry_price": 76.0,
+      "windows": {
+        "5": {
+          "max_return_pct": 5.79,
+          "end_return_pct": -1.58,
+          "hit": true,
+          "days_to_hit": 3,
+          "status": "hit"
+        },
+        "10": {
+          "max_return_pct": 5.79,
+          "end_return_pct": -1.58,
+          "hit": true,
+          "days_to_hit": 3,
+          "status": "hit"
+        },
+        "20": {
+          "max_return_pct": 5.79,
+          "end_return_pct": -1.58,
+          "hit": true,
+          "days_to_hit": 3,
+          "status": "hit"
+        }
+      },
+      "last_return_pct": -1.58,
+      "status_overall": "evaluated"
+    },
+    {
+      "date": "2026-06-16",
+      "code": "2527",
+      "name": "宏璟",
+      "total_score": 29.0,
+      "scores": {
+        "fundamental": "改善",
+        "valuation": "便宜",
+        "chips": "中性",
+        "technical": "多頭",
+        "industry": "持平",
+        "catalyst": "有利多",
+        "expectation": "超預期",
+        "risk": "中"
+      },
+      "entry_price": 39.95,
+      "windows": {
+        "5": {
+          "max_return_pct": 2.75,
+          "end_return_pct": -0.63,
+          "hit": false,
+          "days_to_hit": null,
+          "status": "open"
+        },
+        "10": {
+          "max_return_pct": 2.75,
+          "end_return_pct": -0.63,
+          "hit": false,
+          "days_to_hit": null,
+          "status": "open"
+        },
+        "20": {
+          "max_return_pct": 2.75,
+          "end_return_pct": -0.63,
+          "hit": false,
+          "days_to_hit": null,
+          "status": "open"
+        }
+      },
+      "last_return_pct": -0.63,
+      "status_overall": "evaluated"
+    },
+    {
+      "date": "2026-06-16",
+      "code": "1303",
+      "name": "南亞",
+      "total_score": 31.0,
+      "scores": {
+        "fundamental": "改善",
+        "valuation": "合理",
+        "chips": "偏多",
+        "technical": "多頭",
+        "industry": "成長",
+        "catalyst": "有利多",
+        "expectation": "超預期",
+        "risk": "中"
+      },
+      "entry_price": 115.0,
+      "windows": {
+        "5": {
+          "max_return_pct": 43.48,
+          "end_return_pct": 34.35,
+          "hit": true,
+          "days_to_hit": 1,
+          "status": "hit"
+        },
+        "10": {
+          "max_return_pct": 43.48,
+          "end_return_pct": 34.35,
+          "hit": true,
+          "days_to_hit": 1,
+          "status": "hit"
+        },
+        "20": {
+          "max_return_pct": 43.48,
+          "end_return_pct": 34.35,
+          "hit": true,
+          "days_to_hit": 1,
+          "status": "hit"
+        }
+      },
+      "last_return_pct": 34.35,
+      "status_overall": "evaluated"
+    }
+  ]
+}
