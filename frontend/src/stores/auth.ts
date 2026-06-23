@@ -15,6 +15,10 @@ import type { UserProfile } from '@/types'
 
 export type AuthProvider = 'GOOGLE' | 'PASSWORD' | 'UNKNOWN'
 
+// Module-level guard so the Firebase listener is subscribed exactly once and
+// every caller (router guard, App.vue) awaits the SAME ready promise.
+let authReadyPromise: Promise<void> | null = null
+
 interface AuthState {
   firebaseUser: FirebaseUser | null
   profile: UserProfile | null
@@ -78,7 +82,9 @@ export const useAuthStore = defineStore('auth', {
      * navigation (no redirect flicker).
      */
     initAuthListener(): Promise<void> {
-      return new Promise((resolve) => {
+      // Idempotent: only ever subscribe once; all callers share one promise.
+      if (authReadyPromise) return authReadyPromise
+      authReadyPromise = new Promise((resolve) => {
         onAuthStateChanged(auth, async (user) => {
           this.firebaseUser = user
           if (user) {
@@ -94,6 +100,7 @@ export const useAuthStore = defineStore('auth', {
           }
         })
       })
+      return authReadyPromise
     },
 
     // Backwards-compatible alias used by the existing router guard.
