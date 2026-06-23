@@ -1,4 +1,4 @@
-# 前端一鍵部署到 Vercel（正式環境）。
+﻿# 前端一鍵部署到 Vercel（正式環境）。
 #
 # 為什麼用這種方式：在 Windows PowerShell 5.1 用 `vercel env add` 經由管線設定
 # 環境變數時，主控台編碼會在值開頭黏上一個隱形 BOM 字元，導致 Firebase API key

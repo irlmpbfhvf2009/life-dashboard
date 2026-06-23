@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Menu, Search, Bell, LogOut, User, ChevronDown, Sun, Moon } from 'lucide-vue-next'
+import { Menu, Search, Bell, LogOut, User, ChevronDown, Sun, Moon, Coins } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import { useTheme } from '@/composables/useTheme'
+import { useHealthStore } from '@/composables/useHealthStore'
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher.vue'
 
 defineEmits<{ 'toggle-sidebar': [] }>()
 const auth = useAuthStore()
 const router = useRouter()
 const menuOpen = ref(false)
 const { theme, toggle: toggleTheme } = useTheme()
+const health = useHealthStore()
 
 async function logout() {
   menuOpen.value = false
@@ -32,6 +35,13 @@ async function logout() {
     </button>
 
     <div class="ml-auto flex items-center gap-1.5">
+      <span
+        class="mr-1 inline-flex items-center gap-1.5 rounded-full bg-amber-400/90 px-3 py-1.5 text-sm font-bold text-white shadow-sm"
+        :title="'遊戲幣 / Coins'"
+      >
+        <Coins class="h-4 w-4" /> {{ health.coins.value.toLocaleString() }}
+      </span>
+      <LanguageSwitcher />
       <button class="btn-icon" :title="theme === 'dark' ? '切換到淺色' : '切換到深色'" @click="toggleTheme">
         <component :is="theme === 'dark' ? Sun : Moon" class="h-5 w-5" />
       </button>

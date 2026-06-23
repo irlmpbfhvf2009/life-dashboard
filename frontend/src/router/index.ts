@@ -20,10 +20,7 @@ const router = createRouter({
           path: 'life', name: 'life', component: () => import('@/views/ModuleLandingView.vue'),
           meta: { category: 'LIFE', eyebrow: 'Life', title: '生活管理', subtitle: '生活紀錄、日記、習慣與目標，記錄並回顧你的每一天。' },
         },
-        {
-          path: 'health', name: 'health', component: () => import('@/views/ModuleLandingView.vue'),
-          meta: { category: 'HEALTH', eyebrow: 'Health', title: '健康減脂', subtitle: '體重、飲食、斷食與目標，視覺化你的健康進度。' },
-        },
+        { path: 'health', name: 'health', component: () => import('@/views/HealthView.vue') },
         {
           path: 'finance', name: 'finance', component: () => import('@/views/ModuleLandingView.vue'),
           meta: { category: 'FINANCE', eyebrow: 'Finance', title: '財務分析', subtitle: '收支記帳、分類統計與財務摘要。' },
