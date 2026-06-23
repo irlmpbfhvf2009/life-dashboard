@@ -7,9 +7,10 @@ dist-ssr/
 *.tsbuildinfo
 vite.config.js
 vite.config.d.ts
+# Ignore all env files except the example
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
 # Editor
 .vscode/
