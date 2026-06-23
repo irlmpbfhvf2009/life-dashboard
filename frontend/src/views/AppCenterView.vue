@@ -46,7 +46,7 @@ const filtered = computed(() =>
         v-for="c in categories"
         :key="c.key"
         class="rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors"
-        :class="activeCat === c.key ? 'bg-ink-800 text-white' : 'border border-ink-200 bg-white text-ink-600 hover:bg-ink-50'"
+        :class="activeCat === c.key ? 'bg-brand-600 text-white' : 'border border-ink-200 bg-surface text-ink-600 hover:bg-ink-100'"
         @click="activeCat = c.key"
       >
         {{ c.label }}

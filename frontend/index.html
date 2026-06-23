@@ -5,6 +5,17 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Personal Intelligence Studio · 個人智慧工作台</title>
+    <script>
+      // Apply saved/system theme before first paint to avoid a flash.
+      (function () {
+        try {
+          var t = localStorage.getItem('theme')
+          if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark')
+          }
+        } catch (e) {}
+      })()
+    </script>
   </head>
   <body>
     <div id="app"></div>

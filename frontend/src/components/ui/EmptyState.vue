@@ -9,7 +9,7 @@ withDefaults(
 
 <template>
   <div class="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-ink-200 bg-ink-50/40 px-6 py-14 text-center">
-    <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-card">
+    <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-surface shadow-card">
       <component :is="icon || Inbox" class="h-5 w-5 text-ink-400" :stroke-width="1.75" />
     </div>
     <div>

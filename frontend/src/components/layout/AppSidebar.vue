@@ -58,7 +58,7 @@ const settingsActive = computed(() => route.path.startsWith('/settings'))
         設定
       </RouterLink>
 
-      <RouterLink to="/settings" class="mt-2 flex items-center gap-3 rounded-xl border border-ink-200 bg-white p-2.5 shadow-card" @click="emit('navigate')">
+      <RouterLink to="/settings" class="mt-2 flex items-center gap-3 rounded-xl border border-ink-200 bg-surface p-2.5 shadow-card" @click="emit('navigate')">
         <img
           v-if="auth.photoUrl"
           :src="auth.photoUrl"

@@ -11,7 +11,7 @@ defineProps<{ app: StudioApp }>()
 <template>
   <RouterLink
     :to="app.to"
-    class="group flex flex-col rounded-2xl border border-ink-200 bg-white p-5 shadow-card transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-card-hover ring-focus"
+    class="group flex flex-col rounded-2xl border border-ink-200 bg-surface p-5 shadow-card transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-card-hover ring-focus"
   >
     <div class="mb-4 flex items-start justify-between">
       <span
