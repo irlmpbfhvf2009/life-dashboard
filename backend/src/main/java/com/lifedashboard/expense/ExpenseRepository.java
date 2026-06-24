@@ -18,12 +18,13 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
     /**
      * Total spend grouped by category within a date range (inclusive).
+     * Only EXPENSE rows count — income is excluded so this stays a spending figure.
      * Returns rows of [category, total].
      */
     @Query("""
             select e.category as category, sum(e.amount) as total
             from Expense e
-            where e.userId = :userId and e.date between :from and :to
+            where e.userId = :userId and e.date between :from and :to and e.type = 'EXPENSE'
             group by e.category
             order by sum(e.amount) desc
             """)

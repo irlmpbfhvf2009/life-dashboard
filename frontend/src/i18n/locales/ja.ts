@@ -56,4 +56,47 @@ export default {
       training: { full: '全身', arms: '腕', chest: '胸', back: '背中', abs: '腹', legs: '脚' },
     },
   },
+  todos: {
+    title: 'ToDo', subtitle: 'やるべきことを管理', newTodo: '新規 ToDo',
+    all: 'すべて', active: '進行中', done: '完了', empty: 'ToDo はまだありません',
+    emptyDesc: '最初の ToDo を追加して始めましょう。', titleLabel: 'タイトル',
+    titlePlaceholder: '何をしますか？', descLabel: '説明', priority: '優先度',
+    dueDate: '期限', titleRequired: 'タイトルを入力してください',
+  },
+  priority: { LOW: '低', MEDIUM: '中', HIGH: '高' },
+  moods: {
+    title: '気分', subtitle: '今日の気分は？', mood: '気分', last30: '直近 30 日',
+    entries: '記録数', avgMood: '平均気分', noData: '気分データがありません',
+    noDataDesc: '気分を記録すると分布が表示されます。',
+  },
+  finance: {
+    eyebrow: 'Finance', title: '家計分析', subtitle: '収入と支出を記録し、毎月の構成と推移を把握します。',
+    add: '記録する', income: '今月の収入', expense: '今月の支出', net: '今月の収支', surplus: '収入が支出を上回る',
+    deficit: '支出が収入を上回る', amount: '金額', category: 'カテゴリ',
+    categoryPlaceholder: 'カスタム分類、例：食費', descLabel: 'メモ', descPlaceholder: '何に使いましたか？',
+    topCategory: '最大の支出分類', byCategory: '支出のカテゴリ別割合', trend6m: '直近 6 か月の支出推移',
+    recent: '最近の記録', noSpending: '今月の支出はありません', noSpendingDesc: '「記録する」で最初の一件を追加。',
+    noExpenses: '記録がありません', invalidInput: '有効な日付・金額・カテゴリを入力してください',
+  },
+  knowledge: {
+    eyebrow: 'Knowledge', title: 'ナレッジベース', subtitle: 'アイデアを書き留め、ノートを整理して個人のナレッジベースを作ります。',
+    newNote: '新規ノート', untitled: '無題のノート', search: 'ノートを検索…', noMatch: '一致するノートがありません',
+    noContent: '（内容なし）', empty: 'ノートがありません', emptyDesc: '最初のノートを作成して、アイデアを集め始めましょう。',
+    titlePlaceholder: 'ノートのタイトル', contentPlaceholder: '書き始める…', updatedAt: '{time} に更新',
+    unsaved: '未保存', saved: '保存済み', pickTitle: 'ノートを選択', pickDesc: '一覧から選ぶか、新しいノートを作成してください。',
+  },
+  life: {
+    eyebrow: 'Life', title: 'ライフ管理', subtitle: 'ToDo と気分日記で、毎日を記録して振り返ります。',
+    tabs: { todos: 'ToDo', mood: '気分日記' },
+  },
+  portfolio: {
+    eyebrow: 'Portfolio', title: 'ポートフォリオ', subtitle: '厳選したプロジェクトと作品 — このスタジオ自体から。',
+    featured: '注目', visit: 'サイトへ', source: 'ソース',
+    projects: {
+      studio: { name: 'パーソナル・インテリジェンス・スタジオ', summary: 'モジュール式の個人 OS：生活・健康・家計・AI 株式調査・ナレッジベースを統合。フルスタックで自作・公開。' },
+      stockAi: { name: 'AI 台湾株リサーチ', summary: '毎日の自動スキャンと 8 観点の AI 分析を行う台湾株リサーチ基盤。フロントが結果をリアルタイム取得。' },
+      health: { name: '健康・脂肪減量', summary: 'ゲーム化した減量システム：相棒の育成、断食、食事と習慣の追跡。ウェアラブル不要。' },
+      casino: { name: 'ゲームアーケード', summary: 'サーバー権威のコインスロット。改ざん対策のサーバー精算と専用ログイン入口を備える。' },
+    },
+  },
 }

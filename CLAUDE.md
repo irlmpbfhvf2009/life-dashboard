@@ -46,8 +46,15 @@ infra/billing-guard/          費用自動關閉的 Cloud Function
 - **Phase 1 已完成並上線**：設計系統、雙登入、AppShell/Sidebar/Header、總覽 Dashboard、App Center、AI 股票研究（完整）、設定、深色模式。
 - **舊功能頁已刪除**（Todos/Weights/Foods/Expenses/Moods/Notes 的舊 CRUD 頁）。
 - **AI 股票研究已完整**：今日 AI 精選（合併行情+K線+AI八面向）、雷達選股、AI 預判追蹤、過往分析；資料即時讀 GitHub raw。
-- **Phase 2 未做**：各模組詳細頁（生活/日記/習慣/目標、健康減脂/飲食/斷食、財務記帳、知識庫筆記、作品集）。目前是 ModuleLandingView 佔位。
-- **Phase 3 未做**：後端新資料表（life_logs/journals/habits/habit_records/fasting_records/goals/portfolio_projects/case_studies/resources；users 加 provider 欄）對應的 Entity/Repository/Service/Controller。
+- **Phase 2 進行中**：已完成並上線 5 個模組——
+  - **健康減脂 `/health`**（OtterLife 風，完整）。
+  - **財務分析 `/finance`**：收入/支出/結餘、支出分類甜甜圈、近 6 月趨勢、收支列表；後端 `Expense` 已加 `type`（INCOME/EXPENSE），接 `expenseApi` 存 Neon。
+  - **知識庫 `/knowledge`**：master-detail 筆記（搜尋/新增/編輯/Ctrl⌘+S/刪除），接 `noteApi`。
+  - **生活管理 `/life`**：待辦（todoApi）+ 心情日記（moodApi）兩個分頁。
+  - **作品展示 `/portfolio`**：靜態卡片展示（資料在 `src/data/portfolio.ts`），無後端。
+  - i18n：以上模組 6 語系（zh-TW/zh-CN/en/ja/ko/th）皆已翻譯；其他舊區塊（nav/login/dashboard…）仍只有 zh-TW。
+  - 仍佔位（ModuleLandingView）：**AI 實驗室 `/ai`** 落地頁（其下 `/ai/stock` 已完整；英文家教、資料分析待做）。
+- **Phase 3 未做**：習慣/目標/斷食/日記長文 等需要新資料表的功能（habits/habit_records/goals/journals/fasting_records/portfolio_projects…）對應的 Entity/Repository/Service/Controller；users 加 provider 欄。
 
 ## AI 股票管線（重要）
 - 每日免費層（GitHub Actions `stock_scan.yml`）：掃描/評分/籌碼/命中率 → 寫 `stock-radar/public/*.json` → commit。

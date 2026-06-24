@@ -20,28 +20,16 @@ const router = createRouter({
       children: [
         { path: '', name: 'overview', component: () => import('@/views/OverviewView.vue') },
         { path: 'apps', name: 'apps', component: () => import('@/views/AppCenterView.vue') },
-        {
-          path: 'life', name: 'life', component: () => import('@/views/ModuleLandingView.vue'),
-          meta: { category: 'LIFE', eyebrow: 'Life', title: '生活管理', subtitle: '生活紀錄、日記、習慣與目標，記錄並回顧你的每一天。' },
-        },
+        { path: 'life', name: 'life', component: () => import('@/views/LifeView.vue') },
         { path: 'health', name: 'health', component: () => import('@/views/HealthView.vue') },
-        {
-          path: 'finance', name: 'finance', component: () => import('@/views/ModuleLandingView.vue'),
-          meta: { category: 'FINANCE', eyebrow: 'Finance', title: '財務分析', subtitle: '收支記帳、分類統計與財務摘要。' },
-        },
+        { path: 'finance', name: 'finance', component: () => import('@/views/FinanceView.vue') },
         {
           path: 'ai', name: 'ai', component: () => import('@/views/ModuleLandingView.vue'),
           meta: { category: 'AI', eyebrow: 'AI Lab', title: 'AI 實驗室', subtitle: 'AI 股票研究、英文教練與資料分析工具（研究用途）。' },
         },
         { path: 'ai/stock', name: 'stock', component: () => import('@/views/StockResearchView.vue') },
-        {
-          path: 'knowledge', name: 'knowledge', component: () => import('@/views/ModuleLandingView.vue'),
-          meta: { category: 'KNOWLEDGE', eyebrow: 'Knowledge', title: '知識庫', subtitle: '筆記、資源庫與學習紀錄。' },
-        },
-        {
-          path: 'portfolio', name: 'portfolio', component: () => import('@/views/ModuleLandingView.vue'),
-          meta: { category: 'PORTFOLIO', eyebrow: 'Portfolio', title: '作品展示', subtitle: '專案作品、案例研究與技術文章。' },
-        },
+        { path: 'knowledge', name: 'knowledge', component: () => import('@/views/KnowledgeView.vue') },
+        { path: 'portfolio', name: 'portfolio', component: () => import('@/views/PortfolioView.vue') },
         { path: 'settings', name: 'settings', component: () => import('@/views/SettingsView.vue') },
         { path: 'admin', name: 'admin', component: () => import('@/views/AdminView.vue'), meta: { requires: 'admin' } },
       ],

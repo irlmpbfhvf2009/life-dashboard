@@ -110,7 +110,7 @@ export const expenseApi = {
   list: () => request<Expense[]>(() => http.get('/api/expenses')),
   monthly: (month?: string) =>
     request<MonthlyStats>(() => http.get('/api/expenses/stats/monthly', { params: { month } })),
-  create: (body: { date: string; amount: number; category: string; description?: string }) =>
+  create: (body: { date: string; amount: number; category: string; type?: 'EXPENSE' | 'INCOME'; description?: string }) =>
     request<Expense>(() => http.post('/api/expenses', body)),
   remove: (id: number) => request<void>(() => http.delete(`/api/expenses/${id}`)),
 }

@@ -11,11 +11,12 @@ public record ExpenseDto(
         LocalDate date,
         BigDecimal amount,
         String category,
+        String type,
         String description,
         Instant createdAt
 ) {
     public static ExpenseDto from(Expense e) {
         return new ExpenseDto(e.getId(), e.getDate(), e.getAmount(), e.getCategory(),
-                e.getDescription(), e.getCreatedAt());
+                e.getType(), e.getDescription(), e.getCreatedAt());
     }
 }

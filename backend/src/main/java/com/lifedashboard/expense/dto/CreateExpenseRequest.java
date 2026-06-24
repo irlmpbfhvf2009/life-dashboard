@@ -3,6 +3,7 @@ package com.lifedashboard.expense.dto;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
@@ -19,6 +20,10 @@ public record CreateExpenseRequest(
         @NotBlank(message = "category is required")
         @Size(max = 64)
         String category,
+
+        /** "EXPENSE" or "INCOME"; null/blank defaults to EXPENSE in the service. */
+        @Pattern(regexp = "EXPENSE|INCOME", message = "type must be EXPENSE or INCOME")
+        String type,
 
         @Size(max = 2000)
         String description

@@ -56,4 +56,47 @@ export default {
       training: { full: '全身', arms: '手臂', chest: '胸部', back: '背部', abs: '腹部', legs: '腿部' },
     },
   },
+  todos: {
+    title: '待办', subtitle: '掌握你的每一件事', newTodo: '新增待办',
+    all: '全部', active: '进行中', done: '已完成', empty: '尚无待办',
+    emptyDesc: '新增第一笔待办开始使用吧。', titleLabel: '标题',
+    titlePlaceholder: '要做什么？', descLabel: '描述', priority: '优先级',
+    dueDate: '截止日', titleRequired: '请输入标题',
+  },
+  priority: { LOW: '低', MEDIUM: '中', HIGH: '高' },
+  moods: {
+    title: '心情', subtitle: '今天感觉如何？', mood: '心情', last30: '近 30 天',
+    entries: '记录笔数', avgMood: '平均心情', noData: '尚无心情数据',
+    noDataDesc: '记录心情后就会看到分布图。',
+  },
+  finance: {
+    eyebrow: 'Finance', title: '财务分析', subtitle: '记录每笔收入与支出，掌握每月收支结构与趋势。',
+    add: '记一笔', income: '本月收入', expense: '本月支出', net: '本月结余', surplus: '收入大于支出',
+    deficit: '支出大于收入', amount: '金额', category: '分类',
+    categoryPlaceholder: '自定义分类，例如：餐饮', descLabel: '说明', descPlaceholder: '这笔的用途？',
+    topCategory: '最大支出分类', byCategory: '支出分类占比', trend6m: '近 6 个月支出趋势',
+    recent: '近期收支', noSpending: '本月尚无支出', noSpendingDesc: '点「记一笔」新增第一笔收支。',
+    noExpenses: '尚无收支记录', invalidInput: '请输入有效的日期、金额与分类',
+  },
+  knowledge: {
+    eyebrow: 'Knowledge', title: '知识库', subtitle: '随手记下想法、整理笔记，建立你的个人知识库。',
+    newNote: '新增笔记', untitled: '未命名笔记', search: '搜索笔记…', noMatch: '找不到符合的笔记',
+    noContent: '（尚无内容）', empty: '还没有任何笔记', emptyDesc: '建立你的第一则笔记，开始累积想法。',
+    titlePlaceholder: '笔记标题', contentPlaceholder: '开始写点什么…', updatedAt: '更新于 {time}',
+    unsaved: '尚未保存', saved: '已保存', pickTitle: '选一则笔记', pickDesc: '从左侧列表选择，或新增一则笔记开始编辑。',
+  },
+  life: {
+    eyebrow: 'Life', title: '生活管理', subtitle: '待办与心情日记，记录并回顾你的每一天。',
+    tabs: { todos: '待办', mood: '心情日记' },
+  },
+  portfolio: {
+    eyebrow: 'Portfolio', title: '作品展示', subtitle: '精选项目与技术作品，从这个工作台本身开始。',
+    featured: '精选', visit: '前往网站', source: '源代码',
+    projects: {
+      studio: { name: '个人智能工作台', summary: '模块化的个人 OS：整合生活、健康减脂、财务分析、AI 股票研究与知识库，全栈自建并上线。' },
+      stockAi: { name: 'AI 台股研究模型', summary: '每日自动扫描＋AI 八面向深度分析的台股研究管线，前端实时读取分析结果。' },
+      health: { name: '健康减脂模块', summary: '游戏化的减脂养成系统：伙伴养成、断食、饮食与习惯追踪，免穿戴设备。' },
+      casino: { name: '游戏娱乐城', summary: '服务器权威的代币老虎机，后端结算防作弊，独立登录入口。' },
+    },
+  },
 }

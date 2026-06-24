@@ -35,6 +35,15 @@ public class Expense {
     @Column(nullable = false, length = 64)
     private String category;
 
+    /**
+     * "EXPENSE" (default) or "INCOME". The columnDefinition carries a DB-level
+     * default so {@code ddl-auto: update} can add this NOT NULL column to a table
+     * that already holds rows (Postgres backfills existing rows with the default).
+     */
+    @Builder.Default
+    @Column(nullable = false, length = 16, columnDefinition = "varchar(16) not null default 'EXPENSE'")
+    private String type = "EXPENSE";
+
     @Column(columnDefinition = "text")
     private String description;
 

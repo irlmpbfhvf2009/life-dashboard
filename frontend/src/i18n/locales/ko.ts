@@ -56,4 +56,47 @@ export default {
       training: { full: '전신', arms: '팔', chest: '가슴', back: '등', abs: '복부', legs: '다리' },
     },
   },
+  todos: {
+    title: '할 일', subtitle: '모든 일을 한눈에', newTodo: '새 할 일',
+    all: '전체', active: '진행 중', done: '완료', empty: '할 일이 없습니다',
+    emptyDesc: '첫 할 일을 추가해 시작하세요.', titleLabel: '제목',
+    titlePlaceholder: '무엇을 하나요?', descLabel: '설명', priority: '우선순위',
+    dueDate: '마감일', titleRequired: '제목을 입력하세요',
+  },
+  priority: { LOW: '낮음', MEDIUM: '보통', HIGH: '높음' },
+  moods: {
+    title: '기분', subtitle: '오늘 기분은 어떤가요?', mood: '기분', last30: '최근 30일',
+    entries: '기록 수', avgMood: '평균 기분', noData: '기분 데이터가 없습니다',
+    noDataDesc: '기분을 기록하면 분포가 표시됩니다.',
+  },
+  finance: {
+    eyebrow: 'Finance', title: '재무 분석', subtitle: '수입과 지출을 기록하고 매월 구조와 추세를 파악하세요.',
+    add: '기록하기', income: '이번 달 수입', expense: '이번 달 지출', net: '이번 달 잔액', surplus: '수입이 지출보다 많음',
+    deficit: '지출이 수입보다 많음', amount: '금액', category: '분류',
+    categoryPlaceholder: '사용자 분류, 예: 식비', descLabel: '메모', descPlaceholder: '무엇에 썼나요?',
+    topCategory: '최대 지출 분류', byCategory: '지출 분류 비중', trend6m: '최근 6개월 지출 추세',
+    recent: '최근 내역', noSpending: '이번 달 지출 없음', noSpendingDesc: '"기록하기"로 첫 내역을 추가하세요.',
+    noExpenses: '내역이 없습니다', invalidInput: '유효한 날짜, 금액, 분류를 입력하세요',
+  },
+  knowledge: {
+    eyebrow: 'Knowledge', title: '지식 베이스', subtitle: '아이디어를 적고 노트를 정리해 나만의 지식 베이스를 만드세요.',
+    newNote: '새 노트', untitled: '제목 없는 노트', search: '노트 검색…', noMatch: '일치하는 노트가 없습니다',
+    noContent: '(내용 없음)', empty: '노트가 없습니다', emptyDesc: '첫 노트를 만들어 아이디어를 모아보세요.',
+    titlePlaceholder: '노트 제목', contentPlaceholder: '작성을 시작하세요…', updatedAt: '{time} 업데이트',
+    unsaved: '저장 안 됨', saved: '저장됨', pickTitle: '노트를 선택하세요', pickDesc: '목록에서 선택하거나 새 노트를 만드세요.',
+  },
+  life: {
+    eyebrow: 'Life', title: '생활 관리', subtitle: '할 일과 기분 일기로 매일을 기록하고 돌아보세요.',
+    tabs: { todos: '할 일', mood: '기분 일기' },
+  },
+  portfolio: {
+    eyebrow: 'Portfolio', title: '포트폴리오', subtitle: '엄선한 프로젝트와 작업물 — 이 스튜디오 자체부터.',
+    featured: '추천', visit: '사이트로', source: '소스',
+    projects: {
+      studio: { name: '퍼스널 인텔리전스 스튜디오', summary: '모듈형 개인 OS: 생활·건강·재무·AI 주식 리서치·지식 베이스를 통합. 풀스택 자체 구축 및 배포.' },
+      stockAi: { name: 'AI 대만 주식 리서치', summary: '매일 자동 스캔과 8개 관점 AI 분석을 수행하는 대만 주식 리서치 파이프라인. 프런트가 결과를 실시간으로 읽음.' },
+      health: { name: '건강·체지방 감량', summary: '게임화된 감량 시스템: 동반자 성장, 단식, 식사와 습관 추적. 웨어러블 불필요.' },
+      casino: { name: '게임 아케이드', summary: '서버 권위형 코인 슬롯머신. 변조 방지 서버 정산과 자체 로그인 포털 제공.' },
+    },
+  },
 }

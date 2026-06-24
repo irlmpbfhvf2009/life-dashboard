@@ -32,11 +32,13 @@ public class ExpenseService {
     @Transactional
     public ExpenseDto create(CreateExpenseRequest request) {
         Long userId = currentUserService.getCurrentUserId();
+        String type = (request.type() == null || request.type().isBlank()) ? "EXPENSE" : request.type();
         Expense expense = Expense.builder()
                 .userId(userId)
                 .date(request.date())
                 .amount(request.amount())
                 .category(request.category())
+                .type(type)
                 .description(request.description())
                 .build();
         return ExpenseDto.from(expenseRepository.save(expense));

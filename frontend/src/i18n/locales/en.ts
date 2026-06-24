@@ -56,4 +56,47 @@ export default {
       training: { full: 'Full body', arms: 'Arms', chest: 'Chest', back: 'Back', abs: 'Abs', legs: 'Legs' },
     },
   },
+  todos: {
+    title: 'To-dos', subtitle: 'Stay on top of everything', newTodo: 'New to-do',
+    all: 'All', active: 'Active', done: 'Done', empty: 'No to-dos yet',
+    emptyDesc: 'Add your first to-do to get started.', titleLabel: 'Title',
+    titlePlaceholder: 'What needs doing?', descLabel: 'Description', priority: 'Priority',
+    dueDate: 'Due date', titleRequired: 'Please enter a title',
+  },
+  priority: { LOW: 'Low', MEDIUM: 'Medium', HIGH: 'High' },
+  moods: {
+    title: 'Mood', subtitle: 'How are you feeling today?', mood: 'Mood', last30: 'Last 30 days',
+    entries: 'Entries', avgMood: 'Average mood', noData: 'No mood data yet',
+    noDataDesc: 'Log a mood to see your distribution.',
+  },
+  finance: {
+    eyebrow: 'Finance', title: 'Finance', subtitle: 'Track income and expenses; see your monthly structure and trends.',
+    add: 'Add entry', income: 'Income', expense: 'Expenses', net: 'Net', surplus: 'Income exceeds spending',
+    deficit: 'Spending exceeds income', amount: 'Amount', category: 'Category',
+    categoryPlaceholder: 'Custom category, e.g. Food', descLabel: 'Note', descPlaceholder: 'What was it for?',
+    topCategory: 'Top category', byCategory: 'Spending by category', trend6m: 'Spending — last 6 months',
+    recent: 'Recent entries', noSpending: 'No spending this month', noSpendingDesc: 'Tap "Add entry" to log your first one.',
+    noExpenses: 'No entries yet', invalidInput: 'Enter a valid date, amount and category',
+  },
+  knowledge: {
+    eyebrow: 'Knowledge', title: 'Knowledge base', subtitle: 'Capture ideas and organize notes into your personal knowledge base.',
+    newNote: 'New note', untitled: 'Untitled note', search: 'Search notes…', noMatch: 'No matching notes',
+    noContent: '(no content)', empty: 'No notes yet', emptyDesc: 'Create your first note to start collecting ideas.',
+    titlePlaceholder: 'Note title', contentPlaceholder: 'Start writing…', updatedAt: 'Updated {time}',
+    unsaved: 'Unsaved', saved: 'Saved', pickTitle: 'Pick a note', pickDesc: 'Choose one from the list, or create a new note.',
+  },
+  life: {
+    eyebrow: 'Life', title: 'Life', subtitle: 'To-dos and a mood journal to record and revisit your days.',
+    tabs: { todos: 'To-dos', mood: 'Mood journal' },
+  },
+  portfolio: {
+    eyebrow: 'Portfolio', title: 'Portfolio', subtitle: 'Selected projects and work — starting with this studio itself.',
+    featured: 'Featured', visit: 'Visit', source: 'Source',
+    projects: {
+      studio: { name: 'Personal Intelligence Studio', summary: 'A modular personal OS: life, health, finance, AI stock research and a knowledge base — full-stack, self-built and live.' },
+      stockAi: { name: 'AI TW Stock Research', summary: 'A Taiwan-stock research pipeline with daily automated scans and eight-dimension AI analysis, read live by the frontend.' },
+      health: { name: 'Health & Fat-loss', summary: 'A gamified fat-loss system: companion leveling, fasting, food and habit tracking — no wearables needed.' },
+      casino: { name: 'Game Arcade', summary: 'A server-authoritative coin slot machine with anti-tamper backend settlement and its own login portal.' },
+    },
+  },
 }

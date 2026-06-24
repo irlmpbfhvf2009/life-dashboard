@@ -62,11 +62,14 @@ export interface FoodRecord {
   createdAt: string
 }
 
+export type ExpenseType = 'EXPENSE' | 'INCOME'
+
 export interface Expense {
   id: number
   date: string
   amount: number
   category: string
+  type: ExpenseType
   description: string | null
   createdAt: string
 }
