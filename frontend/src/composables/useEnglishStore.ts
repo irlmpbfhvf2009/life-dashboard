@@ -1,9 +1,11 @@
-// Per-user English-Coach state, persisted to localStorage. This is the ONLY
-// layer that touches storage; swapping to the Spring Boot backend later means
-// rewriting just this file + api/english.ts — the views stay the same.
+// Per-user English-Coach state. localStorage is the immediate cache (synchronous,
+// offline-safe); the backend (/api/english/state) is a background sync layer so
+// the state follows the user across devices. Backend failures degrade silently —
+// the app keeps working on localStorage alone.
 
 import { computed, reactive, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { englishStateApi } from '@/api'
 import { todayISO } from '@/utils/format'
 import type {
   DailyMission,
@@ -64,6 +66,10 @@ const storageKey = (uid: string) => `english:${uid}`
 
 const state = reactive<{ uid: string | null; data: Persisted | null }>({ uid: null, data: null })
 
+// Background-sync bookkeeping.
+let pulledForUid: string | null = null
+let pushTimer: ReturnType<typeof setTimeout> | undefined
+
 function load(uid: string) {
   state.uid = uid
   try {
@@ -75,7 +81,18 @@ function load(uid: string) {
 }
 
 function persist() {
-  if (state.uid && state.data) localStorage.setItem(storageKey(state.uid), JSON.stringify(state.data))
+  if (!state.uid || !state.data) return
+  localStorage.setItem(storageKey(state.uid), JSON.stringify(state.data))
+  schedulePush()
+}
+
+/** Debounced push of the full state document to the backend. */
+function schedulePush() {
+  if (!state.uid) return
+  clearTimeout(pushTimer)
+  pushTimer = setTimeout(() => {
+    if (state.uid && state.data) englishStateApi.put(state.data).catch(() => undefined)
+  }, 1500)
 }
 
 function buildDailyMission(date: string): DailyMission {
@@ -96,6 +113,30 @@ export function useEnglishStore() {
   function ensureLoaded() {
     if (uid.value && state.uid !== uid.value) load(uid.value)
     if (state.data) rollDailyAndStreak()
+    if (uid.value) void pullOnce(uid.value)
+  }
+
+  /**
+   * Pull the cloud state once per uid. If the cloud has state, it wins (replaces
+   * the local cache); if not, push the current local state up. Failures are
+   * swallowed so the app keeps running on localStorage.
+   */
+  async function pullOnce(targetUid: string) {
+    if (pulledForUid === targetUid) return
+    pulledForUid = targetUid
+    try {
+      const remote = await englishStateApi.get<Persisted>()
+      if (state.uid !== targetUid) return
+      if (remote && typeof remote === 'object') {
+        state.data = { ...freshState(), ...remote }
+        localStorage.setItem(storageKey(targetUid), JSON.stringify(state.data))
+        rollDailyAndStreak()
+      } else if (state.data) {
+        englishStateApi.put(state.data).catch(() => undefined)
+      }
+    } catch {
+      pulledForUid = null // allow a retry on the next interaction
+    }
   }
 
   /** Refresh the daily mission and streak when the date changes. */

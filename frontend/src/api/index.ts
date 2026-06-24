@@ -78,6 +78,12 @@ export const aiApi = {
     request<SentenceCorrection>(() => http.post('/api/ai/english/correct', body)),
 }
 
+// ---- English Coach state (per-user, cross-device sync) ----
+export const englishStateApi = {
+  get: <T = unknown>() => request<T | null>(() => http.get('/api/english/state')),
+  put: (state: unknown) => request<void>(() => http.put('/api/english/state', state)),
+}
+
 // ---- Usage (owner-only free-tier bar) ----
 export const usageApi = {
   get: () => request<UsageData>(() => http.get('/api/usage')),
