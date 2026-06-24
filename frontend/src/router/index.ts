@@ -39,10 +39,10 @@ const router = createRouter({
             { path: 'speaking', name: 'english-speaking', component: () => import('@/views/english/SpeakingPracticePage.vue') },
             { path: 'coach', name: 'english-coach', component: () => import('@/views/english/SentenceCoachPage.vue') },
             // Phase 2 pages — polished placeholders driven by route meta.
+            { path: 'vocabulary', name: 'english-vocabulary', component: () => import('@/views/english/VocabularyPage.vue') },
+            { path: 'phrases', name: 'english-phrases', component: () => import('@/views/english/PhraseBankPage.vue') },
+            { path: 'grammar', name: 'english-grammar', component: () => import('@/views/english/GrammarBasicsPage.vue') },
             { path: 'path', component: () => import('@/views/english/EnglishComingSoonPage.vue'), meta: { title: '學習路徑', subtitle: '依你的程度安排單字、句型、文法與情境的學習路徑。', features: ['程度分級（初/中/進階）', '已完成單元與下個推薦', '已掌握技能追蹤'] } },
-            { path: 'vocabulary', component: () => import('@/views/english/EnglishComingSoonPage.vue'), meta: { title: '單字系統', subtitle: '情境單字卡：朗讀、跟讀、例句、選擇/填空/造句與複習。', features: ['情境單字卡 + 朗讀跟讀', '依旅遊/商務/面試等分類', '加入間隔複習'] } },
-            { path: 'phrases', component: () => import('@/views/english/EnglishComingSoonPage.vue'), meta: { title: '句型庫', subtitle: '常用句型：聽、模仿造句、AI 修正與情境套用。', features: ['I was wondering if… 等實用句型', '常見錯誤提醒', '模仿造句 + AI 修正'] } },
-            { path: 'grammar', component: () => import('@/views/english/EnglishComingSoonPage.vue'), meta: { title: '基礎文法', subtitle: '可行動的文法卡：正確/錯誤例句、練習題與 AI 修正入口。', features: ['時態、冠詞、介系詞等主題', '正確 vs 中式英文對照', '互動練習題'] } },
             { path: 'missions', component: () => import('@/views/english/EnglishComingSoonPage.vue'), meta: { title: '每日任務', subtitle: '每天一組微任務，維持學習節奏。', features: ['單字/句型/對話/口說任務', '完成度與 streak', '高質感任務卡'] } },
             { path: 'mistakes', component: () => import('@/views/english/EnglishComingSoonPage.vue'), meta: { title: '常錯庫', subtitle: '自動收集你的文法、單字、時態與口說常錯。', features: ['依類別與頻率呈現', '一鍵加入複習', '掌握狀態追蹤'] } },
             { path: 'review', component: () => import('@/views/english/EnglishComingSoonPage.vue'), meta: { title: '複習系統', subtitle: '簡化版間隔複習：單字、句型、常錯句、口說。', features: ['今日待複習佇列', 'New/Learning/Reviewing/Mastered', '複習完成率'] } },

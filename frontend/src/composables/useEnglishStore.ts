@@ -169,6 +169,22 @@ export function useEnglishStore() {
   }
   function masterVocab(id: string) {
     update((d) => { if (!d.masteredVocabIds.includes(id)) d.masteredVocabIds.push(id) })
+    bumpMission('m-vocab')
+  }
+  function masterPhrase(id: string) {
+    update((d) => { if (!d.masteredPhraseIds.includes(id)) d.masteredPhraseIds.push(id) })
+    bumpMission('m-phrase')
+  }
+
+  /** Queue a vocab/phrase (or other ref) for review without logging a mistake. */
+  function queueReview(refType: ReviewItem['refType'], refId: string, title: string) {
+    update((d) => {
+      if (d.reviews.some((r) => r.refType === refType && r.refId === refId)) return
+      d.reviews.unshift({
+        id: `rv-${refType}-${refId}-${Date.now()}`, refType, refId, title,
+        status: 'NEW', dueDate: todayISO(), interval: 1, ease: 2.3,
+      })
+    })
   }
   function completeScenario(id: string) {
     update((d) => {
@@ -187,6 +203,6 @@ export function useEnglishStore() {
   return {
     data, isOnboarded, level, mission, mistakes, reviews, dueReviews,
     update, touchStreak, setLevel, bumpMission, addMistake, addStudyMinutes,
-    recordSpeaking, masterVocab, completeScenario, reset,
+    recordSpeaking, masterVocab, masterPhrase, queueReview, completeScenario, reset,
   }
 }
