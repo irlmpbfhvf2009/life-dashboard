@@ -87,17 +87,23 @@ infra/billing-guard/          費用自動關閉的 Cloud Function
 - **AI 英文家教要能對話，需注入 `GEMINI_API_KEY`**（見下方「in-app AI」）。沒注入時前端會顯示「尚未啟用」提示、不會壞。
 
 ## in-app AI（Gemini）
-- 後端 `com.lifedashboard.ai`：`GeminiClient`（呼叫 Gemini `generateContent`）+ `EnglishCoachService`（英文家教 system prompt、JSON 結構化輸出 reply/correction）+ `AiController`（`GET /api/ai/status`、`POST /api/ai/english/chat`）。
-- 設定在 `application.yml` 的 `app.gemini`：`api-key=${GEMINI_API_KEY:}`、`model=${GEMINI_MODEL:gemini-2.0-flash}`、`base-url`。**金鑰留空時自動降級**：回 503 友善訊息、`/status` 回 `enabled:false`，前端顯示提示。
+- 後端 `com.lifedashboard.ai`：`GeminiClient`（呼叫 Gemini `generateContent`，JSON schema 結構化輸出，**可重用**）+ `EnglishCoachService`（`chat()` 回 reply/correction；`correct()` 回結構化 `CorrectionReply`）+ `AiController`（`GET /api/ai/status`、`POST /api/ai/english/chat`、`POST /api/ai/english/correct`）。
+- 設定在 `application.yml` 的 `app.gemini`：`api-key=${GEMINI_API_KEY:}`、`model=${GEMINI_MODEL:gemini-2.0-flash}`、`base-url`。**金鑰留空時自動降級**：回 503、`/status` 回 `enabled:false`，前端顯示提示。
 - 注入金鑰（建議走 Secret Manager）：
   ```
   gcloud run services update life-dashboard-backend --region asia-southeast1 \
     --update-secrets GEMINI_API_KEY=gemini-api-key:latest
   ```
   （或臨時用 `--set-env-vars GEMINI_API_KEY=xxx` 測試）。Gemini 有免費層，對 billing-guard 較安全。
-- 前端：`aiApi`（`src/api/index.ts`）、`EnglishCoachView.vue`（`/ai/english`，聊天＋糾錯泡泡）。
+
+## AI 英文家教（`/ai/english`，商業化學習模組，Phase 1 完成）
+- 四層架構：基礎學習 / AI 練習 / 口說 / 複習成長。巢狀路由掛在 `EnglishLayout`（含自有二級導航 `EnglishSubNav`，側邊欄只保留「AI 實驗室」大類）。
+- **已完成真實頁**：Home（`AiEnglishHomePage`）、對話室（`ConversationRoomPage`，三欄：情境/對話+語音/即時回饋）、口說練習、句子修正、情境練習。其餘 9 頁是 `EnglishComingSoonPage`（讀 route meta 的精緻佔位，Phase 2 接後端）。
+- **語音全用瀏覽器原生、零成本**：`composables/useSpeechSynthesis`（TTS 慢/正常）、`useSpeechRecognition`（STT）、`utils/pronunciation.compareSentence`（文字相似度，非音素級；UI 預留未來升級）。不支援時 `VoiceUnsupportedNotice` 降級成文字輸入。
+- **狀態**：`useEnglishStore`（localStorage，per-uid）管 streak/每日任務/常錯庫/簡化複習；每次練習都沉澱成可複習資產。`api/english.ts` 內容走 mock、對話/修正走既有免費 Gemini，**無金鑰可全程跑（mock 教練 fallback）**。
+- **zh-TW 字串目前內嵌在元件**（量大）；Phase 2 再抽 key + 回填 6 語系。
 
 ## 建議下一步
-1. **資料分析工具 `/ai/data-lab`**：唯一還沒做的 AI app（上傳 CSV→Gemini 洞察），可重用上面的 GeminiClient。
-2. **Phase 3 後端**：習慣/目標/斷食/日記長文 等需要新資料表的功能，建 Entity/Repository/Service/Controller 存進 Neon。
-3. 小優化：K 線「滑鼠懸停看 OHLC」、深色模式微調、Dashboard 的 AI 卡接真實資料、英文家教加「語音朗讀」。
+1. **英文家教 Phase 2**：接 Spring Boot（`com.lifedashboard.english` + Neon 新表），把單字/句型/文法/複習/程度檢測/進度做成真實；AI 對話結束自動抽錯入庫；真間隔複習（SM-2 簡化）；i18n 抽 key 回填。
+2. **資料分析工具 `/ai/data-lab`**：唯一還沒做的 AI app（上傳 CSV→Gemini 洞察），重用 `GeminiClient`。
+3. **Phase 3 後端**：習慣/目標/斷食/日記長文 等需要新資料表的功能。
