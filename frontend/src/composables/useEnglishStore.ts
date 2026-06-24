@@ -27,6 +27,8 @@ interface Persisted {
   mistakes: EnglishMistake[]
   reviews: ReviewItem[]
   mission: DailyMission | null
+  reviewedTodayCount: number
+  reviewedTodayDate: string | null
 }
 
 function freshState(): Persisted {
@@ -44,7 +46,18 @@ function freshState(): Persisted {
     mistakes: [],
     reviews: [],
     mission: null,
+    reviewedTodayCount: 0,
+    reviewedTodayDate: null,
   }
+}
+
+const REVIEW_STEPS: ReviewItem['status'][] = ['NEW', 'LEARNING', 'REVIEWING', 'MASTERED']
+const REVIEW_INTERVALS = [1, 3, 7, 21] // days per step
+
+function addDays(iso: string, days: number): string {
+  const d = new Date(`${iso}T00:00:00`)
+  d.setDate(d.getDate() + days)
+  return d.toISOString().slice(0, 10)
 }
 
 const storageKey = (uid: string) => `english:${uid}`
@@ -194,6 +207,45 @@ export function useEnglishStore() {
     bumpMission('m-conv')
   }
 
+  /**
+   * Simplified spaced-repetition (SM-2 inspired): remembered → advance a step and
+   * push the due date out; forgot → drop back to LEARNING and review again tomorrow.
+   */
+  function reviewComplete(id: string, remembered: boolean) {
+    update((d) => {
+      const r = d.reviews.find((x) => x.id === id)
+      if (!r) return
+      const today = todayISO()
+      let i = REVIEW_STEPS.indexOf(r.status)
+      if (remembered) {
+        i = Math.min(3, i + 1)
+        r.ease = Math.min(3.0, r.ease + 0.1)
+      } else {
+        i = 1
+        r.ease = Math.max(1.3, r.ease - 0.2)
+      }
+      r.status = REVIEW_STEPS[i]
+      r.interval = REVIEW_INTERVALS[i]
+      r.dueDate = addDays(today, r.interval)
+      // Reflect mastery onto the linked mistake.
+      if (r.refType === 'mistake') {
+        const m = d.mistakes.find((x) => x.id === r.refId)
+        if (m) m.mastery = r.status
+      }
+      // Track today's completed reviews.
+      if (d.reviewedTodayDate !== today) {
+        d.reviewedTodayDate = today
+        d.reviewedTodayCount = 0
+      }
+      d.reviewedTodayCount += 1
+    })
+    bumpMission('m-review')
+  }
+
+  const reviewedToday = computed(() =>
+    state.data?.reviewedTodayDate === todayISO() ? state.data.reviewedTodayCount : 0,
+  )
+
   function reset() {
     if (state.uid) localStorage.removeItem(storageKey(state.uid))
     state.data = freshState()
@@ -201,8 +253,8 @@ export function useEnglishStore() {
   }
 
   return {
-    data, isOnboarded, level, mission, mistakes, reviews, dueReviews,
+    data, isOnboarded, level, mission, mistakes, reviews, dueReviews, reviewedToday,
     update, touchStreak, setLevel, bumpMission, addMistake, addStudyMinutes,
-    recordSpeaking, masterVocab, masterPhrase, queueReview, completeScenario, reset,
+    recordSpeaking, masterVocab, masterPhrase, queueReview, reviewComplete, completeScenario, reset,
   }
 }

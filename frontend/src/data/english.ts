@@ -9,7 +9,18 @@ import type {
   GrammarLesson,
   SpeakingPracticeItem,
   ScenarioCategory,
+  MistakeCategory,
 } from '@/types/english'
+
+export const MISTAKE_LABELS: Record<MistakeCategory, string> = {
+  grammar: '文法',
+  vocab: '單字',
+  tense: '時態',
+  preposition: '介系詞',
+  unnatural: '不自然',
+  chinglish: '中式英文',
+  speech: '口說',
+}
 
 export const SCENARIO_LABELS: Record<ScenarioCategory, string> = {
   travel: '旅遊英文',
