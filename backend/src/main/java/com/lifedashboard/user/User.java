@@ -34,6 +34,14 @@ public class User {
     @Column(name = "photo_url", length = 1024)
     private String photoUrl;
 
+    /** Can enter the game hub (slot machine etc.). Nullable for legacy rows = false. */
+    @Column(name = "is_player")
+    private Boolean isPlayer;
+
+    /** Can access the admin panel. Nullable for legacy rows = false. */
+    @Column(name = "is_admin")
+    private Boolean isAdmin;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

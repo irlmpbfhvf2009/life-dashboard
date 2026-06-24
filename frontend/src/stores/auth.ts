@@ -63,6 +63,8 @@ export const useAuthStore = defineStore('auth', {
     displayName: (s) =>
       s.profile?.displayName || s.firebaseUser?.displayName || s.firebaseUser?.email?.split('@')[0] || '使用者',
     photoUrl: (s) => s.profile?.photoUrl || s.firebaseUser?.photoURL || null,
+    isPlayer: (s) => !!s.profile?.isPlayer,
+    isAdmin: (s) => !!s.profile?.isAdmin,
     provider(s): AuthProvider {
       const pid = s.firebaseUser?.providerData?.[0]?.providerId
       if (pid === 'google.com') return 'GOOGLE'

@@ -1,6 +1,7 @@
 package com.lifedashboard.user.dto;
 
 import com.lifedashboard.user.User;
+import com.lifedashboard.user.UserService;
 
 import java.time.Instant;
 
@@ -10,6 +11,8 @@ public record UserDto(
         String email,
         String displayName,
         String photoUrl,
+        boolean isPlayer,
+        boolean isAdmin,
         Instant createdAt,
         Instant updatedAt
 ) {
@@ -20,6 +23,8 @@ public record UserDto(
                 u.getEmail(),
                 u.getDisplayName(),
                 u.getPhotoUrl(),
+                UserService.isPlayer(u),
+                UserService.isAdmin(u),
                 u.getCreatedAt(),
                 u.getUpdatedAt()
         );

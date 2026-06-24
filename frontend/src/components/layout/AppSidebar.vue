@@ -15,6 +15,15 @@ function isActive(to: string): boolean {
   return to === '/' ? route.path === '/' : route.path.startsWith(to)
 }
 const settingsActive = computed(() => route.path.startsWith('/settings'))
+
+// Hide role-gated entries (遊戲 / 管理後台) unless the user has the role.
+const visibleGroups = computed(() =>
+  navGroups.filter((g) =>
+    g.requires === 'player' ? auth.isPlayer
+      : g.requires === 'admin' ? auth.isAdmin
+        : true,
+  ),
+)
 </script>
 
 <template>
@@ -34,7 +43,7 @@ const settingsActive = computed(() => route.path.startsWith('/settings'))
     <nav class="flex flex-1 flex-col gap-1">
       <p class="eyebrow px-3 pb-1 pt-2">工作區</p>
       <RouterLink
-        v-for="g in navGroups"
+        v-for="g in visibleGroups"
         :key="g.key"
         :to="g.to"
         class="nav-item"

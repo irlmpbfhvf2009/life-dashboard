@@ -39,6 +39,8 @@ const router = createRouter({
           meta: { category: 'PORTFOLIO', eyebrow: 'Portfolio', title: '作品展示', subtitle: '專案作品、案例研究與技術文章。' },
         },
         { path: 'settings', name: 'settings', component: () => import('@/views/SettingsView.vue') },
+        { path: 'game', name: 'game', component: () => import('@/views/GameView.vue'), meta: { requires: 'player' } },
+        { path: 'admin', name: 'admin', component: () => import('@/views/AdminView.vue'), meta: { requires: 'admin' } },
       ],
     },
     { path: '/:pathMatch(.*)*', redirect: '/' },
@@ -56,6 +58,10 @@ router.beforeEach(async (to) => {
   if (to.meta.public && authStore.isAuthenticated) {
     return { name: 'overview' }
   }
+  // Role-gated routes (遊戲 / 管理後台)
+  const requires = to.meta.requires as 'player' | 'admin' | undefined
+  if (requires === 'player' && !authStore.isPlayer) return { name: 'overview' }
+  if (requires === 'admin' && !authStore.isAdmin) return { name: 'overview' }
   return true
 })
 

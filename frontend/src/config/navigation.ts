@@ -8,6 +8,8 @@ import {
   FlaskConical,
   Library,
   FolderGit2,
+  Gamepad2,
+  ShieldCheck,
   NotebookPen,
   Repeat,
   Target,
@@ -29,6 +31,8 @@ export interface NavGroup {
   label: string
   icon: Component
   to: string
+  /** Role required to see this entry. Omitted = always visible. */
+  requires?: 'player' | 'admin'
 }
 
 export interface StudioApp {
@@ -52,6 +56,9 @@ export const navGroups: NavGroup[] = [
   { key: 'ai', label: 'AI 實驗室', icon: FlaskConical, to: '/ai' },
   { key: 'knowledge', label: '知識庫', icon: Library, to: '/knowledge' },
   { key: 'portfolio', label: '作品展示', icon: FolderGit2, to: '/portfolio' },
+  // Role-gated — hidden unless the user has the matching role.
+  { key: 'game', label: '遊戲', icon: Gamepad2, to: '/game', requires: 'player' },
+  { key: 'admin', label: '管理後台', icon: ShieldCheck, to: '/admin', requires: 'admin' },
 ]
 
 export const categoryMeta: Record<AppCategory, { label: string; tint: string }> = {

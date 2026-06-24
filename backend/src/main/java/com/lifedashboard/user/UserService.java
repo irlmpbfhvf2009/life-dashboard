@@ -11,7 +11,18 @@ import org.springframework.util.StringUtils;
 @RequiredArgsConstructor
 public class UserService {
 
+    /** The root super-admin — always has admin rights, can't be demoted. */
+    public static final String ROOT_ADMIN_EMAIL = "ws794613@gmail.com";
+
     private final UserRepository userRepository;
+
+    public static boolean isAdmin(User u) {
+        return Boolean.TRUE.equals(u.getIsAdmin()) || ROOT_ADMIN_EMAIL.equalsIgnoreCase(u.getEmail());
+    }
+
+    public static boolean isPlayer(User u) {
+        return Boolean.TRUE.equals(u.getIsPlayer()) || isAdmin(u);
+    }
 
     /**
      * Resolves the database user for the given Firebase principal, creating the
@@ -20,7 +31,7 @@ public class UserService {
      */
     @Transactional
     public User provisionFromFirebase(FirebaseUserPrincipal principal) {
-        return userRepository.findByFirebaseUid(principal.uid())
+        User user = userRepository.findByFirebaseUid(principal.uid())
                 .map(existing -> syncProfile(existing, principal))
                 .orElseGet(() -> userRepository.save(User.builder()
                         .firebaseUid(principal.uid())
@@ -28,6 +39,12 @@ public class UserService {
                         .displayName(principal.displayName())
                         .photoUrl(principal.photoUrl())
                         .build()));
+        // Root admin always carries the admin flag.
+        if (ROOT_ADMIN_EMAIL.equalsIgnoreCase(user.getEmail()) && !Boolean.TRUE.equals(user.getIsAdmin())) {
+            user.setIsAdmin(true);
+            user = userRepository.save(user);
+        }
+        return user;
     }
 
     private User syncProfile(User user, FirebaseUserPrincipal principal) {

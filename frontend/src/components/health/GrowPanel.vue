@@ -56,7 +56,6 @@ function submitHabit() {
           <Backpack class="h-3.5 w-3.5 text-violet-500" /> {{ unlockedCount }}/{{ WEARABLES.length }}
         </span>
       </div>
-      <p class="mt-2 text-center text-2xs text-ink-400">{{ t('health.coin.earnHint') }}</p>
 
       <div class="mx-auto my-2 h-32 w-32">
         <Creature :animal="animal" mood="great" :accessory="accessory" class="h-32 w-32" />

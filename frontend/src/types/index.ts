@@ -12,6 +12,8 @@ export interface UserProfile {
   email: string
   displayName: string | null
   photoUrl: string | null
+  isPlayer: boolean
+  isAdmin: boolean
   createdAt: string
   updatedAt: string
 }

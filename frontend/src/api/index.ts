@@ -29,14 +29,31 @@ export const dashboardApi = {
   get: () => request<DashboardData>(() => http.get('/api/dashboard')),
 }
 
-// ---- Wallet (server-authoritative game coins) ----
+// ---- Wallet (server-authoritative game coins, read-only) ----
 export interface WalletDto { coins: number; lastBonusDate: string | null; claimedToday: boolean }
-export interface GrantResult { granted: number; balance: number }
 export const walletApi = {
   get: () => request<WalletDto>(() => http.get('/api/wallet')),
-  dailyBonus: () => request<GrantResult>(() => http.post('/api/wallet/daily-bonus')),
-  completion: (body: { progress: number; level: number }) =>
-    request<GrantResult>(() => http.post('/api/wallet/completion', body)),
+}
+
+// ---- Game (slot machine — spins resolved server-side) ----
+export interface SpinResult { reels: number[]; bet: number; payout: number; balance: number }
+export const gameApi = {
+  spin: (bet: number) => request<SpinResult>(() => http.post('/api/game/slot/spin', { bet })),
+}
+
+// ---- Admin (root-admin only) ----
+export interface AdminUser {
+  id: number; email: string; displayName: string | null; photoUrl: string | null
+  coins: number; isPlayer: boolean; isAdmin: boolean; createdAt: string
+}
+export interface AdminWeight { id: number; date: string; weight: number; note: string | null; createdAt: string }
+export const adminApi = {
+  users: () => request<AdminUser[]>(() => http.get('/api/admin/users')),
+  setRoles: (id: number, body: { isPlayer: boolean; isAdmin: boolean }) =>
+    request<AdminUser>(() => http.patch(`/api/admin/users/${id}/roles`, body)),
+  adjustCoins: (id: number, delta: number) =>
+    request<AdminUser>(() => http.post(`/api/admin/users/${id}/coins`, { delta })),
+  weights: (id: number) => request<AdminWeight[]>(() => http.get(`/api/admin/users/${id}/weights`)),
 }
 
 // ---- Usage (owner-only free-tier bar) ----
