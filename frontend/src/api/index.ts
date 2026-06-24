@@ -58,6 +58,15 @@ export const adminApi = {
   weights: (id: number) => request<AdminWeight[]>(() => http.get(`/api/admin/users/${id}/weights`)),
 }
 
+// ---- AI (in-app Gemini-backed assistants) ----
+export interface ChatTurn { role: 'user' | 'model'; content: string }
+export interface ChatReply { reply: string; correction: string | null }
+export const aiApi = {
+  status: () => request<{ enabled: boolean }>(() => http.get('/api/ai/status')),
+  englishChat: (body: { message: string; history: ChatTurn[] }) =>
+    request<ChatReply>(() => http.post('/api/ai/english/chat', body)),
+}
+
 // ---- Usage (owner-only free-tier bar) ----
 export const usageApi = {
   get: () => request<UsageData>(() => http.get('/api/usage')),

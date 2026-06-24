@@ -146,6 +146,19 @@ export default {
     noExpenses: '尚無收支紀錄',
     invalidInput: '請輸入有效的日期、金額與分類',
   },
+  english: {
+    eyebrow: 'AI English',
+    title: 'AI 英文家教',
+    subtitle: '用英文自然對話，AI 即時給你溫和的文法與用字糾錯。',
+    greeting: "Hi! I'm your English tutor. What would you like to chat about today?",
+    placeholder: '用英文打一句話…',
+    notConfigured: 'AI 家教尚未啟用（後端缺少 GEMINI_API_KEY）。介面可瀏覽，設定金鑰後即可對話。',
+    starters: {
+      weekend: "Let's talk about my weekend.",
+      hobby: 'Can we chat about hobbies?',
+      travel: 'I want to plan a trip.',
+    },
+  },
   life: {
     eyebrow: 'Life',
     title: '生活管理',

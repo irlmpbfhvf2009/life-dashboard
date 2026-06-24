@@ -99,4 +99,12 @@ export default {
       casino: { name: '游戏娱乐城', summary: '服务器权威的代币老虎机，后端结算防作弊，独立登录入口。' },
     },
   },
+  english: {
+    eyebrow: 'AI English', title: 'AI 英文家教',
+    subtitle: '用英文自然对话，AI 实时给你温和的语法与用词纠错。',
+    greeting: "Hi! I'm your English tutor. What would you like to chat about today?",
+    placeholder: '用英文打一句话…',
+    notConfigured: 'AI 家教尚未启用（后端缺少 GEMINI_API_KEY）。界面可浏览，设定金钥后即可对话。',
+    starters: { weekend: "Let's talk about my weekend.", hobby: 'Can we chat about hobbies?', travel: 'I want to plan a trip.' },
+  },
 }

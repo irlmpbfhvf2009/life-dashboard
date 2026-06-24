@@ -2,6 +2,7 @@ package com.lifedashboard.common;
 
 import com.lifedashboard.common.exception.ForbiddenException;
 import com.lifedashboard.common.exception.ResourceNotFoundException;
+import com.lifedashboard.common.exception.ServiceUnavailableException;
 import com.lifedashboard.common.exception.UnauthorizedException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -48,6 +49,11 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
         return ResponseEntity.badRequest()
                 .body(ApiResponse.error("Invalid value for parameter '" + ex.getName() + "'"));
+    }
+
+    @ExceptionHandler(ServiceUnavailableException.class)
+    public ResponseEntity<ApiResponse<Void>> handleServiceUnavailable(ServiceUnavailableException ex) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(ApiResponse.error(ex.getMessage()));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

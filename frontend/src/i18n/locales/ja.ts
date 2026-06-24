@@ -99,4 +99,12 @@ export default {
       casino: { name: 'ゲームアーケード', summary: 'サーバー権威のコインスロット。改ざん対策のサーバー精算と専用ログイン入口を備える。' },
     },
   },
+  english: {
+    eyebrow: 'AI English', title: 'AI 英会話コーチ',
+    subtitle: '英語で自然に会話。AI が文法や語彙をその場でやさしく直してくれます。',
+    greeting: "Hi! I'm your English tutor. What would you like to chat about today?",
+    placeholder: '英語で一文どうぞ…',
+    notConfigured: 'AI コーチはまだ有効ではありません（バックエンドに GEMINI_API_KEY がありません）。UI は閲覧できます。キーを設定すると会話できます。',
+    starters: { weekend: "Let's talk about my weekend.", hobby: 'Can we chat about hobbies?', travel: 'I want to plan a trip.' },
+  },
 }

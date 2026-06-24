@@ -99,4 +99,12 @@ export default {
       casino: { name: '게임 아케이드', summary: '서버 권위형 코인 슬롯머신. 변조 방지 서버 정산과 자체 로그인 포털 제공.' },
     },
   },
+  english: {
+    eyebrow: 'AI English', title: 'AI 영어 튜터',
+    subtitle: '영어로 자연스럽게 대화하고, AI가 문법과 어휘를 실시간으로 부드럽게 교정해 줍니다.',
+    greeting: "Hi! I'm your English tutor. What would you like to chat about today?",
+    placeholder: '영어로 한 문장 입력…',
+    notConfigured: 'AI 튜터가 아직 활성화되지 않았습니다(백엔드에 GEMINI_API_KEY 없음). UI는 둘러볼 수 있으며, 키를 설정하면 대화할 수 있습니다.',
+    starters: { weekend: "Let's talk about my weekend.", hobby: 'Can we chat about hobbies?', travel: 'I want to plan a trip.' },
+  },
 }

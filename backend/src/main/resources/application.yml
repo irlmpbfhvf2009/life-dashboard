@@ -40,6 +40,12 @@ app:
   # Optional: restrict owner-only endpoints (e.g. /api/usage) to this email.
   # Leave blank to allow any authenticated user (local dev).
   owner-email: ${OWNER_EMAIL:}
+  # In-app AI (Gemini). Leave api-key blank to disable — endpoints then return a
+  # friendly 503 instead of failing. Inject the key via Secret Manager in prod.
+  gemini:
+    api-key: ${GEMINI_API_KEY:}
+    model: ${GEMINI_MODEL:gemini-2.0-flash}
+    base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com/v1beta}
 
 management:
   endpoints:

@@ -86,7 +86,7 @@ export const studioApps: StudioApp[] = [
   { key: 'food', name: '飲食 / 斷食', description: '飲食紀錄與斷食時間追蹤', category: 'HEALTH', status: 'BETA', icon: UtensilsCrossed, to: '/health' },
   { key: 'finance', name: '記帳', description: '收支分類、月度統計與趨勢', category: 'FINANCE', status: 'ACTIVE', icon: Wallet, to: '/finance', lastUsed: '2026-06-23' },
   { key: 'stock-ai', name: 'AI 股票研究模型', description: '研究與模擬分析（非投資建議）', category: 'AI', status: 'BETA', icon: LineChart, to: '/ai/stock', lastUsed: '2026-06-21' },
-  { key: 'english-ai', name: 'AI 英文教練', description: '練習對話與寫作回饋', category: 'AI', status: 'DRAFT', icon: GraduationCap, to: '/ai' },
+  { key: 'english-ai', name: 'AI 英文教練', description: '練習對話與即時糾錯', category: 'AI', status: 'BETA', icon: GraduationCap, to: '/ai/english' },
   { key: 'data-lab', name: '資料分析工具', description: '上傳資料、快速洞察', category: 'AI', status: 'DRAFT', icon: Bot, to: '/ai' },
   { key: 'notes', name: '筆記', description: '結構化筆記與知識庫', category: 'KNOWLEDGE', status: 'ACTIVE', icon: BookOpen, to: '/knowledge' },
   { key: 'resources', name: '資源庫', description: '收藏連結與常用工具', category: 'KNOWLEDGE', status: 'DRAFT', icon: Bookmark, to: '/knowledge' },

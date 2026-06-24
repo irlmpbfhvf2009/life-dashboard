@@ -84,8 +84,20 @@ infra/billing-guard/          費用自動關閉的 Cloud Function
 ## 待辦 / 使用者要做的
 - 確認 **life-dashboard** repo 的 GitHub Actions 寫入權限已開（Settings → Actions → General → Read and write），每日股票掃描才會自動 commit。
 - （選用）在 life-dashboard repo 設 `FINMIND_TOKEN` secret（基本面資料用，沒設會略過）。
+- **AI 英文家教要能對話，需注入 `GEMINI_API_KEY`**（見下方「in-app AI」）。沒注入時前端會顯示「尚未啟用」提示、不會壞。
+
+## in-app AI（Gemini）
+- 後端 `com.lifedashboard.ai`：`GeminiClient`（呼叫 Gemini `generateContent`）+ `EnglishCoachService`（英文家教 system prompt、JSON 結構化輸出 reply/correction）+ `AiController`（`GET /api/ai/status`、`POST /api/ai/english/chat`）。
+- 設定在 `application.yml` 的 `app.gemini`：`api-key=${GEMINI_API_KEY:}`、`model=${GEMINI_MODEL:gemini-2.0-flash}`、`base-url`。**金鑰留空時自動降級**：回 503 友善訊息、`/status` 回 `enabled:false`，前端顯示提示。
+- 注入金鑰（建議走 Secret Manager）：
+  ```
+  gcloud run services update life-dashboard-backend --region asia-southeast1 \
+    --update-secrets GEMINI_API_KEY=gemini-api-key:latest
+  ```
+  （或臨時用 `--set-env-vars GEMINI_API_KEY=xxx` 測試）。Gemini 有免費層，對 billing-guard 較安全。
+- 前端：`aiApi`（`src/api/index.ts`）、`EnglishCoachView.vue`（`/ai/english`，聊天＋糾錯泡泡）。
 
 ## 建議下一步
-1. **Phase 2 先做深一個模組**（推薦「日記」或「減脂」做成完整可用：mock→接後端），作品集 demo 最有感。
-2. 或 **Phase 3 後端**：把新資料表的 Entity/Repository/Service/Controller 建起來，讓各模組真的存進 Neon。
-3. 小優化：K 線「滑鼠懸停看 OHLC」、深色模式微調、Dashboard 的 AI 卡接真實資料。
+1. **資料分析工具 `/ai/data-lab`**：唯一還沒做的 AI app（上傳 CSV→Gemini 洞察），可重用上面的 GeminiClient。
+2. **Phase 3 後端**：習慣/目標/斷食/日記長文 等需要新資料表的功能，建 Entity/Repository/Service/Controller 存進 Neon。
+3. 小優化：K 線「滑鼠懸停看 OHLC」、深色模式微調、Dashboard 的 AI 卡接真實資料、英文家教加「語音朗讀」。

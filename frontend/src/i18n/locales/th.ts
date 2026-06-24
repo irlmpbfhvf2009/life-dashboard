@@ -99,4 +99,12 @@ export default {
       casino: { name: 'เกมอาเขต', summary: 'สล็อตเหรียญที่เซิร์ฟเวอร์เป็นผู้ตัดสิน คำนวณฝั่งเซิร์ฟเวอร์กันโกง พร้อมพอร์ทัลล็อกอินของตัวเอง' },
     },
   },
+  english: {
+    eyebrow: 'AI English', title: 'ติวเตอร์ภาษาอังกฤษ AI',
+    subtitle: 'สนทนาภาษาอังกฤษอย่างเป็นธรรมชาติ AI ช่วยแก้ไวยากรณ์และการเลือกคำให้แบบนุ่มนวลทันที',
+    greeting: "Hi! I'm your English tutor. What would you like to chat about today?",
+    placeholder: 'พิมพ์ประโยคภาษาอังกฤษ…',
+    notConfigured: 'ติวเตอร์ AI ยังไม่เปิดใช้งาน (แบ็กเอนด์ไม่มี GEMINI_API_KEY) เรียกดู UI ได้ ตั้งค่าคีย์แล้วจึงเริ่มสนทนาได้',
+    starters: { weekend: "Let's talk about my weekend.", hobby: 'Can we chat about hobbies?', travel: 'I want to plan a trip.' },
+  },
 }

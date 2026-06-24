@@ -28,6 +28,7 @@ const router = createRouter({
           meta: { category: 'AI', eyebrow: 'AI Lab', title: 'AI 實驗室', subtitle: 'AI 股票研究、英文教練與資料分析工具（研究用途）。' },
         },
         { path: 'ai/stock', name: 'stock', component: () => import('@/views/StockResearchView.vue') },
+        { path: 'ai/english', name: 'english', component: () => import('@/views/EnglishCoachView.vue') },
         { path: 'knowledge', name: 'knowledge', component: () => import('@/views/KnowledgeView.vue') },
         { path: 'portfolio', name: 'portfolio', component: () => import('@/views/PortfolioView.vue') },
         { path: 'settings', name: 'settings', component: () => import('@/views/SettingsView.vue') },

@@ -99,4 +99,12 @@ export default {
       casino: { name: 'Game Arcade', summary: 'A server-authoritative coin slot machine with anti-tamper backend settlement and its own login portal.' },
     },
   },
+  english: {
+    eyebrow: 'AI English', title: 'AI English Coach',
+    subtitle: 'Chat naturally in English; the AI gently corrects your grammar and word choice in real time.',
+    greeting: "Hi! I'm your English tutor. What would you like to chat about today?",
+    placeholder: 'Type a sentence in English…',
+    notConfigured: 'The AI coach is not enabled yet (backend is missing GEMINI_API_KEY). You can browse the UI; set the key to start chatting.',
+    starters: { weekend: "Let's talk about my weekend.", hobby: 'Can we chat about hobbies?', travel: 'I want to plan a trip.' },
+  },
 }
