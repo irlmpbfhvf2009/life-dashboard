@@ -9,10 +9,14 @@ const router = createRouter({
     { path: '/register', name: 'register', component: () => import('@/views/auth/RegisterView.vue'), meta: { public: true } },
     { path: '/forgot-password', name: 'forgot-password', component: () => import('@/views/auth/ForgotPasswordView.vue'), meta: { public: true } },
 
-    // ---- Protected app shell ----
+    // ---- Standalone game portal (its own full-page app, own email auth) ----
+    { path: '/play', name: 'play', component: () => import('@/views/casino/CasinoView.vue'), meta: { casino: true } },
+
+    // ---- Protected app shell (個人智慧工作台 — requires the studio role) ----
     {
       path: '/',
       component: () => import('@/components/layout/AppShell.vue'),
+      meta: { studio: true },
       children: [
         { path: '', name: 'overview', component: () => import('@/views/OverviewView.vue') },
         { path: 'apps', name: 'apps', component: () => import('@/views/AppCenterView.vue') },
@@ -39,7 +43,6 @@ const router = createRouter({
           meta: { category: 'PORTFOLIO', eyebrow: 'Portfolio', title: '作品展示', subtitle: '專案作品、案例研究與技術文章。' },
         },
         { path: 'settings', name: 'settings', component: () => import('@/views/SettingsView.vue') },
-        { path: 'game', name: 'game', component: () => import('@/views/GameView.vue'), meta: { requires: 'player' } },
         { path: 'admin', name: 'admin', component: () => import('@/views/AdminView.vue'), meta: { requires: 'admin' } },
       ],
     },
@@ -52,16 +55,23 @@ router.beforeEach(async (to) => {
   if (!authStore.initialized) {
     await authStore.initAuthListener()
   }
+  // Casino portal is always reachable (it has its own login UI inside).
+  if (to.meta.casino) return true
+
   if (!to.meta.public && !authStore.isAuthenticated) {
     return { name: 'login', query: to.path !== '/' ? { redirect: to.fullPath } : undefined }
   }
   if (to.meta.public && authStore.isAuthenticated) {
+    return { name: authStore.isStudio ? 'overview' : 'play' }
+  }
+  // Studio access requires the studio role — others go to the game portal.
+  if (to.meta.studio && !authStore.isStudio) {
+    return { name: 'play' }
+  }
+  // Admin-only routes.
+  if (to.meta.requires === 'admin' && !authStore.isAdmin) {
     return { name: 'overview' }
   }
-  // Role-gated routes (遊戲 / 管理後台)
-  const requires = to.meta.requires as 'player' | 'admin' | undefined
-  if (requires === 'player' && !authStore.isPlayer) return { name: 'overview' }
-  if (requires === 'admin' && !authStore.isAdmin) return { name: 'overview' }
   return true
 })
 

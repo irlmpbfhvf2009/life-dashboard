@@ -22,6 +22,8 @@ export const userApi = {
   me: () => request<UserProfile>(() => http.get('/api/me')),
   update: (body: { displayName?: string; photoUrl?: string }) =>
     request<UserProfile>(() => http.patch('/api/me', body)),
+  // Grant the signup portal's default role to brand-new users.
+  source: (s: 'game' | 'studio') => request<UserProfile>(() => http.post(`/api/me/source/${s}`)),
 }
 
 // ---- Dashboard ----
@@ -44,12 +46,12 @@ export const gameApi = {
 // ---- Admin (root-admin only) ----
 export interface AdminUser {
   id: number; email: string; displayName: string | null; photoUrl: string | null
-  coins: number; isPlayer: boolean; isAdmin: boolean; createdAt: string
+  coins: number; isStudio: boolean; isPlayer: boolean; isAdmin: boolean; createdAt: string
 }
 export interface AdminWeight { id: number; date: string; weight: number; note: string | null; createdAt: string }
 export const adminApi = {
   users: () => request<AdminUser[]>(() => http.get('/api/admin/users')),
-  setRoles: (id: number, body: { isPlayer: boolean; isAdmin: boolean }) =>
+  setRoles: (id: number, body: { isStudio: boolean; isPlayer: boolean; isAdmin: boolean }) =>
     request<AdminUser>(() => http.patch(`/api/admin/users/${id}/roles`, body)),
   adjustCoins: (id: number, delta: number) =>
     request<AdminUser>(() => http.post(`/api/admin/users/${id}/coins`, { delta })),

@@ -36,6 +36,7 @@ public class AdminService {
         return new AdminUserDto(
                 u.getId(), u.getEmail(), u.getDisplayName(), u.getPhotoUrl(),
                 walletService.balanceOf(u.getId()),
+                UserService.isStudio(u),
                 Boolean.TRUE.equals(u.getIsPlayer()),
                 UserService.isAdmin(u),
                 u.getCreatedAt());
@@ -55,6 +56,7 @@ public class AdminService {
         requireAdmin();
         User u = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
+        u.setIsStudio(Boolean.TRUE.equals(req.isStudio()));
         u.setIsPlayer(Boolean.TRUE.equals(req.isPlayer()));
         // The root admin can never be demoted from admin.
         boolean rootAdmin = UserService.ROOT_ADMIN_EMAIL.equalsIgnoreCase(u.getEmail());

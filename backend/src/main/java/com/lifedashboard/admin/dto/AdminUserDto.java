@@ -8,6 +8,7 @@ public record AdminUserDto(
         String displayName,
         String photoUrl,
         long coins,
+        boolean isStudio,
         boolean isPlayer,
         boolean isAdmin,
         Instant createdAt

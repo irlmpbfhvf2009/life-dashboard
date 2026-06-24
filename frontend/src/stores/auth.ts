@@ -63,6 +63,7 @@ export const useAuthStore = defineStore('auth', {
     displayName: (s) =>
       s.profile?.displayName || s.firebaseUser?.displayName || s.firebaseUser?.email?.split('@')[0] || '使用者',
     photoUrl: (s) => s.profile?.photoUrl || s.firebaseUser?.photoURL || null,
+    isStudio: (s) => !!s.profile?.isStudio,
     isPlayer: (s) => !!s.profile?.isPlayer,
     isAdmin: (s) => !!s.profile?.isAdmin,
     provider(s): AuthProvider {
@@ -113,6 +114,12 @@ export const useAuthStore = defineStore('auth', {
     async loadProfile() {
       try {
         this.profile = await userApi.me()
+        // First-time users get the default role for the portal they're on
+        // (casino → player, Studio → studio). Idempotent server-side.
+        if (this.profile && !this.profile.isStudio && !this.profile.isPlayer && !this.profile.isAdmin) {
+          const source = window.location.pathname.startsWith('/play') ? 'game' : 'studio'
+          this.profile = await userApi.source(source)
+        }
       } catch (e) {
         this.error = (e as Error).message
       }

@@ -1,4 +1,4 @@
 package com.lifedashboard.admin.dto;
 
-public record RolesRequest(Boolean isPlayer, Boolean isAdmin) {
+public record RolesRequest(Boolean isStudio, Boolean isPlayer, Boolean isAdmin) {
 }

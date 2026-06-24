@@ -38,9 +38,10 @@ async function adjust(u: AdminUser, sign: 1 | -1) {
   }
 }
 
-async function toggleRole(u: AdminUser, role: 'player' | 'admin', checked: boolean) {
-  const body = { isPlayer: u.isPlayer, isAdmin: u.isAdmin }
-  if (role === 'player') body.isPlayer = checked
+async function toggleRole(u: AdminUser, role: 'studio' | 'player' | 'admin', checked: boolean) {
+  const body = { isStudio: u.isStudio, isPlayer: u.isPlayer, isAdmin: u.isAdmin }
+  if (role === 'studio') body.isStudio = checked
+  else if (role === 'player') body.isPlayer = checked
   else body.isAdmin = checked
   try {
     Object.assign(u, await adminApi.setRoles(u.id, body))
@@ -83,6 +84,7 @@ async function viewWeights(u: AdminUser) {
             <th class="px-3 py-2">會員</th>
             <th class="px-3 py-2">遊戲幣</th>
             <th class="px-3 py-2">加 / 扣</th>
+            <th class="px-3 py-2 text-center">工作台</th>
             <th class="px-3 py-2 text-center">玩家</th>
             <th class="px-3 py-2 text-center">管理員</th>
             <th class="px-3 py-2">體重</th>
@@ -116,6 +118,9 @@ async function viewWeights(u: AdminUser) {
                 </div>
               </td>
               <td class="px-3 py-3 text-center">
+                <input type="checkbox" class="h-4 w-4 accent-violet-500" :checked="u.isStudio" :disabled="u.email.toLowerCase() === ROOT_EMAIL" @change="toggleRole(u, 'studio', ($event.target as HTMLInputElement).checked)" />
+              </td>
+              <td class="px-3 py-3 text-center">
                 <input type="checkbox" class="h-4 w-4 accent-violet-500" :checked="u.isPlayer" @change="toggleRole(u, 'player', ($event.target as HTMLInputElement).checked)" />
               </td>
               <td class="px-3 py-3 text-center">
@@ -128,7 +133,7 @@ async function viewWeights(u: AdminUser) {
               </td>
             </tr>
             <tr v-if="openWeights === u.id" class="border-t border-ink-100 bg-ink-50/60">
-              <td colspan="6" class="px-4 py-3">
+              <td colspan="7" class="px-4 py-3">
                 <p v-if="weightsLoading" class="text-xs text-ink-400">載入中…</p>
                 <p v-else-if="!weights.length" class="text-xs text-ink-400">尚無體重紀錄。</p>
                 <div v-else class="flex flex-wrap gap-2">
@@ -140,7 +145,7 @@ async function viewWeights(u: AdminUser) {
             </tr>
           </template>
           <tr v-if="!users.length && !loading">
-            <td colspan="6" class="px-3 py-8 text-center text-sm text-ink-400">尚無會員資料</td>
+            <td colspan="7" class="px-3 py-8 text-center text-sm text-ink-400">尚無會員資料</td>
           </tr>
         </tbody>
       </table>

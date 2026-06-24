@@ -57,7 +57,7 @@ export const navGroups: NavGroup[] = [
   { key: 'knowledge', label: '知識庫', icon: Library, to: '/knowledge' },
   { key: 'portfolio', label: '作品展示', icon: FolderGit2, to: '/portfolio' },
   // Role-gated — hidden unless the user has the matching role.
-  { key: 'game', label: '遊戲', icon: Gamepad2, to: '/game', requires: 'player' },
+  { key: 'game', label: '遊戲', icon: Gamepad2, to: '/play', requires: 'player' },
   { key: 'admin', label: '管理後台', icon: ShieldCheck, to: '/admin', requires: 'admin' },
 ]
 

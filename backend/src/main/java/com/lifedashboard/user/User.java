@@ -34,7 +34,11 @@ public class User {
     @Column(name = "photo_url", length = 1024)
     private String photoUrl;
 
-    /** Can enter the game hub (slot machine etc.). Nullable for legacy rows = false. */
+    /** Can access the personal Studio (個人智慧工作台). Nullable legacy = false. */
+    @Column(name = "is_studio")
+    private Boolean isStudio;
+
+    /** Can enter the game portal (casino / slot machine). Nullable legacy = false. */
     @Column(name = "is_player")
     private Boolean isPlayer;
 

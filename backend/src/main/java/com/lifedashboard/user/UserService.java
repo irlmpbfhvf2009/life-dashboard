@@ -24,6 +24,30 @@ public class UserService {
         return Boolean.TRUE.equals(u.getIsPlayer()) || isAdmin(u);
     }
 
+    public static boolean isStudio(User u) {
+        return Boolean.TRUE.equals(u.getIsStudio()) || isAdmin(u);
+    }
+
+    /**
+     * Give a brand-new user the default role for the portal they signed up on:
+     * game portal → player, Studio → studio. Only applies when the user has no
+     * roles yet, so it never overrides admin-assigned roles.
+     */
+    @Transactional
+    public User applyDefaultRole(User user, String source) {
+        boolean rolesEmpty = !Boolean.TRUE.equals(user.getIsPlayer())
+                && !Boolean.TRUE.equals(user.getIsStudio());
+        if (rolesEmpty) {
+            if ("game".equalsIgnoreCase(source)) {
+                user.setIsPlayer(true);
+            } else {
+                user.setIsStudio(true);
+            }
+            return userRepository.save(user);
+        }
+        return user;
+    }
+
     /**
      * Resolves the database user for the given Firebase principal, creating the
      * record on first login and refreshing profile fields that changed in

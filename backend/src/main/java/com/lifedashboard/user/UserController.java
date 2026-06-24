@@ -26,4 +26,12 @@ public class UserController {
         User updated = userService.updateProfile(currentUserService.getCurrentUser(), request);
         return ApiResponse.ok(UserDto.from(updated));
     }
+
+    /** Record which portal the user signed up on, granting that portal's default
+     *  role to brand-new users (game → player, studio → studio). */
+    @PostMapping("/source/{source}")
+    public ApiResponse<UserDto> source(@PathVariable String source) {
+        User u = userService.applyDefaultRole(currentUserService.getCurrentUser(), source);
+        return ApiResponse.ok(UserDto.from(u));
+    }
 }
