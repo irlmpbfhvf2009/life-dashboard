@@ -62,6 +62,11 @@ public class UserService {
                         .email(principal.email() != null ? principal.email() : "")
                         .displayName(principal.displayName())
                         .photoUrl(principal.photoUrl())
+                        // New accounts default to the Studio so everyone lands on
+                        // the workspace, not the game portal — regardless of which
+                        // URL they happened to sign in from. Casino access stays
+                        // opt-in (grant isPlayer via /admin).
+                        .isStudio(true)
                         .build()));
         // Root admin always carries the admin flag.
         if (ROOT_ADMIN_EMAIL.equalsIgnoreCase(user.getEmail()) && !Boolean.TRUE.equals(user.getIsAdmin())) {
