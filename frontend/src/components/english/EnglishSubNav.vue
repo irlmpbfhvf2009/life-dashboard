@@ -2,10 +2,13 @@
 // Secondary navigation inside the English Coach module, grouped by the four
 // learning layers. The global sidebar only lists "AI 實驗室"; this is how the
 // module's 13 pages stay organized without polluting the app shell.
+import { useI18n } from 'vue-i18n'
 import {
   Home, Route, BookOpen, MessageSquareQuote, GraduationCap, Target, Clapperboard,
   PenLine, Mic, AlertTriangle, Repeat, BarChart3,
 } from 'lucide-vue-next'
+
+const { t } = useI18n()
 
 interface Item { to: string; label: string; icon: typeof Home; exact?: boolean }
 interface Group { label: string; items: Item[] }
@@ -13,34 +16,34 @@ interface Group { label: string; items: Item[] }
 const ACTIVE = '!bg-brand-500 !text-white'
 
 const groups: Group[] = [
-  { label: '', items: [{ to: '/ai/english', label: '首頁', icon: Home, exact: true }] },
+  { label: '', items: [{ to: '/ai/english', label: 'ec.nav.home', icon: Home, exact: true }] },
   {
-    label: '基礎學習',
+    label: 'ec.nav.foundation',
     items: [
-      { to: '/ai/english/path', label: '學習路徑', icon: Route },
-      { to: '/ai/english/vocabulary', label: '單字', icon: BookOpen },
-      { to: '/ai/english/phrases', label: '句型', icon: MessageSquareQuote },
-      { to: '/ai/english/grammar', label: '文法', icon: GraduationCap },
+      { to: '/ai/english/path', label: 'ec.nav.path', icon: Route },
+      { to: '/ai/english/vocabulary', label: 'ec.nav.vocab', icon: BookOpen },
+      { to: '/ai/english/phrases', label: 'ec.nav.phrases', icon: MessageSquareQuote },
+      { to: '/ai/english/grammar', label: 'ec.nav.grammar', icon: GraduationCap },
     ],
   },
   {
-    label: 'AI 練習',
+    label: 'ec.nav.practice',
     items: [
-      { to: '/ai/english/missions', label: '每日任務', icon: Target },
-      { to: '/ai/english/scenarios', label: '情境練習', icon: Clapperboard },
-      { to: '/ai/english/coach', label: '句子修正', icon: PenLine },
+      { to: '/ai/english/missions', label: 'ec.nav.missions', icon: Target },
+      { to: '/ai/english/scenarios', label: 'ec.nav.scenarios', icon: Clapperboard },
+      { to: '/ai/english/coach', label: 'ec.nav.coach', icon: PenLine },
     ],
   },
   {
-    label: '口說',
-    items: [{ to: '/ai/english/speaking', label: '口說練習', icon: Mic }],
+    label: 'ec.nav.speaking',
+    items: [{ to: '/ai/english/speaking', label: 'ec.nav.speakingPractice', icon: Mic }],
   },
   {
-    label: '複習成長',
+    label: 'ec.nav.growth',
     items: [
-      { to: '/ai/english/mistakes', label: '常錯庫', icon: AlertTriangle },
-      { to: '/ai/english/review', label: '複習', icon: Repeat },
-      { to: '/ai/english/progress', label: '學習進度', icon: BarChart3 },
+      { to: '/ai/english/mistakes', label: 'ec.nav.mistakes', icon: AlertTriangle },
+      { to: '/ai/english/review', label: 'ec.nav.review', icon: Repeat },
+      { to: '/ai/english/progress', label: 'ec.nav.progress', icon: BarChart3 },
     ],
   },
 ]
@@ -49,7 +52,7 @@ const groups: Group[] = [
 <template>
   <nav class="mb-6 flex items-center gap-1 overflow-x-auto pb-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
     <template v-for="(group, gi) in groups" :key="gi">
-      <span v-if="group.label" class="ml-2 mr-1 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-ink-300">{{ group.label }}</span>
+      <span v-if="group.label" class="ml-2 mr-1 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-ink-300">{{ t(group.label) }}</span>
       <RouterLink
         v-for="item in group.items"
         :key="item.to"
@@ -59,7 +62,7 @@ const groups: Group[] = [
         :exact-active-class="item.exact ? ACTIVE : ''"
       >
         <component :is="item.icon" class="h-3.5 w-3.5" />
-        {{ item.label }}
+        {{ t(item.label) }}
       </RouterLink>
     </template>
   </nav>

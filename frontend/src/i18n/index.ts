@@ -5,6 +5,14 @@ import zhCN from './locales/zh-CN'
 import ja from './locales/ja'
 import ko from './locales/ko'
 import th from './locales/th'
+// AI English Coach UI-chrome strings (namespace `ec`), kept in their own files
+// to avoid bloating the main locale modules.
+import ecEn from './locales/english/en'
+import ecZhTW from './locales/english/zh-TW'
+import ecZhCN from './locales/english/zh-CN'
+import ecJa from './locales/english/ja'
+import ecKo from './locales/english/ko'
+import ecTh from './locales/english/th'
 
 export type Locale = 'zh-TW' | 'zh-CN' | 'en' | 'ja' | 'ko' | 'th'
 
@@ -41,12 +49,12 @@ export const i18n = createI18n({
   locale: detectInitialLocale(),
   fallbackLocale: 'en',
   messages: {
-    'zh-TW': zhTW,
-    'zh-CN': zhCN,
-    en,
-    ja,
-    ko,
-    th,
+    'zh-TW': { ...zhTW, ec: ecZhTW },
+    'zh-CN': { ...zhCN, ec: ecZhCN },
+    en: { ...en, ec: ecEn },
+    ja: { ...ja, ec: ecJa },
+    ko: { ...ko, ec: ecKo },
+    th: { ...th, ec: ecTh },
   },
 })
 

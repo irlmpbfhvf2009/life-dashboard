@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Difficulty } from '@/types/english'
 
 const props = defineProps<{ level: Difficulty }>()
+const { t } = useI18n()
 
-const map: Record<Difficulty, { label: string; cls: string }> = {
-  BEGINNER: { label: '初級', cls: 'badge-green' },
-  INTERMEDIATE: { label: '中級', cls: 'badge-amber' },
-  ADVANCED: { label: '進階', cls: 'badge-rose' },
+const CLS: Record<Difficulty, string> = {
+  BEGINNER: 'badge-green',
+  INTERMEDIATE: 'badge-amber',
+  ADVANCED: 'badge-rose',
 }
-const meta = computed(() => map[props.level])
+const cls = computed(() => CLS[props.level])
 </script>
 
 <template>
-  <span class="badge" :class="meta.cls">{{ meta.label }}</span>
+  <span class="badge" :class="cls">{{ t('ec.difficulty.' + level) }}</span>
 </template>
