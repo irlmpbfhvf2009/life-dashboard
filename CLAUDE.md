@@ -102,7 +102,9 @@ infra/billing-guard/          費用自動關閉的 Cloud Function
 - **語音全用瀏覽器原生、零成本**：`composables/useSpeechSynthesis`（TTS 慢/正常）、`useSpeechRecognition`（STT）、`utils/pronunciation.compareSentence`（文字相似度，非音素級；UI 預留升級）。不支援時 `VoiceUnsupportedNotice` 降級成文字輸入。
 - **狀態 + 持久化**：`useEnglishStore`（localStorage 即時快取 + **背景同步到後端 `english_state`**，跨裝置；cloud 優先、失敗靜默降級）管 streak/任務/常錯庫/簡化 SM-2 複習。`api/english.ts` 內容走 mock、對話/修正走免費 Gemini（無金鑰 fallback mock 教練）。
 - **後端** `com.lifedashboard.english`：`english_state` 表（per-user JSON 文件）+ `GET/PUT /api/english/state`。內容（單字/句型/文法/情境）仍前端 mock（靜態、不需 per-user）。
-- **待辦**：① zh-TW 字串仍內嵌在元件，i18n 抽 key + 6 語回填未做。② 程度檢測/學習路徑/每日任務獨立頁。③ 內容若要動態化再建細粒度後端表。
+- **i18n 已完成**：所有 UI chrome 抽到 `ec` namespace（`src/i18n/locales/english/*.ts`，6 語），切語言整個模組翻譯。學習「內容」（單字意思/例句/文法解析/情境目標/程度檢測建議）刻意保留 zh-TW（教學內容，非 UI）。
+- **程度檢測/學習路徑已完成**；唯一佔位剩「每日任務」獨立頁（Home 已涵蓋）。
+- **待辦**：內容若要動態化或多語內容，再建細粒度後端表。
 
 ## 建議下一步
 1. **英文家教收尾**：i18n 抽 key 回填 6 語；程度檢測頁（影響個人化路徑）；學習路徑頁。
