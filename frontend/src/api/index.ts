@@ -61,10 +61,21 @@ export const adminApi = {
 // ---- AI (in-app Gemini-backed assistants) ----
 export interface ChatTurn { role: 'user' | 'model'; content: string }
 export interface ChatReply { reply: string; correction: string | null }
+export interface SentenceCorrection {
+  original: string
+  corrected: string
+  natural: string
+  explanationZh: string
+  grammarIssues: string[]
+  alternatives: string[]
+  examples: string[]
+}
 export const aiApi = {
   status: () => request<{ enabled: boolean }>(() => http.get('/api/ai/status')),
   englishChat: (body: { message: string; history: ChatTurn[] }) =>
     request<ChatReply>(() => http.post('/api/ai/english/chat', body)),
+  englishCorrect: (body: { message: string }) =>
+    request<SentenceCorrection>(() => http.post('/api/ai/english/correct', body)),
 }
 
 // ---- Usage (owner-only free-tier bar) ----

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.lifedashboard.ai.dto.ChatReply;
 import com.lifedashboard.ai.dto.ChatRequest;
 import com.lifedashboard.ai.dto.ChatTurn;
+import com.lifedashboard.ai.dto.CorrectionReply;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -66,5 +67,68 @@ public class EnglishCoachService {
             log.warn("Could not parse coach JSON, returning raw text: {}", json);
             return new ChatReply(json, null);
         }
+    }
+
+    private static final String SYSTEM_CORRECT = """
+            You are an English writing coach for a Traditional-Chinese-speaking learner.
+            Given ONE English sentence, return:
+            - "corrected": the grammatically correct version (keep the learner's meaning).
+            - "natural": how a native speaker would naturally say it (may equal corrected).
+            - "explanationZh": a short, friendly explanation IN TRADITIONAL CHINESE of what was wrong and why.
+            - "grammarIssues": a short list of specific issues (English labels ok), empty if none.
+            - "alternatives": 1-3 alternative natural phrasings.
+            - "examples": 1-2 short example sentences using the corrected pattern.
+            If the sentence is already correct, set corrected = the original and say so kindly in explanationZh.
+            Answer with the required JSON object only.
+            """;
+
+    public CorrectionReply correct(String sentence) {
+        ObjectNode schema = mapper.createObjectNode();
+        schema.put("type", "OBJECT");
+        ObjectNode props = schema.putObject("properties");
+        props.putObject("corrected").put("type", "STRING");
+        props.putObject("natural").put("type", "STRING");
+        props.putObject("explanationZh").put("type", "STRING");
+        arrayOfStrings(props, "grammarIssues");
+        arrayOfStrings(props, "alternatives");
+        arrayOfStrings(props, "examples");
+        schema.putArray("required").add("corrected");
+
+        List<ChatTurn> turns = List.of(new ChatTurn("user", sentence));
+        String json = gemini.generateJson(SYSTEM_CORRECT, turns, schema);
+        try {
+            JsonNode n = mapper.readTree(json);
+            return new CorrectionReply(
+                    sentence,
+                    text(n, "corrected", sentence),
+                    text(n, "natural", text(n, "corrected", sentence)),
+                    text(n, "explanationZh", ""),
+                    strings(n.path("grammarIssues")),
+                    strings(n.path("alternatives")),
+                    strings(n.path("examples")));
+        } catch (Exception e) {
+            log.warn("Could not parse correction JSON: {}", json);
+            return new CorrectionReply(sentence, sentence, sentence, "", List.of(), List.of(), List.of());
+        }
+    }
+
+    private void arrayOfStrings(ObjectNode props, String name) {
+        ObjectNode arr = props.putObject(name);
+        arr.put("type", "ARRAY");
+        arr.putObject("items").put("type", "STRING");
+    }
+
+    private String text(JsonNode n, String field, String fallback) {
+        String v = n.path(field).asText("").trim();
+        return v.isBlank() ? fallback : v;
+    }
+
+    private List<String> strings(JsonNode arr) {
+        List<String> out = new ArrayList<>();
+        if (arr.isArray()) arr.forEach(x -> {
+            String s = x.asText("").trim();
+            if (!s.isBlank()) out.add(s);
+        });
+        return out;
     }
 }
