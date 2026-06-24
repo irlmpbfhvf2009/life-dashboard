@@ -50,7 +50,7 @@ const groups: Group[] = [
 </script>
 
 <template>
-  <nav class="mb-6 flex items-center gap-1 overflow-x-auto pb-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+  <nav class="mb-6 flex flex-wrap items-center gap-x-1 gap-y-2">
     <template v-for="(group, gi) in groups" :key="gi">
       <!-- Section label (not a link): a divider + muted heading make it read as a group title. -->
       <span v-if="group.label" class="ml-1.5 mr-1 flex shrink-0 cursor-default select-none items-center gap-2 pl-1.5">
