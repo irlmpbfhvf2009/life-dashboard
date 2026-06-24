@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { Volume2, Loader2, Snail } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 import { useSpeechSynthesis } from '@/composables/useSpeechSynthesis'
+
+const { t } = useI18n()
 
 const props = withDefaults(
   defineProps<{
@@ -29,7 +32,7 @@ function playSlow() {
       type="button"
       class="inline-flex items-center justify-center gap-1.5 rounded-lg border border-ink-200 text-ink-500 transition-colors hover:border-brand-300 hover:text-brand-600"
       :class="size === 'md' ? 'h-9 px-3 text-sm' : 'h-7 px-2 text-xs'"
-      :title="label || '朗讀'"
+      :title="label || t('ec.act.read')"
       @click="play"
     >
       <Loader2 v-if="tts.isSpeaking.value" class="h-3.5 w-3.5 animate-spin" />
@@ -40,7 +43,7 @@ function playSlow() {
       v-if="slow"
       type="button"
       class="inline-flex h-7 items-center justify-center rounded-lg border border-ink-200 px-2 text-ink-400 transition-colors hover:border-brand-300 hover:text-brand-600"
-      title="慢速朗讀"
+      :title="t('ec.act.readSlow')"
       @click="playSlow"
     >
       <Snail class="h-3.5 w-3.5" />

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { RotateCcw, BookmarkPlus, Check } from 'lucide-vue-next'
 import AudioPlayButton from './AudioPlayButton.vue'
 import VoiceRecordButton from './VoiceRecordButton.vue'
@@ -15,6 +16,7 @@ const emit = defineEmits<{
   attempt: [payload: { itemId: string; comparison: SentenceComparison }]
   addReview: [item: SpeakingPracticeItem]
 }>()
+const { t } = useI18n()
 
 const spoken = ref('')
 const interim = ref('')
@@ -58,7 +60,7 @@ function addReview() {
   <div class="card p-5">
     <div class="mb-4 flex items-center justify-between">
       <DifficultyBadge :level="item.difficulty" />
-      <span class="text-xs text-ink-400">嘗試 {{ attempts }} 次</span>
+      <span class="text-xs text-ink-400">{{ t('ec.speaking.attemptsN', { n: attempts }) }}</span>
     </div>
 
     <!-- Target sentence -->
@@ -66,7 +68,7 @@ function addReview() {
       <p class="text-lg font-semibold leading-relaxed text-ink-900">{{ item.targetText }}</p>
       <p class="mt-1 text-sm text-ink-400">{{ item.translationZh }}</p>
       <div class="mt-3 flex justify-center">
-        <AudioPlayButton :text="item.targetText" slow size="md" label="朗讀" />
+        <AudioPlayButton :text="item.targetText" slow size="md" :label="t('ec.act.read')" />
       </div>
     </div>
 
@@ -74,17 +76,17 @@ function addReview() {
     <div v-if="!unsupported" class="flex flex-col items-center gap-2">
       <VoiceRecordButton
         ref="recorder" size="lg"
-        @result="onResult" @interim="(t) => (interim = t)"
+        @result="onResult" @interim="(txt) => (interim = txt)"
         @unsupported="unsupported = true"
       />
-      <p class="h-5 text-sm text-ink-400">{{ interim || '按麥克風開始跟讀' }}</p>
+      <p class="h-5 text-sm text-ink-400">{{ interim || t('ec.speaking.startShadow') }}</p>
     </div>
 
     <div v-else class="space-y-2">
       <VoiceUnsupportedNotice />
       <div class="flex gap-2">
-        <input v-model="manualText" type="text" class="input flex-1" placeholder="改用文字輸入你說的句子" @keydown.enter="submitManual" />
-        <button class="btn-primary btn-sm" @click="submitManual">送出</button>
+        <input v-model="manualText" type="text" class="input flex-1" :placeholder="t('ec.speaking.manualHint')" @keydown.enter="submitManual" />
+        <button class="btn-primary btn-sm" @click="submitManual">{{ t('ec.act.submit') }}</button>
       </div>
     </div>
 
@@ -94,12 +96,12 @@ function addReview() {
       <SpeechResultCard :target="item.targetText" :spoken="spoken" :comparison="comparison" />
       <div class="flex flex-wrap gap-2">
         <button class="btn-secondary btn-sm gap-1.5" @click="retry">
-          <RotateCcw class="h-3.5 w-3.5" /> 再試一次
+          <RotateCcw class="h-3.5 w-3.5" /> {{ t('ec.act.retry') }}
         </button>
         <button class="btn-secondary btn-sm gap-1.5" :disabled="added" @click="addReview">
           <Check v-if="added" class="h-3.5 w-3.5 text-emerald-500" />
           <BookmarkPlus v-else class="h-3.5 w-3.5" />
-          {{ added ? '已加入複習' : '加入複習' }}
+          {{ added ? t('ec.act.added') : t('ec.act.addReview') }}
         </button>
       </div>
     </div>

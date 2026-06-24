@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ChevronDown, Check, X, GraduationCap } from 'lucide-vue-next'
 import AudioPlayButton from './AudioPlayButton.vue'
 import PracticeQuestionCard from './PracticeQuestionCard.vue'
@@ -7,6 +8,7 @@ import type { GrammarLesson, PracticeQuestion } from '@/types/english'
 
 const props = defineProps<{ lesson: GrammarLesson; defaultOpen?: boolean }>()
 const emit = defineEmits<{ answered: [payload: { question: PracticeQuestion; correct: boolean }] }>()
+const { t } = useI18n()
 
 const open = ref(!!props.defaultOpen)
 </script>
@@ -30,7 +32,7 @@ const open = ref(!!props.defaultOpen)
       <!-- Examples -->
       <div class="grid gap-4 sm:grid-cols-2">
         <div>
-          <p class="mb-2 flex items-center gap-1.5 text-xs font-semibold text-emerald-600"><Check class="h-3.5 w-3.5" /> 正確</p>
+          <p class="mb-2 flex items-center gap-1.5 text-xs font-semibold text-emerald-600"><Check class="h-3.5 w-3.5" /> {{ t('ec.grammar.correct') }}</p>
           <ul class="space-y-1.5">
             <li v-for="ex in lesson.correctExamples" :key="ex" class="flex items-center justify-between gap-2 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-xs text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
               <span>{{ ex }}</span><AudioPlayButton :text="ex" />
@@ -38,7 +40,7 @@ const open = ref(!!props.defaultOpen)
           </ul>
         </div>
         <div>
-          <p class="mb-2 flex items-center gap-1.5 text-xs font-semibold text-rose-600"><X class="h-3.5 w-3.5" /> 錯誤</p>
+          <p class="mb-2 flex items-center gap-1.5 text-xs font-semibold text-rose-600"><X class="h-3.5 w-3.5" /> {{ t('ec.grammar.wrong') }}</p>
           <ul class="space-y-1.5">
             <li v-for="ex in lesson.wrongExamples" :key="ex" class="rounded-lg bg-rose-50 px-2.5 py-1.5 text-xs text-rose-700 line-through decoration-rose-300 dark:bg-rose-500/10 dark:text-rose-300">{{ ex }}</li>
           </ul>
@@ -50,7 +52,7 @@ const open = ref(!!props.defaultOpen)
 
       <!-- Practice -->
       <div v-if="lesson.questions.length" class="space-y-3">
-        <p class="text-sm font-semibold text-ink-700">小練習</p>
+        <p class="text-sm font-semibold text-ink-700">{{ t('ec.grammar.practice') }}</p>
         <PracticeQuestionCard
           v-for="q in lesson.questions" :key="q.id" :question="q"
           @answered="(correct) => emit('answered', { question: q, correct })"

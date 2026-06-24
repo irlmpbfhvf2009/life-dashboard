@@ -20,7 +20,7 @@ export default {
     interview: 'Interview', daily: 'Daily chat', support: 'Customer support', custom: 'Custom',
   },
   mcat: { grammar: 'Grammar', vocab: 'Vocabulary', tense: 'Tense', preposition: 'Preposition', unnatural: 'Unnatural', chinglish: 'Chinglish', speech: 'Speaking' },
-  voice: { unsupported: 'This browser does not support speech recognition — switched to text input. Use desktop Chrome or Edge for the full speaking experience.' },
+  voice: { unsupported: 'This browser does not support speech recognition — switched to text input. Use desktop Chrome or Edge for the full speaking experience.', stop: 'Stop', hold: 'Hold to speak', micUnsupported: 'Speech input not supported in this browser' },
 
   home: {
     title: 'AI English Coach', subtitle: 'Chat in English, shadow to practice speaking, get corrected live — a little every day.',
@@ -118,5 +118,6 @@ export default {
     unitVocab: 'Core vocabulary', unitPhrase: 'Common patterns', unitGrammar: 'Grammar basics', unitScenario: 'Conversation',
     skillsHint: 'Finish the units above (mark "I know this" in vocab/phrases, complete conversations) to unlock skills.',
   },
+  mission: { title: 'Daily Mission', sub: 'Keep your daily learning rhythm', doneN: '{done} / {total} done' },
   comingSoon: { phase2: 'In development (Phase 2)', phase2Desc: 'The full experience ships next phase (Spring Boot backend + database). The data model and design are ready.', back: 'Back to home' },
 }

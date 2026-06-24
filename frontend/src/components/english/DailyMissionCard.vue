@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { Target, CheckCircle2, Circle, ChevronRight, BookOpen, MessageSquare, PenLine, Mic, Repeat } from 'lucide-vue-next'
 import SectionCard from '@/components/ui/SectionCard.vue'
 import type { DailyMission, MissionTask } from '@/types/english'
 
 const props = defineProps<{ mission: DailyMission }>()
 const router = useRouter()
+const { t } = useI18n()
 
 const ICONS: Record<MissionTask['kind'], typeof BookOpen> = {
   vocab: BookOpen,
@@ -25,15 +27,15 @@ const pct = computed(() =>
 <template>
   <SectionCard>
     <template #action>
-      <span class="text-xs font-medium text-ink-400">{{ mission.completedCount }} / {{ mission.totalCount }} 完成</span>
+      <span class="text-xs font-medium text-ink-400">{{ t('ec.mission.doneN', { done: mission.completedCount, total: mission.totalCount }) }}</span>
     </template>
     <header class="mb-4 flex items-center gap-2.5">
       <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-50 text-brand-500 dark:bg-brand-500/10">
         <Target class="h-4 w-4" />
       </div>
       <div>
-        <h3 class="section-title">今日任務</h3>
-        <p class="text-xs text-ink-400">完成今天的學習節奏</p>
+        <h3 class="section-title">{{ t('ec.mission.title') }}</h3>
+        <p class="text-xs text-ink-400">{{ t('ec.mission.sub') }}</p>
       </div>
     </header>
 

@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import ScenarioCard from '@/components/english/ScenarioCard.vue'
 import { englishApi } from '@/api/english'
-import { SCENARIO_LABELS } from '@/data/english'
 import { useEnglishStore } from '@/composables/useEnglishStore'
 import type { EnglishScenario, ScenarioCategory } from '@/types/english'
 
 const router = useRouter()
 const store = useEnglishStore()
+const { t } = useI18n()
 
 const scenarios = ref<EnglishScenario[]>([])
 const loading = ref(true)
@@ -39,9 +40,9 @@ function start(s: EnglishScenario) {
 </script>
 
 <template>
-  <PageHeader eyebrow="AI English · 情境練習" title="情境練習" subtitle="挑一個真實情境，和 AI 角色用英文完成任務並獲得即時回饋。" />
+  <PageHeader eyebrow="AI English" :title="t('ec.scenario.title')" :subtitle="t('ec.scenario.subtitle')" />
 
-  <LoadingState v-if="loading" label="載入情境…" />
+  <LoadingState v-if="loading" :label="t('ec.scenario.loading')" />
 
   <template v-else>
     <div class="mb-5 flex flex-wrap gap-1.5">
@@ -50,10 +51,10 @@ function start(s: EnglishScenario) {
         class="rounded-full border px-3 py-1 text-xs font-medium transition-colors"
         :class="activeCat === c ? 'border-brand-400 bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-300' : 'border-ink-200 text-ink-500 hover:border-ink-300'"
         @click="activeCat = c"
-      >{{ c === 'all' ? '全部' : SCENARIO_LABELS[c] }}</button>
+      >{{ c === 'all' ? t('ec.act.all') : t('ec.scat.' + c) }}</button>
     </div>
 
-    <EmptyState v-if="!filtered.length" title="此分類暫無情境" description="換個分類看看。" />
+    <EmptyState v-if="!filtered.length" :title="t('ec.scenario.emptyTitle')" :description="t('ec.scenario.emptyDesc')" />
     <div v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <ScenarioCard v-for="s in filtered" :key="s.id" :scenario="s" @start="start" />
     </div>

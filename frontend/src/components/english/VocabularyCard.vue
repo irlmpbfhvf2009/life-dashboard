@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Eye, EyeOff, Check, BookmarkPlus, Lightbulb } from 'lucide-vue-next'
 import AudioPlayButton from './AudioPlayButton.vue'
 import DifficultyBadge from './DifficultyBadge.vue'
 import MasteryProgressBadge from './MasteryProgressBadge.vue'
-import { SCENARIO_LABELS } from '@/data/english'
 import type { VocabularyItem } from '@/types/english'
 
 const props = defineProps<{ item: VocabularyItem; mastered?: boolean }>()
 const emit = defineEmits<{ master: [item: VocabularyItem]; addReview: [item: VocabularyItem] }>()
+const { t } = useI18n()
 
 const revealed = ref(false)
 // Collapse the answer again when navigating to a different card.
@@ -18,7 +19,7 @@ watch(() => props.item.id, () => (revealed.value = false))
 <template>
   <div class="card p-6">
     <div class="mb-4 flex items-center justify-between">
-      <span class="text-xs font-medium text-brand-600">{{ SCENARIO_LABELS[item.scenario] }}</span>
+      <span class="text-xs font-medium text-brand-600">{{ t('ec.scat.' + item.scenario) }}</span>
       <div class="flex items-center gap-1.5">
         <DifficultyBadge :level="item.difficulty" />
         <MasteryProgressBadge :status="mastered ? 'MASTERED' : item.mastery" />
@@ -40,7 +41,7 @@ watch(() => props.item.id, () => (revealed.value = false))
       @click="revealed = !revealed"
     >
       <component :is="revealed ? EyeOff : Eye" class="h-4 w-4" />
-      {{ revealed ? '收合' : '顯示解答' }}
+      {{ revealed ? t('ec.act.collapse') : t('ec.act.reveal') }}
     </button>
 
     <!-- Answer -->
@@ -66,10 +67,10 @@ watch(() => props.item.id, () => (revealed.value = false))
 
         <div class="flex gap-2 pt-1">
           <button class="btn-primary btn-sm flex-1 justify-center gap-1.5" :disabled="mastered" @click="emit('master', item)">
-            <Check class="h-3.5 w-3.5" /> {{ mastered ? '已掌握' : '我會了' }}
+            <Check class="h-3.5 w-3.5" /> {{ mastered ? t('ec.act.mastered') : t('ec.act.iKnow') }}
           </button>
           <button class="btn-secondary btn-sm flex-1 justify-center gap-1.5" @click="emit('addReview', item)">
-            <BookmarkPlus class="h-3.5 w-3.5" /> 加入複習
+            <BookmarkPlus class="h-3.5 w-3.5" /> {{ t('ec.act.addReview') }}
           </button>
         </div>
       </div>

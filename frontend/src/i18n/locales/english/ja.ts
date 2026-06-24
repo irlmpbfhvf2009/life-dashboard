@@ -20,7 +20,7 @@ export default {
     interview: '面接', daily: '日常会話', support: 'カスタマー対応', custom: 'カスタム',
   },
   mcat: { grammar: '文法', vocab: '単語', tense: '時制', preposition: '前置詞', unnatural: '不自然', chinglish: '直訳英語', speech: 'スピーキング' },
-  voice: { unsupported: 'このブラウザは音声認識に対応していません。テキスト入力に切り替えました。完全な機能はデスクトップ版 Chrome / Edge をご利用ください。' },
+  voice: { unsupported: 'このブラウザは音声認識に対応していません。テキスト入力に切り替えました。完全な機能はデスクトップ版 Chrome / Edge をご利用ください。', stop: '停止', hold: '押して話す', micUnsupported: 'このブラウザは音声入力に対応していません' },
 
   home: {
     title: 'AI 英会話コーチ', subtitle: '英語で会話し、シャドーイングで発話練習、その場で添削 — 毎日少しずつ。',
@@ -118,5 +118,6 @@ export default {
     unitVocab: 'コア単語', unitPhrase: 'よく使う構文', unitGrammar: '基礎文法', unitScenario: '会話',
     skillsHint: '上のユニットを完了（単語/構文で「覚えた」、シーンで会話を完了）するとスキルが解放されます。',
   },
+  mission: { title: '今日のミッション', sub: '今日の学習リズムを保とう', doneN: '{done} / {total} 完了' },
   comingSoon: { phase2: '開発中（Phase 2）', phase2Desc: '完全版は次フェーズで提供（Spring Boot バックエンド＋DB）。データモデルと設計は準備済み。', back: 'ホームへ' },
 }

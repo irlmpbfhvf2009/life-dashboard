@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Mic, Square } from 'lucide-vue-next'
 import { useSpeechRecognition } from '@/composables/useSpeechRecognition'
+
+const { t } = useI18n()
 
 withDefaults(defineProps<{ size?: 'sm' | 'md' | 'lg' }>(), { size: 'md' })
 
@@ -52,7 +55,7 @@ defineExpose({ supported: rec.supported, isListening: rec.isListening })
         : 'bg-brand-500 text-white hover:bg-brand-600',
       !rec.supported && 'opacity-50',
     ]"
-    :title="rec.supported ? (rec.isListening.value ? '停止' : '按住說話') : '此瀏覽器不支援語音輸入'"
+    :title="rec.supported ? (rec.isListening.value ? t('ec.voice.stop') : t('ec.voice.hold')) : t('ec.voice.micUnsupported')"
     @click="toggle"
   >
     <span

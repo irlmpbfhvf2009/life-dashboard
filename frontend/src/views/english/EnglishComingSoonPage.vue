@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { Hammer, ArrowRight, Check } from 'lucide-vue-next'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import SectionCard from '@/components/ui/SectionCard.vue'
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 
 const title = computed(() => (route.meta.title as string) ?? '即將推出')
 const subtitle = computed(() => (route.meta.subtitle as string) ?? '')
@@ -22,9 +24,9 @@ const features = computed(() => (route.meta.features as string[]) ?? [])
         <Hammer class="h-6 w-6" :stroke-width="1.75" />
       </div>
       <div>
-        <p class="text-sm font-semibold text-ink-700">Phase 2 開發中</p>
+        <p class="text-sm font-semibold text-ink-700">{{ t('ec.comingSoon.phase2') }}</p>
         <p class="mx-auto mt-1 max-w-md text-xs text-ink-400">
-          此頁的完整體驗會在下一階段完成（接 Spring Boot 後端與資料庫）。資料模型與設計已就緒。
+          {{ t('ec.comingSoon.phase2Desc') }}
         </p>
       </div>
 
@@ -35,7 +37,7 @@ const features = computed(() => (route.meta.features as string[]) ?? [])
       </ul>
 
       <button class="btn-primary btn-sm gap-1.5" @click="router.push('/ai/english')">
-        回教練首頁 <ArrowRight class="h-3.5 w-3.5" />
+        {{ t('ec.comingSoon.back') }} <ArrowRight class="h-3.5 w-3.5" />
       </button>
     </div>
   </SectionCard>

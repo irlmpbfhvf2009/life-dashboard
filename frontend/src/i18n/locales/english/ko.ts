@@ -20,7 +20,7 @@ export default {
     interview: '면접', daily: '일상 대화', support: '고객 응대', custom: '사용자 지정',
   },
   mcat: { grammar: '문법', vocab: '단어', tense: '시제', preposition: '전치사', unnatural: '부자연', chinglish: '콩글리시', speech: '말하기' },
-  voice: { unsupported: '이 브라우저는 음성 인식을 지원하지 않아 텍스트 입력으로 전환했습니다. 데스크톱 Chrome 또는 Edge에서 전체 말하기 기능을 사용하세요.' },
+  voice: { unsupported: '이 브라우저는 음성 인식을 지원하지 않아 텍스트 입력으로 전환했습니다. 데스크톱 Chrome 또는 Edge에서 전체 말하기 기능을 사용하세요.', stop: '정지', hold: '눌러서 말하기', micUnsupported: '이 브라우저는 음성 입력을 지원하지 않습니다' },
 
   home: {
     title: 'AI 영어 튜터', subtitle: '영어로 대화하고, 따라 말하기로 연습하고, 즉시 교정받으세요 — 매일 조금씩.',
@@ -118,5 +118,6 @@ export default {
     unitVocab: '핵심 단어', unitPhrase: '자주 쓰는 패턴', unitGrammar: '기초 문법', unitScenario: '대화',
     skillsHint: '위 유닛을 완료(단어/패턴에서 "알아요" 표시, 상황에서 대화 완료)하면 스킬이 열립니다.',
   },
+  mission: { title: '오늘의 미션', sub: '오늘의 학습 리듬을 유지하세요', doneN: '{done} / {total} 완료' },
   comingSoon: { phase2: '개발 중 (Phase 2)', phase2Desc: '전체 기능은 다음 단계에서 제공됩니다(Spring Boot 백엔드 + DB). 데이터 모델과 디자인은 준비됨.', back: '홈으로' },
 }

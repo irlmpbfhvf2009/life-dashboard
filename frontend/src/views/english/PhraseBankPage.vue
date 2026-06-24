@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { MessageSquareQuote, CheckCircle2 } from 'lucide-vue-next'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
@@ -11,6 +12,7 @@ import { useEnglishStore } from '@/composables/useEnglishStore'
 import type { Difficulty, PhrasePattern } from '@/types/english'
 
 const store = useEnglishStore()
+const { t } = useI18n()
 const all = ref<PhrasePattern[]>([])
 const loading = ref(true)
 const activeDiff = ref<Difficulty | 'all'>('all')
@@ -20,11 +22,11 @@ onMounted(async () => {
   loading.value = false
 })
 
-const DIFFS: { key: Difficulty | 'all'; label: string }[] = [
-  { key: 'all', label: '全部' },
-  { key: 'BEGINNER', label: '初級' },
-  { key: 'INTERMEDIATE', label: '中級' },
-  { key: 'ADVANCED', label: '進階' },
+const DIFFS: { key: Difficulty | 'all'; labelKey: string }[] = [
+  { key: 'all', labelKey: 'ec.act.all' },
+  { key: 'BEGINNER', labelKey: 'ec.difficulty.BEGINNER' },
+  { key: 'INTERMEDIATE', labelKey: 'ec.difficulty.INTERMEDIATE' },
+  { key: 'ADVANCED', labelKey: 'ec.difficulty.ADVANCED' },
 ]
 const items = computed(() => (activeDiff.value === 'all' ? all.value : all.value.filter((p) => p.difficulty === activeDiff.value)))
 
@@ -37,14 +39,14 @@ function onAddReview(p: PhrasePattern) { store.queueReview('phrase', p.id, p.pat
 </script>
 
 <template>
-  <PageHeader eyebrow="AI English · 基礎學習" title="句型庫" subtitle="學常用句型：聽 AI 唸、看例句與常見錯誤，再用句型造句讓 AI 即時檢查。" />
+  <PageHeader eyebrow="AI English" :title="t('ec.phrase.title')" :subtitle="t('ec.phrase.subtitle')" />
 
-  <LoadingState v-if="loading" label="載入句型…" />
+  <LoadingState v-if="loading" :label="t('ec.phrase.loading')" />
 
   <template v-else>
     <div class="mb-6 grid gap-4 sm:grid-cols-2">
-      <LearningStatCard label="已掌握句型" :value="masteredCount" :sub="`共 ${all.length} 個`" :icon="CheckCircle2" accent="text-emerald-500 bg-emerald-50" :ring="masteryPct" />
-      <LearningStatCard label="本頁句型" :value="items.length" sub="可造句練習" :icon="MessageSquareQuote" />
+      <LearningStatCard :label="t('ec.phrase.mastered')" :value="masteredCount" :sub="t('ec.phrase.totalPatterns', { n: all.length })" :icon="CheckCircle2" accent="text-emerald-500 bg-emerald-50" :ring="masteryPct" />
+      <LearningStatCard :label="t('ec.phrase.thisPage')" :value="items.length" :sub="t('ec.phrase.canCompose')" :icon="MessageSquareQuote" />
     </div>
 
     <div class="mb-5 flex flex-wrap gap-1.5">
@@ -53,10 +55,10 @@ function onAddReview(p: PhrasePattern) { store.queueReview('phrase', p.id, p.pat
         class="rounded-full border px-3 py-1 text-xs font-medium transition-colors"
         :class="activeDiff === d.key ? 'border-brand-400 bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-300' : 'border-ink-200 text-ink-500 hover:border-ink-300'"
         @click="activeDiff = d.key"
-      >{{ d.label }}</button>
+      >{{ t(d.labelKey) }}</button>
     </div>
 
-    <EmptyState v-if="!items.length" title="此難度暫無句型" description="換個難度看看。" />
+    <EmptyState v-if="!items.length" :title="t('ec.phrase.emptyTitle')" :description="t('ec.phrase.emptyDesc')" />
     <div v-else class="grid gap-4 lg:grid-cols-2">
       <PhrasePatternCard
         v-for="p in items" :key="p.id" :pattern="p" :mastered="masteredIds.has(p.id)"

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Sparkles, ClipboardCheck } from 'lucide-vue-next'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import SectionCard from '@/components/ui/SectionCard.vue'
@@ -10,6 +11,7 @@ import { useEnglishStore } from '@/composables/useEnglishStore'
 import type { EnglishLevel, PlacementResult } from '@/types/english'
 
 const store = useEnglishStore()
+const { t } = useI18n()
 
 const started = ref(false)
 const answers = ref<Record<string, boolean>>({}) // questionId -> correct
@@ -61,12 +63,12 @@ function restart() {
 </script>
 
 <template>
-  <PageHeader eyebrow="AI English" title="程度檢測" subtitle="花兩分鐘做幾題，AI 幫你推估程度、找出弱點並推薦學習路徑。" />
+  <PageHeader eyebrow="AI English" :title="t('ec.placement.title')" :subtitle="t('ec.placement.subtitle')" />
 
   <!-- Result -->
   <div v-if="result">
     <PlacementResultCard :result="result" />
-    <button class="btn-secondary btn-sm mt-4" @click="restart">重新檢測</button>
+    <button class="btn-secondary btn-sm mt-4" @click="restart">{{ t('ec.placement.retake') }}</button>
   </div>
 
   <!-- Intro -->
@@ -76,11 +78,11 @@ function restart() {
         <ClipboardCheck class="h-6 w-6" :stroke-width="1.75" />
       </div>
       <div>
-        <p class="text-sm font-semibold text-ink-700">{{ placementQuestions.length }} 題快速檢測</p>
-        <p class="mx-auto mt-1 max-w-sm text-xs text-ink-400">涵蓋時態、冠詞、介系詞、單字、句型與語感。完成後給你程度與建議。</p>
+        <p class="text-sm font-semibold text-ink-700">{{ t('ec.placement.quizN', { n: placementQuestions.length }) }}</p>
+        <p class="mx-auto mt-1 max-w-sm text-xs text-ink-400">{{ t('ec.placement.quizDesc') }}</p>
       </div>
       <button class="btn-primary btn-sm gap-1.5" @click="started = true">
-        <Sparkles class="h-3.5 w-3.5" /> 開始檢測
+        <Sparkles class="h-3.5 w-3.5" /> {{ t('ec.placement.startTest') }}
       </button>
     </div>
   </SectionCard>
@@ -88,7 +90,7 @@ function restart() {
   <!-- Quiz -->
   <div v-else class="space-y-4">
     <div class="flex items-center justify-between">
-      <p class="text-sm font-medium text-ink-500">已作答 {{ answeredCount }} / {{ placementQuestions.length }}</p>
+      <p class="text-sm font-medium text-ink-500">{{ t('ec.placement.answeredN', { done: answeredCount, total: placementQuestions.length }) }}</p>
       <div class="h-1.5 w-40 overflow-hidden rounded-full bg-ink-100">
         <div class="h-full rounded-full bg-brand-400 transition-all" :style="{ width: (answeredCount / placementQuestions.length * 100) + '%' }" />
       </div>
@@ -100,7 +102,7 @@ function restart() {
     />
 
     <button class="btn-primary w-full justify-center" :disabled="!allAnswered" @click="finish">
-      {{ allAnswered ? '查看結果' : `還有 ${placementQuestions.length - answeredCount} 題` }}
+      {{ allAnswered ? t('ec.placement.viewResult') : t('ec.placement.remainN', { n: placementQuestions.length - answeredCount }) }}
     </button>
   </div>
 </template>

@@ -24,7 +24,7 @@ export default {
     interview: '面試英文', daily: '日常聊天', support: '客服溝通', custom: '自訂情境',
   },
   mcat: { grammar: '文法', vocab: '單字', tense: '時態', preposition: '介系詞', unnatural: '不自然', chinglish: '中式英文', speech: '口說' },
-  voice: { unsupported: '此瀏覽器不支援語音辨識，已自動切換為文字輸入模式。建議使用桌面版 Chrome 或 Edge 體驗完整口說功能。' },
+  voice: { unsupported: '此瀏覽器不支援語音辨識，已自動切換為文字輸入模式。建議使用桌面版 Chrome 或 Edge 體驗完整口說功能。', stop: '停止', hold: '按住說話', micUnsupported: '此瀏覽器不支援語音輸入' },
 
   home: {
     title: 'AI 英文教練', subtitle: '用英文自然對話、跟讀練口說、被即時修正，每天一點一滴累積。',
@@ -122,5 +122,6 @@ export default {
     unitVocab: '核心單字', unitPhrase: '常用句型', unitGrammar: '基礎文法', unitScenario: '情境對話',
     skillsHint: '完成上面的單元（在單字/句型頁標記「我會了」、在情境完成對話）就會解鎖技能。',
   },
+  mission: { title: '今日任務', sub: '完成今天的學習節奏', doneN: '{done} / {total} 完成' },
   comingSoon: { phase2: 'Phase 2 開發中', phase2Desc: '此頁的完整體驗會在下一階段完成（接 Spring Boot 後端與資料庫）。資料模型與設計已就緒。', back: '回教練首頁' },
 }

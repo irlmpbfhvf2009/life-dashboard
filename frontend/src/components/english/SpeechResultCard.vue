@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { SentenceComparison } from '@/utils/pronunciation'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   target: string
@@ -23,7 +26,7 @@ const tokens = computed(() => {
 <template>
   <div class="space-y-3">
     <div>
-      <p class="mb-1 text-xs font-medium text-ink-400">目標句</p>
+      <p class="mb-1 text-xs font-medium text-ink-400">{{ t('ec.speaking.target') }}</p>
       <p class="text-base leading-relaxed text-ink-800">
         <template v-for="(tk, i) in tokens" :key="i"><span
           v-if="!tk.space"
@@ -32,11 +35,11 @@ const tokens = computed(() => {
       </p>
     </div>
     <div>
-      <p class="mb-1 text-xs font-medium text-ink-400">你說的（語音辨識）</p>
+      <p class="mb-1 text-xs font-medium text-ink-400">{{ t('ec.speaking.youSaid') }}</p>
       <p class="text-sm leading-relaxed text-ink-600">{{ spoken || '—' }}</p>
     </div>
     <p v-if="comparison.missingWords.length" class="text-xs text-ink-400">
-      可能漏掉或說錯：<span class="font-medium text-amber-600">{{ comparison.missingWords.join('、') }}</span>
+      {{ t('ec.speaking.missed') }}<span class="font-medium text-amber-600">{{ comparison.missingWords.join('、') }}</span>
     </p>
   </div>
 </template>

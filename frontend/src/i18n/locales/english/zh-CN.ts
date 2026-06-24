@@ -20,7 +20,7 @@ export default {
     interview: '面试英文', daily: '日常聊天', support: '客服沟通', custom: '自定义情境',
   },
   mcat: { grammar: '语法', vocab: '单词', tense: '时态', preposition: '介词', unnatural: '不自然', chinglish: '中式英文', speech: '口说' },
-  voice: { unsupported: '此浏览器不支持语音识别，已自动切换为文字输入模式。建议使用桌面版 Chrome 或 Edge 体验完整口说功能。' },
+  voice: { unsupported: '此浏览器不支持语音识别，已自动切换为文字输入模式。建议使用桌面版 Chrome 或 Edge 体验完整口说功能。', stop: '停止', hold: '按住说话', micUnsupported: '此浏览器不支持语音输入' },
 
   home: {
     title: 'AI 英文教练', subtitle: '用英文自然对话、跟读练口说、被即时修正，每天一点一滴累积。',
@@ -118,5 +118,6 @@ export default {
     unitVocab: '核心单词', unitPhrase: '常用句型', unitGrammar: '基础语法', unitScenario: '情境对话',
     skillsHint: '完成上面的单元（在单词/句型页标记「我会了」、在情境完成对话）就会解锁技能。',
   },
+  mission: { title: '今日任务', sub: '完成今天的学习节奏', doneN: '{done} / {total} 完成' },
   comingSoon: { phase2: 'Phase 2 开发中', phase2Desc: '此页的完整体验会在下一阶段完成（接 Spring Boot 后端与数据库）。数据模型与设计已就绪。', back: '回教练首页' },
 }

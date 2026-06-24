@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Repeat, CheckCircle2, Layers } from 'lucide-vue-next'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import SectionCard from '@/components/ui/SectionCard.vue'
@@ -10,6 +11,7 @@ import { useEnglishStore } from '@/composables/useEnglishStore'
 import type { ReviewItem } from '@/types/english'
 
 const store = useEnglishStore()
+const { t } = useI18n()
 
 const due = computed(() => store.dueReviews.value)
 const current = computed(() => due.value[0])
@@ -42,12 +44,12 @@ const breakdown = computed(() => {
 </script>
 
 <template>
-  <PageHeader eyebrow="AI English · 複習成長" title="複習" subtitle="用間隔複習鞏固單字、句型與常錯句：記得就拉長間隔，忘記就明天再來。" />
+  <PageHeader eyebrow="AI English" :title="t('ec.review.title')" :subtitle="t('ec.review.subtitle')" />
 
   <div class="mb-6 grid gap-4 sm:grid-cols-3">
-    <LearningStatCard label="今日待複習" :value="due.length" sub="到期項目" :icon="Repeat" accent="text-amber-500 bg-amber-50" />
-    <LearningStatCard label="今日完成率" :value="`${completionRate}%`" :sub="`已複習 ${reviewedToday} 項`" :ring="completionRate" />
-    <LearningStatCard label="已掌握" :value="masteredCount" sub="累積掌握" :icon="CheckCircle2" accent="text-emerald-500 bg-emerald-50" />
+    <LearningStatCard :label="t('ec.review.dueToday')" :value="due.length" :sub="t('ec.review.dueItems')" :icon="Repeat" accent="text-amber-500 bg-amber-50" />
+    <LearningStatCard :label="t('ec.review.todayRate')" :value="`${completionRate}%`" :sub="t('ec.review.reviewedN', { n: reviewedToday })" :ring="completionRate" />
+    <LearningStatCard :label="t('ec.review.mastered')" :value="masteredCount" :sub="t('ec.review.accMastered')" :icon="CheckCircle2" accent="text-emerald-500 bg-emerald-50" />
   </div>
 
   <!-- Today's queue -->
@@ -57,13 +59,13 @@ const breakdown = computed(() => {
   <SectionCard v-else class="mb-6">
     <div class="flex flex-col items-center gap-3 py-10 text-center">
       <CheckCircle2 class="h-8 w-8 text-emerald-500" />
-      <p class="text-sm font-semibold text-ink-700">今日複習完成！</p>
-      <p class="max-w-sm text-xs text-ink-400">所有到期項目都複習過了。去學新單字、句型或對話，明天再回來複習。</p>
+      <p class="text-sm font-semibold text-ink-700">{{ t('ec.review.doneTitle') }}</p>
+      <p class="max-w-sm text-xs text-ink-400">{{ t('ec.review.doneDesc') }}</p>
     </div>
   </SectionCard>
 
   <!-- All items overview -->
-  <SectionCard :icon="Layers" title="全部複習項目">
+  <SectionCard :icon="Layers" :title="t('ec.review.allItems')">
     <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
       <div v-for="b in breakdown" :key="b.status" class="flex flex-col items-center gap-1.5 rounded-2xl bg-ink-50 px-3 py-4">
         <span class="text-2xl font-bold text-ink-900">{{ b.n }}</span>

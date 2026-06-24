@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import {
   ArrowLeft, Send, Target, BookText, MessageSquareQuote, Volume2, Lightbulb,
   Repeat2, Sparkles, TrendingDown, Flag, CheckCircle2,
@@ -21,6 +22,7 @@ const route = useRoute()
 const router = useRouter()
 const store = useEnglishStore()
 const tts = useSpeechSynthesis()
+const { t } = useI18n()
 
 const scenario = ref<EnglishScenario>()
 const loading = ref(true)
@@ -70,7 +72,7 @@ function buildFeedback(userMsg: string, correction: string | null): TurnFeedback
     natural: null,
     vocabSuggestions,
     patternScore,
-    focusNote: scenario.value?.goals[0] ? `本回合重點：${scenario.value.goals[0]}` : null,
+    focusNote: scenario.value?.goals[0] ? `${t('ec.conversation.goals')}：${scenario.value.goals[0]}` : null,
     correctable: correction
       ? { original: userMsg, corrected: userMsg, natural: userMsg, explanationZh: correction, grammarIssues: [correction], alternatives: [], examples: [] }
       : null,
@@ -142,41 +144,41 @@ function onVoiceResult(text: string) {
 </script>
 
 <template>
-  <LoadingState v-if="loading" label="載入情境…" />
+  <LoadingState v-if="loading" :label="t('ec.conversation.loading')" />
 
-  <div v-else-if="!scenario" class="card p-8 text-center text-ink-400">找不到這個情境。</div>
+  <div v-else-if="!scenario" class="card p-8 text-center text-ink-400">{{ t('ec.conversation.notFound') }}</div>
 
   <div v-else class="grid gap-4 lg:grid-cols-[17rem_1fr_19rem]">
     <!-- LEFT: context -->
     <aside class="space-y-4">
       <button class="inline-flex items-center gap-1.5 text-sm text-ink-500 hover:text-ink-800" @click="router.push('/ai/english/scenarios')">
-        <ArrowLeft class="h-4 w-4" /> 情境列表
+        <ArrowLeft class="h-4 w-4" /> {{ t('ec.conversation.scenarioList') }}
       </button>
       <div class="card p-4">
         <div class="mb-2 flex items-center justify-between">
           <DifficultyBadge :level="scenario.difficulty" />
-          <span class="text-xs text-ink-400">{{ scenario.estMinutes }} 分鐘</span>
+          <span class="text-xs text-ink-400">{{ t('ec.scenario.minutesN', { n: scenario.estMinutes }) }}</span>
         </div>
         <h2 class="font-bold text-ink-900">{{ scenario.title }}</h2>
         <p class="mt-0.5 text-xs text-ink-400">{{ scenario.coachName }}</p>
 
-        <p class="mb-1.5 mt-4 flex items-center gap-1.5 text-xs font-semibold text-ink-500"><Target class="h-3.5 w-3.5" /> 學習目標</p>
+        <p class="mb-1.5 mt-4 flex items-center gap-1.5 text-xs font-semibold text-ink-500"><Target class="h-3.5 w-3.5" /> {{ t('ec.conversation.goals') }}</p>
         <ul class="space-y-1">
           <li v-for="g in scenario.goals" :key="g" class="text-xs text-ink-600">· {{ g }}</li>
         </ul>
 
-        <p class="mb-1.5 mt-4 flex items-center gap-1.5 text-xs font-semibold text-ink-500"><BookText class="h-3.5 w-3.5" /> 必用單字</p>
+        <p class="mb-1.5 mt-4 flex items-center gap-1.5 text-xs font-semibold text-ink-500"><BookText class="h-3.5 w-3.5" /> {{ t('ec.conversation.requiredVocab') }}</p>
         <div class="flex flex-wrap gap-1.5">
           <span v-for="w in scenario.requiredVocab" :key="w" class="badge badge-gray">{{ w }}</span>
         </div>
 
-        <p class="mb-1.5 mt-4 flex items-center gap-1.5 text-xs font-semibold text-ink-500"><MessageSquareQuote class="h-3.5 w-3.5" /> 可用句型</p>
+        <p class="mb-1.5 mt-4 flex items-center gap-1.5 text-xs font-semibold text-ink-500"><MessageSquareQuote class="h-3.5 w-3.5" /> {{ t('ec.conversation.usablePhrases') }}</p>
         <ul class="space-y-1">
           <li v-for="p in scenario.requiredPhrases" :key="p" class="text-xs text-ink-600">“{{ p }}”</li>
         </ul>
 
         <label class="mt-4 flex items-center justify-between rounded-xl bg-ink-50 px-3 py-2">
-          <span class="flex items-center gap-1.5 text-sm text-ink-600"><Volume2 class="h-4 w-4" /> 語音模式</span>
+          <span class="flex items-center gap-1.5 text-sm text-ink-600"><Volume2 class="h-4 w-4" /> {{ t('ec.conversation.voiceMode') }}</span>
           <input v-model="voiceMode" type="checkbox" class="h-4 w-4 accent-brand-500" />
         </label>
       </div>
@@ -185,7 +187,7 @@ function onVoiceResult(text: string) {
     <!-- MIDDLE: conversation -->
     <section class="card flex h-[calc(100vh-9rem)] min-h-[30rem] flex-col p-0">
       <header class="flex items-center justify-between border-b border-ink-100 px-4 py-3">
-        <span class="text-sm font-semibold text-ink-700">對話進度</span>
+        <span class="text-sm font-semibold text-ink-700">{{ t('ec.conversation.progress') }}</span>
         <div class="flex flex-1 items-center gap-2 px-4">
           <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-ink-100">
             <div class="h-full rounded-full bg-brand-400 transition-all" :style="{ width: progress + '%' }" />
@@ -205,12 +207,12 @@ function onVoiceResult(text: string) {
 
       <!-- Quick prompts -->
       <div class="flex flex-wrap gap-1.5 border-t border-ink-100 px-3 py-2">
-        <button class="quick" @click="hint"><Lightbulb class="h-3.5 w-3.5" /> 給我提示</button>
-        <button class="quick" @click="rephrase"><Repeat2 class="h-3.5 w-3.5" /> 換個說法</button>
-        <button class="quick" @click="natural"><Sparkles class="h-3.5 w-3.5" /> 更自然</button>
-        <button class="quick" @click="easier"><TrendingDown class="h-3.5 w-3.5" /> 降低難度</button>
-        <button class="quick" @click="readAgain"><Volume2 class="h-3.5 w-3.5" /> 唸一次</button>
-        <button class="quick" :disabled="finished" @click="finish"><Flag class="h-3.5 w-3.5" /> 結束並總結</button>
+        <button class="quick" @click="hint"><Lightbulb class="h-3.5 w-3.5" /> {{ t('ec.conversation.hint') }}</button>
+        <button class="quick" @click="rephrase"><Repeat2 class="h-3.5 w-3.5" /> {{ t('ec.conversation.rephrase') }}</button>
+        <button class="quick" @click="natural"><Sparkles class="h-3.5 w-3.5" /> {{ t('ec.conversation.natural') }}</button>
+        <button class="quick" @click="easier"><TrendingDown class="h-3.5 w-3.5" /> {{ t('ec.conversation.easier') }}</button>
+        <button class="quick" @click="readAgain"><Volume2 class="h-3.5 w-3.5" /> {{ t('ec.conversation.readOnce') }}</button>
+        <button class="quick" :disabled="finished" @click="finish"><Flag class="h-3.5 w-3.5" /> {{ t('ec.conversation.finish') }}</button>
       </div>
 
       <!-- Composer -->
@@ -219,13 +221,13 @@ function onVoiceResult(text: string) {
         <div class="flex items-center gap-2">
           <input
             v-model="input" type="text"
-            :placeholder="finished ? '練習已結束' : (interim || '用英文回覆…')"
+            :placeholder="finished ? t('ec.conversation.finished') : (interim || t('ec.conversation.placeholder'))"
             class="input flex-1" :disabled="finished"
             @keydown.enter="send()"
           />
           <VoiceRecordButton
             v-if="voiceMode && !finished" size="md"
-            @result="onVoiceResult" @interim="(t) => (interim = t)" @unsupported="unsupported = true"
+            @result="onVoiceResult" @interim="(txt) => (interim = txt)" @unsupported="unsupported = true"
           />
           <button class="btn-primary btn-sm h-11 w-11 shrink-0 justify-center !px-0" :disabled="sending || finished || !input.trim()" @click="send()">
             <Send class="h-4 w-4" />
@@ -238,7 +240,7 @@ function onVoiceResult(text: string) {
     <aside class="card p-4">
       <FeedbackPanel :feedback="feedback" :added="added" @add-review="addReview" />
       <div v-if="finished" class="mt-4 flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2.5 text-sm text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
-        <CheckCircle2 class="h-4 w-4" /> 已完成本情境，計入學習進度。
+        <CheckCircle2 class="h-4 w-4" /> {{ t('ec.conversation.done') }}
       </div>
     </aside>
   </div>

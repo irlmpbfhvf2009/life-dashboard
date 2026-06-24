@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
 import GrammarLessonCard from '@/components/english/GrammarLessonCard.vue'
@@ -8,6 +9,7 @@ import { useEnglishStore } from '@/composables/useEnglishStore'
 import type { GrammarLesson, PracticeQuestion } from '@/types/english'
 
 const store = useEnglishStore()
+const { t } = useI18n()
 const lessons = ref<GrammarLesson[]>([])
 const loading = ref(true)
 
@@ -29,9 +31,9 @@ function onAnswered(payload: { question: PracticeQuestion; correct: boolean }) {
 </script>
 
 <template>
-  <PageHeader eyebrow="AI English · 基礎學習" title="基礎文法" subtitle="可行動的文法卡：正確 vs 中式英文對照、中文解析與互動練習；答錯自動收進常錯庫。" />
+  <PageHeader eyebrow="AI English" :title="t('ec.grammar.title')" :subtitle="t('ec.grammar.subtitle')" />
 
-  <LoadingState v-if="loading" label="載入文法…" />
+  <LoadingState v-if="loading" :label="t('ec.grammar.loading')" />
 
   <div v-else class="space-y-4">
     <GrammarLessonCard

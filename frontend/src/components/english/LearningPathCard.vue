@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { BookOpen, MessageSquareQuote, GraduationCap, Clapperboard, ChevronRight } from 'lucide-vue-next'
 import MasteryProgressBadge from './MasteryProgressBadge.vue'
 import type { LearningUnit } from '@/types/english'
 
 const props = defineProps<{ unit: LearningUnit; progress?: number; recommended?: boolean }>()
 const router = useRouter()
+const { t } = useI18n()
 
 const ICONS = { vocab: BookOpen, phrase: MessageSquareQuote, grammar: GraduationCap, scenario: Clapperboard }
 const ROUTES = {
@@ -28,13 +30,13 @@ const pct = computed(() => props.progress ?? 0)
     <div class="min-w-0 flex-1">
       <div class="flex items-center gap-2">
         <h3 class="font-semibold text-ink-800">{{ unit.title }}</h3>
-        <span v-if="recommended" class="badge badge-brand">推薦</span>
+        <span v-if="recommended" class="badge badge-brand">{{ t('ec.path.recommended') }}</span>
       </div>
       <div class="mt-1.5 flex items-center gap-2">
         <div class="h-1.5 w-28 overflow-hidden rounded-full bg-ink-100">
           <div class="h-full rounded-full bg-brand-400 transition-all" :style="{ width: pct + '%' }" />
         </div>
-        <span class="text-xs text-ink-400">{{ unit.itemCount }} 項</span>
+        <span class="text-xs text-ink-400">{{ t('ec.path.itemsN', { n: unit.itemCount }) }}</span>
       </div>
     </div>
     <MasteryProgressBadge :status="unit.status" />

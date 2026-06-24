@@ -1,18 +1,20 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import ScoreRing from './ScoreRing.vue'
 import type { PronunciationFeedback } from '@/types/english'
 
 defineProps<{ feedback: PronunciationFeedback }>()
+const { t } = useI18n()
 
 const bars = (f: PronunciationFeedback) => [
-  { label: '流暢度', value: f.fluency },
-  { label: '完整度', value: f.completeness },
+  { label: t('ec.speaking.fluency'), value: f.fluency },
+  { label: t('ec.speaking.completeness'), value: f.completeness },
 ]
 </script>
 
 <template>
   <div class="flex flex-col items-center gap-5 sm:flex-row sm:items-center">
-    <ScoreRing :value="feedback.similarityScore" :size="112" :stroke="9" label="相似度" suffix="%" />
+    <ScoreRing :value="feedback.similarityScore" :size="112" :stroke="9" :label="t('ec.speaking.similarity')" suffix="%" />
     <div class="w-full flex-1 space-y-3">
       <div v-for="b in bars(feedback)" :key="b.label">
         <div class="mb-1 flex items-center justify-between text-xs">

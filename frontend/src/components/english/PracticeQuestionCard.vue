@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Check, X, Lightbulb } from 'lucide-vue-next'
 import AudioPlayButton from './AudioPlayButton.vue'
 import type { PracticeQuestion } from '@/types/english'
 
 const props = defineProps<{ question: PracticeQuestion }>()
 const emit = defineEmits<{ answered: [correct: boolean] }>()
+const { t } = useI18n()
 
 const selected = ref<string | null>(null)
 const typed = ref('')
@@ -67,11 +69,11 @@ function reset() {
     <div v-else class="flex gap-2">
       <input
         v-model="typed" type="text"
-        :placeholder="question.kind === 'compose' ? '用這個句型造句…' : '填入答案'"
+        :placeholder="question.kind === 'compose' ? t('ec.grammar.composePlaceholder') : t('ec.grammar.clozePlaceholder')"
         class="input flex-1" :disabled="submitted"
         @keydown.enter="submit"
       />
-      <button v-if="!submitted" class="btn-primary btn-sm" :disabled="!typed.trim()" @click="submit">送出</button>
+      <button v-if="!submitted" class="btn-primary btn-sm" :disabled="!typed.trim()" @click="submit">{{ t('ec.act.submit') }}</button>
     </div>
 
     <!-- Feedback -->
@@ -81,17 +83,17 @@ function reset() {
         :class="correct ? 'text-emerald-600' : 'text-amber-600'"
       >
         <Check v-if="correct" class="h-4 w-4" /><X v-else class="h-4 w-4" />
-        {{ correct ? '答對了！' : (question.kind === 'compose' ? '已提交，參考下方解析' : '再想想') }}
+        {{ correct ? t('ec.grammar.qRight') : (question.kind === 'compose' ? t('ec.grammar.qSubmitted') : t('ec.grammar.qWrong')) }}
       </div>
       <div class="flex items-start gap-2 rounded-xl bg-ink-50 px-3 py-2 text-xs text-ink-600">
         <Lightbulb class="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
         <div class="flex-1">
-          <p><span class="font-medium text-ink-700">參考答案：</span>{{ question.answer }}
+          <p><span class="font-medium text-ink-700">{{ t('ec.grammar.qReference') }}</span>{{ question.answer }}
             <AudioPlayButton :text="question.answer" class="ml-1 align-middle" /></p>
           <p class="mt-1">{{ question.explanationZh }}</p>
         </div>
       </div>
-      <button class="text-xs text-brand-600 hover:underline" @click="reset">再試一次</button>
+      <button class="text-xs text-brand-600 hover:underline" @click="reset">{{ t('ec.act.retry') }}</button>
     </div>
   </div>
 </template>
