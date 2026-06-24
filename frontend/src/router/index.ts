@@ -28,6 +28,7 @@ const router = createRouter({
           meta: { category: 'AI', eyebrow: 'AI Lab', title: 'AI 實驗室', subtitle: 'AI 股票研究、英文教練與資料分析工具（研究用途）。' },
         },
         { path: 'ai/stock', name: 'stock', component: () => import('@/views/StockResearchView.vue') },
+        { path: 'ai/data-lab', name: 'data-lab', component: () => import('@/views/DataLabView.vue') },
         // ---- AI English Coach (module with its own sub-nav) ----
         {
           path: 'ai/english',
@@ -42,12 +43,12 @@ const router = createRouter({
             { path: 'vocabulary', name: 'english-vocabulary', component: () => import('@/views/english/VocabularyPage.vue') },
             { path: 'phrases', name: 'english-phrases', component: () => import('@/views/english/PhraseBankPage.vue') },
             { path: 'grammar', name: 'english-grammar', component: () => import('@/views/english/GrammarBasicsPage.vue') },
-            { path: 'path', component: () => import('@/views/english/EnglishComingSoonPage.vue'), meta: { title: '學習路徑', subtitle: '依你的程度安排單字、句型、文法與情境的學習路徑。', features: ['程度分級（初/中/進階）', '已完成單元與下個推薦', '已掌握技能追蹤'] } },
+            { path: 'path', name: 'english-path', component: () => import('@/views/english/EnglishLearningPathPage.vue') },
+            { path: 'placement', name: 'english-placement', component: () => import('@/views/english/PlacementTestPage.vue') },
             { path: 'missions', component: () => import('@/views/english/EnglishComingSoonPage.vue'), meta: { title: '每日任務', subtitle: '每天一組微任務，維持學習節奏。', features: ['單字/句型/對話/口說任務', '完成度與 streak', '高質感任務卡'] } },
             { path: 'mistakes', name: 'english-mistakes', component: () => import('@/views/english/MistakeLibraryPage.vue') },
             { path: 'review', name: 'english-review', component: () => import('@/views/english/ReviewPage.vue') },
             { path: 'progress', name: 'english-progress', component: () => import('@/views/english/EnglishProgressPage.vue') },
-            { path: 'placement', component: () => import('@/views/english/EnglishComingSoonPage.vue'), meta: { title: '程度檢測', subtitle: '快速檢測單字、文法、造句與口說，推估程度與弱點。', features: ['多題型檢測', '推估 CEFR 程度', '個人化學習路徑建議'] } },
           ],
         },
         { path: 'knowledge', name: 'knowledge', component: () => import('@/views/KnowledgeView.vue') },

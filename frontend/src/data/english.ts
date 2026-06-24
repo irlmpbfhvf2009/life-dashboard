@@ -10,7 +10,23 @@ import type {
   SpeakingPracticeItem,
   ScenarioCategory,
   MistakeCategory,
+  PracticeQuestion,
 } from '@/types/english'
+
+/** A placement question tagged with the skill it probes (for weakness analysis). */
+export interface PlacementQuestion extends PracticeQuestion {
+  skill: string
+}
+
+export const placementQuestions: PlacementQuestion[] = [
+  { id: 'pl-1', skill: '時態', kind: 'choice', prompt: 'I ___ to Tokyo last summer.', options: ['go', 'went', 'have gone'], answer: 'went', explanationZh: 'last summer 表過去，用過去式 went。' },
+  { id: 'pl-2', skill: '冠詞', kind: 'choice', prompt: 'She is ___ engineer.', options: ['a', 'an', 'the'], answer: 'an', explanationZh: 'engineer 以母音開頭，用 an。' },
+  { id: 'pl-3', skill: '介系詞', kind: 'choice', prompt: "I'm good ___ playing the guitar.", options: ['in', 'at', 'on'], answer: 'at', explanationZh: 'be good at + 活動。' },
+  { id: 'pl-4', skill: '單字', kind: 'choice', prompt: 'A word that means "to suggest": ___', options: ['recommend', 'reserve', 'confirm'], answer: 'recommend', explanationZh: 'recommend = 推薦/建議。' },
+  { id: 'pl-5', skill: '完成式', kind: 'choice', prompt: 'I have ___ here for three years.', options: ['live', 'lived', 'living'], answer: 'lived', explanationZh: 'have + 過去分詞 lived，表持續到現在。' },
+  { id: 'pl-6', skill: '句型', kind: 'choice', prompt: '___ you please repeat that?', options: ['Could', 'Do', 'Are'], answer: 'Could', explanationZh: 'Could you please... 是禮貌請求句型。' },
+  { id: 'pl-7', skill: '語感', kind: 'choice', prompt: 'The most natural: "I look forward to ___ you."', options: ['meet', 'meeting', 'met'], answer: 'meeting', explanationZh: 'look forward to + V-ing。' },
+]
 
 export const MISTAKE_LABELS: Record<MistakeCategory, string> = {
   grammar: '文法',

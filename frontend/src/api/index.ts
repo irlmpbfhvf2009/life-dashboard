@@ -70,12 +70,15 @@ export interface SentenceCorrection {
   alternatives: string[]
   examples: string[]
 }
+export interface DataInsight { summary: string; findings: string[]; suggestions: string[] }
 export const aiApi = {
   status: () => request<{ enabled: boolean }>(() => http.get('/api/ai/status')),
   englishChat: (body: { message: string; history: ChatTurn[] }) =>
     request<ChatReply>(() => http.post('/api/ai/english/chat', body)),
   englishCorrect: (body: { message: string }) =>
     request<SentenceCorrection>(() => http.post('/api/ai/english/correct', body)),
+  dataLabAnalyze: (body: { profile: string }) =>
+    request<DataInsight>(() => http.post('/api/ai/datalab/analyze', body)),
 }
 
 // ---- English Coach state (per-user, cross-device sync) ----
