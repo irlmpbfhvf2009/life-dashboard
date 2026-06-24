@@ -96,14 +96,15 @@ infra/billing-guard/          費用自動關閉的 Cloud Function
   ```
   （或臨時用 `--set-env-vars GEMINI_API_KEY=xxx` 測試）。Gemini 有免費層，對 billing-guard 較安全。
 
-## AI 英文家教（`/ai/english`，商業化學習模組，Phase 1 完成）
+## AI 英文家教（`/ai/english`，商業化學習模組，Phase 1+2 完成）
 - 四層架構：基礎學習 / AI 練習 / 口說 / 複習成長。巢狀路由掛在 `EnglishLayout`（含自有二級導航 `EnglishSubNav`，側邊欄只保留「AI 實驗室」大類）。
-- **已完成真實頁**：Home（`AiEnglishHomePage`）、對話室（`ConversationRoomPage`，三欄：情境/對話+語音/即時回饋）、口說練習、句子修正、情境練習。其餘 9 頁是 `EnglishComingSoonPage`（讀 route meta 的精緻佔位，Phase 2 接後端）。
-- **語音全用瀏覽器原生、零成本**：`composables/useSpeechSynthesis`（TTS 慢/正常）、`useSpeechRecognition`（STT）、`utils/pronunciation.compareSentence`（文字相似度，非音素級；UI 預留未來升級）。不支援時 `VoiceUnsupportedNotice` 降級成文字輸入。
-- **狀態**：`useEnglishStore`（localStorage，per-uid）管 streak/每日任務/常錯庫/簡化複習；每次練習都沉澱成可複習資產。`api/english.ts` 內容走 mock、對話/修正走既有免費 Gemini，**無金鑰可全程跑（mock 教練 fallback）**。
-- **zh-TW 字串目前內嵌在元件**（量大）；Phase 2 再抽 key + 回填 6 語系。
+- **13 頁中 12 頁已真實**：Home、對話室（三欄）、口說、句子修正、情境、單字、句型、文法、常錯庫、複習、學習進度。**唯一佔位剩**：學習路徑、程度檢測、每日任務獨立頁（用 `EnglishComingSoonPage` 讀 route meta）。
+- **語音全用瀏覽器原生、零成本**：`composables/useSpeechSynthesis`（TTS 慢/正常）、`useSpeechRecognition`（STT）、`utils/pronunciation.compareSentence`（文字相似度，非音素級；UI 預留升級）。不支援時 `VoiceUnsupportedNotice` 降級成文字輸入。
+- **狀態 + 持久化**：`useEnglishStore`（localStorage 即時快取 + **背景同步到後端 `english_state`**，跨裝置；cloud 優先、失敗靜默降級）管 streak/任務/常錯庫/簡化 SM-2 複習。`api/english.ts` 內容走 mock、對話/修正走免費 Gemini（無金鑰 fallback mock 教練）。
+- **後端** `com.lifedashboard.english`：`english_state` 表（per-user JSON 文件）+ `GET/PUT /api/english/state`。內容（單字/句型/文法/情境）仍前端 mock（靜態、不需 per-user）。
+- **待辦**：① zh-TW 字串仍內嵌在元件，i18n 抽 key + 6 語回填未做。② 程度檢測/學習路徑/每日任務獨立頁。③ 內容若要動態化再建細粒度後端表。
 
 ## 建議下一步
-1. **英文家教 Phase 2**：接 Spring Boot（`com.lifedashboard.english` + Neon 新表），把單字/句型/文法/複習/程度檢測/進度做成真實；AI 對話結束自動抽錯入庫；真間隔複習（SM-2 簡化）；i18n 抽 key 回填。
+1. **英文家教收尾**：i18n 抽 key 回填 6 語；程度檢測頁（影響個人化路徑）；學習路徑頁。
 2. **資料分析工具 `/ai/data-lab`**：唯一還沒做的 AI app（上傳 CSV→Gemini 洞察），重用 `GeminiClient`。
 3. **Phase 3 後端**：習慣/目標/斷食/日記長文 等需要新資料表的功能。
