@@ -30,10 +30,10 @@ const sidebarOpen = ref(false)
     <div class="flex min-w-0 flex-1 flex-col">
       <AppHeader @toggle-sidebar="sidebarOpen = true" />
       <main class="flex-1 px-4 py-6 lg:px-8 lg:py-8">
-        <div class="mx-auto w-full max-w-7xl">
-          <RouterView v-slot="{ Component }">
-            <Transition name="page" mode="out-in">
-              <component :is="Component" />
+        <div class="relative mx-auto w-full max-w-7xl">
+          <RouterView v-slot="{ Component, route }">
+            <Transition name="page">
+              <component :is="Component" :key="route.path" />
             </Transition>
           </RouterView>
         </div>
@@ -61,5 +61,14 @@ const sidebarOpen = ref(false)
 }
 .page-leave-to {
   opacity: 0;
+}
+/* Take the leaving page out of flow so the entering page doesn't get pushed
+   down during the crossfade (we intentionally avoid mode="out-in", which
+   deadlocks into a blank screen on rapid route switches). */
+.page-leave-active {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
 }
 </style>
