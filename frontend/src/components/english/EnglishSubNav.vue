@@ -52,7 +52,11 @@ const groups: Group[] = [
 <template>
   <nav class="mb-6 flex items-center gap-1 overflow-x-auto pb-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
     <template v-for="(group, gi) in groups" :key="gi">
-      <span v-if="group.label" class="ml-2 mr-1 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-ink-300">{{ t(group.label) }}</span>
+      <!-- Section label (not a link): a divider + muted heading make it read as a group title. -->
+      <span v-if="group.label" class="ml-1.5 mr-1 flex shrink-0 cursor-default select-none items-center gap-2 pl-1.5">
+        <span class="h-3.5 w-px bg-ink-200" aria-hidden="true" />
+        <span class="text-[10px] font-semibold uppercase tracking-wider text-ink-300">{{ t(group.label) }}</span>
+      </span>
       <RouterLink
         v-for="item in group.items"
         :key="item.to"
