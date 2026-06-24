@@ -3,8 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Personal Intelligence Studio · 個人智慧工作台</title>
+
+    <!-- PWA / installable app (Add to Home Screen) -->
+    <meta name="theme-color" content="#4f46e5" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <!-- iOS-specific: makes "Add to Home Screen" launch full-screen, no Safari chrome -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="PI Studio" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
     <script>
       // Apply saved/system theme before first paint to avoid a flash.
       (function () {
