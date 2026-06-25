@@ -44,7 +44,8 @@ app:
   # friendly 503 instead of failing. Inject the key via Secret Manager in prod.
   gemini:
     api-key: ${GEMINI_API_KEY:}
-    model: ${GEMINI_MODEL:gemini-2.0-flash}
+    # gemini-2.0-flash free tier is 0 on the current key (429); 2.5-flash works.
+    model: ${GEMINI_MODEL:gemini-2.5-flash}
     base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com/v1beta}
 
 management:

@@ -94,6 +94,7 @@ infra/billing-guard/          費用自動關閉的 Cloud Function
 4. **GitHub raw 有 404 負快取**（曾請求過不存在的路徑）；App 抓取一律帶 `?t=時間戳` 繞過（已內建於 stockResearch.ts）。
 5. **vercel CLI 在這環境的互動/管線常卡住**（env add 空值、project rm 卡住）；能避則避，改網頁操作。
 6. **台股顏色**：漲=紅、跌=綠（`utils/format.ts` 的 `twPriceClass`），與一般西方相反；關鍵字highlight刻意用靛/琥珀，不用紅綠以免衝突。
+7. **Gemini 模型 free tier=0**：現用金鑰對 `gemini-2.0-flash` 免費額度是 0（呼叫回 429 `limit: 0`，所有 in-app AI 都會降級成「尚未啟用」）。改用 **`gemini-2.5-flash`** 即正常。已在線上 `GEMINI_MODEL=gemini-2.5-flash`（`gcloud run services update`）並改 `application.yml`/`GeminiClient` 預設。換 key 或模型壞掉時先用 `models/{model}:generateContent` 直接打 API 看 429/200。
 
 ## 待辦 / 使用者要做的
 - 確認 **life-dashboard** repo 的 GitHub Actions 寫入權限已開（Settings → Actions → General → Read and write），每日股票掃描才會自動 commit。
@@ -102,7 +103,8 @@ infra/billing-guard/          費用自動關閉的 Cloud Function
 
 ## in-app AI（Gemini）
 - 後端 `com.lifedashboard.ai`：`GeminiClient`（呼叫 Gemini `generateContent`，JSON schema 結構化輸出，**可重用**）+ `EnglishCoachService`（`chat()` 回 reply/correction；`correct()` 回結構化 `CorrectionReply`）+ `AiController`（`GET /api/ai/status`、`POST /api/ai/english/chat`、`POST /api/ai/english/correct`）。
-- 設定在 `application.yml` 的 `app.gemini`：`api-key=${GEMINI_API_KEY:}`、`model=${GEMINI_MODEL:gemini-2.0-flash}`、`base-url`。**金鑰留空時自動降級**：回 503、`/status` 回 `enabled:false`，前端顯示提示。
+- 設定在 `application.yml` 的 `app.gemini`：`api-key=${GEMINI_API_KEY:}`、`model=${GEMINI_MODEL:gemini-2.5-flash}`（**注意：2.0-flash 此 key free tier=0、回 429**，見踩過的坑 7）、`base-url`。**金鑰留空時自動降級**：回 503、`/status` 回 `enabled:false`，前端顯示提示。
+- 旅遊模組的 AI 端點也都掛在 `AiController`：`POST /api/ai/phrase/translate`（翻譯）、`/api/ai/receipt`（收據 vision）、`/api/ai/spots`（景點建議）。
 - 注入金鑰（建議走 Secret Manager）：
   ```
   gcloud run services update life-dashboard-backend --region asia-southeast1 \
