@@ -51,7 +51,9 @@ public class BookController {
                                             @RequestParam(defaultValue = "1") int page) {
         try {
             String raw = gutendex.get()
-                    .uri(b -> b.path("/books")
+                    // Trailing slash matters: gutendex 301-redirects /books → /books/,
+                    // and RestClient does not follow redirects by default.
+                    .uri(b -> b.path("/books/")
                             .queryParam("search", q.trim())
                             .queryParam("page", Math.max(1, page))
                             .build())
@@ -75,7 +77,7 @@ public class BookController {
     @GetMapping("/text")
     public ApiResponse<BookText> text(@RequestParam long id) {
         try {
-            String meta = gutendex.get().uri("/books/{id}", id)
+            String meta = gutendex.get().uri("/books/{id}/", id)
                     .header("User-Agent", UA).retrieve().body(String.class);
             JsonNode n = mapper.readTree(meta);
             String title = n.path("title").asText("");
