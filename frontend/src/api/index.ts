@@ -1,13 +1,21 @@
 import http, { request } from './http'
 import type {
+  ChatMessage,
+  Conversation,
   DashboardData,
   Expense,
   FoodRecord,
+  FriendProfile,
+  FriendRequest,
+  GifPage,
   MealType,
+  MessageKind,
   MonthlyStats,
   MoodRecord,
   MoodStats,
   Note,
+  SocialPrivacy,
+  SocialUser,
   Todo,
   TodoPriority,
   TodoStatus,
@@ -31,6 +39,56 @@ export const dashboardApi = {
   get: () => request<DashboardData>(() => http.get('/api/dashboard')),
 }
 
+// ---- Social (friends + privacy-gated profile viewing) ----
+export const socialApi = {
+  /** Search users by name/email (min 2 chars). */
+  search: (q: string) => request<SocialUser[]>(() => http.get('/api/social/search', { params: { q } })),
+  friends: () => request<SocialUser[]>(() => http.get('/api/social/friends')),
+  incoming: () => request<FriendRequest[]>(() => http.get('/api/social/requests/incoming')),
+  outgoing: () => request<FriendRequest[]>(() => http.get('/api/social/requests/outgoing')),
+  sendRequest: (targetUserId: number) =>
+    request<void>(() => http.post('/api/social/requests', { targetUserId })),
+  accept: (id: number) => request<void>(() => http.post(`/api/social/requests/${id}/accept`)),
+  decline: (id: number) => request<void>(() => http.post(`/api/social/requests/${id}/decline`)),
+  removeFriend: (userId: number) => request<void>(() => http.delete(`/api/social/friends/${userId}`)),
+  getPrivacy: () => request<SocialPrivacy>(() => http.get('/api/social/privacy')),
+  updatePrivacy: (body: SocialPrivacy) =>
+    request<SocialPrivacy>(() => http.put('/api/social/privacy', body)),
+  profile: (userId: number) => request<FriendProfile>(() => http.get(`/api/social/profile/${userId}`)),
+}
+
+// ---- Chat (DMs, groups, public room — polled) ----
+export const chatApi = {
+  conversations: () => request<Conversation[]>(() => http.get('/api/chat/conversations')),
+  unread: () => request<number>(() => http.get('/api/chat/unread')),
+  createDm: (userId: number) =>
+    request<Conversation>(() => http.post('/api/chat/conversations/dm', { userId })),
+  createGroup: (name: string, memberIds: number[]) =>
+    request<Conversation>(() => http.post('/api/chat/conversations/group', { name, memberIds })),
+  addMembers: (id: number, memberIds: number[]) =>
+    request<void>(() => http.post(`/api/chat/conversations/${id}/members`, { memberIds })),
+  leave: (id: number) => request<void>(() => http.post(`/api/chat/conversations/${id}/leave`)),
+  messages: (id: number, params?: { beforeId?: number; afterId?: number }) =>
+    request<ChatMessage[]>(() => http.get(`/api/chat/conversations/${id}/messages`, { params })),
+  send: (id: number, body: { content?: string; kind?: MessageKind; attachmentUrl?: string }) =>
+    request<ChatMessage>(() => http.post(`/api/chat/conversations/${id}/messages`, body)),
+  read: (id: number) => request<void>(() => http.post(`/api/chat/conversations/${id}/read`)),
+}
+
+// ---- GIF (Tenor, proxied; returns 503 when TENOR_API_KEY unset) ----
+export const gifApi = {
+  search: (q: string, pos?: string) =>
+    request<GifPage>(() => http.get('/api/gif/search', { params: { q, pos } })),
+  featured: (pos?: string) =>
+    request<GifPage>(() => http.get('/api/gif/featured', { params: { pos } })),
+}
+
+// ---- Web Push (FCM) token registration ----
+export const pushApi = {
+  register: (token: string) => request<void>(() => http.post('/api/push/token', { token })),
+  unregister: (token: string) => request<void>(() => http.delete('/api/push/token', { data: { token } })),
+}
+
 // ---- Wallet (server-authoritative game coins, read-only) ----
 export interface WalletDto { coins: number; lastBonusDate: string | null; claimedToday: boolean }
 export const walletApi = {
@@ -39,8 +97,35 @@ export const walletApi = {
 
 // ---- Game (slot machine — spins resolved server-side) ----
 export interface SpinResult { reels: number[]; bet: number; payout: number; balance: number }
+
+// Seth tumble slot — the full cascade sequence is resolved server-side.
+// cell.type: 0–7 = pay symbols (low→high), 8 = scatter, 9 = multiplier orb (value = ×N).
+export interface SethCell { type: number; value: number }
+export interface SethTumble { grid: SethCell[]; winPositions: number[]; pay: number }
+export interface SethRound {
+  type: 'BASE' | 'FREE'
+  tumbles: SethTumble[]
+  multiplier: number
+  pay: number
+  spinIndex: number
+  spinTotal: number
+}
+export interface SethSpinResult {
+  bet: number
+  cost: number
+  rounds: SethRound[]
+  freeSpins: number
+  totalPayout: number
+  balance: number
+}
+export interface SethSpinOptions { ante?: boolean; buyBonus?: boolean }
+
 export const gameApi = {
   spin: (bet: number) => request<SpinResult>(() => http.post('/api/game/slot/spin', { bet })),
+  sethSpin: (bet: number, opts: SethSpinOptions = {}) =>
+    request<SethSpinResult>(() => http.post('/api/game/seth/spin', {
+      bet, ante: opts.ante ?? false, buyBonus: opts.buyBonus ?? false,
+    })),
 }
 
 // ---- Admin (root-admin only) ----

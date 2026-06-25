@@ -18,6 +18,29 @@ export async function uploadJournalPhoto(file: File, destinationId: string): Pro
   return getDownloadURL(r)
 }
 
+/** Upload a chat photo (compressed) and return its public download URL. */
+export async function uploadChatImage(file: File): Promise<string> {
+  const uid = auth.currentUser?.uid
+  if (!uid) throw new Error('not signed in')
+  const blob = await fileToCompressedBlob(file)
+  const name = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`
+  const path = `chat/${uid}/img/${name}`
+  const r = storageRef(storage, path)
+  await uploadBytes(r, blob, { contentType: 'image/jpeg' })
+  return getDownloadURL(r)
+}
+
+/** Upload a recorded voice clip and return its public download URL. */
+export async function uploadChatAudio(blob: Blob, ext = 'webm'): Promise<string> {
+  const uid = auth.currentUser?.uid
+  if (!uid) throw new Error('not signed in')
+  const name = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+  const path = `chat/${uid}/audio/${name}`
+  const r = storageRef(storage, path)
+  await uploadBytes(r, blob, { contentType: blob.type || 'audio/webm' })
+  return getDownloadURL(r)
+}
+
 /** Best-effort delete of a previously-uploaded photo by its download URL. */
 export async function deleteJournalPhoto(url: string): Promise<void> {
   try {

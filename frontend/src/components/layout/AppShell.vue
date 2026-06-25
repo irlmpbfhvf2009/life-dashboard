@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { RouterView } from 'vue-router'
 import AppSidebar from './AppSidebar.vue'
 import AppHeader from './AppHeader.vue'
+import ChatWidget from '@/components/chat/ChatWidget.vue'
 
 const sidebarOpen = ref(false)
 </script>
@@ -42,6 +43,9 @@ const sidebarOpen = ref(false)
         </div>
       </main>
     </div>
+
+    <!-- Floating chat (DMs / groups / public room) — always available in the shell -->
+    <ChatWidget />
   </div>
 </template>
 

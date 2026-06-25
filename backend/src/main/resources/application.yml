@@ -47,6 +47,11 @@ app:
     # gemini-2.0-flash free tier is 0 on the current key (429); 2.5-flash works.
     model: ${GEMINI_MODEL:gemini-2.5-flash}
     base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com/v1beta}
+  # GIPHY GIF search (chat GIF picker). Leave api-key blank to disable — the GIF
+  # endpoints then return 503 and the picker shows a "not enabled" notice.
+  # (Tenor can't be enabled on this GCP project, so GIPHY is used instead.)
+  giphy:
+    api-key: ${GIPHY_API_KEY:}
 
 management:
   endpoints:
