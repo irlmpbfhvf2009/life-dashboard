@@ -176,7 +176,7 @@ export interface BookSummary {
   hasText: boolean
 }
 export interface BookSearch { count: number; results: BookSummary[] }
-export interface BookText { id: number; title: string; format: 'text' | 'html'; content: string }
+export interface BookText { id: number; title: string; author: string; format: 'text' | 'html'; content: string }
 export interface ZhResult { title: string; pageid: number; snippet: string }
 export interface ZhPage { title: string; html: string }
 export const bookApi = {
@@ -189,6 +189,12 @@ export const bookApi = {
   zhSearch: (q: string) => request<ZhResult[]>(() => http.get('/api/books/zh/search', { params: { q } })),
   /** Chinese Wikisource page (rendered HTML — sanitize before display). */
   zhPage: (title: string) => request<ZhPage>(() => http.get('/api/books/zh/page', { params: { title } })),
+}
+
+// ---- Library state (bookmarks + reading progress, cross-device sync) ----
+export const libraryStateApi = {
+  get: <T = unknown>() => request<T | null>(() => http.get('/api/library/state')),
+  put: (state: unknown) => request<void>(() => http.put('/api/library/state', state)),
 }
 
 // ---- Usage (owner-only free-tier bar) ----

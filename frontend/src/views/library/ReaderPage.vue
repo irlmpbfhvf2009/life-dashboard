@@ -1,19 +1,29 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DOMPurify from 'dompurify'
-import { ArrowLeft, Loader2, Minus, Plus, Type, ExternalLink, BookX } from 'lucide-vue-next'
+import { ArrowLeft, Loader2, Minus, Plus, Type, ExternalLink, BookX, Bookmark, BookmarkCheck } from 'lucide-vue-next'
 import { bookApi } from '@/api'
+import { useLibrary, type BookRef } from '@/composables/useLibrary'
 
 const route = useRoute()
 const router = useRouter()
+const library = useLibrary()
 
 const source = computed(() => String(route.params.source)) // 'gutenberg' | 'wikisource'
 const id = computed(() => String(route.params.id))
 
 const title = ref('')
+const author = ref('')
 const loading = ref(true)
 const error = ref('')
+
+const bookRef = computed<BookRef>(() => ({ source: source.value, id: id.value, title: title.value, author: author.value }))
+const bookmarked = computed(() => library.isBookmarked(source.value, id.value))
+function toggleBookmark() {
+  if (!title.value) return
+  library.toggleBookmark(bookRef.value)
+}
 /** Plain-text paragraphs (Gutenberg) … */
 const paragraphs = ref<string[]>([])
 /** … or sanitized HTML (Wikisource / Gutenberg HTML fallback). */
@@ -54,16 +64,19 @@ async function load() {
     if (source.value === 'wikisource') {
       const r = await bookApi.zhPage(id.value)
       title.value = r.title
+      author.value = ''
       html.value = clean(r.html)
     } else {
       const r = await bookApi.text(Number(id.value))
       title.value = r.title
+      author.value = r.author
       if (r.format === 'text') {
         paragraphs.value = r.content.split(/\r?\n\s*\r?\n/).map((p) => p.trim()).filter(Boolean)
       } else {
         html.value = clean(r.content)
       }
     }
+    void restoreScroll()
   } catch (e) {
     error.value = e instanceof Error ? e.message : '無法載入這本書'
   } finally {
@@ -71,7 +84,50 @@ async function load() {
   }
 }
 
-onMounted(load)
+// ---- Reading-progress tracking (whole window scrolls; see AppShell) ----
+let restoring = false
+let lastSave = 0
+const resumed = ref(false)
+
+function scrollMax() {
+  return document.documentElement.scrollHeight - window.innerHeight
+}
+
+function recordProgress(force = false) {
+  if (restoring || loading.value || !title.value) return
+  const now = Date.now()
+  if (!force && now - lastSave < 800) return
+  lastSave = now
+  const max = scrollMax()
+  library.saveProgress(bookRef.value, max > 0 ? window.scrollY / max : 0)
+}
+
+async function restoreScroll() {
+  const pct = library.getProgress(source.value, id.value)
+  if (pct <= 0.01) return
+  restoring = true
+  await nextTick()
+  // Wait a beat for content height to settle, then jump to the saved spot.
+  setTimeout(() => {
+    window.scrollTo({ top: pct * scrollMax() })
+    resumed.value = true
+    setTimeout(() => (resumed.value = false), 2500)
+    setTimeout(() => (restoring = false), 250)
+  }, 80)
+}
+
+function onScroll() {
+  recordProgress()
+}
+
+onMounted(() => {
+  window.addEventListener('scroll', onScroll, { passive: true })
+  load()
+})
+onUnmounted(() => {
+  window.removeEventListener('scroll', onScroll)
+  recordProgress(true) // capture the final position on leave
+})
 </script>
 
 <template>
@@ -83,6 +139,16 @@ onMounted(load)
           <ArrowLeft class="h-4 w-4" /> 返回書庫
         </button>
         <div class="flex items-center gap-1">
+          <button
+            class="btn-icon mr-1 h-8 w-8 border text-ink-500 hover:text-brand-600"
+            :class="bookmarked ? 'border-amber-300 text-amber-500' : 'border-ink-200'"
+            :title="bookmarked ? '移除收藏' : '收藏這本書'"
+            :disabled="!title"
+            @click="toggleBookmark"
+          >
+            <BookmarkCheck v-if="bookmarked" class="h-4 w-4" />
+            <Bookmark v-else class="h-4 w-4" />
+          </button>
           <button class="btn-icon h-8 w-8 border border-ink-200 text-ink-500 hover:text-brand-600" title="縮小字級" @click="setFont(fontPx - 1)">
             <Minus class="h-4 w-4" />
           </button>
@@ -101,6 +167,13 @@ onMounted(load)
         </div>
       </div>
     </div>
+
+    <!-- Resumed-position hint -->
+    <Transition name="fade">
+      <div v-if="resumed" class="fixed bottom-6 left-1/2 z-20 -translate-x-1/2 rounded-full bg-ink-900/85 px-4 py-2 text-xs font-medium text-white shadow-lg">
+        已回到上次閱讀的位置
+      </div>
+    </Transition>
 
     <div class="mx-auto max-w-3xl">
       <!-- Loading -->
@@ -121,6 +194,7 @@ onMounted(load)
       <template v-else>
         <header class="mb-8">
           <h1 class="text-2xl font-bold tracking-tight text-ink-900 sm:text-3xl">{{ title }}</h1>
+          <p v-if="author" class="mt-1 text-sm text-ink-500">{{ author }}</p>
           <a :href="sourceUrl" target="_blank" rel="noopener"
             class="mt-2 inline-flex items-center gap-1 text-xs text-ink-400 hover:text-brand-600">
             來源：{{ sourceLabel }} <ExternalLink class="h-3 w-3" />
@@ -174,4 +248,9 @@ onMounted(load)
 .reader-prose :deep(td),
 .reader-prose :deep(th) { border: 1px solid rgb(var(--ink-200)); padding: 0.4em 0.6em; }
 .reader-prose :deep(center) { text-align: center; }
+
+.fade-enter-active,
+.fade-leave-active { transition: opacity 0.3s ease; }
+.fade-enter-from,
+.fade-leave-to { opacity: 0; }
 </style>

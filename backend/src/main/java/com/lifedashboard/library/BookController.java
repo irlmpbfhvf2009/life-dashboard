@@ -34,7 +34,7 @@ public class BookController {
 
     public record BookSummary(long id, String title, String author, List<String> languages, long downloads, boolean hasText) {}
     public record SearchResult(long count, List<BookSummary> results) {}
-    public record BookText(long id, String title, String format, String content) {}
+    public record BookText(long id, String title, String author, String format, String content) {}
     public record ZhResult(String title, long pageid, String snippet) {}
     public record ZhPage(String title, String html) {}
 
@@ -81,6 +81,8 @@ public class BookController {
                     .header("User-Agent", UA).retrieve().body(String.class);
             JsonNode n = mapper.readTree(meta);
             String title = n.path("title").asText("");
+            JsonNode authors = n.path("authors");
+            String author = authors.isArray() && authors.size() > 0 ? authors.get(0).path("name").asText("") : "";
             JsonNode formats = n.path("formats");
 
             String txtUrl = pickFormat(formats, "text/plain");
@@ -93,7 +95,7 @@ public class BookController {
 
             String body = httpRaw.get().uri(URI.create(url)).header("User-Agent", UA).retrieve().body(String.class);
             if ("text".equals(format)) body = stripGutenbergBoilerplate(body);
-            return ApiResponse.ok(new BookText(id, title, format, body));
+            return ApiResponse.ok(new BookText(id, title, author, format, body));
         } catch (ServiceUnavailableException e) {
             throw e;
         } catch (Exception e) {

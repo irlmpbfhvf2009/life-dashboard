@@ -1,13 +1,19 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { BookMarked, Search, Loader2, BookOpen, Download, Languages, ScrollText } from 'lucide-vue-next'
+import { BookMarked, Search, Loader2, BookOpen, Download, Languages, ScrollText, BookmarkCheck, History } from 'lucide-vue-next'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import SectionCard from '@/components/ui/SectionCard.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import { bookApi, type BookSummary, type ZhResult } from '@/api'
+import { useLibrary, type BookRef } from '@/composables/useLibrary'
 
 const router = useRouter()
+const { bookmarks, recentlyRead } = useLibrary()
+
+function openBook(b: BookRef) {
+  router.push({ name: 'library-read', params: { source: b.source, id: b.id } })
+}
 type Tab = 'en' | 'zh'
 const tab = ref<Tab>('en')
 
@@ -74,6 +80,43 @@ onMounted(searchEn) // load popular Gutenberg books up front
       title="書庫"
       subtitle="免費閱讀版權已開放的公版書，直接在站內看：英文經典（Project Gutenberg）與中文古籍（維基文庫）。"
     />
+
+    <!-- Continue reading -->
+    <SectionCard v-if="recentlyRead.length" class="mb-5" title="繼續閱讀" :icon="History">
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <button
+          v-for="p in recentlyRead"
+          :key="p.source + p.id"
+          type="button"
+          class="group rounded-xl border border-ink-200 bg-surface p-3 text-left transition-colors hover:border-brand-200"
+          @click="openBook(p)"
+        >
+          <p class="line-clamp-1 text-sm font-semibold text-ink-800 group-hover:text-brand-700">{{ p.title }}</p>
+          <p v-if="p.author" class="mt-0.5 line-clamp-1 text-xs text-ink-400">{{ p.author }}</p>
+          <div class="mt-2 flex items-center gap-2">
+            <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-ink-100">
+              <div class="h-full rounded-full bg-brand-500" :style="{ width: Math.round(p.pct * 100) + '%' }" />
+            </div>
+            <span class="text-2xs tabular-nums text-ink-400">{{ Math.round(p.pct * 100) }}%</span>
+          </div>
+        </button>
+      </div>
+    </SectionCard>
+
+    <!-- Bookmarks -->
+    <SectionCard v-if="bookmarks.length" class="mb-5" title="我的收藏" :icon="BookmarkCheck">
+      <ul class="grid gap-2 sm:grid-cols-2">
+        <li v-for="b in bookmarks" :key="b.source + b.id">
+          <button type="button" class="group flex w-full items-start gap-2.5 rounded-lg px-2 py-2 text-left hover:bg-ink-50" @click="openBook(b)">
+            <BookmarkCheck class="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+            <span class="min-w-0">
+              <span class="block truncate text-sm font-medium text-ink-800 group-hover:text-brand-700">{{ b.title }}</span>
+              <span v-if="b.author" class="block truncate text-xs text-ink-400">{{ b.author }}</span>
+            </span>
+          </button>
+        </li>
+      </ul>
+    </SectionCard>
 
     <!-- Tabs -->
     <div class="mb-5 inline-flex rounded-xl border border-ink-200 bg-surface p-1">
