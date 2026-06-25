@@ -106,5 +106,26 @@ export default {
       total: '合計',
       perPerson: '1人あたり',
     },
+    weather: {
+      title: '天気',
+      today: '今日',
+      now: '現在',
+      unavailable: '天気を取得できませんでした',
+      cond: { clear: '快晴', partlyCloudy: '晴れ時々曇り', cloudy: '曇り', fog: '霧', drizzle: '霧雨', rain: '雨', snow: '雪', thunder: '雷雨' },
+    },
+    time: {
+      title: '現地時間',
+      same: '台湾と同じ時間帯',
+      diffAhead: '台湾より {n} 時間進んでいます',
+      diffBehind: '台湾より {n} 時間遅れています',
+    },
+    spots: {
+      title: 'AIスポット提案',
+      days: '日数',
+      button: '提案する',
+      add: '行程に追加',
+      empty: '提案が出ませんでした。日数を変えてお試しを。',
+      disabled: 'AI提案は未設定です（GEMINI_API_KEYが必要）。',
+    },
   },
 }

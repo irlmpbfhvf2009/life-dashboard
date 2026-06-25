@@ -106,5 +106,26 @@ export default {
       total: 'Total',
       perPerson: 'Per person',
     },
+    weather: {
+      title: 'Weather',
+      today: 'Today',
+      now: 'Now',
+      unavailable: 'Weather is unavailable right now',
+      cond: { clear: 'Clear', partlyCloudy: 'Partly cloudy', cloudy: 'Cloudy', fog: 'Fog', drizzle: 'Drizzle', rain: 'Rain', snow: 'Snow', thunder: 'Thunderstorm' },
+    },
+    time: {
+      title: 'Local time',
+      same: 'Same time zone as Taiwan',
+      diffAhead: '{n}h ahead of Taiwan',
+      diffBehind: '{n}h behind Taiwan',
+    },
+    spots: {
+      title: 'AI spot ideas',
+      days: 'Days',
+      button: 'Suggest',
+      add: 'Add to itinerary',
+      empty: 'No suggestions — try a different number of days.',
+      disabled: 'AI suggestions are off (backend needs GEMINI_API_KEY).',
+    },
   },
 }

@@ -106,5 +106,26 @@ export default {
       total: '总计',
       perPerson: '每人',
     },
+    weather: {
+      title: '天气',
+      today: '今天',
+      now: '当前',
+      unavailable: '天气数据暂时无法获取',
+      cond: { clear: '晴', partlyCloudy: '多云转晴', cloudy: '阴', fog: '有雾', drizzle: '毛毛雨', rain: '下雨', snow: '下雪', thunder: '雷雨' },
+    },
+    time: {
+      title: '当地时间',
+      same: '与台湾同时区',
+      diffAhead: '比台湾快 {n} 小时',
+      diffBehind: '比台湾慢 {n} 小时',
+    },
+    spots: {
+      title: 'AI 景点建议',
+      days: '几天',
+      button: '生成建议',
+      add: '加入行程',
+      empty: 'AI 暂时没有建议，换个天数再试。',
+      disabled: 'AI 建议尚未启用（需要后端 GEMINI_API_KEY）。',
+    },
   },
 }

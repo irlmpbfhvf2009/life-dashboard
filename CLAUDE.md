@@ -61,6 +61,8 @@ infra/billing-guard/          費用自動關閉的 Cloud Function
     - **換算/小費 `/travel/tools`**：當地貨幣⇄台幣雙向換算、小費/分帳（共用 wallet 的當地幣別與匯率）。
     - **自動匯率**：後端 `com.lifedashboard.fx.FxController`（`GET /api/fx/rate?from=&to=TWD`）代理免費 open.er-api.com、快取 6h，前端 `fxApi`＋`wallet.refreshRate()`（記帳/換算頁有「更新」鈕，匯率仍為預設時自動抓一次）。
     - **收據拍照記帳**：`GeminiClient.generateJsonWithImage`（vision）+ `ReceiptService` + `POST /api/ai/receipt`（body 含 base64 image）；前端 `utils/image.ts` 壓縮後上傳，回填記帳表單。
+    - **天氣 + 當地時間**：`useWeather`（Open-Meteo 免金鑰、CORS、快取 30 分）+ `useLocalTime`（IANA 時區 vs 台灣，Intl 計算）；`DestinationWeather.vue` 顯示在旅遊首頁，行程表每日卡片對齊出發日顯示當天天氣。目的地座標/時區在 `destinations.ts`（`lat/lon/timezone`）。
+    - **AI 景點建議**：`SpotSuggestService` + `POST /api/ai/spots`（body `{place,days}`，回每個景點含建議天數）；行程表「AI 景點建議」卡片，點一下加進行程。
     - 後端 AI：`com.lifedashboard.ai.PhraseCoachService` + `POST /api/ai/phrase/translate`（body `{message,lang}`，lang=Thai/Japanese/Korean/Vietnamese；比照 EnglishCoach，共用 `GeminiClient` 與 `GEMINI_API_KEY`，無金鑰回 503）。
     - **i18n 已完成**：UI 字串抽到 `tv` namespace（`src/i18n/locales/travel/*.ts`，6 語）；內容（短句/小抄/國名）刻意保留中文＋當地語言。
     - **待辦**：PWA 推播（FCM）——需在 Firebase Console 產 Web Push (VAPID) 金鑰後才能接（SW + token 表 + 發送），尚未做。

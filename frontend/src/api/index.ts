@@ -90,6 +90,9 @@ export const aiApi = {
   /** Read a receipt photo (base64, no data: prefix) into expense fields. */
   receiptScan: (body: { image: string; mimeType: string; currency: string; categories: string[] }) =>
     request<ReceiptScan>(() => http.post('/api/ai/receipt', body)),
+  /** Suggest sightseeing spots for a destination over N days. */
+  suggestSpots: (body: { place: string; days: number }) =>
+    request<{ spots: SpotSuggestion[] }>(() => http.post('/api/ai/spots', body)),
   dataLabAnalyze: (body: { profile: string }) =>
     request<DataInsight>(() => http.post('/api/ai/datalab/analyze', body)),
 }
@@ -99,6 +102,12 @@ export interface ReceiptScan {
   category: string
   note: string
   date: string
+}
+export interface SpotSuggestion {
+  name: string
+  area: string
+  reason: string
+  day: number
 }
 
 // ---- Text-to-speech (server proxy → speaks any language without an OS voice) ----

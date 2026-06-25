@@ -108,5 +108,26 @@ export default {
       total: '總計',
       perPerson: '每人',
     },
+    weather: {
+      title: '天氣',
+      today: '今天',
+      now: '目前',
+      unavailable: '天氣資料暫時無法取得',
+      cond: { clear: '晴', partlyCloudy: '多雲時晴', cloudy: '陰', fog: '有霧', drizzle: '毛毛雨', rain: '下雨', snow: '下雪', thunder: '雷雨' },
+    },
+    time: {
+      title: '當地時間',
+      same: '與台灣同時區',
+      diffAhead: '比台灣快 {n} 小時',
+      diffBehind: '比台灣慢 {n} 小時',
+    },
+    spots: {
+      title: 'AI 景點建議',
+      days: '幾天',
+      button: '產生建議',
+      add: '加入行程',
+      empty: 'AI 想不出建議，換個天數再試。',
+      disabled: 'AI 建議尚未啟用（需要後端 GEMINI_API_KEY）。',
+    },
   },
 }

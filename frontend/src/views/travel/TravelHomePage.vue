@@ -5,6 +5,7 @@ import { Plane, Languages, Wallet, Calculator, ArrowRight, CalendarDays, Calenda
 import PageHeader from '@/components/ui/PageHeader.vue'
 import SectionCard from '@/components/ui/SectionCard.vue'
 import DestinationPicker from '@/components/travel/DestinationPicker.vue'
+import DestinationWeather from '@/components/travel/DestinationWeather.vue'
 import { useTravelWallet } from '@/composables/useTravelWallet'
 
 // Destination + departure date are part of the per-user trip state (synced).
@@ -61,6 +62,11 @@ const tools = [
           />
         </label>
       </div>
+    </div>
+
+    <!-- Weather + local time -->
+    <div class="mb-6">
+      <DestinationWeather />
     </div>
 
     <!-- Tool entries -->

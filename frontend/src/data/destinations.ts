@@ -50,6 +50,10 @@ export interface Destination {
   /** Target language name for the AI translator's system prompt. */
   translateLangName: string
   currency: Currency
+  /** City coordinates + IANA timezone, for weather and local time. */
+  lat: number
+  lon: number
+  timezone: string
   categories: PhraseCategory[]
   cheatSheet: CheatItem[]
 }
@@ -66,6 +70,7 @@ const thailand: Destination = {
   ttsLang: 'th',
   translateLangName: 'Thai',
   currency: { code: 'THB', symbol: '฿', defaultRate: 0.92 },
+  lat: 13.7563, lon: 100.5018, timezone: 'Asia/Bangkok',
   categories: [
     {
       key: 'basics', label: '基本問候', icon: Hand, hint: '萬用客套話。',
@@ -141,6 +146,7 @@ const japan: Destination = {
   ttsLang: 'ja',
   translateLangName: 'Japanese',
   currency: { code: 'JPY', symbol: '¥', defaultRate: 0.21 },
+  lat: 35.6762, lon: 139.6503, timezone: 'Asia/Tokyo',
   categories: [
     {
       key: 'basics', label: '基本問候', icon: Hand, hint: '「すみません」可同時表示不好意思/借過/叫人。',
@@ -216,6 +222,7 @@ const korea: Destination = {
   ttsLang: 'ko',
   translateLangName: 'Korean',
   currency: { code: 'KRW', symbol: '₩', defaultRate: 0.024 },
+  lat: 37.5665, lon: 126.9780, timezone: 'Asia/Seoul',
   categories: [
     {
       key: 'basics', label: '基本問候', icon: Hand, hint: '句尾「-요 yo」是禮貌語氣。',
@@ -291,6 +298,7 @@ const vietnam: Destination = {
   ttsLang: 'vi',
   translateLangName: 'Vietnamese',
   currency: { code: 'VND', symbol: '₫', defaultRate: 0.0013 },
+  lat: 10.8231, lon: 106.6297, timezone: 'Asia/Ho_Chi_Minh',
   categories: [
     {
       key: 'basics', label: '基本問候', icon: Hand, hint: '拼音是粗略發音提示，聲調以聽 TTS 為準。',

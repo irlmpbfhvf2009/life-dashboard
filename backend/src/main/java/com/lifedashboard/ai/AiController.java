@@ -9,6 +9,8 @@ import com.lifedashboard.ai.dto.PhraseReply;
 import com.lifedashboard.ai.dto.PhraseTranslateRequest;
 import com.lifedashboard.ai.dto.ReceiptReply;
 import com.lifedashboard.ai.dto.ReceiptRequest;
+import com.lifedashboard.ai.dto.SpotReply;
+import com.lifedashboard.ai.dto.SpotRequest;
 import com.lifedashboard.common.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,7 @@ public class AiController {
     private final EnglishCoachService englishCoach;
     private final PhraseCoachService phraseCoach;
     private final ReceiptService receiptService;
+    private final SpotSuggestService spotSuggest;
     private final DataLabService dataLab;
 
     /** Whether in-app AI is configured — lets the UI show a setup hint instead of erroring. */
@@ -57,5 +60,11 @@ public class AiController {
     @PostMapping("/receipt")
     public ApiResponse<ReceiptReply> receipt(@Valid @RequestBody ReceiptRequest request) {
         return ApiResponse.ok(receiptService.scan(request));
+    }
+
+    /** Suggest sightseeing spots for a destination (for the itinerary). */
+    @PostMapping("/spots")
+    public ApiResponse<SpotReply> spots(@Valid @RequestBody SpotRequest request) {
+        return ApiResponse.ok(spotSuggest.suggest(request.place(), request.days()));
     }
 }

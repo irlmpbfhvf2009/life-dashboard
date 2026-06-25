@@ -106,5 +106,26 @@ export default {
       total: '합계',
       perPerson: '1인당',
     },
+    weather: {
+      title: '날씨',
+      today: '오늘',
+      now: '현재',
+      unavailable: '날씨 정보를 가져올 수 없어요',
+      cond: { clear: '맑음', partlyCloudy: '구름 조금', cloudy: '흐림', fog: '안개', drizzle: '이슬비', rain: '비', snow: '눈', thunder: '뇌우' },
+    },
+    time: {
+      title: '현지 시간',
+      same: '대만과 같은 시간대',
+      diffAhead: '대만보다 {n}시간 빠름',
+      diffBehind: '대만보다 {n}시간 느림',
+    },
+    spots: {
+      title: 'AI 장소 추천',
+      days: '일수',
+      button: '추천 받기',
+      add: '일정에 추가',
+      empty: '추천이 없어요. 일수를 바꿔 다시 시도하세요.',
+      disabled: 'AI 추천이 꺼져 있어요 (GEMINI_API_KEY 필요).',
+    },
   },
 }
