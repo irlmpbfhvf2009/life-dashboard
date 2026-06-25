@@ -51,6 +51,19 @@ const router = createRouter({
             { path: 'progress', name: 'english-progress', component: () => import('@/views/english/EnglishProgressPage.vue') },
           ],
         },
+        // ---- Travel assistant (module with its own sub-nav) ----
+        {
+          path: 'travel',
+          component: () => import('@/views/travel/TravelLayout.vue'),
+          children: [
+            { path: '', name: 'travel', component: () => import('@/views/travel/TravelHomePage.vue') },
+            { path: 'phrasebook', name: 'travel-phrasebook', component: () => import('@/views/travel/PhrasebookPage.vue') },
+            { path: 'itinerary', name: 'travel-itinerary', component: () => import('@/views/travel/ItineraryPage.vue') },
+            { path: 'packing', name: 'travel-packing', component: () => import('@/views/travel/PackingPage.vue') },
+            { path: 'expense', name: 'travel-expense', component: () => import('@/views/travel/TravelExpensePage.vue') },
+            { path: 'tools', name: 'travel-tools', component: () => import('@/views/travel/TravelToolsPage.vue') },
+          ],
+        },
         { path: 'knowledge', name: 'knowledge', component: () => import('@/views/KnowledgeView.vue') },
         { path: 'portfolio', name: 'portfolio', component: () => import('@/views/PortfolioView.vue') },
         { path: 'settings', name: 'settings', component: () => import('@/views/SettingsView.vue') },
@@ -72,11 +85,17 @@ router.beforeEach(async (to) => {
   if (!to.meta.public && !authStore.isAuthenticated) {
     return { name: 'login', query: to.path !== '/' ? { redirect: to.fullPath } : undefined }
   }
+  // Dev escape hatch: locally the studio profile often can't load (the prod
+  // backend's CORS blocks localhost, and the local backend may be off), so the
+  // role check would wrongly bounce you to the game portal. Treat dev as studio.
+  // Production builds (import.meta.env.DEV === false) still enforce the real role.
+  const isStudio = authStore.isStudio || import.meta.env.DEV
+
   if (to.meta.public && authStore.isAuthenticated) {
-    return { name: authStore.isStudio ? 'overview' : 'play' }
+    return { name: isStudio ? 'overview' : 'play' }
   }
   // Studio access requires the studio role — others go to the game portal.
-  if (to.meta.studio && !authStore.isStudio) {
+  if (to.meta.studio && !isStudio) {
     return { name: 'play' }
   }
   // Admin-only routes.

@@ -13,6 +13,13 @@ import ecZhCN from './locales/english/zh-CN'
 import ecJa from './locales/english/ja'
 import ecKo from './locales/english/ko'
 import ecTh from './locales/english/th'
+// Travel module UI strings (namespace `tv`), kept in their own files.
+import tvEn from './locales/travel/en'
+import tvZhTW from './locales/travel/zh-TW'
+import tvZhCN from './locales/travel/zh-CN'
+import tvJa from './locales/travel/ja'
+import tvKo from './locales/travel/ko'
+import tvTh from './locales/travel/th'
 
 export type Locale = 'zh-TW' | 'zh-CN' | 'en' | 'ja' | 'ko' | 'th'
 
@@ -49,12 +56,12 @@ export const i18n = createI18n({
   locale: detectInitialLocale(),
   fallbackLocale: 'en',
   messages: {
-    'zh-TW': { ...zhTW, ec: ecZhTW },
-    'zh-CN': { ...zhCN, ec: ecZhCN },
-    en: { ...en, ec: ecEn },
-    ja: { ...ja, ec: ecJa },
-    ko: { ...ko, ec: ecKo },
-    th: { ...th, ec: ecTh },
+    'zh-TW': { ...zhTW, ec: ecZhTW, ...tvZhTW },
+    'zh-CN': { ...zhCN, ec: ecZhCN, ...tvZhCN },
+    en: { ...en, ec: ecEn, ...tvEn },
+    ja: { ...ja, ec: ecJa, ...tvJa },
+    ko: { ...ko, ec: ecKo, ...tvKo },
+    th: { ...th, ec: ecTh, ...tvTh },
   },
 })
 

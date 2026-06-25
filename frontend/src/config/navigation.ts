@@ -21,10 +21,13 @@ import {
   BookOpen,
   Bookmark,
   FileText,
+  Plane,
+  Languages,
+  Calculator,
 } from 'lucide-vue-next'
 
 export type AppStatus = 'ACTIVE' | 'BETA' | 'DRAFT'
-export type AppCategory = 'LIFE' | 'HEALTH' | 'FINANCE' | 'AI' | 'KNOWLEDGE' | 'PORTFOLIO'
+export type AppCategory = 'LIFE' | 'HEALTH' | 'FINANCE' | 'AI' | 'KNOWLEDGE' | 'PORTFOLIO' | 'TRAVEL'
 
 export interface NavGroup {
   key: string
@@ -54,6 +57,7 @@ export const navGroups: NavGroup[] = [
   { key: 'health', label: '健康減脂', icon: HeartPulse, to: '/health' },
   { key: 'finance', label: '財務分析', icon: Wallet, to: '/finance' },
   { key: 'ai', label: 'AI 實驗室', icon: FlaskConical, to: '/ai' },
+  { key: 'travel', label: '旅遊', icon: Plane, to: '/travel' },
   { key: 'knowledge', label: '知識庫', icon: Library, to: '/knowledge' },
   { key: 'portfolio', label: '作品展示', icon: FolderGit2, to: '/portfolio' },
   // Role-gated — hidden unless the user has the matching role.
@@ -68,6 +72,7 @@ export const categoryMeta: Record<AppCategory, { label: string; tint: string }> 
   AI: { label: 'AI 實驗室', tint: 'text-brand-600 bg-brand-50' },
   KNOWLEDGE: { label: '知識庫', tint: 'text-sky-600 bg-sky-50' },
   PORTFOLIO: { label: '作品展示', tint: 'text-rose-600 bg-rose-50' },
+  TRAVEL: { label: '旅遊', tint: 'text-teal-600 bg-teal-50' },
 }
 
 export const statusMeta: Record<AppStatus, { label: string; cls: string }> = {
@@ -87,7 +92,10 @@ export const studioApps: StudioApp[] = [
   { key: 'finance', name: '記帳', description: '收支分類、月度統計與趨勢', category: 'FINANCE', status: 'ACTIVE', icon: Wallet, to: '/finance', lastUsed: '2026-06-23' },
   { key: 'stock-ai', name: 'AI 股票研究模型', description: '研究與模擬分析（非投資建議）', category: 'AI', status: 'BETA', icon: LineChart, to: '/ai/stock', lastUsed: '2026-06-21' },
   { key: 'english-ai', name: 'AI 英文教練', description: '練習對話與即時糾錯', category: 'AI', status: 'BETA', icon: GraduationCap, to: '/ai/english' },
-  { key: 'data-lab', name: '資料分析工具', description: '上傳 CSV、AI 洞察', category: 'AI', status: 'BETA', icon: Bot, to: '/ai/data-lab' },
+  { key: 'data-lab', name: '資料分析工具', description: '上傳 CSV、欄位統計與圖表、AI 洞察', category: 'AI', status: 'ACTIVE', icon: Bot, to: '/ai/data-lab' },
+  { key: 'travel-phrasebook', name: '旅遊用語包', description: '泰/日/韓/越情境短句＋發音＋AI 翻譯', category: 'TRAVEL', status: 'ACTIVE', icon: Languages, to: '/travel/phrasebook' },
+  { key: 'travel-expense', name: '旅遊記帳', description: '當地貨幣記帳、自動換算台幣與分類', category: 'TRAVEL', status: 'ACTIVE', icon: Wallet, to: '/travel/expense' },
+  { key: 'travel-tools', name: '換算 / 小費', description: '當地貨幣⇄台幣、小費與分帳計算', category: 'TRAVEL', status: 'ACTIVE', icon: Calculator, to: '/travel/tools' },
   { key: 'notes', name: '筆記', description: '結構化筆記與知識庫', category: 'KNOWLEDGE', status: 'ACTIVE', icon: BookOpen, to: '/knowledge' },
   { key: 'resources', name: '資源庫', description: '收藏連結與常用工具', category: 'KNOWLEDGE', status: 'DRAFT', icon: Bookmark, to: '/knowledge' },
   { key: 'projects', name: '作品集', description: '專案作品與技術棧展示', category: 'PORTFOLIO', status: 'ACTIVE', icon: FolderGit2, to: '/portfolio' },

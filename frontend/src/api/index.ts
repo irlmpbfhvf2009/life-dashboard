@@ -71,20 +71,62 @@ export interface SentenceCorrection {
   examples: string[]
 }
 export interface DataInsight { summary: string; findings: string[]; suggestions: string[] }
+export interface PhraseTranslation {
+  nativeText: string
+  pronunciation: string
+  literal: string
+  polite: string
+  tip: string
+}
 export const aiApi = {
   status: () => request<{ enabled: boolean }>(() => http.get('/api/ai/status')),
   englishChat: (body: { message: string; history: ChatTurn[] }) =>
     request<ChatReply>(() => http.post('/api/ai/english/chat', body)),
   englishCorrect: (body: { message: string }) =>
     request<SentenceCorrection>(() => http.post('/api/ai/english/correct', body)),
+  /** Translate Chinese → a travel language (lang = "Thai" | "Japanese" | "Korean" | "Vietnamese"). */
+  phraseTranslate: (body: { message: string; lang: string }) =>
+    request<PhraseTranslation>(() => http.post('/api/ai/phrase/translate', body)),
+  /** Read a receipt photo (base64, no data: prefix) into expense fields. */
+  receiptScan: (body: { image: string; mimeType: string; currency: string; categories: string[] }) =>
+    request<ReceiptScan>(() => http.post('/api/ai/receipt', body)),
   dataLabAnalyze: (body: { profile: string }) =>
     request<DataInsight>(() => http.post('/api/ai/datalab/analyze', body)),
+}
+export interface ReceiptScan {
+  amount: number
+  currency: string
+  category: string
+  note: string
+  date: string
+}
+
+// ---- Text-to-speech (server proxy → speaks any language without an OS voice) ----
+export const ttsApi = {
+  /** Fetch spoken audio as an object URL; the caller revokes it when finished. */
+  async objectUrl(text: string, lang = 'th'): Promise<string> {
+    const res = await http.get('/api/tts', { params: { text, lang }, responseType: 'blob' })
+    return URL.createObjectURL(res.data as Blob)
+  },
 }
 
 // ---- English Coach state (per-user, cross-device sync) ----
 export const englishStateApi = {
   get: <T = unknown>() => request<T | null>(() => http.get('/api/english/state')),
   put: (state: unknown) => request<void>(() => http.put('/api/english/state', state)),
+}
+
+// ---- Travel state (per-user trip wallet, cross-device sync) ----
+export const travelStateApi = {
+  get: <T = unknown>() => request<T | null>(() => http.get('/api/travel/state')),
+  put: (state: unknown) => request<void>(() => http.put('/api/travel/state', state)),
+}
+
+// ---- Foreign exchange (live rate proxy for the travel wallet) ----
+export interface FxRate { from: string; to: string; rate: number; asOf: string }
+export const fxApi = {
+  rate: (from: string, to = 'TWD') =>
+    request<FxRate>(() => http.get('/api/fx/rate', { params: { from, to } })),
 }
 
 // ---- Usage (owner-only free-tier bar) ----

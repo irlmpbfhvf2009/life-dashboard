@@ -52,7 +52,15 @@ infra/billing-guard/          費用自動關閉的 Cloud Function
   - **知識庫 `/knowledge`**：master-detail 筆記（搜尋/新增/編輯/Ctrl⌘+S/刪除），接 `noteApi`。
   - **生活管理 `/life`**：待辦（todoApi）+ 心情日記（moodApi）兩個分頁。
   - **作品展示 `/portfolio`**：靜態卡片展示（資料在 `src/data/portfolio.ts`），無後端。
-  - i18n：以上模組 6 語系（zh-TW/zh-CN/en/ja/ko/th）皆已翻譯；其他舊區塊（nav/login/dashboard…）仍只有 zh-TW。
+  - **旅遊助手 `/travel`**（**多國**：泰/日/韓/越，目的地驅動；含自有子導航 `TravelSubNav`，側邊欄大類「旅遊」）：
+    - **目的地資料集中在 `src/data/destinations.ts`**：每國一筆（country/city/flag、`ttsLang`、`translateLangName`、`currency{code,symbol,defaultRate}`、5 大情境短句 `categories`、`cheatSheet`）。**加一國＝加一筆**，UI 全部目的地驅動。共用元件 `DestinationPicker`（寫進同步狀態，全頁面連動、跨裝置）。
+    - **旅遊用語包 `/travel/phrasebook`**（`PhrasebookPage.vue`）：選國家→該國情境短句（中/當地文字/拼音）＋一鍵發音＋ AI 即時翻譯（中→當地語言，`destination.translateLangName`）。
+    - **發音＝雲端 TTS**：後端 `com.lifedashboard.tts.TtsController`（`GET /api/tts?text=&lang=`，`lang`=th/ja/ko/vi…）server-side 代理 Google 翻譯免費 TTS（免金鑰、回 mp3、避 CORS），前端 `ttsApi.objectUrl` 播放 blob（`PhraseAudioButton`，吃 `lang` prop）。**抓不到後端時自動降級**回瀏覽器原生 `useSpeechSynthesis(lang)`（裝置沒裝該語言語音會沒聲音，所以才改雲端）。要有聲音 → 後端要跑/部署得到。
+    - **旅遊記帳 `/travel/expense`**：**每國各自幣別＋可調匯率**（記帳明細存當地貨幣＋幣別碼，依國家分開統計、換算台幣）；**跨裝置綁帳號**——`useTravelWallet` 照 `useEnglishStore` 模式（localStorage 即時快取 + 背景同步後端 `travel_state`、雲端優先、失敗靜默降級）。同步文件含 `items[]`(含 currency)、`rates{}`(per 幣別)、`departDate`、`destinationId`；`normalize()` 會把舊的 THB-only 格式（`amountThb`/`thbToTwd`）自動升級。後端 `com.lifedashboard.travel`：`travel_state` 表（per-user JSON）+ `GET/PUT /api/travel/state`。刻意與正式財務（expenses 表）分開。
+    - **換算/小費 `/travel/tools`**：當地貨幣⇄台幣雙向換算、小費/分帳（共用 wallet 的當地幣別與匯率）。
+    - 後端 AI：`com.lifedashboard.ai.PhraseCoachService` + `POST /api/ai/phrase/translate`（body `{message,lang}`，lang=Thai/Japanese/Korean/Vietnamese；比照 EnglishCoach，共用 `GeminiClient` 與 `GEMINI_API_KEY`，無金鑰回 503）。
+    - **i18n 待回填**：此模組 UI 字串目前**只有 zh-TW（硬編碼，未抽 key）**，其他 5 語未做。內容（短句/小抄）刻意保留中文＋當地語言。
+  - i18n：以上模組（不含 travel）6 語系（zh-TW/zh-CN/en/ja/ko/th）皆已翻譯；其他舊區塊（nav/login/dashboard…）仍只有 zh-TW。
   - 仍佔位（ModuleLandingView）：**AI 實驗室 `/ai`** 落地頁（其下 `/ai/stock` 已完整；英文家教、資料分析待做）。
 - **Phase 3 未做**：習慣/目標/斷食/日記長文 等需要新資料表的功能（habits/habit_records/goals/journals/fasting_records/portfolio_projects…）對應的 Entity/Repository/Service/Controller；users 加 provider 欄。
 

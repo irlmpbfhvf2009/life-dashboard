@@ -69,6 +69,42 @@ public class GeminiClient {
         gen.put("responseMimeType", "application/json");
         gen.set("responseSchema", responseSchema);
 
+        return execute(body);
+    }
+
+    /**
+     * Like {@link #generateJson} but with a single user message that includes an
+     * inline image (base64) — for vision tasks such as reading a receipt.
+     */
+    public String generateJsonWithImage(String systemInstruction, String userText,
+                                        String base64Image, String mimeType, ObjectNode responseSchema) {
+        if (!isEnabled()) {
+            throw new ServiceUnavailableException("AI 尚未設定（缺少 GEMINI_API_KEY）");
+        }
+
+        ObjectNode body = mapper.createObjectNode();
+        ObjectNode sys = body.putObject("systemInstruction");
+        sys.putArray("parts").addObject().put("text", systemInstruction);
+
+        ArrayNode contents = body.putArray("contents");
+        ObjectNode c = contents.addObject();
+        c.put("role", "user");
+        ArrayNode parts = c.putArray("parts");
+        parts.addObject().put("text", userText);
+        ObjectNode inline = parts.addObject().putObject("inlineData");
+        inline.put("mimeType", mimeType == null || mimeType.isBlank() ? "image/jpeg" : mimeType);
+        inline.put("data", base64Image);
+
+        ObjectNode gen = body.putObject("generationConfig");
+        gen.put("temperature", 0.2); // factual extraction — keep it tight
+        gen.put("responseMimeType", "application/json");
+        gen.set("responseSchema", responseSchema);
+
+        return execute(body);
+    }
+
+    /** Posts a fully-built request body and returns the model's text part. */
+    private String execute(ObjectNode body) {
         try {
             String raw = http.post()
                     .uri(uriBuilder -> uriBuilder
