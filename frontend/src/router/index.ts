@@ -77,6 +77,7 @@ const router = createRouter({
         { path: 'social', name: 'social', component: () => import('@/views/social/SocialHubView.vue') },
         { path: 'social/u/:userId', name: 'social-profile', component: () => import('@/views/social/FriendProfileView.vue') },
         { path: 'fate', name: 'fate', component: () => import('@/views/FateView.vue') },
+        { path: 'roulette', name: 'roulette', component: () => import('@/views/FoodRouletteView.vue') },
         { path: 'knowledge', name: 'knowledge', component: () => import('@/views/KnowledgeView.vue') },
         { path: 'portfolio', name: 'portfolio', component: () => import('@/views/PortfolioView.vue') },
         { path: 'settings', name: 'settings', component: () => import('@/views/SettingsView.vue') },
