@@ -62,13 +62,24 @@ infra/billing-guard/          費用自動關閉的 Cloud Function
     - **自動匯率**：後端 `com.lifedashboard.fx.FxController`（`GET /api/fx/rate?from=&to=TWD`）代理免費 open.er-api.com、快取 6h，前端 `fxApi`＋`wallet.refreshRate()`（記帳/換算頁有「更新」鈕，匯率仍為預設時自動抓一次）。
     - **收據拍照記帳**：`GeminiClient.generateJsonWithImage`（vision）+ `ReceiptService` + `POST /api/ai/receipt`（body 含 base64 image）；前端 `utils/image.ts` 壓縮後上傳，回填記帳表單。
     - **天氣 + 當地時間**：`useWeather`（Open-Meteo 免金鑰、CORS、快取 30 分）+ `useLocalTime`（IANA 時區 vs 台灣，Intl 計算）；`DestinationWeather.vue` 顯示在旅遊首頁，行程表每日卡片對齊出發日顯示當天天氣。目的地座標/時區在 `destinations.ts`（`lat/lon/timezone`）。
-    - **AI 景點建議**：`SpotSuggestService` + `POST /api/ai/spots`（body `{place,days}`，回每個景點含建議天數）；行程表「AI 景點建議」卡片，點一下加進行程。
-    - 後端 AI：`com.lifedashboard.ai.PhraseCoachService` + `POST /api/ai/phrase/translate`（body `{message,lang}`，lang=Thai/Japanese/Korean/Vietnamese；比照 EnglishCoach，共用 `GeminiClient` 與 `GEMINI_API_KEY`，無金鑰回 503）。
-    - **i18n 已完成**：UI 字串抽到 `tv` namespace（`src/i18n/locales/travel/*.ts`，6 語）；內容（短句/小抄/國名）刻意保留中文＋當地語言。
-    - **待辦**：PWA 推播（FCM）——需在 Firebase Console 產 Web Push (VAPID) 金鑰後才能接（SW + token 表 + 發送），尚未做。
+    - **AI 景點建議**：`SpotSuggestService` + `POST /api/ai/spots`（body `{place,days}`，回每個景點含建議天數、依距離分天）；行程表「AI 景點建議」卡片，點一下加進行程。
+    - **預算追蹤**：`useTravelWallet` 的 `budget`（per destinationId、台幣，存同步文件 `budgets{}`）+ `remainingTwd/budgetPct/overBudget`；記帳頁有預算進度條（已花/剩餘/超支轉紅）。
+    - **行程總覽 Dashboard**：`TripSummary.vue`（首頁）整合預算/打包進度/今日行程（依 `departDate` 算「今天第幾天」），每塊可點進對應頁。
+    - **行程地圖 `/travel/map`**：`MapPage.vue` 用 **Leaflet + OSM**（免金鑰，套件 `leaflet`）把行程景點以「分天數字」標記、自動框景、popup。地理編碼走後端 `com.lifedashboard.geo.GeoController`（`GET /api/geo?q=`）代理 **Nominatim**（合規 User-Agent + 快取）；前端**抽英文名查詢**（`大皇宮 (Grand Palace)`→`Grand Palace, Bangkok`）、**節流 1 req/s**，座標寫回 `ItineraryItem.lat/lon`（同步）。地圖下方有景點清單顯示「在地圖上/找不到位置」。
+    - **PWA 自動更新**：`main.ts` 監聽 `controllerchange` + 定期 `reg.update()`，部署新版自動 reload（`registerType:autoUpdate`），不用手動硬重整。
+    - 後端 AI：`com.lifedashboard.ai`：`PhraseCoachService`（`/api/ai/phrase/translate`）、`ReceiptService`（`/api/ai/receipt` vision）、`SpotSuggestService`（`/api/ai/spots`）；比照 EnglishCoach，共用 `GeminiClient` 與 `GEMINI_API_KEY`，無金鑰回 503。**模型用 `gemini-2.5-flash`**（2.0-flash 此 key free tier=0、回 429，見踩過的坑 7）。
+    - **i18n 已完成**：UI 字串抽到 `tv` namespace（`src/i18n/locales/travel/*.ts`，6 語）；內容（短句/小抄/國名）刻意保留中文＋當地語言。新增字串記得 6 語都補。
+    - **下一步（要做，商業規模）**：離線緊急卡、行程分享、旅遊日記——設計指引見下方「## 旅遊：下一步三個功能」。
   - i18n：以上模組 6 語系（zh-TW/zh-CN/en/ja/ko/th）皆已翻譯；其他舊區塊（nav/login/dashboard…）仍只有 zh-TW。
   - 仍佔位（ModuleLandingView）：**AI 實驗室 `/ai`** 落地頁（其下 `/ai/stock` 已完整；英文家教、資料分析待做）。
 - **Phase 3 未做**：習慣/目標/斷食/日記長文 等需要新資料表的功能（habits/habit_records/goals/journals/fasting_records/portfolio_projects…）對應的 Entity/Repository/Service/Controller；users 加 provider 欄。
+
+## 旅遊：下一步三個功能（使用者指定，要做到商業規模）
+> 共同原則：延續**目的地驅動**＋`travel_state` 同步（`useTravelState()` plumbing）＋`tv` namespace **6 語 i18n**＋子導航(`TravelSubNav`)/首頁卡(`TravelHomePage` tools)＋一條龍部署（前端 prebuilt `deploy-frontend.ps1`、後端 `gcloud run deploy --source backend`）＋部署後 `curl` 驗端點(401=掛載受保護)。新端點掛 `/api/**`(authed) 或 `/api/public/**`(要在 `SecurityConfig` permitAll)。
+
+1. **離線緊急卡 `/travel/emergency`**：到當地沒網路也能秀的一張大字卡。內容＝當地緊急電話(已在 `destinations.ts` 的 `cheatSheet`)＋使用者填的飯店名/地址/訂房代號/保險/大使館(存 `travel_state` 新欄位 `trip:{}` per destinationId)＋關鍵求助句(中＋當地語言，取自 phrasebook 的 emergency 分類)。PWA 已 precache app shell、同步資料在 localStorage→離線可讀。重點 UX：大字、可一鍵用 `PhraseAudioButton` 把飯店地址/求助句念出當地語言給計程車/警察聽。
+2. **行程分享**（分享鈕 / `/travel/share`）：產**唯讀公開連結**。後端新增 `shared_trip` 表(token、user_id、JSON snapshot、createdAt) + `POST /api/travel/share`(把當下行程/景點/天氣 snapshot 起來、回 token) + **公開** `GET /api/public/trip/{token}`(免 auth；`SecurityConfig` 加 `/api/public/**` permitAll)。前端公開唯讀頁 `/t/{token}`(router `meta.public`，免登入)，渲染行程表＋地圖。只 snapshot 要分享的東西、別漏個資。加分：匯出 PDF(用 pdf skill 或前端 print CSS)。
+3. **旅遊日記 `/travel/journal`**：每日照片＋心得時間軸。**照片要真存放**(localStorage 塞不下)→用 **Firebase Storage**(專案已有 Firebase；前端 SDK 直傳、存 download URL)。entry `{day/date, text, photoUrls[]}` 存 `travel_state` 的 `journal{}` per destinationId(只存文字＋URL，照片在 Storage)；上傳前用 `utils/image.ts` 壓縮。加分：可接「行程分享」一起公開。
 
 ## AI 股票管線（重要）
 - 每日免費層（GitHub Actions `stock_scan.yml`）：掃描/評分/籌碼/命中率 → 寫 `stock-radar/public/*.json` → commit。
