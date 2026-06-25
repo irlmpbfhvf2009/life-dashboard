@@ -50,12 +50,17 @@ interface Persisted {
   packing: Record<string, PackingItem[]>
   /** Itinerary items, keyed by destinationId. */
   itinerary: Record<string, ItineraryItem[]>
+  /** Trip budget in TWD, keyed by destinationId. */
+  budgets: Record<string, number>
 }
 
 const storageKey = (uid: string) => `travel:${uid}`
 
 function freshState(): Persisted {
-  return { items: [], rates: {}, departDate: '', destinationId: destinations[0].id, packing: {}, itinerary: {} }
+  return {
+    items: [], rates: {}, departDate: '', destinationId: destinations[0].id,
+    packing: {}, itinerary: {}, budgets: {},
+  }
 }
 
 /** Upgrade any previously-stored shape (incl. the THB-only version) to Persisted. */
@@ -87,6 +92,7 @@ function normalize(raw: unknown): Persisted {
 
   const packing = (r.packing && typeof r.packing === 'object' ? r.packing : {}) as Record<string, PackingItem[]>
   const itinerary = (r.itinerary && typeof r.itinerary === 'object' ? r.itinerary : {}) as Record<string, ItineraryItem[]>
+  const budgets = (r.budgets && typeof r.budgets === 'object' ? r.budgets : {}) as Record<string, number>
 
   return {
     items,
@@ -95,6 +101,7 @@ function normalize(raw: unknown): Persisted {
     destinationId: typeof r.destinationId === 'string' ? r.destinationId : base.destinationId,
     packing,
     itinerary,
+    budgets,
   }
 }
 
@@ -269,6 +276,22 @@ export function useTravelWallet() {
     return Math.round(amount * rate.value)
   }
 
+  // ---- Budget (per destination, in TWD) ----
+  const budget = computed<number>({
+    get: () => state.data?.budgets[destinationId.value] ?? 0,
+    set: (v: number) => {
+      if (state.data) {
+        state.data.budgets[destinationId.value] = v > 0 ? v : 0
+        persist()
+      }
+    },
+  })
+  const remainingTwd = computed(() => budget.value - totalTwd.value)
+  const budgetPct = computed(() =>
+    budget.value > 0 ? Math.min(100, Math.round((totalTwd.value / budget.value) * 100)) : 0,
+  )
+  const overBudget = computed(() => budget.value > 0 && totalTwd.value > budget.value)
+
   const rateLoading = ref(false)
 
   /** Fetch the live rate for the active currency and store it. Silent on failure. */
@@ -301,6 +324,10 @@ export function useTravelWallet() {
     totalForeign,
     totalTwd,
     byCategory,
+    budget,
+    remainingTwd,
+    budgetPct,
+    overBudget,
     add,
     remove,
     clearAll,

@@ -13,7 +13,7 @@ import { fileToCompressedBase64 } from '@/utils/image'
 
 const { t } = useI18n()
 const wallet = useTravelWallet()
-const { destination, currency, rate } = wallet
+const { destination, currency, rate, budget } = wallet
 
 const today = new Date().toISOString().slice(0, 10)
 const form = ref({ date: today, category: TRIP_CATEGORIES[0] as string, amount: null as number | null, note: '' })
@@ -107,6 +107,31 @@ const fmt = (n: number) => nf.format(Math.round(n))
           <template v-else>{{ $t('tv.expense.rateManual') }}</template>
         </p>
       </div>
+    </div>
+
+    <!-- Budget -->
+    <div class="card mb-6 p-5">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <p class="text-sm font-medium text-ink-500">{{ $t('tv.budget.title') }}</p>
+        <label class="flex items-center gap-2 text-sm">
+          <span class="text-ink-500">{{ $t('tv.budget.setLabel') }}</span>
+          <span class="text-ink-400">NT$</span>
+          <input v-model.number="budget" type="number" min="0" step="100" class="w-32 rounded-lg border border-ink-200 bg-surface px-2 py-1 text-right text-sm" placeholder="0" />
+        </label>
+      </div>
+      <template v-if="budget > 0">
+        <div class="mt-3 h-2.5 overflow-hidden rounded-full bg-ink-100">
+          <div class="h-full rounded-full transition-all" :class="wallet.overBudget.value ? 'bg-rose-500' : 'bg-emerald-500'" :style="{ width: wallet.budgetPct.value + '%' }" />
+        </div>
+        <div class="mt-2 flex flex-wrap items-center justify-between gap-2 text-sm">
+          <span class="text-ink-500">{{ $t('tv.budget.spent') }} NT$ {{ fmt(wallet.totalTwd.value) }} / NT$ {{ fmt(budget) }}</span>
+          <span :class="wallet.overBudget.value ? 'font-semibold text-rose-600' : 'font-medium text-emerald-600'">
+            <template v-if="wallet.overBudget.value">{{ $t('tv.budget.over') }} NT$ {{ fmt(-wallet.remainingTwd.value) }}</template>
+            <template v-else>{{ $t('tv.budget.remaining') }} NT$ {{ fmt(wallet.remainingTwd.value) }}</template>
+          </span>
+        </div>
+      </template>
+      <p v-else class="mt-2 text-xs text-ink-400">{{ $t('tv.budget.none') }}</p>
     </div>
 
     <div class="grid gap-6 lg:grid-cols-5">

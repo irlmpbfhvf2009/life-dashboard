@@ -128,5 +128,22 @@ export default {
       empty: '추천이 없어요. 일수를 바꿔 다시 시도하세요.',
       disabled: 'AI 추천이 꺼져 있어요 (GEMINI_API_KEY 필요).',
     },
+    budget: {
+      title: '예산',
+      setLabel: '여행 예산',
+      spent: '사용',
+      remaining: '남음',
+      over: '초과',
+      none: '예산을 설정해 지출을 관리하세요',
+    },
+    summary: {
+      title: '여행 개요',
+      packing: '짐 싸기',
+      today: '오늘 일정',
+      notSet: '미설정',
+      setDate: '출발일을 설정하면 표시돼요',
+      noToday: '오늘은 일정이 없어요',
+      ended: '여행이 끝났어요',
+    },
   },
 }

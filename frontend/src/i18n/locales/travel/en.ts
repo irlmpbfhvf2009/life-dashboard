@@ -128,5 +128,22 @@ export default {
       empty: 'No suggestions — try a different number of days.',
       disabled: 'AI suggestions are off (backend needs GEMINI_API_KEY).',
     },
+    budget: {
+      title: 'Budget',
+      setLabel: 'Trip budget',
+      spent: 'Spent',
+      remaining: 'Left',
+      over: 'Over',
+      none: 'Set a budget to track spending',
+    },
+    summary: {
+      title: 'Trip overview',
+      packing: 'Packing',
+      today: "Today's plan",
+      notSet: 'Not set',
+      setDate: 'Set a departure date to show',
+      noToday: 'Nothing planned today',
+      ended: 'Trip ended',
+    },
   },
 }

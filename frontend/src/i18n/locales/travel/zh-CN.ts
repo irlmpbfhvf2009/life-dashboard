@@ -128,5 +128,22 @@ export default {
       empty: 'AI 暂时没有建议，换个天数再试。',
       disabled: 'AI 建议尚未启用（需要后端 GEMINI_API_KEY）。',
     },
+    budget: {
+      title: '预算',
+      setLabel: '本趟预算',
+      spent: '已花',
+      remaining: '剩余',
+      over: '超支',
+      none: '设置预算以追踪花费',
+    },
+    summary: {
+      title: '行程总览',
+      packing: '打包',
+      today: '今日行程',
+      notSet: '尚未设置',
+      setDate: '设置出发日即可显示',
+      noToday: '今天没有安排',
+      ended: '行程已结束',
+    },
   },
 }

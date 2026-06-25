@@ -130,5 +130,22 @@ export default {
       empty: 'AI 想不出建議，換個天數再試。',
       disabled: 'AI 建議尚未啟用（需要後端 GEMINI_API_KEY）。',
     },
+    budget: {
+      title: '預算',
+      setLabel: '本趟預算',
+      spent: '已花',
+      remaining: '剩餘',
+      over: '超支',
+      none: '設定預算以追蹤花費',
+    },
+    summary: {
+      title: '行程總覽',
+      packing: '打包',
+      today: '今日行程',
+      notSet: '尚未設定',
+      setDate: '設定出發日即可顯示',
+      noToday: '今天沒有安排',
+      ended: '行程已結束',
+    },
   },
 }

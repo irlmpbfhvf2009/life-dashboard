@@ -128,5 +128,22 @@ export default {
       empty: '提案が出ませんでした。日数を変えてお試しを。',
       disabled: 'AI提案は未設定です（GEMINI_API_KEYが必要）。',
     },
+    budget: {
+      title: '予算',
+      setLabel: '旅の予算',
+      spent: '使用',
+      remaining: '残り',
+      over: '超過',
+      none: '予算を設定して支出を管理',
+    },
+    summary: {
+      title: '旅程の概要',
+      packing: '持ち物',
+      today: '今日の予定',
+      notSet: '未設定',
+      setDate: '出発日を設定すると表示',
+      noToday: '今日の予定はありません',
+      ended: '旅程は終了しました',
+    },
   },
 }
