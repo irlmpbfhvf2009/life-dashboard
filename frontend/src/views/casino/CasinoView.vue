@@ -4,6 +4,7 @@ import { Coins, LogOut, ArrowLeft } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import { useWallet } from '@/composables/useWallet'
 import SlotMachine from '@/components/casino/SlotMachine.vue'
+import SethSlot from '@/components/casino/SethSlot.vue'
 
 const auth = useAuthStore()
 const { coins, refresh } = useWallet()
@@ -22,6 +23,9 @@ const CATEGORIES = [
   { key: 'vip', label: 'VIP', emoji: '⭐' },
 ]
 const activeCat = ref('electronic')
+
+// Which electronic game is open in full-screen play ('seth' | 'classic' | null = lobby).
+const openGame = ref<'seth' | 'classic' | null>(null)
 
 // Placeholder game tiles for flavour.
 const TILES = ['农庄争霸', '凤凰传奇', '动物王国', '亚瑟王', '超级巨星', 'Candy Dreams', '三重辣椒', 'Fruit Nova']
@@ -110,19 +114,52 @@ onMounted(() => { if (auth.isAuthenticated) refresh() })
         <p class="font-mono text-4xl font-black tracking-widest text-amber-300">30,245,457</p>
       </div>
 
-      <!-- Electronic = working slot machine -->
+      <!-- Electronic = working slot machines -->
       <template v-if="activeCat === 'electronic'">
-        <h2 class="mb-3 text-lg font-bold">🎰 电子 · 老虎機</h2>
-        <div class="grid gap-5 lg:grid-cols-2">
+        <!-- A game is open: play it full-width -->
+        <div v-if="openGame === 'seth'" class="mx-auto max-w-xl">
+          <SethSlot @back="openGame = null" />
+        </div>
+        <div v-else-if="openGame === 'classic'" class="mx-auto max-w-lg">
+          <button class="mb-3 inline-flex items-center gap-1 text-sm text-white/60 hover:text-white" @click="openGame = null">
+            <ArrowLeft class="h-4 w-4" /> 大廳
+          </button>
           <SlotMachine />
-          <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-2">
-            <div v-for="t in TILES" :key="t" class="flex aspect-[4/3] flex-col items-center justify-center rounded-xl bg-gradient-to-br from-[#1b2a4a] to-[#0f1a30] text-center ring-1 ring-white/10">
+        </div>
+
+        <!-- Lobby: pick a game -->
+        <template v-else>
+          <h2 class="mb-3 text-lg font-bold">🎰 电子 · 老虎機</h2>
+          <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+            <!-- Featured: Seth tumble slot -->
+            <button
+              class="group relative col-span-2 flex aspect-[2/1] flex-col items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-[#3a1d6e] via-[#241555] to-[#0c0822] text-center ring-1 ring-amber-400/40 transition hover:ring-amber-300 sm:col-span-1 sm:aspect-[4/3]"
+              @click="openGame = 'seth'"
+            >
+              <span class="absolute right-1.5 top-1.5 rounded bg-amber-400 px-1.5 py-0.5 text-[9px] font-black text-[#1a1140]">HOT</span>
+              <span class="text-4xl drop-shadow">⚱️</span>
+              <span class="mt-1 px-2 text-sm font-bold text-amber-200">法老寶藏</span>
+              <span class="mt-0.5 text-[10px] text-white/50">連消 · 倍數球 · 免費旋轉</span>
+            </button>
+
+            <!-- Classic 3-reel -->
+            <button
+              class="flex aspect-[2/1] flex-col items-center justify-center rounded-xl bg-gradient-to-br from-[#1b2a4a] to-[#0f1a30] text-center ring-1 ring-white/10 transition hover:ring-amber-400/40 sm:aspect-[4/3]"
+              @click="openGame = 'classic'"
+            >
+              <span class="text-3xl">🎰</span>
+              <span class="mt-1 px-2 text-xs font-bold text-white/80">幸運老虎機</span>
+              <span class="mt-0.5 text-[10px] text-white/40">經典三轉軸</span>
+            </button>
+
+            <!-- Coming soon -->
+            <div v-for="t in TILES" :key="t" class="flex aspect-[2/1] flex-col items-center justify-center rounded-xl bg-gradient-to-br from-[#1b2a4a] to-[#0f1a30] text-center ring-1 ring-white/10 sm:aspect-[4/3]">
               <span class="text-2xl">🎲</span>
               <span class="mt-1 px-2 text-xs text-white/70">{{ t }}</span>
               <span class="mt-1 text-[10px] text-white/30">敬請期待</span>
             </div>
           </div>
-        </div>
+        </template>
       </template>
 
       <!-- Other categories: placeholder -->
