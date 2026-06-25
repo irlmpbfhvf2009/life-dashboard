@@ -59,6 +59,7 @@ const router = createRouter({
             { path: '', name: 'travel', component: () => import('@/views/travel/TravelHomePage.vue') },
             { path: 'phrasebook', name: 'travel-phrasebook', component: () => import('@/views/travel/PhrasebookPage.vue') },
             { path: 'itinerary', name: 'travel-itinerary', component: () => import('@/views/travel/ItineraryPage.vue') },
+            { path: 'map', name: 'travel-map', component: () => import('@/views/travel/MapPage.vue') },
             { path: 'packing', name: 'travel-packing', component: () => import('@/views/travel/PackingPage.vue') },
             { path: 'expense', name: 'travel-expense', component: () => import('@/views/travel/TravelExpensePage.vue') },
             { path: 'tools', name: 'travel-tools', component: () => import('@/views/travel/TravelToolsPage.vue') },

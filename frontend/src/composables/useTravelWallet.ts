@@ -38,6 +38,9 @@ export interface ItineraryItem {
   time: string // free text, e.g. "09:00"
   place: string
   note: string
+  /** Geocoded coordinates (filled lazily by the map). */
+  lat?: number
+  lon?: number
 }
 
 interface Persisted {
@@ -432,5 +435,15 @@ export function useItinerary() {
     persist()
   }
 
-  return { destination, items, byDay, add, remove }
+  /** Cache geocoded coordinates onto an item (called by the map). */
+  function setCoords(id: string, lat: number, lon: number) {
+    const it = listFor().find((x) => x.id === id)
+    if (it) {
+      it.lat = lat
+      it.lon = lon
+      persist()
+    }
+  }
+
+  return { destination, destinationId, items, byDay, add, remove, setCoords }
 }

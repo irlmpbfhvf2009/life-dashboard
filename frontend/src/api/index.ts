@@ -138,6 +138,12 @@ export const fxApi = {
     request<FxRate>(() => http.get('/api/fx/rate', { params: { from, to } })),
 }
 
+// ---- Geocoding (Nominatim proxy for the itinerary map) ----
+export interface GeoResult { lat: number; lon: number; displayName: string }
+export const geoApi = {
+  search: (q: string) => request<GeoResult | null>(() => http.get('/api/geo', { params: { q } })),
+}
+
 // ---- Usage (owner-only free-tier bar) ----
 export const usageApi = {
   get: () => request<UsageData>(() => http.get('/api/usage')),

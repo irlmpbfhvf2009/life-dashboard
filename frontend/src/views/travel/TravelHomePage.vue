@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
-import { Plane, Languages, Wallet, Calculator, ArrowRight, CalendarDays, CalendarRange, ListChecks } from 'lucide-vue-next'
+import { Plane, Languages, Wallet, Calculator, ArrowRight, CalendarDays, CalendarRange, ListChecks, Map } from 'lucide-vue-next'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import SectionCard from '@/components/ui/SectionCard.vue'
 import DestinationPicker from '@/components/travel/DestinationPicker.vue'
@@ -24,6 +24,7 @@ const daysLeft = computed(() => {
 const tools = [
   { to: '/travel/phrasebook', name: 'tv.nav.phrasebook', desc: 'tv.home.phrasebookDesc', icon: Languages, tint: 'text-brand-600 bg-brand-50' },
   { to: '/travel/itinerary', name: 'tv.nav.itinerary', desc: 'tv.home.itineraryDesc', icon: CalendarRange, tint: 'text-sky-600 bg-sky-50' },
+  { to: '/travel/map', name: 'tv.nav.map', desc: 'tv.home.mapDesc', icon: Map, tint: 'text-rose-600 bg-rose-50' },
   { to: '/travel/packing', name: 'tv.nav.packing', desc: 'tv.home.packingDesc', icon: ListChecks, tint: 'text-violet-600 bg-violet-50' },
   { to: '/travel/expense', name: 'tv.nav.expense', desc: 'tv.home.expenseDesc', icon: Wallet, tint: 'text-amber-600 bg-amber-50' },
   { to: '/travel/tools', name: 'tv.nav.tools', desc: 'tv.home.toolsDesc', icon: Calculator, tint: 'text-emerald-600 bg-emerald-50' },
