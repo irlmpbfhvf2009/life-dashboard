@@ -342,7 +342,7 @@ const isGroupOrPublic = computed(() =>
                     class="rounded-2xl px-2 py-1.5"
                     :class="m.senderId === chat.meId() ? 'bg-brand-500' : 'bg-ink-100'"
                   >
-                    <audio :src="m.attachmentUrl" controls preload="none" class="h-8 w-48 max-w-full" />
+                    <audio :src="m.attachmentUrl" controls preload="metadata" class="h-8 w-48 max-w-full" />
                   </div>
 
                   <!-- Text -->
