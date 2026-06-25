@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-06-24 18:37",
+  "updated_at": "2026-06-25 18:29",
   "windows": [
     5,
     10,
@@ -20,7 +20,7 @@
       "in_progress": 4,
       "avg_win_pct": 5.0,
       "avg_loss_pct": -0.63,
-      "avg_max_return_pct": 14.91,
+      "avg_max_return_pct": 14.94,
       "expectancy_pct": 4.06
     },
     "10": {
@@ -33,7 +33,7 @@
       "in_progress": 5,
       "avg_win_pct": 5.0,
       "avg_loss_pct": null,
-      "avg_max_return_pct": 17.34,
+      "avg_max_return_pct": 17.38,
       "expectancy_pct": 5.0
     },
     "20": {
@@ -46,7 +46,7 @@
       "in_progress": 5,
       "avg_win_pct": 5.0,
       "avg_loss_pct": null,
-      "avg_max_return_pct": 17.34,
+      "avg_max_return_pct": 17.38,
       "expectancy_pct": 5.0
     }
   },
@@ -110,28 +110,28 @@
       "entry_price": 172.0,
       "windows": {
         "5": {
-          "max_return_pct": 1.16,
-          "end_return_pct": 0.0,
+          "max_return_pct": 4.36,
+          "end_return_pct": -6.1,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         },
         "10": {
-          "max_return_pct": 1.16,
-          "end_return_pct": 0.0,
+          "max_return_pct": 4.36,
+          "end_return_pct": -6.1,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         },
         "20": {
-          "max_return_pct": 1.16,
-          "end_return_pct": 0.0,
+          "max_return_pct": 4.36,
+          "end_return_pct": -6.1,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         }
       },
-      "last_return_pct": 0.0,
+      "last_return_pct": -6.1,
       "status_overall": "evaluated"
     },
     {
@@ -153,27 +153,27 @@
       "windows": {
         "5": {
           "max_return_pct": 0.83,
-          "end_return_pct": -4.17,
+          "end_return_pct": -2.5,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         },
         "10": {
           "max_return_pct": 0.83,
-          "end_return_pct": -4.17,
+          "end_return_pct": -2.5,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         },
         "20": {
           "max_return_pct": 0.83,
-          "end_return_pct": -4.17,
+          "end_return_pct": -2.5,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         }
       },
-      "last_return_pct": -4.17,
+      "last_return_pct": -2.5,
       "status_overall": "evaluated"
     },
     {
@@ -195,27 +195,27 @@
       "windows": {
         "5": {
           "max_return_pct": 2.33,
-          "end_return_pct": -3.35,
+          "end_return_pct": -2.62,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         },
         "10": {
           "max_return_pct": 2.33,
-          "end_return_pct": -3.35,
+          "end_return_pct": -2.62,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         },
         "20": {
           "max_return_pct": 2.33,
-          "end_return_pct": -3.35,
+          "end_return_pct": -2.62,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         }
       },
-      "last_return_pct": -3.35,
+      "last_return_pct": -2.62,
       "status_overall": "evaluated"
     },
     {
@@ -236,28 +236,28 @@
       "entry_price": 235.0,
       "windows": {
         "5": {
-          "max_return_pct": 7.45,
-          "end_return_pct": 3.19,
+          "max_return_pct": 7.66,
+          "end_return_pct": 1.28,
           "hit": true,
           "days_to_hit": 1,
           "status": "hit"
         },
         "10": {
-          "max_return_pct": 7.45,
-          "end_return_pct": 3.19,
+          "max_return_pct": 7.66,
+          "end_return_pct": 1.28,
           "hit": true,
           "days_to_hit": 1,
           "status": "hit"
         },
         "20": {
-          "max_return_pct": 7.45,
-          "end_return_pct": 3.19,
+          "max_return_pct": 7.66,
+          "end_return_pct": 1.28,
           "hit": true,
           "days_to_hit": 1,
           "status": "hit"
         }
       },
-      "last_return_pct": 3.19,
+      "last_return_pct": 1.28,
       "status_overall": "evaluated"
     },
     {
@@ -279,27 +279,27 @@
       "windows": {
         "5": {
           "max_return_pct": 0.39,
-          "end_return_pct": -3.52,
+          "end_return_pct": -0.91,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         },
         "10": {
           "max_return_pct": 0.39,
-          "end_return_pct": -3.52,
+          "end_return_pct": -0.91,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         },
         "20": {
           "max_return_pct": 0.39,
-          "end_return_pct": -3.52,
+          "end_return_pct": -0.91,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         }
       },
-      "last_return_pct": -3.52,
+      "last_return_pct": -0.91,
       "status_overall": "evaluated"
     },
     {
@@ -321,27 +321,27 @@
       "windows": {
         "5": {
           "max_return_pct": 5.54,
-          "end_return_pct": -7.0,
+          "end_return_pct": -6.58,
           "hit": true,
           "days_to_hit": 2,
           "status": "hit"
         },
         "10": {
           "max_return_pct": 5.54,
-          "end_return_pct": -7.0,
+          "end_return_pct": -6.58,
           "hit": true,
           "days_to_hit": 2,
           "status": "hit"
         },
         "20": {
           "max_return_pct": 5.54,
-          "end_return_pct": -7.0,
+          "end_return_pct": -6.58,
           "hit": true,
           "days_to_hit": 2,
           "status": "hit"
         }
       },
-      "last_return_pct": -7.0,
+      "last_return_pct": -6.58,
       "status_overall": "evaluated"
     },
     {
@@ -370,20 +370,20 @@
         },
         "10": {
           "max_return_pct": 20.51,
-          "end_return_pct": 8.88,
+          "end_return_pct": 1.48,
           "hit": true,
           "days_to_hit": 2,
           "status": "hit"
         },
         "20": {
           "max_return_pct": 20.51,
-          "end_return_pct": 8.88,
+          "end_return_pct": 1.48,
           "hit": true,
           "days_to_hit": 2,
           "status": "hit"
         }
       },
-      "last_return_pct": 8.88,
+      "last_return_pct": 1.48,
       "status_overall": "evaluated"
     },
     {
@@ -412,20 +412,20 @@
         },
         "10": {
           "max_return_pct": 5.79,
-          "end_return_pct": -1.45,
+          "end_return_pct": -1.18,
           "hit": true,
           "days_to_hit": 3,
           "status": "hit"
         },
         "20": {
           "max_return_pct": 5.79,
-          "end_return_pct": -1.45,
+          "end_return_pct": -1.18,
           "hit": true,
           "days_to_hit": 3,
           "status": "hit"
         }
       },
-      "last_return_pct": -1.45,
+      "last_return_pct": -1.18,
       "status_overall": "evaluated"
     },
     {
@@ -454,20 +454,20 @@
         },
         "10": {
           "max_return_pct": 2.75,
-          "end_return_pct": -0.63,
+          "end_return_pct": 0.5,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         },
         "20": {
           "max_return_pct": 2.75,
-          "end_return_pct": -0.63,
+          "end_return_pct": 0.5,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         }
       },
-      "last_return_pct": -0.63,
+      "last_return_pct": 0.5,
       "status_overall": "evaluated"
     },
     {
@@ -496,20 +496,20 @@
         },
         "10": {
           "max_return_pct": 47.39,
-          "end_return_pct": 35.65,
+          "end_return_pct": 34.78,
           "hit": true,
           "days_to_hit": 1,
           "status": "hit"
         },
         "20": {
           "max_return_pct": 47.39,
-          "end_return_pct": 35.65,
+          "end_return_pct": 34.78,
           "hit": true,
           "days_to_hit": 1,
           "status": "hit"
         }
       },
-      "last_return_pct": 35.65,
+      "last_return_pct": 34.78,
       "status_overall": "evaluated"
     }
   ]
