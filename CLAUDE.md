@@ -74,7 +74,9 @@ infra/billing-guard/          費用自動關閉的 Cloud Function
     - **旅遊日記 `/travel/journal`**（`JournalPage.vue`，完成）：每日照片＋心得時間軸。照片真存 **Firebase Storage**（`firebase.ts` 加 `storage`＋`storageBucket` 預設 `${projectId}.appspot.com`；`utils/storage.ts` `uploadJournalPhoto`→`fileToCompressedBlob` 壓縮→傳 `journal/{uid}/{destId}/...`→回 download URL）。entry `{id,date,text,photoUrls[]}` 存 `travel_state` 的 `journal{}` per destinationId（composable `useTravelJournal`，只存文字＋URL）。
     - **共用元件 `TripMap.vue`**：把 Leaflet marker 渲染抽成 presentational（props `stops`/`center`），公開分享頁用它（MapPage 仍自帶 geocoding）。
     - **這三個功能的使用者待辦**：① 後端重新部署（`gcloud run deploy --source backend`，自動建 `shared_trip` 表）；② Firebase Console 啟用 **Storage** 並設規則允許登入者讀寫自己的 `journal/{uid}/**`（例：`match /journal/{uid}/{p=**} { allow read, write: if request.auth.uid == uid; }`），否則日記上傳失敗（頁面已優雅顯示錯誤）；③ 前端重新部署（`deploy-frontend.ps1`）。Storage 有免費層，留意 billing-guard（NT$1）。
-  - i18n：以上模組 6 語系（zh-TW/zh-CN/en/ja/ko/th）皆已翻譯；其他舊區塊（nav/login/dashboard…）仍只有 zh-TW。
+  - **書庫 `/library`**（公版書站內閱讀，完成）：側邊欄大類「書庫」。後端 `com.lifedashboard.library.BookController`（`/api/books`）代理兩個免金鑰來源——Gutendex(Project Gutenberg 英文經典) 與 zh.wikisource.org(中文古籍)；端點 `search`/`text`(全文)/`zh/search`/`zh/page`。全文抓取限定 `gutenberg.org` 網域(防 SSRF)、自動去除 Gutenberg 版權前後文。前端 `views/library/`：`LibraryHomePage`(英/中分頁、搜尋、熱門) + `ReaderPage`(站內閱讀器：字級、襯線切換、來源連結)；Gutenberg 純文字分段渲染，維基文庫 HTML 經 **DOMPurify** 清毒後 v-html。**Gutendex 一定要帶結尾斜線**(見踩過的坑 8)。
+  - **總覽 `/`（OverviewView）已改用真實資料**：讀後端 `/api/dashboard`(今日待辦、本月支出、近7天體重、最近心情/筆記/飲食)，移除所有 mock；沒資料顯示空狀態。**「工具中心」`/apps` 已移除**(側邊欄+路由+AppCenterView；`studioApps` 清單保留給 `/ai` 落地頁)。`src/data/mock.ts` 已刪。
+  - i18n：旅遊/英文家教/健康/財務/知識/生活 模組 6 語系皆已翻譯；總覽、書庫等核心頁刻意用 zh-TW 字面字串（非 i18n）。
   - 仍佔位（ModuleLandingView）：**AI 實驗室 `/ai`** 落地頁（其下 `/ai/stock` 已完整；英文家教、資料分析待做）。
 - **Phase 3 未做**：習慣/目標/斷食/日記長文 等需要新資料表的功能（habits/habit_records/goals/journals/fasting_records/portfolio_projects…）對應的 Entity/Repository/Service/Controller；users 加 provider 欄。
 
@@ -107,6 +109,7 @@ infra/billing-guard/          費用自動關閉的 Cloud Function
 5. **vercel CLI 在這環境的互動/管線常卡住**（env add 空值、project rm 卡住）；能避則避，改網頁操作。
 6. **台股顏色**：漲=紅、跌=綠（`utils/format.ts` 的 `twPriceClass`），與一般西方相反；關鍵字highlight刻意用靛/琥珀，不用紅綠以免衝突。
 7. **Gemini 模型 free tier=0**：現用金鑰對 `gemini-2.0-flash` 免費額度是 0（呼叫回 429 `limit: 0`，所有 in-app AI 都會降級成「尚未啟用」）。改用 **`gemini-2.5-flash`** 即正常。已在線上 `GEMINI_MODEL=gemini-2.5-flash`（`gcloud run services update`）並改 `application.yml`/`GeminiClient` 預設。換 key 或模型壞掉時先用 `models/{model}:generateContent` 直接打 API 看 429/200。
+8. **Gutendex(Project Gutenberg) 一定要帶結尾斜線**：`/books` 與 `/books/{id}` 都會 **301 轉址**到帶斜線版本，而 Spring `RestClient` 預設**不跟隨轉址**→回傳空 body、JSON 解析失敗。改用 `/books/`、`/books/{id}/` 才直接拿 200。書庫的全文抓取也只允許 `*.gutenberg.org` 網域（防 SSRF）。
 
 ## 待辦 / 使用者要做的
 - 確認 **life-dashboard** repo 的 GitHub Actions 寫入權限已開（Settings → Actions → General → Read and write），每日股票掃描才會自動 commit。
