@@ -47,15 +47,18 @@ public class SpotSuggestService {
         schema.putArray("required").add("spots");
 
         String system = """
-                You are a travel planner. Suggest must-see spots for a tourist visiting %s for %d day(s).
-                Reply IN TRADITIONAL CHINESE. Return ONLY the JSON object with "spots": an array of 5-8 items,
-                each with:
+                You are a travel planner. Plan must-see spots for a tourist visiting %s for %d day(s).
+                Reply IN TRADITIONAL CHINESE. Return ONLY the JSON object with "spots": an array of
+                about 2-3 items per day (max 12 total), each with:
                 - "name": the place name (you may add the local-language name in parentheses).
                 - "area": the district / area it is in.
                 - "reason": ONE short sentence on why it is worth visiting.
-                - "day": a suggested day number from 1 to %d, grouping nearby places onto the same day.
-                Favor iconic, realistic, well-known spots; no duplicates.
-                """.formatted(place, d, d);
+                - "day": which day to visit, an integer from 1 to %d.
+                Planning rules (IMPORTANT):
+                - Spread the spots across ALL days from 1 to %d. Do NOT put everything on day 1; every day should have at least 2 spots.
+                - Put geographically NEARBY spots on the SAME day to minimize travel (same district, or along the same river / transit line).
+                - Iconic, realistic, well-known spots only; no duplicates.
+                """.formatted(place, d, d, d);
 
         String json = gemini.generateJson(system,
                 List.of(new ChatTurn("user", "請推薦景點並安排天數。")), schema);

@@ -111,6 +111,7 @@ export default {
       today: 'วันนี้',
       now: 'ตอนนี้',
       unavailable: 'ไม่สามารถดึงข้อมูลอากาศได้ในขณะนี้',
+      rainyHint: 'ช่วงฝนชุก บ่ายมักมีพายุฝนฟ้าคะนอง อย่าลืมพกร่ม',
       cond: { clear: 'แจ่มใส', partlyCloudy: 'มีเมฆบางส่วน', cloudy: 'มีเมฆมาก', fog: 'มีหมอก', drizzle: 'ฝนปรอย', rain: 'ฝนตก', snow: 'หิมะ', thunder: 'พายุฝนฟ้าคะนอง' },
     },
     time: {

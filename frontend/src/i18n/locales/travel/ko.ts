@@ -111,6 +111,7 @@ export default {
       today: '오늘',
       now: '현재',
       unavailable: '날씨 정보를 가져올 수 없어요',
+      rainyHint: '비가 잦은 시기예요. 오후에 천둥번개가 잦으니 우산을 챙기세요',
       cond: { clear: '맑음', partlyCloudy: '구름 조금', cloudy: '흐림', fog: '안개', drizzle: '이슬비', rain: '비', snow: '눈', thunder: '뇌우' },
     },
     time: {

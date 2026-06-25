@@ -113,6 +113,7 @@ export default {
       today: '今天',
       now: '目前',
       unavailable: '天氣資料暫時無法取得',
+      rainyHint: '近期多雨，午後常有雷陣雨，記得帶傘',
       cond: { clear: '晴', partlyCloudy: '多雲時晴', cloudy: '陰', fog: '有霧', drizzle: '毛毛雨', rain: '下雨', snow: '下雪', thunder: '雷雨' },
     },
     time: {

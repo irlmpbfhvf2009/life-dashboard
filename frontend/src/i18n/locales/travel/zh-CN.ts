@@ -111,6 +111,7 @@ export default {
       today: '今天',
       now: '当前',
       unavailable: '天气数据暂时无法获取',
+      rainyHint: '近期多雨，午后常有雷阵雨，记得带伞',
       cond: { clear: '晴', partlyCloudy: '多云转晴', cloudy: '阴', fog: '有雾', drizzle: '毛毛雨', rain: '下雨', snow: '下雪', thunder: '雷雨' },
     },
     time: {

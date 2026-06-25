@@ -111,6 +111,7 @@ export default {
       today: 'Today',
       now: 'Now',
       unavailable: 'Weather is unavailable right now',
+      rainyHint: 'Wet season — afternoon thunderstorms are common; pack an umbrella',
       cond: { clear: 'Clear', partlyCloudy: 'Partly cloudy', cloudy: 'Cloudy', fog: 'Fog', drizzle: 'Drizzle', rain: 'Rain', snow: 'Snow', thunder: 'Thunderstorm' },
     },
     time: {

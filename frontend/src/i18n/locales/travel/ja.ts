@@ -111,6 +111,7 @@ export default {
       today: '今日',
       now: '現在',
       unavailable: '天気を取得できませんでした',
+      rainyHint: '雨の多い時期です。午後は雷雨になりやすいので傘をお忘れなく',
       cond: { clear: '快晴', partlyCloudy: '晴れ時々曇り', cloudy: '曇り', fog: '霧', drizzle: '霧雨', rain: '雨', snow: '雪', thunder: '雷雨' },
     },
     time: {

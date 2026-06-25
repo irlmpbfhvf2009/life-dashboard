@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { CloudOff, Loader2 } from 'lucide-vue-next'
+import { CloudOff, Loader2, Umbrella } from 'lucide-vue-next'
 import { useTravelWallet } from '@/composables/useTravelWallet'
 import { useWeather } from '@/composables/useWeather'
 import { useLocalTime } from '@/composables/useLocalTime'
@@ -23,6 +23,12 @@ const diffText = computed(() => {
   const h = diffHours.value
   if (h === 0) return t('tv.time.same')
   return h > 0 ? t('tv.time.diffAhead', { n: h }) : t('tv.time.diffBehind', { n: -h })
+})
+
+// Most of the forecast is wet → show a rainy-season heads-up.
+const rainy = computed(() => {
+  const days = data.value?.daily ?? []
+  return days.length >= 4 && days.filter((d) => d.precip >= 60).length >= Math.ceil(days.length * 0.6)
 })
 </script>
 
@@ -64,5 +70,9 @@ const diffText = computed(() => {
         <span v-if="d.precip >= 30" class="text-[10px] font-medium text-sky-500">{{ d.precip }}%</span>
       </div>
     </div>
+
+    <p v-if="rainy" class="mt-3 flex items-center gap-1.5 rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-700">
+      <Umbrella class="h-3.5 w-3.5 shrink-0" /> {{ t('tv.weather.rainyHint') }}
+    </p>
   </div>
 </template>
