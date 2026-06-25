@@ -153,6 +153,11 @@ export default {
       locating: '位置を取得中… {done}/{total}',
       emptyTitle: 'まだ行き先がありません',
       emptyDesc: '行程表で場所を追加すると地図に表示されます。',
+      legend: '数字＝何日目',
+      located: '{n}/{total} を地図に表示',
+      stops: 'スポット一覧',
+      onMap: '地図に表示',
+      notFound: '位置不明',
     },
   },
 }

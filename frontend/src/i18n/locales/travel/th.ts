@@ -153,6 +153,11 @@ export default {
       locating: 'กำลังค้นหาตำแหน่ง… {done}/{total}',
       emptyTitle: 'ยังไม่มีสถานที่',
       emptyDesc: 'เพิ่มสถานที่ในกำหนดการแล้วจะปรากฏบนแผนที่',
+      legend: 'ตัวเลข＝วันที่',
+      located: 'แสดง {n}/{total}',
+      stops: 'รายการสถานที่',
+      onMap: 'บนแผนที่',
+      notFound: 'หาตำแหน่งไม่พบ',
     },
   },
 }

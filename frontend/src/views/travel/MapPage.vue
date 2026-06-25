@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { Loader2 } from 'lucide-vue-next'
+import { Loader2, MapPin, CircleSlash } from 'lucide-vue-next'
 import PageHeader from '@/components/ui/PageHeader.vue'
+import SectionCard from '@/components/ui/SectionCard.vue'
 import DestinationPicker from '@/components/travel/DestinationPicker.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import { useItinerary } from '@/composables/useTravelWallet'
@@ -21,13 +22,26 @@ const geocoding = ref(false)
 const progress = ref({ done: 0, total: 0 })
 
 const dayColors = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6']
+const dayColor = (day: number) => dayColors[(day - 1) % dayColors.length]
 
 function escapeHtml(s: string) {
   return s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string))
 }
 
+// The Latin (English) part of the city name, which Nominatim handles best.
+const latinCity = computed(() => destination.value.city.match(/[A-Za-z][A-Za-z\s.\-]*/)?.[0]?.trim() ?? destination.value.city)
+
+// Build a clean geocoding query: prefer the English name in parentheses, else the
+// first part before a separator, then add the city for context.
+function geoQuery(place: string) {
+  const paren = place.match(/\(([^)]*[A-Za-z][^)]*)\)/)
+  let name = paren ? paren[1] : place.split(/[&、,，/／(（]/)[0]
+  name = name.replace(/[（）()]/g, ' ').trim()
+  return `${name}, ${latinCity.value}`
+}
+
 function dayIcon(day: number) {
-  const color = dayColors[(day - 1) % dayColors.length]
+  const color = dayColor(day)
   return L.divIcon({
     className: '',
     html:
@@ -56,7 +70,7 @@ function render() {
     m.addTo(layer)
     pts.push([it.lat, it.lon])
   }
-  if (pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.2), { maxZoom: 15 })
+  if (pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.25), { maxZoom: 14 })
   else map.setView([destination.value.lat, destination.value.lon], 12)
 }
 
@@ -70,7 +84,7 @@ async function ensureCoords() {
   progress.value = { done: 0, total: todo.length }
   for (const it of todo) {
     try {
-      const r = await geoApi.search(`${it.place}, ${destination.value.city}`)
+      const r = await geoApi.search(geoQuery(it.place))
       if (r) itin.setCoords(it.id, r.lat, r.lon)
     } catch {
       /* skip places we can't locate */
@@ -82,6 +96,8 @@ async function ensureCoords() {
   geocoding.value = false
   render()
 }
+
+const locatedCount = computed(() => items.value.filter((i) => i.lat != null).length)
 
 onMounted(() => {
   if (!mapEl.value) return
@@ -116,19 +132,49 @@ onUnmounted(() => {
       <DestinationPicker />
     </div>
 
-    <p v-if="geocoding" class="mb-3 flex items-center gap-1.5 text-sm text-ink-500">
-      <Loader2 class="h-4 w-4 animate-spin" /> {{ $t('tv.map.locating', { done: progress.done, total: progress.total }) }}
-    </p>
-
-    <div class="card relative isolate overflow-hidden p-0">
-      <div ref="mapEl" class="h-[62vh] w-full" />
-    </div>
-
     <EmptyState
       v-if="!items.length"
-      class="mt-4"
+      class="mb-4"
+      :icon="MapPin"
       :title="$t('tv.map.emptyTitle')"
       :description="$t('tv.map.emptyDesc')"
     />
+
+    <template v-else>
+      <!-- Legend + status -->
+      <div class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-500">
+        <span class="inline-flex items-center gap-1.5">
+          <span class="flex h-4 w-4 items-center justify-center rounded-full bg-brand-500 text-[9px] font-bold text-white">1</span>
+          {{ $t('tv.map.legend') }}
+        </span>
+        <span v-if="geocoding" class="inline-flex items-center gap-1.5 text-ink-400">
+          <Loader2 class="h-3.5 w-3.5 animate-spin" /> {{ $t('tv.map.locating', { done: progress.done, total: progress.total }) }}
+        </span>
+        <span v-else>{{ $t('tv.map.located', { n: locatedCount, total: items.length }) }}</span>
+      </div>
+
+      <div class="card relative isolate mb-6 overflow-hidden p-0">
+        <div ref="mapEl" class="h-[58vh] w-full" />
+      </div>
+
+      <!-- Stops list (ties the map to the itinerary) -->
+      <SectionCard :title="$t('tv.map.stops')" :icon="MapPin">
+        <ul class="divide-y divide-ink-100">
+          <li v-for="it in items" :key="it.id" class="flex items-center gap-3 py-2.5">
+            <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white" :style="{ background: dayColor(it.day) }">{{ it.day }}</span>
+            <span class="min-w-0 flex-1 truncate text-sm text-ink-800">{{ it.place }}</span>
+            <span v-if="it.lat != null" class="inline-flex items-center gap-1 text-xs text-emerald-600">
+              <MapPin class="h-3.5 w-3.5" /> {{ $t('tv.map.onMap') }}
+            </span>
+            <span v-else-if="geocoding" class="inline-flex items-center gap-1 text-xs text-ink-400">
+              <Loader2 class="h-3.5 w-3.5 animate-spin" />
+            </span>
+            <span v-else class="inline-flex items-center gap-1 text-xs text-ink-400">
+              <CircleSlash class="h-3.5 w-3.5" /> {{ $t('tv.map.notFound') }}
+            </span>
+          </li>
+        </ul>
+      </SectionCard>
+    </template>
   </div>
 </template>

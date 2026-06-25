@@ -153,6 +153,11 @@ export default {
       locating: 'Locating… {done}/{total}',
       emptyTitle: 'No stops yet',
       emptyDesc: 'Add places in the itinerary and they will appear on the map.',
+      legend: 'Number = day',
+      located: '{n}/{total} on the map',
+      stops: 'Stops',
+      onMap: 'On map',
+      notFound: 'Not located',
     },
   },
 }

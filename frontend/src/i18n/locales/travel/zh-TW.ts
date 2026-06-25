@@ -155,6 +155,11 @@ export default {
       locating: '定位中… {done}/{total}',
       emptyTitle: '還沒有景點',
       emptyDesc: '先到行程表加景點，這裡就會標上地圖。',
+      legend: '數字＝第幾天',
+      located: '已標示 {n}/{total}',
+      stops: '景點清單',
+      onMap: '在地圖上',
+      notFound: '找不到位置',
     },
   },
 }

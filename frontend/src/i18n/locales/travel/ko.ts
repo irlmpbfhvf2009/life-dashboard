@@ -153,6 +153,11 @@ export default {
       locating: '위치 찾는 중… {done}/{total}',
       emptyTitle: '아직 장소가 없어요',
       emptyDesc: '일정표에서 장소를 추가하면 지도에 표시돼요.',
+      legend: '숫자＝며칠째',
+      located: '{n}/{total} 표시됨',
+      stops: '장소 목록',
+      onMap: '지도에 표시',
+      notFound: '위치 못 찾음',
     },
   },
 }

@@ -153,6 +153,11 @@ export default {
       locating: '定位中… {done}/{total}',
       emptyTitle: '还没有景点',
       emptyDesc: '先到行程表加景点，这里就会标上地图。',
+      legend: '数字＝第几天',
+      located: '已标示 {n}/{total}',
+      stops: '景点清单',
+      onMap: '在地图上',
+      notFound: '找不到位置',
     },
   },
 }
