@@ -41,3 +41,41 @@ export async function fileToCompressedBase64(
   const out = canvas.toDataURL('image/jpeg', quality)
   return { base64: out.slice(out.indexOf(',') + 1), mimeType: 'image/jpeg' }
 }
+
+/**
+ * Downscale + re-encode an image File to a JPEG Blob — for uploading travel
+ * photos to Firebase Storage (smaller = faster, cheaper, well under quota).
+ */
+export async function fileToCompressedBlob(
+  file: File,
+  maxDim = 1600,
+  quality = 0.78,
+): Promise<Blob> {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = () => reject(new Error('read failed'))
+    reader.readAsDataURL(file)
+  })
+
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const el = new Image()
+    el.onload = () => resolve(el)
+    el.onerror = () => reject(new Error('decode failed'))
+    el.src = dataUrl
+  })
+
+  const scale = Math.min(1, maxDim / Math.max(img.width, img.height))
+  const w = Math.round(img.width * scale)
+  const h = Math.round(img.height * scale)
+  const canvas = document.createElement('canvas')
+  canvas.width = w
+  canvas.height = h
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return file // fall back to the original
+
+  ctx.drawImage(img, 0, 0, w, h)
+  return new Promise<Blob>((resolve) => {
+    canvas.toBlob((blob) => resolve(blob ?? file), 'image/jpeg', quality)
+  })
+}

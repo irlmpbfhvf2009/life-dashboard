@@ -69,17 +69,18 @@ infra/billing-guard/          費用自動關閉的 Cloud Function
     - **PWA 自動更新**：`main.ts` 監聽 `controllerchange` + 定期 `reg.update()`，部署新版自動 reload（`registerType:autoUpdate`），不用手動硬重整。
     - 後端 AI：`com.lifedashboard.ai`：`PhraseCoachService`（`/api/ai/phrase/translate`）、`ReceiptService`（`/api/ai/receipt` vision）、`SpotSuggestService`（`/api/ai/spots`）；比照 EnglishCoach，共用 `GeminiClient` 與 `GEMINI_API_KEY`，無金鑰回 503。**模型用 `gemini-2.5-flash`**（2.0-flash 此 key free tier=0、回 429，見踩過的坑 7）。
     - **i18n 已完成**：UI 字串抽到 `tv` namespace（`src/i18n/locales/travel/*.ts`，6 語）；內容（短句/小抄/國名）刻意保留中文＋當地語言。新增字串記得 6 語都補。
-    - **下一步（要做，商業規模）**：離線緊急卡、行程分享、旅遊日記——設計指引見下方「## 旅遊：下一步三個功能」。
+    - **離線緊急卡 `/travel/emergency`**（`EmergencyCardPage.vue`，完成）：大字卡＝當地報案電話（取自 cheatSheet 的 Phone 項）＋使用者填的飯店名/地址/訂房代號/保險/大使館/血型/備註（存 `travel_state` 新欄位 `trip{}` per destinationId，composable `useTripInfo`）＋求助句（取 phrasebook `emergency` 分類）。飯店地址與求助句可用 `PhraseAudioButton` 念當地語言給司機/警察；保險/大使館電話有 `tel:` 撥號鈕。localStorage→離線可讀。
+    - **行程分享 `/travel/share`**（`TravelSharePage.vue` + 公開唯讀頁 `PublicTripView.vue`，完成）：後端 `shared_trip` 表（token/userId/snapshot JSON/createdAt，`ddl-auto:update` 自動建表）+ `POST /api/travel/share`（回 token）/`GET /api/travel/shares`/`DELETE /api/travel/share/{token}`，**公開** `GET /api/public/trip/{token}`（`SecurityConfig` 已加 `/api/public/**` permitAll）。前端公開頁 `/t/:token`（`meta.open`：guard 早退、免登入也不被導去 overview、無 AppShell），渲染行程表＋共用地圖 `TripMap.vue`，有「列印 / 存 PDF」(`window.print()`＋`@media print`)。snapshot 只含 destination/departDate/itinerary(含 lat/lon)。
+    - **旅遊日記 `/travel/journal`**（`JournalPage.vue`，完成）：每日照片＋心得時間軸。照片真存 **Firebase Storage**（`firebase.ts` 加 `storage`＋`storageBucket` 預設 `${projectId}.appspot.com`；`utils/storage.ts` `uploadJournalPhoto`→`fileToCompressedBlob` 壓縮→傳 `journal/{uid}/{destId}/...`→回 download URL）。entry `{id,date,text,photoUrls[]}` 存 `travel_state` 的 `journal{}` per destinationId（composable `useTravelJournal`，只存文字＋URL）。
+    - **共用元件 `TripMap.vue`**：把 Leaflet marker 渲染抽成 presentational（props `stops`/`center`），公開分享頁用它（MapPage 仍自帶 geocoding）。
+    - **這三個功能的使用者待辦**：① 後端重新部署（`gcloud run deploy --source backend`，自動建 `shared_trip` 表）；② Firebase Console 啟用 **Storage** 並設規則允許登入者讀寫自己的 `journal/{uid}/**`（例：`match /journal/{uid}/{p=**} { allow read, write: if request.auth.uid == uid; }`），否則日記上傳失敗（頁面已優雅顯示錯誤）；③ 前端重新部署（`deploy-frontend.ps1`）。Storage 有免費層，留意 billing-guard（NT$1）。
   - i18n：以上模組 6 語系（zh-TW/zh-CN/en/ja/ko/th）皆已翻譯；其他舊區塊（nav/login/dashboard…）仍只有 zh-TW。
   - 仍佔位（ModuleLandingView）：**AI 實驗室 `/ai`** 落地頁（其下 `/ai/stock` 已完整；英文家教、資料分析待做）。
 - **Phase 3 未做**：習慣/目標/斷食/日記長文 等需要新資料表的功能（habits/habit_records/goals/journals/fasting_records/portfolio_projects…）對應的 Entity/Repository/Service/Controller；users 加 provider 欄。
 
-## 旅遊：下一步三個功能（使用者指定，要做到商業規模）
-> 共同原則：延續**目的地驅動**＋`travel_state` 同步（`useTravelState()` plumbing）＋`tv` namespace **6 語 i18n**＋子導航(`TravelSubNav`)/首頁卡(`TravelHomePage` tools)＋一條龍部署（前端 prebuilt `deploy-frontend.ps1`、後端 `gcloud run deploy --source backend`）＋部署後 `curl` 驗端點(401=掛載受保護)。新端點掛 `/api/**`(authed) 或 `/api/public/**`(要在 `SecurityConfig` permitAll)。
-
-1. **離線緊急卡 `/travel/emergency`**：到當地沒網路也能秀的一張大字卡。內容＝當地緊急電話(已在 `destinations.ts` 的 `cheatSheet`)＋使用者填的飯店名/地址/訂房代號/保險/大使館(存 `travel_state` 新欄位 `trip:{}` per destinationId)＋關鍵求助句(中＋當地語言，取自 phrasebook 的 emergency 分類)。PWA 已 precache app shell、同步資料在 localStorage→離線可讀。重點 UX：大字、可一鍵用 `PhraseAudioButton` 把飯店地址/求助句念出當地語言給計程車/警察聽。
-2. **行程分享**（分享鈕 / `/travel/share`）：產**唯讀公開連結**。後端新增 `shared_trip` 表(token、user_id、JSON snapshot、createdAt) + `POST /api/travel/share`(把當下行程/景點/天氣 snapshot 起來、回 token) + **公開** `GET /api/public/trip/{token}`(免 auth；`SecurityConfig` 加 `/api/public/**` permitAll)。前端公開唯讀頁 `/t/{token}`(router `meta.public`，免登入)，渲染行程表＋地圖。只 snapshot 要分享的東西、別漏個資。加分：匯出 PDF(用 pdf skill 或前端 print CSS)。
-3. **旅遊日記 `/travel/journal`**：每日照片＋心得時間軸。**照片要真存放**(localStorage 塞不下)→用 **Firebase Storage**(專案已有 Firebase；前端 SDK 直傳、存 download URL)。entry `{day/date, text, photoUrls[]}` 存 `travel_state` 的 `journal{}` per destinationId(只存文字＋URL，照片在 Storage)；上傳前用 `utils/image.ts` 壓縮。加分：可接「行程分享」一起公開。
+## 旅遊：三個進階功能（已完成上線）
+緊急卡 / 行程分享 / 旅遊日記三個皆已實作完成，細節見上方 `/travel` 模組各 bullet。
+**加分未做（可選）**：日記接「行程分享」一起公開、緊急卡列印版、分享 snapshot 帶天氣。
 
 ## AI 股票管線（重要）
 - 每日免費層（GitHub Actions `stock_scan.yml`）：掃描/評分/籌碼/命中率 → 寫 `stock-radar/public/*.json` → commit。

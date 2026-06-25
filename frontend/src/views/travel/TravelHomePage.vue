@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
-import { Plane, Languages, Wallet, Calculator, ArrowRight, CalendarDays, CalendarRange, ListChecks, Map } from 'lucide-vue-next'
+import { Plane, Languages, Wallet, Calculator, ArrowRight, CalendarDays, CalendarRange, ListChecks, Map, Siren, BookHeart, Share2 } from 'lucide-vue-next'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import SectionCard from '@/components/ui/SectionCard.vue'
 import DestinationPicker from '@/components/travel/DestinationPicker.vue'
@@ -28,6 +28,9 @@ const tools = [
   { to: '/travel/packing', name: 'tv.nav.packing', desc: 'tv.home.packingDesc', icon: ListChecks, tint: 'text-violet-600 bg-violet-50' },
   { to: '/travel/expense', name: 'tv.nav.expense', desc: 'tv.home.expenseDesc', icon: Wallet, tint: 'text-amber-600 bg-amber-50' },
   { to: '/travel/tools', name: 'tv.nav.tools', desc: 'tv.home.toolsDesc', icon: Calculator, tint: 'text-emerald-600 bg-emerald-50' },
+  { to: '/travel/emergency', name: 'tv.nav.emergency', desc: 'tv.home.emergencyDesc', icon: Siren, tint: 'text-rose-600 bg-rose-50' },
+  { to: '/travel/journal', name: 'tv.nav.journal', desc: 'tv.home.journalDesc', icon: BookHeart, tint: 'text-pink-600 bg-pink-50' },
+  { to: '/travel/share', name: 'tv.nav.share', desc: 'tv.home.shareDesc', icon: Share2, tint: 'text-indigo-600 bg-indigo-50' },
 ]
 </script>
 

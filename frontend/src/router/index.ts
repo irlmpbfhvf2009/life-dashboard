@@ -12,6 +12,9 @@ const router = createRouter({
     // ---- Standalone game portal (its own full-page app, own email auth) ----
     { path: '/play', name: 'play', component: () => import('@/views/casino/CasinoView.vue'), meta: { casino: true } },
 
+    // ---- Public read-only shared trip (no login, no app shell) ----
+    { path: '/t/:token', name: 'public-trip', component: () => import('@/views/public/PublicTripView.vue'), meta: { open: true } },
+
     // ---- Protected app shell (個人智慧工作台 — requires the studio role) ----
     {
       path: '/',
@@ -63,6 +66,9 @@ const router = createRouter({
             { path: 'packing', name: 'travel-packing', component: () => import('@/views/travel/PackingPage.vue') },
             { path: 'expense', name: 'travel-expense', component: () => import('@/views/travel/TravelExpensePage.vue') },
             { path: 'tools', name: 'travel-tools', component: () => import('@/views/travel/TravelToolsPage.vue') },
+            { path: 'emergency', name: 'travel-emergency', component: () => import('@/views/travel/EmergencyCardPage.vue') },
+            { path: 'journal', name: 'travel-journal', component: () => import('@/views/travel/JournalPage.vue') },
+            { path: 'share', name: 'travel-share', component: () => import('@/views/travel/TravelSharePage.vue') },
           ],
         },
         { path: 'knowledge', name: 'knowledge', component: () => import('@/views/KnowledgeView.vue') },
@@ -82,6 +88,9 @@ router.beforeEach(async (to) => {
   }
   // Casino portal is always reachable (it has its own login UI inside).
   if (to.meta.casino) return true
+  // Public read-only pages (e.g. shared trips) are reachable by anyone, logged
+  // in or not, and must never bounce to login or the role-based home.
+  if (to.meta.open) return true
 
   if (!to.meta.public && !authStore.isAuthenticated) {
     return { name: 'login', query: to.path !== '/' ? { redirect: to.fullPath } : undefined }

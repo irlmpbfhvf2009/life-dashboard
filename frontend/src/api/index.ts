@@ -131,6 +131,28 @@ export const travelStateApi = {
   put: (state: unknown) => request<void>(() => http.put('/api/travel/state', state)),
 }
 
+// ---- Trip sharing (read-only public links) ----
+export interface ShareSummary {
+  token: string
+  createdAt: string
+  destination: string
+  departDate: string
+  stops: number
+}
+export const travelShareApi = {
+  /** Publish a snapshot; returns the public token. */
+  create: (snapshot: unknown) =>
+    request<{ token: string }>(() => http.post('/api/travel/share', snapshot)),
+  /** The current user's published links. */
+  list: () => request<ShareSummary[]>(() => http.get('/api/travel/shares')),
+  revoke: (token: string) => request<void>(() => http.delete(`/api/travel/share/${token}`)),
+}
+
+// ---- Public trip view (no auth — used by the shared read-only page) ----
+export const publicTripApi = {
+  get: <T = unknown>(token: string) => request<T | null>(() => http.get(`/api/public/trip/${token}`)),
+}
+
 // ---- Foreign exchange (live rate proxy for the travel wallet) ----
 export interface FxRate { from: string; to: string; rate: number; asOf: string }
 export const fxApi = {

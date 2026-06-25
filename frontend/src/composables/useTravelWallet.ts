@@ -43,6 +43,33 @@ export interface ItineraryItem {
   lon?: number
 }
 
+/** Trip logistics for the offline emergency card (per destination). */
+export interface TripInfo {
+  hotelName: string
+  hotelAddress: string
+  bookingRef: string
+  insurer: string
+  insurancePhone: string
+  embassy: string
+  bloodType: string
+  notes: string
+}
+
+export function emptyTripInfo(): TripInfo {
+  return {
+    hotelName: '', hotelAddress: '', bookingRef: '', insurer: '',
+    insurancePhone: '', embassy: '', bloodType: '', notes: '',
+  }
+}
+
+/** One travel-journal entry (per destination). Photos live in Firebase Storage; we only keep URLs. */
+export interface JournalEntry {
+  id: string
+  date: string // ISO yyyy-mm-dd
+  text: string
+  photoUrls: string[]
+}
+
 interface Persisted {
   items: TripExpense[]
   /** TWD per 1 unit, keyed by currency code. */
@@ -55,6 +82,10 @@ interface Persisted {
   itinerary: Record<string, ItineraryItem[]>
   /** Trip budget in TWD, keyed by destinationId. */
   budgets: Record<string, number>
+  /** Emergency-card trip info, keyed by destinationId. */
+  trip: Record<string, TripInfo>
+  /** Travel journal entries, keyed by destinationId. */
+  journal: Record<string, JournalEntry[]>
 }
 
 const storageKey = (uid: string) => `travel:${uid}`
@@ -62,7 +93,7 @@ const storageKey = (uid: string) => `travel:${uid}`
 function freshState(): Persisted {
   return {
     items: [], rates: {}, departDate: '', destinationId: destinations[0].id,
-    packing: {}, itinerary: {}, budgets: {},
+    packing: {}, itinerary: {}, budgets: {}, trip: {}, journal: {},
   }
 }
 
@@ -96,6 +127,8 @@ function normalize(raw: unknown): Persisted {
   const packing = (r.packing && typeof r.packing === 'object' ? r.packing : {}) as Record<string, PackingItem[]>
   const itinerary = (r.itinerary && typeof r.itinerary === 'object' ? r.itinerary : {}) as Record<string, ItineraryItem[]>
   const budgets = (r.budgets && typeof r.budgets === 'object' ? r.budgets : {}) as Record<string, number>
+  const trip = (r.trip && typeof r.trip === 'object' ? r.trip : {}) as Record<string, TripInfo>
+  const journal = (r.journal && typeof r.journal === 'object' ? r.journal : {}) as Record<string, JournalEntry[]>
 
   return {
     items,
@@ -105,6 +138,8 @@ function normalize(raw: unknown): Persisted {
     packing,
     itinerary,
     budgets,
+    trip,
+    journal,
   }
 }
 
@@ -446,4 +481,98 @@ export function useItinerary() {
   }
 
   return { destination, destinationId, items, byDay, add, remove, setCoords }
+}
+
+// ---------------------------------------------------------------------------
+// Emergency-card trip info (per destination, synced)
+// ---------------------------------------------------------------------------
+export function useTripInfo() {
+  const { destination, destinationId } = useTravelState()
+
+  function current(): TripInfo {
+    if (!state.data) return emptyTripInfo()
+    if (!state.data.trip[destinationId.value]) state.data.trip[destinationId.value] = emptyTripInfo()
+    return state.data.trip[destinationId.value]
+  }
+
+  const info = computed<TripInfo>(() => state.data?.trip[destinationId.value] ?? emptyTripInfo())
+
+  function update(patch: Partial<TripInfo>) {
+    if (!state.data) return
+    Object.assign(current(), patch)
+    persist()
+  }
+
+  /** Whether the user has filled in anything yet (drives the empty hint). */
+  const hasInfo = computed(() => Object.values(info.value).some((v) => String(v).trim().length > 0))
+
+  return { destination, destinationId, info, update, hasInfo }
+}
+
+// ---------------------------------------------------------------------------
+// Travel journal (per destination, synced; photos in Firebase Storage)
+// ---------------------------------------------------------------------------
+export function useTravelJournal() {
+  const { destination, destinationId } = useTravelState()
+
+  function listFor(): JournalEntry[] {
+    if (!state.data) return []
+    if (!state.data.journal[destinationId.value]) state.data.journal[destinationId.value] = []
+    return state.data.journal[destinationId.value]
+  }
+
+  // Newest first.
+  const entries = computed<JournalEntry[]>(() =>
+    (state.data?.journal[destinationId.value] ?? [])
+      .slice()
+      .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.id.localeCompare(a.id))),
+  )
+
+  const photoCount = computed(() => entries.value.reduce((n, e) => n + e.photoUrls.length, 0))
+
+  function add(entry: { date: string; text: string; photoUrls?: string[] }): string {
+    const id = uid4()
+    if (!state.data) return id
+    listFor().push({
+      id,
+      date: entry.date || new Date().toISOString().slice(0, 10),
+      text: entry.text.trim(),
+      photoUrls: entry.photoUrls ?? [],
+    })
+    persist()
+    return id
+  }
+
+  function update(id: string, patch: Partial<Pick<JournalEntry, 'date' | 'text' | 'photoUrls'>>) {
+    const e = listFor().find((x) => x.id === id)
+    if (!e) return
+    if (patch.date !== undefined) e.date = patch.date
+    if (patch.text !== undefined) e.text = patch.text
+    if (patch.photoUrls !== undefined) e.photoUrls = patch.photoUrls
+    persist()
+  }
+
+  function addPhoto(id: string, url: string) {
+    const e = listFor().find((x) => x.id === id)
+    if (e && !e.photoUrls.includes(url)) {
+      e.photoUrls.push(url)
+      persist()
+    }
+  }
+
+  function removePhoto(id: string, url: string) {
+    const e = listFor().find((x) => x.id === id)
+    if (e) {
+      e.photoUrls = e.photoUrls.filter((u) => u !== url)
+      persist()
+    }
+  }
+
+  function remove(id: string) {
+    if (!state.data) return
+    state.data.journal[destinationId.value] = listFor().filter((x) => x.id !== id)
+    persist()
+  }
+
+  return { destination, destinationId, entries, photoCount, add, update, addPhoto, removePhoto, remove }
 }
