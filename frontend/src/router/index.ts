@@ -70,6 +70,9 @@ const router = createRouter({
             { path: 'share', name: 'travel-share', component: () => import('@/views/travel/TravelSharePage.vue') },
           ],
         },
+        // ---- Library (free public-domain e-books, read in-site) ----
+        { path: 'library', name: 'library', component: () => import('@/views/library/LibraryHomePage.vue') },
+        { path: 'library/read/:source/:id', name: 'library-read', component: () => import('@/views/library/ReaderPage.vue') },
         { path: 'knowledge', name: 'knowledge', component: () => import('@/views/KnowledgeView.vue') },
         { path: 'portfolio', name: 'portfolio', component: () => import('@/views/PortfolioView.vue') },
         { path: 'settings', name: 'settings', component: () => import('@/views/SettingsView.vue') },

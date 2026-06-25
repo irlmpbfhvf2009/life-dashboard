@@ -166,6 +166,31 @@ export const geoApi = {
   search: (q: string) => request<GeoResult | null>(() => http.get('/api/geo', { params: { q } })),
 }
 
+// ---- Library (free public-domain e-books, read in-site) ----
+export interface BookSummary {
+  id: number
+  title: string
+  author: string
+  languages: string[]
+  downloads: number
+  hasText: boolean
+}
+export interface BookSearch { count: number; results: BookSummary[] }
+export interface BookText { id: number; title: string; format: 'text' | 'html'; content: string }
+export interface ZhResult { title: string; pageid: number; snippet: string }
+export interface ZhPage { title: string; html: string }
+export const bookApi = {
+  /** Gutenberg search (blank q = popular). */
+  search: (q: string, page = 1) =>
+    request<BookSearch>(() => http.get('/api/books/search', { params: { q, page } })),
+  /** Gutenberg full text. */
+  text: (id: number) => request<BookText>(() => http.get('/api/books/text', { params: { id } })),
+  /** Chinese Wikisource search. */
+  zhSearch: (q: string) => request<ZhResult[]>(() => http.get('/api/books/zh/search', { params: { q } })),
+  /** Chinese Wikisource page (rendered HTML — sanitize before display). */
+  zhPage: (title: string) => request<ZhPage>(() => http.get('/api/books/zh/page', { params: { title } })),
+}
+
 // ---- Usage (owner-only free-tier bar) ----
 export const usageApi = {
   get: () => request<UsageData>(() => http.get('/api/usage')),

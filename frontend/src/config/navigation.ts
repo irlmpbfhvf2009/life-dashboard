@@ -6,6 +6,7 @@ import {
   Wallet,
   FlaskConical,
   Library,
+  BookMarked,
   FolderGit2,
   Gamepad2,
   ShieldCheck,
@@ -56,6 +57,7 @@ export const navGroups: NavGroup[] = [
   { key: 'finance', label: '財務分析', icon: Wallet, to: '/finance' },
   { key: 'ai', label: 'AI 實驗室', icon: FlaskConical, to: '/ai' },
   { key: 'travel', label: '旅遊', icon: Plane, to: '/travel' },
+  { key: 'library', label: '書庫', icon: BookMarked, to: '/library' },
   { key: 'knowledge', label: '知識庫', icon: Library, to: '/knowledge' },
   { key: 'portfolio', label: '作品展示', icon: FolderGit2, to: '/portfolio' },
   // Role-gated — hidden unless the user has the matching role.
