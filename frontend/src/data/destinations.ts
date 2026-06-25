@@ -46,7 +46,7 @@ export interface Destination {
   flag: string
   blurb: string
   /** Google TTS language code (tl). */
-  ttsLang: 'th' | 'ja' | 'ko' | 'vi'
+  ttsLang: 'th' | 'ja' | 'ko' | 'vi' | 'zh-TW'
   /** Target language name for the AI translator's system prompt. */
   translateLangName: string
   currency: Currency
@@ -362,7 +362,88 @@ const vietnam: Destination = {
   ],
 }
 
-export const destinations: Destination[] = [thailand, japan, korea, vietnam]
+// ---------------------------------------------------------------------------
+// Taiwan · Nationwide (domestic trips). The traveller already speaks Mandarin,
+// so the phrasebook is Taiwanese Hokkien (台語) with Tâi-lô romanization — handy
+// for elders, night-market vendors and rural shops. The speak button uses the
+// zh-TW voice, so it reads the Han characters in Mandarin (a reference reading);
+// the 台羅拼音 line shows the actual Taiwanese pronunciation.
+// ---------------------------------------------------------------------------
+const taiwan: Destination = {
+  id: 'taiwan',
+  country: '台灣',
+  city: '全台 Taiwan',
+  flag: '🇹🇼',
+  blurb: '台語小幫手：對長輩、在地店家、夜市攤販開口更親切（發音鈕為華語朗讀參考，發音以台羅拼音為準）。',
+  ttsLang: 'zh-TW',
+  translateLangName: 'Taiwanese Hokkien (台語/台灣閩南語)',
+  currency: { code: 'TWD', symbol: 'NT$', defaultRate: 1 },
+  lat: 25.0330, lon: 121.5654, timezone: 'Asia/Taipei',
+  categories: [
+    {
+      key: 'basics', label: '基本問候', icon: Hand, hint: '台語問候常用「食飽未」當開場白。',
+      items: [
+        { zh: '你好', native: '你好', pron: 'lí-hó' },
+        { zh: '吃飽了嗎？（招呼語）', native: '食飽未？', pron: 'tsia̍h-pá--bē?' },
+        { zh: '謝謝', native: '多謝', pron: 'to-siā' },
+        { zh: '不好意思 / 抱歉', native: '歹勢', pron: 'pháinn-sè' },
+        { zh: '沒關係', native: '無要緊', pron: 'bô-iàu-kín' },
+        { zh: '我聽不懂', native: '我聽無', pron: 'guá thiann-bô' },
+      ],
+    },
+    {
+      key: 'transport', label: '交通 / 搭車', icon: Car, hint: '搭計程車先問車資，給看地址最快。',
+      items: [
+        { zh: '到這裡要多少錢？', native: '這欲偌濟錢？', pron: 'tse beh guā-tsē tsînn?' },
+        { zh: '載我去這（給看地址）', native: '載我去遮', pron: 'tsài guá khì tsia' },
+        { zh: '下一站是哪裡？', native: '後一站是佗位？', pron: 'āu tsi̍t tsām sī tó-uī?' },
+        { zh: '到了，停這裡', native: '到位矣，停遮', pron: 'kàu-uī--ah, thîng tsia' },
+        { zh: '火車站在哪裡？', native: '火車站佇佗位？', pron: 'hué-tshia-tsām tī tó-uī?' },
+      ],
+    },
+    {
+      key: 'food', label: '吃飯 / 點菜', icon: UtensilsCrossed, hint: '小吃攤、夜市開口用台語特別有親切感。',
+      items: [
+        { zh: '我要這個（指）', native: '我欲這个', pron: 'guá beh tsit-ê' },
+        { zh: '好吃！', native: '好食！', pron: 'hó-tsia̍h!' },
+        { zh: '別太鹹 / 別太油', native: '莫傷鹹', pron: 'mài siunn kiâm' },
+        { zh: '一碗就好', native: '一碗就好', pron: 'tsi̍t uánn tō hó' },
+        { zh: '內用 / 外帶', native: '內用 / 包轉去', pron: 'lāi-iōng / pau tńg-khì' },
+        { zh: '結帳 / 算錢', native: '算錢', pron: 'sǹg-tsînn' },
+      ],
+    },
+    {
+      key: 'shopping', label: '買東西 / 議價', icon: ShoppingBag, hint: '傳統市場、夜市可小議價，百貨則否。',
+      items: [
+        { zh: '這個多少錢？', native: '這偌濟錢？', pron: 'tse guā-tsē tsînn?' },
+        { zh: '太貴了', native: '傷貴矣', pron: 'siunn kuì--ah' },
+        { zh: '可以便宜一點嗎？', native: '會使較俗無？', pron: 'ē-sái khah sio̍k--bô?' },
+        { zh: '我看看', native: '我看覓咧', pron: 'guá khuànn-māi--leh' },
+        { zh: '可以刷卡嗎？', native: '通刷卡無？', pron: 'thang suah-khah--bô?' },
+      ],
+    },
+    {
+      key: 'emergency', label: '求助 / 緊急', icon: Siren, hint: '警察 110、消防/救護 119、手機統一緊急 112。',
+      items: [
+        { zh: '救命！', native: '救人喔！', pron: 'kiù-lâng--ooh!' },
+        { zh: '廁所在哪裡？', native: '便所佇佗位？', pron: 'piān-sóo tī tó-uī?' },
+        { zh: '我迷路了', native: '我揣無路', pron: 'guá tshuē-bô lōo' },
+        { zh: '我不舒服 / 生病了', native: '我人無爽快', pron: 'guá lâng bô sóng-khuài' },
+        { zh: '快叫救護車', native: '緊叫救護車', pron: 'kín kiò kiù-hōo-tshia' },
+      ],
+    },
+  ],
+  cheatSheet: [
+    { icon: Phone, label: '緊急電話', value: '警察 110 ・ 消防 / 救護 119 ・ 手機統一緊急 112' },
+    { icon: Coins, label: '小費文化', value: '原則上免小費；多數中大型餐廳已收 10% 服務費' },
+    { icon: Car, label: '交通', value: '悠遊卡/一卡通搭捷運、公車、台鐵；長途高鐵或客運，市區 Uber/小黃' },
+    { icon: Plug, label: '插座電壓', value: '110V，插座 Type A/B（雙扁腳），與家中電器相同' },
+    { icon: Droplets, label: '飲水', value: '自來水煮沸可飲；超商與公共飲水機、瓶裝水普及' },
+    { icon: HandHeart, label: '在地提醒', value: '台語對長輩/在地店家特別親切；機車多、過馬路看左右；多數店家收行動支付' },
+  ],
+}
+
+export const destinations: Destination[] = [thailand, japan, korea, vietnam, taiwan]
 
 export function destinationById(id: string | null | undefined): Destination {
   return destinations.find((d) => d.id === id) ?? destinations[0]
