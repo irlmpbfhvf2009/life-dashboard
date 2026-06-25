@@ -22,7 +22,6 @@ const router = createRouter({
       meta: { studio: true },
       children: [
         { path: '', name: 'overview', component: () => import('@/views/OverviewView.vue') },
-        { path: 'apps', name: 'apps', component: () => import('@/views/AppCenterView.vue') },
         { path: 'life', name: 'life', component: () => import('@/views/LifeView.vue') },
         { path: 'health', name: 'health', component: () => import('@/views/HealthView.vue') },
         { path: 'finance', name: 'finance', component: () => import('@/views/FinanceView.vue') },

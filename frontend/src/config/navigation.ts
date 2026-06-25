@@ -1,7 +1,6 @@
 import type { Component } from 'vue'
 import {
   LayoutDashboard,
-  LayoutGrid,
   Sparkles,
   HeartPulse,
   Wallet,
@@ -52,7 +51,6 @@ export interface StudioApp {
 /** Top-level sidebar — only big categories, never individual tools. */
 export const navGroups: NavGroup[] = [
   { key: 'overview', label: '總覽', icon: LayoutDashboard, to: '/' },
-  { key: 'apps', label: '工具中心', icon: LayoutGrid, to: '/apps' },
   { key: 'life', label: '生活管理', icon: Sparkles, to: '/life' },
   { key: 'health', label: '健康減脂', icon: HeartPulse, to: '/health' },
   { key: 'finance', label: '財務分析', icon: Wallet, to: '/finance' },
