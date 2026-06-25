@@ -95,8 +95,8 @@ const faceClass = computed(() => {
       <!-- Verdict line -->
       <p class="mb-6 h-6 text-center text-sm text-ink-500">
         <template v-if="rolling">命運正在決定…</template>
-        <template v-else-if="result === 'YES'">骰子說：<span class="font-bold text-rose-500">就去做吧 ✅</span></template>
-        <template v-else-if="result === 'NO'">骰子說：<span class="font-bold text-emerald-500">先別 ❌</span></template>
+        <template v-else-if="result === 'YES'">骰子說：<span class="font-bold text-emerald-500">就去做吧 ✅</span></template>
+        <template v-else-if="result === 'NO'">骰子說：<span class="font-bold text-rose-500">先別 ❌</span></template>
         <template v-else>準備好了就擲骰。</template>
       </p>
 
@@ -122,12 +122,12 @@ const faceClass = computed(() => {
       <div class="card p-5">
         <h2 class="mb-4 text-sm font-semibold text-ink-700">本次統計</h2>
         <div class="grid grid-cols-2 gap-3">
-          <div class="rounded-2xl bg-rose-50 p-4 text-center dark:bg-rose-500/10">
-            <p class="text-2xl font-black text-rose-500">{{ yesCount }}</p>
+          <div class="rounded-2xl bg-emerald-50 p-4 text-center dark:bg-emerald-500/10">
+            <p class="text-2xl font-black text-emerald-500">{{ yesCount }}</p>
             <p class="mt-0.5 text-xs font-semibold text-ink-500">YES</p>
           </div>
-          <div class="rounded-2xl bg-emerald-50 p-4 text-center dark:bg-emerald-500/10">
-            <p class="text-2xl font-black text-emerald-500">{{ noCount }}</p>
+          <div class="rounded-2xl bg-rose-50 p-4 text-center dark:bg-rose-500/10">
+            <p class="text-2xl font-black text-rose-500">{{ noCount }}</p>
             <p class="mt-0.5 text-xs font-semibold text-ink-500">NO</p>
           </div>
         </div>
@@ -143,7 +143,7 @@ const faceClass = computed(() => {
           >
             <span
               class="inline-flex items-center gap-1.5 font-bold"
-              :class="h.result === 'YES' ? 'text-rose-500' : 'text-emerald-500'"
+              :class="h.result === 'YES' ? 'text-emerald-500' : 'text-rose-500'"
             >
               <component :is="h.result === 'YES' ? Check : X" class="h-4 w-4" />
               {{ h.result }}
@@ -163,11 +163,11 @@ const faceClass = computed(() => {
   color: var(--ink-400, #a1a1aa);
 }
 .fate-die.is-yes {
-  background: linear-gradient(135deg, #fb7185, #e11d48);
+  background: linear-gradient(135deg, #34d399, #059669);
   color: #fff;
 }
 .fate-die.is-no {
-  background: linear-gradient(135deg, #34d399, #059669);
+  background: linear-gradient(135deg, #fb7185, #e11d48);
   color: #fff;
 }
 .fate-die--rolling {
