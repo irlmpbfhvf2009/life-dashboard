@@ -24,6 +24,8 @@ import {
   Plane,
   Languages,
   Calculator,
+  Users,
+  Dices,
 } from 'lucide-vue-next'
 
 export type AppStatus = 'ACTIVE' | 'BETA' | 'DRAFT'
@@ -57,6 +59,8 @@ export const navGroups: NavGroup[] = [
   { key: 'finance', label: '財務分析', icon: Wallet, to: '/finance' },
   { key: 'ai', label: 'AI 實驗室', icon: FlaskConical, to: '/ai' },
   { key: 'travel', label: '旅遊', icon: Plane, to: '/travel' },
+  { key: 'social', label: '社交', icon: Users, to: '/social' },
+  { key: 'fate', label: '命運', icon: Dices, to: '/fate' },
   { key: 'library', label: '書庫', icon: BookMarked, to: '/library' },
   { key: 'knowledge', label: '知識庫', icon: Library, to: '/knowledge' },
   { key: 'portfolio', label: '作品展示', icon: FolderGit2, to: '/portfolio' },
