@@ -32,7 +32,7 @@ export default {
     workoutNames: { walk: 'เดิน', run: 'วิ่ง', strength: 'เวทเทรนนิง', yoga: 'โยคะ', bike: 'ปั่นจักรยาน', swim: 'ว่ายน้ำ' },
     sections: { dailyActions: 'กิจกรรมวันนี้' },
     reset: { button: 'รีเซ็ต', confirm: 'ล้างข้อมูลสุขภาพแล้วตั้งค่าใหม่?' },
-    tabs: { today: 'วันนี้', fitness: 'ฟิตเนส', grow: 'เลี้ยงดู' },
+    tabs: { today: 'วันนี้', fast: 'อดอาหาร', fitness: 'ฟิตเนส', grow: 'เลี้ยงดู' },
     fasting: {
       title: 'อดอาหารช่วง', plan: 'แผน', remaining: 'เวลาที่เหลือ', eatingWindow: 'ช่วงกินอาหาร',
       start: 'เริ่มอดอาหาร', end: 'จบการอด', stageRange: 'อด {from}–{to} ชม.',

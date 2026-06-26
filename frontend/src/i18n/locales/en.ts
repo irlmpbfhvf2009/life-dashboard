@@ -32,7 +32,7 @@ export default {
     workoutNames: { walk: 'Walk', run: 'Run', strength: 'Strength', yoga: 'Yoga', bike: 'Cycling', swim: 'Swim' },
     sections: { dailyActions: 'Daily actions' },
     reset: { button: 'Reset', confirm: 'Clear your health data and set up again?' },
-    tabs: { today: 'Today', fitness: 'Fitness', grow: 'Grow' },
+    tabs: { today: 'Today', fast: 'Fasting', fitness: 'Fitness', grow: 'Grow' },
     fasting: {
       title: 'Fasting', plan: 'Plan', remaining: 'Time left', eatingWindow: 'Eating window',
       start: 'Start fasting', end: 'End fasting', stageRange: 'Fasting {from}–{to} h',

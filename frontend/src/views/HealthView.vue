@@ -14,6 +14,7 @@ import WorkoutLog from '@/components/health/WorkoutLog.vue'
 import WaterTracker from '@/components/health/WaterTracker.vue'
 import GrowPanel from '@/components/health/GrowPanel.vue'
 import FitnessPanel from '@/components/health/FitnessPanel.vue'
+import FastingTrackerPanel from '@/components/health/FastingTrackerPanel.vue'
 import { useHealthStore } from '@/composables/useHealthStore'
 import { eatingWindow } from '@/utils/healthPlan'
 import { workoutPresets, MEAL_SHARE, type OtterMood, type HealthProfile, type MealKey, type FastingPlan } from '@/data/health'
@@ -25,7 +26,7 @@ import { dailyJoke } from '@/data/jokes'
 const { t, locale } = useI18n()
 const store = useHealthStore()
 
-const tabs = ['today', 'fitness', 'grow'] as const
+const tabs = ['today', 'fast', 'fitness', 'grow'] as const
 type Tab = (typeof tabs)[number]
 const activeTab = ref<Tab>('today')
 
@@ -279,6 +280,9 @@ function addExercise(ex: Exercise) {
         <HabitChecklist :items="log.habits" :week-rate="weekRate" @toggle="toggleHabit" />
       </div>
     </template>
+
+    <!-- 斷食 -->
+    <FastingTrackerPanel v-else-if="activeTab === 'fast'" />
 
     <!-- 健身 -->
     <FitnessPanel

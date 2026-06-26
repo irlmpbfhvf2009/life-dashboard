@@ -9,6 +9,8 @@ import type {
   FoodRecord,
   FriendProfile,
   FriendRequest,
+  FastingSession,
+  FastingStats,
   GifPage,
   Goal,
   Habit,
@@ -384,6 +386,18 @@ export const goalApi = {
   addProgress: (id: number, delta: number) =>
     request<Goal>(() => http.post(`/api/goals/${id}/progress`, { delta })),
   remove: (id: number) => request<void>(() => http.delete(`/api/goals/${id}`)),
+}
+
+// ---- Fasting ----
+export const fastingApi = {
+  current: () => request<FastingSession | null>(() => http.get('/api/fasting/current')),
+  recent: (limit = 20) =>
+    request<FastingSession[]>(() => http.get('/api/fasting/sessions', { params: { limit } })),
+  stats: () => request<FastingStats>(() => http.get('/api/fasting/stats')),
+  start: (targetHours: number) =>
+    request<FastingSession>(() => http.post('/api/fasting/start', { targetHours })),
+  stop: () => request<FastingSession>(() => http.post('/api/fasting/stop')),
+  remove: (id: number) => request<void>(() => http.delete(`/api/fasting/sessions/${id}`)),
 }
 
 // ---- Weights ----

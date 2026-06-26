@@ -301,7 +301,7 @@ export default {
     workoutNames: { walk: '走路', run: '跑步', strength: '重訓', yoga: '瑜伽', bike: '騎車', swim: '游泳' },
     sections: { dailyActions: '每日行動', recovery: '身體恢復' },
     reset: { button: '重新設定', confirm: '確定要清除目前的健康資料、重新進行問卷嗎？' },
-    tabs: { today: '今日', fitness: '健身', grow: '養成' },
+    tabs: { today: '今日', fast: '斷食', fitness: '健身', grow: '養成' },
     soon: '開發中',
     soonDesc: {
       fitness: '健身日曆（消耗＋連勝）與依部位/避傷推薦訓練，下一階段完成。',

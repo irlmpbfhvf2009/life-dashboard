@@ -32,7 +32,7 @@ export default {
     workoutNames: { walk: '走路', run: '跑步', strength: '力量训练', yoga: '瑜伽', bike: '骑车', swim: '游泳' },
     sections: { dailyActions: '每日行动' },
     reset: { button: '重新设置', confirm: '确定要清除目前的健康资料、重新填写吗？' },
-    tabs: { today: '今日', fitness: '健身', grow: '养成' },
+    tabs: { today: '今日', fast: '断食', fitness: '健身', grow: '养成' },
     fasting: {
       title: '轻断食', plan: '断食计划', remaining: '断食剩余时间', eatingWindow: '建议用餐窗口',
       start: '开始断食', end: '结束断食', stageRange: '断食 {from}–{to} 小时',
