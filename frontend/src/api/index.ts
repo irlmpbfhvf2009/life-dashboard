@@ -189,8 +189,12 @@ export interface PhraseTranslation {
   polite: string
   tip: string
 }
+export interface BriefInsight { title: string; text: string }
+export interface DailyBrief { brief: string; suggestion: string; insights: BriefInsight[] }
 export const aiApi = {
   status: () => request<{ enabled: boolean }>(() => http.get('/api/ai/status')),
+  /** AI-generated daily brief for the home command center (503 when no key). */
+  brief: () => request<DailyBrief>(() => http.get('/api/ai/brief')),
   englishChat: (body: { message: string; history: ChatTurn[] }) =>
     request<ChatReply>(() => http.post('/api/ai/english/chat', body)),
   englishCorrect: (body: { message: string }) =>

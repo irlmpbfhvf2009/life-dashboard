@@ -6,8 +6,9 @@ import {
   ListTodo, Loader2, Brain, TrendingDown, TrendingUp, Activity, Zap, MessageSquareText,
 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
-import { dashboardApi } from '@/api'
+import { dashboardApi, aiApi } from '@/api'
 import type { DashboardData } from '@/types'
+import type { BriefInsight } from '@/api'
 import TrendChartCard from '@/components/ui/TrendChartCard.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import { formatDate, formatMoney } from '@/utils/format'
@@ -18,6 +19,13 @@ const router = useRouter()
 const data = ref<DashboardData | null>(null)
 const loading = ref(true)
 
+// AI brief: filled from /api/ai/brief when Gemini is configured; otherwise we
+// keep the rule-based fallback below. aiUsed flips the "AI 生成 / 依數據" badge.
+const aiBrief = ref<string | null>(null)
+const aiSuggestion = ref<string | null>(null)
+const aiInsights = ref<BriefInsight[] | null>(null)
+const aiUsed = computed(() => aiBrief.value !== null)
+
 onMounted(async () => {
   try {
     data.value = await dashboardApi.get()
@@ -25,6 +33,17 @@ onMounted(async () => {
     data.value = null
   } finally {
     loading.value = false
+  }
+  // Best-effort AI brief — silently falls back to the rule-based copy on 503/no key.
+  try {
+    const b = await aiApi.brief()
+    if (b?.brief) {
+      aiBrief.value = b.brief
+      aiSuggestion.value = b.suggestion || null
+      aiInsights.value = b.insights ?? []
+    }
+  } catch {
+    // no AI configured — keep rule-based brief
   }
 })
 
@@ -69,8 +88,8 @@ const moodFaces = ['😖', '😞', '😐', '🙂', '😄']
 const moodFace = (score: number) => moodFaces[Math.min(4, Math.max(0, Math.round(score) - 1))]
 const mealLabels: Record<string, string> = { BREAKFAST: '早餐', LUNCH: '午餐', DINNER: '晚餐', SNACK: '點心' }
 
-// ---- AI Brief: a short summary + one actionable suggestion, derived from data ----
-const brief = computed(() => {
+// ---- AI Brief: prefer the Gemini brief, else a rule-based summary ----
+const ruleBrief = computed(() => {
   if (loading.value) return '正在整合你的今日數據…'
   const bits: string[] = []
   bits.push(todoTotal.value ? `今天 ${todoTotal.value} 件待辦、已完成 ${todoDone.value} 件` : '今天尚未安排待辦')
@@ -79,7 +98,7 @@ const brief = computed(() => {
   if (avgMood.value !== null) bits.push(`心情平均 ${avgMood.value}/5`)
   return bits.join('、') + '。'
 })
-const suggestion = computed(() => {
+const ruleSuggestion = computed(() => {
   if (loading.value) return ''
   if (todoRemaining.value >= 3) return `建議優先清理待辦——挑出最重要的 1–2 件先攻克。`
   if (todoRemaining.value > 0) return `只剩 ${todoRemaining.value} 件待辦，午後找空檔一鼓作氣完成。`
@@ -88,10 +107,26 @@ const suggestion = computed(() => {
   if (!todoTotal.value) return `先記下今天想做的事，讓司令艙幫你追蹤進度。`
   return `今天節奏穩定，保持下去就很好。`
 })
+const brief = computed(() => aiBrief.value ?? ruleBrief.value)
+const suggestion = computed(() => aiSuggestion.value ?? ruleSuggestion.value)
 
-// ---- AI insights: derived cards ----
+// ---- Insight cards ----
 interface Insight { key: string; icon: typeof Brain; grad: string; title: string; text: string }
+
+// Pick an icon + gradient for an AI insight by matching keywords in its title.
+function decorate(title: string): { icon: typeof Brain; grad: string } {
+  if (/待辦|任務|工作/.test(title)) return { icon: ListTodo, grad: 'from-brand-400 to-violet-500' }
+  if (/體重|健康|運動|斷食/.test(title)) return { icon: Activity, grad: 'from-emerald-400 to-teal-500' }
+  if (/心情|情緒/.test(title)) return { icon: Smile, grad: 'from-rose-400 to-pink-500' }
+  if (/財務|支出|花費|預算|錢/.test(title)) return { icon: Wallet, grad: 'from-amber-400 to-yellow-500' }
+  return { icon: Brain, grad: 'from-brand-400 to-cyan-500' }
+}
+
 const insights = computed<Insight[]>(() => {
+  // Prefer AI-generated insights when available.
+  if (aiInsights.value && aiInsights.value.length) {
+    return aiInsights.value.map((ins, i) => ({ key: 'ai-' + i, ...decorate(ins.title), title: ins.title, text: ins.text }))
+  }
   const out: Insight[] = []
   if (todoTotal.value) {
     out.push({
@@ -163,11 +198,15 @@ const statusTiles = computed(() => [
 
       <div class="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
         <div class="min-w-0">
-          <p class="flex items-center gap-2 text-2xs font-semibold uppercase tracking-[0.2em] text-brand-300">
+          <p class="flex flex-wrap items-center gap-2 text-2xs font-semibold uppercase tracking-[0.2em] text-brand-300">
             <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-brand-400 to-violet-500 text-white shadow-glow-brand">
               <Brain class="h-3.5 w-3.5" />
             </span>
             AI Brief · {{ todayLabel }}
+            <span
+              class="rounded-full border px-2 py-0.5 normal-case tracking-normal"
+              :class="aiUsed ? 'border-cyan-400/30 bg-cyan-400/10 text-cyan-200' : 'border-ink-200/60 bg-ink-50/50 text-ink-400'"
+            >{{ aiUsed ? 'AI 生成' : '依數據' }}</span>
           </p>
           <h1 class="mt-3 text-2xl font-bold tracking-tight text-ink-900 sm:text-3xl">
             {{ greeting }}，<span class="text-gradient">{{ auth.displayName }}</span>

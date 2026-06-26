@@ -31,6 +31,7 @@ public class AiController {
     private final SpotSuggestService spotSuggest;
     private final FoodSuggestService foodSuggest;
     private final DataLabService dataLab;
+    private final BriefService briefService;
 
     /** Whether in-app AI is configured — lets the UI show a setup hint instead of erroring. */
     @GetMapping("/status")
@@ -41,6 +42,12 @@ public class AiController {
     @PostMapping("/datalab/analyze")
     public ApiResponse<DataInsightReply> dataLabAnalyze(@Valid @RequestBody DataInsightRequest request) {
         return ApiResponse.ok(dataLab.analyze(request.profile()));
+    }
+
+    /** AI-generated daily brief for the home command center (from the user's dashboard data). */
+    @GetMapping("/brief")
+    public ApiResponse<com.lifedashboard.ai.dto.BriefReply> brief() {
+        return ApiResponse.ok(briefService.generate());
     }
 
     @PostMapping("/english/chat")

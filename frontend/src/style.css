@@ -75,16 +75,29 @@
 }
 
 @layer components {
-  /* ---- Surfaces / cards ---- */
+  /* ---- Surfaces / cards ----
+     In dark mode every .card becomes smoked glass over the command-center
+     backdrop (translucent surface + blur + hairline). Light mode stays solid. */
   .card {
     @apply rounded-2xl border border-ink-200 bg-surface shadow-card;
+  }
+  .dark .card {
+    @apply border-white/10 shadow-glass backdrop-blur-xl;
+    background: rgb(var(--surface) / 0.58);
   }
   .card-hover {
     @apply transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover hover:border-ink-300;
   }
+  .dark .card-hover:hover {
+    @apply border-brand-400/40 shadow-glow-brand;
+  }
   /* Soft, rounded "cute" card used by the Health module (OtterLife vibe). */
   .card-cute {
     @apply rounded-3xl border border-ink-200/80 bg-surface shadow-card;
+  }
+  .dark .card-cute {
+    @apply border-white/10 shadow-glass backdrop-blur-xl;
+    background: rgb(var(--surface) / 0.58);
   }
   /* Friendly rounded icon chip. */
   .chip-cute {

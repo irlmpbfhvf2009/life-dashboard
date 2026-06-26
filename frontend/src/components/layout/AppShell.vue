@@ -20,9 +20,10 @@ const sidebarOpen = ref(false)
       />
     </Transition>
 
-    <!-- Sidebar -->
+    <!-- Sidebar — fixed drawer on mobile; sticks to the viewport on desktop so
+         it stays put while the page content scrolls. -->
     <aside
-      class="fixed inset-y-0 left-0 z-40 w-[264px] border-r border-ink-200 transition-transform duration-200 lg:static lg:translate-x-0"
+      class="fixed inset-y-0 left-0 z-40 w-[264px] border-r border-ink-200 transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 lg:self-start"
       :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
     >
       <AppSidebar @navigate="sidebarOpen = false" />
