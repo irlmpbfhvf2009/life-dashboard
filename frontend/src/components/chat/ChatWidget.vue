@@ -2,7 +2,7 @@
 import { computed, nextTick, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import {
   MessageCircle, X, ChevronLeft, Send, Users, Plus, Search,
-  Hash, UserPlus, LogOut, Check, Smile, Image as ImageIcon, Film,
+  Hash, UserPlus, LogOut, Check, CheckCheck, Smile, Image as ImageIcon, Film,
   Mic, Trash2, Loader2, Bell, BellOff, Volume2, VolumeX,
 } from 'lucide-vue-next'
 import { useChat } from '@/composables/useChat'
@@ -10,14 +10,14 @@ import { useNotify } from '@/composables/useNotify'
 import { usePush } from '@/composables/usePush'
 import { useRecorder } from '@/composables/useRecorder'
 import { uploadChatImage, uploadChatAudio } from '@/utils/storage'
-import { socialApi } from '@/api'
+import { chatApi, socialApi } from '@/api'
 import EmojiPicker from './EmojiPicker.vue'
 import GifPicker from './GifPicker.vue'
-import type { Conversation, Gif, SocialUser } from '@/types'
+import type { ChatMessage, ChatReader, Conversation, Gif, SocialUser } from '@/types'
 
 const chat = useChat()
 const {
-  open, view, conversations, messages, unreadTotal,
+  open, view, conversations, messages, unreadTotal, peerReadAt,
   loadingMessages, sending, activeConversation,
 } = chat
 const notify = useNotify()
@@ -31,8 +31,8 @@ const showEmoji = ref(false)
 const showGif = ref(false)
 const uploading = ref(false)
 
-// New-chat overlay: pick a friend (DM) or build a group.
-const newMode = ref<'none' | 'pick' | 'group'>('none')
+// New-chat overlay: pick a friend (DM), build a group, or invite into a group.
+const newMode = ref<'none' | 'pick' | 'group' | 'add'>('none')
 const friends = ref<SocialUser[]>([])
 const friendsLoaded = ref(false)
 const friendQuery = ref('')
@@ -53,7 +53,7 @@ function scrollToBottom() {
 watch(() => messages.value.length, scrollToBottom)
 watch(view, (v) => { if (v === 'conversation') scrollToBottom() })
 // Close popovers when leaving a conversation.
-watch(view, () => { showEmoji.value = false; showGif.value = false })
+watch(view, () => { showEmoji.value = false; showGif.value = false; readersOpen.value = false })
 
 async function ensureFriends() {
   if (friendsLoaded.value) return
@@ -99,6 +99,23 @@ async function submitGroup() {
   newMode.value = 'none'
   await chat.createGroup(name, [...groupSelected.value])
 }
+
+async function openAddMembers() {
+  newMode.value = 'add'
+  groupSelected.value = new Set()
+  friendQuery.value = ''
+  await ensureFriends()
+}
+
+async function submitAddMembers() {
+  const conv = activeConversation.value
+  if (!conv || groupSelected.value.size === 0) return
+  newMode.value = 'none'
+  await chat.addMembers(conv.id, [...groupSelected.value])
+}
+
+// Group/add overlays both pick members with checkboxes.
+const picking = computed(() => newMode.value === 'group' || newMode.value === 'add')
 
 async function onSend() {
   const text = draft.value
@@ -199,6 +216,36 @@ function convTitle(c: Conversation | null) {
 const isGroupOrPublic = computed(() =>
   activeConversation.value?.type === 'GROUP' || activeConversation.value?.type === 'PUBLIC',
 )
+
+// Read receipts only make sense for DMs and (small) groups, not the public room.
+const showTicks = computed(() =>
+  activeConversation.value?.type === 'DM' || activeConversation.value?.type === 'GROUP',
+)
+
+// A message I sent counts as read once at least one other member has seen it.
+function isRead(m: { createdAt: string }) {
+  return !!peerReadAt.value && new Date(m.createdAt).getTime() <= new Date(peerReadAt.value).getTime()
+}
+
+// "Seen by" sheet — tap one of my own group messages to see who has read it.
+const readersOpen = ref(false)
+const readersList = ref<ChatReader[]>([])
+const readersLoading = ref(false)
+
+async function openReaders(m: ChatMessage) {
+  if (m.senderId !== chat.meId() || activeConversation.value?.type !== 'GROUP') return
+  if (!activeConversation.value) return
+  readersOpen.value = true
+  readersLoading.value = true
+  readersList.value = []
+  try {
+    readersList.value = await chatApi.readers(activeConversation.value.id, m.id)
+  } catch {
+    /* shown as empty */
+  } finally {
+    readersLoading.value = false
+  }
+}
 </script>
 
 <template>
@@ -249,6 +296,14 @@ const isGroupOrPublic = computed(() =>
             @click="toggleNotify()"
           >
             <component :is="push.pushEnabled.value ? Bell : BellOff" class="h-4 w-4" />
+          </button>
+          <button
+            v-if="view === 'conversation' && activeConversation?.type === 'GROUP'"
+            class="btn-icon h-8 w-8 rounded-lg text-ink-400 hover:bg-ink-50"
+            title="邀請好友"
+            @click="openAddMembers()"
+          >
+            <UserPlus class="h-4 w-4" />
           </button>
           <button
             v-if="view === 'conversation' && activeConversation?.type === 'GROUP'"
@@ -352,7 +407,25 @@ const isGroupOrPublic = computed(() =>
                     :class="m.senderId === chat.meId() ? 'bg-brand-500 text-white' : 'bg-ink-100 text-ink-800'"
                   >{{ m.content }}</div>
 
-                  <p class="mt-0.5 px-1 text-2xs text-ink-300" :class="m.senderId === chat.meId() ? 'text-right' : ''">{{ fmtTime(m.createdAt) }}</p>
+                  <component
+                    :is="m.senderId === chat.meId() && activeConversation?.type === 'GROUP' ? 'button' : 'p'"
+                    type="button"
+                    class="mt-0.5 flex items-center gap-1 px-1 text-2xs text-ink-300"
+                    :class="[
+                      m.senderId === chat.meId() ? 'justify-end' : '',
+                      m.senderId === chat.meId() && activeConversation?.type === 'GROUP' ? 'cursor-pointer hover:text-ink-500' : '',
+                    ]"
+                    @click="m.senderId === chat.meId() && activeConversation?.type === 'GROUP' ? openReaders(m) : null"
+                  >
+                    <span>{{ fmtTime(m.createdAt) }}</span>
+                    <component
+                      v-if="m.senderId === chat.meId() && showTicks"
+                      :is="isRead(m) ? CheckCheck : Check"
+                      class="h-3.5 w-3.5"
+                      :class="isRead(m) ? 'text-sky-500' : 'text-ink-300'"
+                      :title="isRead(m) ? '已讀' : '已送出'"
+                    />
+                  </component>
                 </div>
               </div>
             </template>
@@ -437,7 +510,7 @@ const isGroupOrPublic = computed(() =>
         <div v-if="newMode !== 'none'" class="absolute inset-0 flex flex-col bg-surface">
           <header class="flex items-center gap-2 border-b border-ink-100 px-3 py-2.5">
             <button class="btn-icon h-8 w-8 rounded-lg text-ink-500 hover:bg-ink-50" @click="newMode = 'none'"><ChevronLeft class="h-5 w-5" /></button>
-            <p class="flex-1 text-sm font-semibold text-ink-800">{{ newMode === 'group' ? '建立群組' : '開始新對話' }}</p>
+            <p class="flex-1 text-sm font-semibold text-ink-800">{{ newMode === 'group' ? '建立群組' : newMode === 'add' ? '邀請好友' : '開始新對話' }}</p>
             <button
               v-if="newMode === 'pick'"
               class="btn-ghost btn-sm gap-1"
@@ -472,7 +545,7 @@ const isGroupOrPublic = computed(() =>
               v-for="f in filteredFriends"
               :key="f.userId"
               class="flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left transition-colors hover:bg-ink-50"
-              @click="newMode === 'group' ? toggleGroupMember(f.userId) : pickDm(f)"
+              @click="picking ? toggleGroupMember(f.userId) : pickDm(f)"
             >
               <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-xs font-semibold text-brand-700">
                 <img v-if="f.photoUrl" :src="f.photoUrl" alt="" class="h-9 w-9 rounded-xl object-cover" referrerpolicy="no-referrer" />
@@ -483,7 +556,7 @@ const isGroupOrPublic = computed(() =>
                 <p class="truncate text-2xs text-ink-400">{{ f.email }}</p>
               </div>
               <span
-                v-if="newMode === 'group'"
+                v-if="picking"
                 class="flex h-5 w-5 items-center justify-center rounded-md border"
                 :class="groupSelected.has(f.userId) ? 'border-brand-500 bg-brand-500 text-white' : 'border-ink-300'"
               >
@@ -500,6 +573,46 @@ const isGroupOrPublic = computed(() =>
               :disabled="!groupName.trim() || groupSelected.size === 0"
               @click="submitGroup"
             >建立群組（{{ groupSelected.size }} 人）</button>
+          </div>
+          <div v-else-if="newMode === 'add'" class="border-t border-ink-100 p-2.5">
+            <button
+              class="btn-primary btn-sm w-full"
+              :disabled="groupSelected.size === 0"
+              @click="submitAddMembers"
+            >加入群組（{{ groupSelected.size }} 人）</button>
+          </div>
+        </div>
+
+        <!-- "Seen by" sheet (tap one of my own group messages) -->
+        <div
+          v-if="readersOpen"
+          class="absolute inset-0 z-20 flex flex-col justify-end bg-ink-900/30"
+          @click.self="readersOpen = false"
+        >
+          <div class="max-h-[70%] overflow-hidden rounded-t-2xl bg-surface shadow-pop">
+            <header class="flex items-center justify-between border-b border-ink-100 px-4 py-3">
+              <p class="text-sm font-semibold text-ink-800">已讀成員</p>
+              <button class="btn-icon h-7 w-7 rounded-lg text-ink-400 hover:bg-ink-50" @click="readersOpen = false">
+                <X class="h-4 w-4" />
+              </button>
+            </header>
+            <div class="max-h-[50vh] overflow-y-auto px-2 py-2">
+              <p v-if="readersLoading" class="py-4 text-center text-xs text-ink-400">載入中…</p>
+              <template v-else>
+                <div v-for="r in readersList" :key="r.userId" class="flex items-center gap-2.5 rounded-xl px-2 py-2">
+                  <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-xs font-semibold text-brand-700">
+                    <img v-if="r.photoUrl" :src="r.photoUrl" alt="" class="h-9 w-9 rounded-xl object-cover" referrerpolicy="no-referrer" />
+                    <template v-else>{{ avatarText(r.name) }}</template>
+                  </span>
+                  <div class="min-w-0 flex-1">
+                    <p class="truncate text-sm font-medium text-ink-800">{{ r.name || '—' }}</p>
+                    <p class="truncate text-2xs text-ink-400">{{ fmtTime(r.readAt) }} 已讀</p>
+                  </div>
+                  <CheckCheck class="h-4 w-4 shrink-0 text-sky-500" />
+                </div>
+                <p v-if="!readersList.length" class="py-6 text-center text-xs text-ink-400">還沒有人看過這則訊息。</p>
+              </template>
+            </div>
           </div>
         </div>
       </div>

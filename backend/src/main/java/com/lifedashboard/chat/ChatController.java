@@ -75,4 +75,19 @@ public class ChatController {
         chatService.markRead(id);
         return ApiResponse.ok();
     }
+
+    /** readAt = watermark all other members have read past (drives the 2nd tick). */
+    public record ReadStateResponse(java.time.Instant readAt) {}
+
+    @GetMapping("/conversations/{id}/read-state")
+    public ApiResponse<ReadStateResponse> readState(@PathVariable Long id) {
+        return ApiResponse.ok(new ReadStateResponse(chatService.readWatermark(id)));
+    }
+
+    /** "Seen by" list for one of my messages (group read receipts). */
+    @GetMapping("/conversations/{id}/readers")
+    public ApiResponse<List<ChatService.ReaderDto>> readers(
+            @PathVariable Long id, @RequestParam Long messageId) {
+        return ApiResponse.ok(chatService.messageReaders(id, messageId));
+    }
 }

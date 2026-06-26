@@ -19,6 +19,9 @@ const view = ref<'list' | 'conversation'>('list')
 const conversations = ref<Conversation[]>([])
 const activeId = ref<number | null>(null)
 const messages = ref<ChatMessage[]>([])
+// Watermark all other members of the active conversation have read past — my own
+// messages at or before it show a double tick (read), otherwise a single tick.
+const peerReadAt = ref<string | null>(null)
 const unreadTotal = ref(0)
 const loadingConversations = ref(false)
 const loadingMessages = ref(false)
@@ -57,6 +60,16 @@ async function refreshConversations() {
   }
 }
 
+async function refreshReadState() {
+  if (activeId.value == null) return
+  try {
+    const { readAt } = await chatApi.readState(activeId.value)
+    peerReadAt.value = readAt
+  } catch {
+    /* keep last value on transient errors */
+  }
+}
+
 async function pollActiveMessages() {
   if (activeId.value == null) return
   const last = messages.value[messages.value.length - 1]
@@ -74,6 +87,9 @@ async function pollActiveMessages() {
         if (c) c.unreadCount = 0
       }
     }
+    // Refresh read receipts every tick so my sent messages flip to "read"
+    // as the other side catches up, even when no new message arrives.
+    await refreshReadState()
   } catch {
     /* transient — next tick retries */
   }
@@ -135,12 +151,14 @@ export function useChat() {
     view.value = 'conversation'
     loadingMessages.value = true
     messages.value = []
+    peerReadAt.value = null
     try {
       messages.value = await chatApi.messages(id)
       await chatApi.read(id)
       const c = conversations.value.find((x) => x.id === id)
       if (c) c.unreadCount = 0
       unreadTotal.value = conversations.value.reduce((sum, x) => sum + x.unreadCount, 0)
+      await refreshReadState()
     } catch (e) {
       error.value = (e as Error).message
     } finally {
@@ -209,6 +227,13 @@ export function useChat() {
     return conv
   }
 
+  /** Pull more friends into a group I'm already in. */
+  async function addMembers(id: number, memberIds: number[]) {
+    if (!memberIds.length) return
+    await chatApi.addMembers(id, memberIds)
+    await refreshConversations()
+  }
+
   async function leaveGroup(id: number) {
     await chatApi.leave(id)
     if (activeId.value === id) backToList()
@@ -223,6 +248,7 @@ export function useChat() {
     activeId,
     activeConversation,
     messages,
+    peerReadAt,
     unreadTotal,
     loadingConversations,
     loadingMessages,
@@ -241,6 +267,7 @@ export function useChat() {
     sendAttachment,
     startDm,
     createGroup,
+    addMembers,
     leaveGroup,
     refreshConversations,
     meId,

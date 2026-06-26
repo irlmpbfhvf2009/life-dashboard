@@ -1,6 +1,8 @@
 import http, { request } from './http'
 import type {
   ChatMessage,
+  ChatReadState,
+  ChatReader,
   Conversation,
   DashboardData,
   Expense,
@@ -73,6 +75,12 @@ export const chatApi = {
   send: (id: number, body: { content?: string; kind?: MessageKind; attachmentUrl?: string }) =>
     request<ChatMessage>(() => http.post(`/api/chat/conversations/${id}/messages`, body)),
   read: (id: number) => request<void>(() => http.post(`/api/chat/conversations/${id}/read`)),
+  /** Watermark at least one other member has read past — drives the read-receipt ticks. */
+  readState: (id: number) =>
+    request<ChatReadState>(() => http.get(`/api/chat/conversations/${id}/read-state`)),
+  /** "Seen by" list for one of my messages. */
+  readers: (id: number, messageId: number) =>
+    request<ChatReader[]>(() => http.get(`/api/chat/conversations/${id}/readers`, { params: { messageId } })),
 }
 
 // ---- GIF (Tenor, proxied; returns 503 when TENOR_API_KEY unset) ----

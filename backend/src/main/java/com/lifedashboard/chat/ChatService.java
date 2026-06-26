@@ -232,6 +232,62 @@ public class ChatService {
                 "type", c.getType().name()));
     }
 
+    /**
+     * Watermark up to which <em>at least one other</em> member has read — drives
+     * the sender-side read receipt (the second tick), Telegram-style: a message
+     * shows two ticks as soon as anyone has seen it. This is the <em>max</em> of
+     * the other members' lastReadAt (for a DM that's simply the other person).
+     * Returns null when nobody else has read anything yet (single "sent" tick).
+     * Use {@link #messageReaders} for the exact "who has read this" list.
+     */
+    @Transactional(readOnly = true)
+    public Instant readWatermark(Long conversationId) {
+        Long me = currentUserService.getCurrentUserId();
+        requireConversation(conversationId);
+        memberRepository.findByConversationIdAndUserId(conversationId, me)
+                .orElseThrow(() -> new ForbiddenException("你不在這個對話中"));
+
+        Instant max = null;
+        for (ConversationMember m : memberRepository.findByConversationId(conversationId)) {
+            if (m.getUserId().equals(me)) continue;
+            Instant r = m.getLastReadAt();
+            if (r != null && (max == null || r.isAfter(max))) max = r;
+        }
+        return max;
+    }
+
+    /** Members (other than me) who have read a specific message of mine, newest
+     *  read first — powers the "seen by" list. */
+    @Transactional(readOnly = true)
+    public List<ReaderDto> messageReaders(Long conversationId, Long messageId) {
+        Long me = currentUserService.getCurrentUserId();
+        requireConversation(conversationId);
+        memberRepository.findByConversationIdAndUserId(conversationId, me)
+                .orElseThrow(() -> new ForbiddenException("你不在這個對話中"));
+
+        ChatMessage msg = messageRepository.findById(messageId)
+                .orElseThrow(() -> new ResourceNotFoundException("訊息不存在"));
+        if (!msg.getConversationId().equals(conversationId)) {
+            throw new ForbiddenException("訊息不屬於這個對話");
+        }
+        Instant at = msg.getCreatedAt();
+        Map<Long, User> cache = new HashMap<>();
+        List<ReaderDto> readers = new ArrayList<>();
+        for (ConversationMember m : memberRepository.findByConversationId(conversationId)) {
+            if (m.getUserId().equals(me)) continue;
+            Instant r = m.getLastReadAt();
+            if (r != null && !r.isBefore(at)) {
+                User u = user(m.getUserId(), cache);
+                readers.add(new ReaderDto(m.getUserId(), displayName(u),
+                        u == null ? null : u.getPhotoUrl(), r));
+            }
+        }
+        readers.sort(Comparator.comparing(ReaderDto::readAt).reversed());
+        return readers;
+    }
+
+    public record ReaderDto(Long userId, String name, String photoUrl, Instant readAt) {}
+
     @Transactional
     public void markRead(Long conversationId) {
         Long me = currentUserService.getCurrentUserId();

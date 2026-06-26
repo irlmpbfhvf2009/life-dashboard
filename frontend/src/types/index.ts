@@ -195,6 +195,19 @@ export interface ChatMessage {
   createdAt: string
 }
 
+/** Read receipt: the timestamp at least one other member has read past. */
+export interface ChatReadState {
+  readAt: string | null
+}
+
+/** A member who has seen a specific message (for the group "seen by" list). */
+export interface ChatReader {
+  userId: number
+  name: string
+  photoUrl: string | null
+  readAt: string
+}
+
 // ---- GIF (Tenor proxy) ----
 export interface Gif {
   id: string
