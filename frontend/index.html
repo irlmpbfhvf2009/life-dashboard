@@ -15,14 +15,16 @@
     <meta name="apple-mobile-web-app-title" content="PI Studio" />
     <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
     <script>
-      // Apply saved/system theme before first paint to avoid a flash.
+      // Command-center experience is dark by default; only an explicit "light"
+      // choice opts out. Applied before first paint to avoid a flash.
       (function () {
         try {
-          var t = localStorage.getItem('theme')
-          if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          if (localStorage.getItem('theme') !== 'light') {
             document.documentElement.classList.add('dark')
           }
-        } catch (e) {}
+        } catch (e) {
+          document.documentElement.classList.add('dark')
+        }
       })()
     </script>
   </head>

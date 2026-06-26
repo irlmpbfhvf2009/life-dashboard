@@ -54,6 +54,19 @@ export default {
         'card-hover': '0 10px 28px -10px rgba(16,24,40,0.16), 0 2px 6px -2px rgba(16,24,40,0.06)',
         pop: '0 12px 32px -8px rgba(16,24,40,0.22)',
         glow: '0 6px 18px -4px rgba(99,102,241,0.45)',
+        // Command-center glass + glow
+        glass: '0 1px 0 0 rgba(255,255,255,0.05) inset, 0 24px 50px -28px rgba(0,0,0,0.85)',
+        'glow-brand': '0 0 0 1px rgba(99,102,241,0.25), 0 12px 40px -12px rgba(99,102,241,0.45)',
+        'glow-cyan': '0 0 24px -6px rgba(34,211,238,0.45)',
+      },
+      keyframes: {
+        'pulse-glow': {
+          '0%, 100%': { opacity: '0.55' },
+          '50%': { opacity: '1' },
+        },
+      },
+      animation: {
+        'pulse-glow': 'pulse-glow 3s ease-in-out infinite',
       },
       fontSize: {
         '2xs': ['0.6875rem', { lineHeight: '1rem' }],

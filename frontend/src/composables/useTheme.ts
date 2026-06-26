@@ -4,7 +4,8 @@ export type Theme = 'light' | 'dark'
 const STORAGE_KEY = 'theme'
 
 // Module-level shared state so every component sees the same theme.
-const theme = ref<Theme>('light')
+// The command-center UI is dark-first; light is an explicit opt-out.
+const theme = ref<Theme>('dark')
 
 function apply(t: Theme) {
   document.documentElement.classList.toggle('dark', t === 'dark')
@@ -13,12 +14,8 @@ function apply(t: Theme) {
 /** Resolve and apply the initial theme (call once at startup). */
 export function initTheme() {
   const saved = localStorage.getItem(STORAGE_KEY)
-  const t: Theme =
-    saved === 'dark' || saved === 'light'
-      ? saved
-      : window.matchMedia('(prefers-color-scheme: dark)').matches
-        ? 'dark'
-        : 'light'
+  // Default to dark unless the user has explicitly chosen light.
+  const t: Theme = saved === 'light' ? 'light' : 'dark'
   theme.value = t
   apply(t)
 }

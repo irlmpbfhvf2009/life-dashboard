@@ -26,18 +26,19 @@
     --canvas: 248 250 252;
   }
   .dark {
-    --ink-50: 24 27 33;
-    --ink-100: 31 35 43;
-    --ink-200: 44 49 60;
-    --ink-300: 60 67 80;
-    --ink-400: 124 134 150;
-    --ink-500: 152 162 177;
-    --ink-600: 180 188 200;
-    --ink-700: 205 211 221;
-    --ink-800: 226 230 238;
-    --ink-900: 241 244 249;
-    --surface: 31 35 43;
-    --canvas: 16 18 23;
+    /* Command-center palette: deep blue-black canvas, raised glass panels. */
+    --ink-50: 26 31 46;
+    --ink-100: 32 38 54;
+    --ink-200: 48 56 76;
+    --ink-300: 66 75 98;
+    --ink-400: 128 138 158;
+    --ink-500: 156 166 186;
+    --ink-600: 184 192 208;
+    --ink-700: 206 213 226;
+    --ink-800: 227 232 241;
+    --ink-900: 244 247 252;
+    --surface: 20 25 38;
+    --canvas: 8 10 20;
   }
 
   html {
@@ -51,10 +52,21 @@
        default (微軟正黑 / 蘋方 / …). */
     font-family: 'Inter', 'Noto Sans TC', ui-sans-serif, system-ui, sans-serif;
     /* Soft brand wash in the top corners adds depth without a flat slab look.
-       Low alpha keeps it subtle in both light and dark mode. */
+       Low alpha keeps it subtle in light mode. */
     background-image:
       radial-gradient(880px 420px at 82% -10%, rgba(99, 102, 241, 0.10), transparent 60%),
       radial-gradient(680px 380px at -5% 0%, rgba(139, 92, 246, 0.08), transparent 55%);
+    background-attachment: fixed;
+  }
+  /* Command-center backdrop: purple→blue→cyan glows over a faint tech grid. */
+  .dark body {
+    background-image:
+      radial-gradient(900px 520px at 82% -12%, rgba(99, 102, 241, 0.22), transparent 60%),
+      radial-gradient(760px 520px at -8% 6%, rgba(139, 92, 246, 0.18), transparent 55%),
+      radial-gradient(760px 620px at 50% 116%, rgba(34, 211, 238, 0.12), transparent 60%),
+      linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
+    background-size: auto, auto, auto, 46px 46px, 46px 46px;
     background-attachment: fixed;
   }
   * {
@@ -83,6 +95,37 @@
   }
   .surface-muted {
     @apply rounded-xl border border-ink-200 bg-ink-50;
+  }
+
+  /* ---- Command-center glass surfaces ----
+     Theme-aware: translucent surface over the page backdrop + blur. Frosted
+     white in light mode, smoked glass in dark. */
+  .glass {
+    @apply rounded-2xl border border-ink-200/70 shadow-card backdrop-blur-xl;
+    background: rgb(var(--surface) / 0.62);
+  }
+  .dark .glass {
+    @apply border-white/10 shadow-glass;
+  }
+  .glass-hover {
+    @apply transition-all duration-200 hover:-translate-y-0.5 hover:border-ink-300 hover:shadow-card-hover;
+  }
+  .dark .glass-hover:hover {
+    @apply border-brand-400/40 shadow-glow-brand;
+  }
+  /* Gradient hairline accent on the top edge of a hero/glass card. */
+  .glow-edge {
+    position: relative;
+  }
+  .glow-edge::before {
+    content: '';
+    @apply pointer-events-none absolute inset-x-0 top-0 h-px rounded-t-2xl;
+    background-image: linear-gradient(90deg, transparent, theme('colors.brand.400'), theme('colors.cyan.300'), transparent);
+    opacity: 0.6;
+  }
+  /* Purple→cyan text gradient for command-center headings/accents. */
+  .text-gradient {
+    @apply bg-gradient-to-r from-brand-300 via-violet-300 to-cyan-200 bg-clip-text text-transparent;
   }
 
   /* ---- Buttons ---- */
