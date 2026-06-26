@@ -46,7 +46,7 @@ const sel = (active: boolean) =>
   <div class="mx-auto max-w-2xl space-y-4">
     <div class="card-cute p-6">
       <div class="mb-4 flex items-center gap-3">
-        <div class="h-14 w-14 shrink-0"><Creature :animal="form.animal" mood="good" /></div>
+        <div class="h-16 w-14 shrink-0"><Creature :animal="form.animal" mood="good" /></div>
         <div>
           <h2 class="text-lg font-bold text-ink-900">{{ t('health.setup.title') }}</h2>
           <p class="text-sm text-ink-500">{{ t('health.setup.subtitle') }}</p>
@@ -56,7 +56,7 @@ const sel = (active: boolean) =>
       <!-- animal + name -->
       <div class="mb-4 grid grid-cols-5 gap-2">
         <button v-for="a in ANIMALS" :key="a.key" class="flex flex-col items-center gap-1 rounded-2xl border p-2" :class="sel(form.animal === a.key)" @click="form.animal = a.key">
-          <Creature :animal="a.key" :bob="false" class="h-10 w-10" />
+          <div class="h-12 w-10"><Creature :animal="a.key" :bob="false" /></div>
           <span class="text-2xs">{{ t('health.onboarding.animal.' + a.key) }}</span>
         </button>
       </div>

@@ -14,13 +14,21 @@ const d = computed(() => animalDef(props.animal))
 
 <template>
   <svg
-    viewBox="0 0 120 120"
-    class="drop-shadow-sm"
+    viewBox="0 0 120 150"
+    class="h-full w-full drop-shadow-sm"
     :class="bob ? 'creature-bob' : ''"
     xmlns="http://www.w3.org/2000/svg"
     role="img"
     :aria-label="animal"
   >
+    <!-- body (drawn first so the head sits on top) -->
+    <ellipse cx="44" cy="142" rx="9" ry="6" :fill="d.ear" />
+    <ellipse cx="76" cy="142" rx="9" ry="6" :fill="d.ear" />
+    <ellipse cx="60" cy="116" rx="33" ry="31" :fill="d.body" />
+    <ellipse cx="60" cy="124" rx="20" ry="17" :fill="d.snout" />
+    <ellipse cx="30" cy="118" rx="8" ry="12" :fill="d.body" />
+    <ellipse cx="90" cy="118" rx="8" ry="12" :fill="d.body" />
+
     <!-- ears -->
     <template v-if="d.earType === 'round'">
       <circle cx="34" cy="36" r="11" :fill="d.ear" />

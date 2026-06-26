@@ -45,7 +45,7 @@ function rename(e: Event) {
       <!-- Preview -->
       <SectionCard>
         <div class="flex flex-col items-center gap-3 py-2">
-          <div class="h-32 w-32">
+          <div class="h-40 w-32">
             <Creature :animal="pet.data.value.animal" :accessory="pet.data.value.accessory" :mood="pet.mood.value" :bob="true" />
           </div>
           <p class="text-base font-bold text-ink-800">{{ pet.data.value.name }}</p>
@@ -80,7 +80,7 @@ function rename(e: Event) {
               :class="pet.data.value.animal === a.key ? 'border-brand-400 bg-brand-50/50 dark:bg-brand-500/10' : 'border-ink-200/60 hover:bg-ink-50/50'"
               @click="pet.setAnimal(a.key)"
             >
-              <div class="h-12 w-12"><Creature :animal="a.key" :bob="false" /></div>
+              <div class="h-16 w-12"><Creature :animal="a.key" :bob="false" /></div>
               <span class="text-2xs text-ink-500">{{ animalDef(a.key).defaultName }}</span>
             </button>
           </div>

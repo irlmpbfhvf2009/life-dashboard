@@ -8,7 +8,7 @@ import { usePet } from '@/composables/usePet'
 const pet = usePet()
 
 // ---- Walk state (mode A: strolls along the bottom of the viewport) ----
-const x = ref(24)
+const x = ref(280)
 const facing = ref<1 | -1>(1)
 const phase = ref<'walk' | 'idle' | 'sleep'>('walk')
 const popoverOpen = ref(false)
@@ -26,8 +26,11 @@ let phaseTimer: ReturnType<typeof setTimeout> | undefined
 
 function bounds() {
   const w = typeof window !== 'undefined' ? window.innerWidth : 1200
+  // On desktop the 264px sidebar is fixed on the left — start past it so the pet
+  // is never hidden behind it. On mobile/tablet the sidebar is an off-canvas drawer.
+  const leftInset = w >= 1024 ? 280 : 16
   // Keep clear of the chat bubble in the bottom-right corner.
-  return { min: 16, max: Math.max(16, w - PET_W - 88) }
+  return { min: leftInset, max: Math.max(leftInset, w - PET_W - 88) }
 }
 
 function scheduleNextPhase() {
@@ -64,7 +67,7 @@ function onResize() {
 }
 
 function startRoaming() {
-  if (isMobile.value) x.value = 16
+  x.value = bounds().min
   if (!reduceMotion && !isMobile.value) {
     if (!timer) timer = setInterval(step, 33)
     phase.value = 'walk'
@@ -122,7 +125,7 @@ const moodLabel = computed(() => ({ great: '心情很好', good: '還不錯', ti
       <Transition name="pet-pop">
         <div
           v-if="popoverOpen"
-          class="glass absolute bottom-[72px] left-1/2 w-56 -translate-x-1/2 rounded-2xl p-3.5"
+          class="glass absolute bottom-[92px] left-1/2 w-56 -translate-x-1/2 rounded-2xl p-3.5"
         >
           <div class="flex items-center justify-between">
             <p class="text-sm font-semibold text-ink-800">{{ pet.data.value.name }}</p>
@@ -163,7 +166,7 @@ const moodLabel = computed(() => ({ great: '心情很好', good: '還不錯', ti
 
       <!-- The creature -->
       <button
-        class="block h-16 w-16 transition-transform active:scale-95"
+        class="block h-20 w-16 transition-transform active:scale-95"
         :style="{ transform: `scaleX(${facing})` }"
         :aria-label="`${pet.data.value.name}（${moodLabel}）`"
         @click="onPetClick"

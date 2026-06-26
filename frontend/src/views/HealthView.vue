@@ -4,7 +4,6 @@ import { useI18n } from 'vue-i18n'
 import { PartyPopper, RotateCcw, HeartPulse } from 'lucide-vue-next'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import ProfileSetup from '@/components/health/ProfileSetup.vue'
-import CompanionCard from '@/components/health/CompanionCard.vue'
 import MetricsCard from '@/components/health/MetricsCard.vue'
 import WeightPlanCard from '@/components/health/WeightPlanCard.vue'
 import FastingCard from '@/components/health/FastingCard.vue'
@@ -12,21 +11,18 @@ import FoodCard from '@/components/health/FoodCard.vue'
 import HabitChecklist from '@/components/health/HabitChecklist.vue'
 import WorkoutLog from '@/components/health/WorkoutLog.vue'
 import WaterTracker from '@/components/health/WaterTracker.vue'
-import GrowPanel from '@/components/health/GrowPanel.vue'
 import FitnessPanel from '@/components/health/FitnessPanel.vue'
 import FastingTrackerPanel from '@/components/health/FastingTrackerPanel.vue'
 import { useHealthStore } from '@/composables/useHealthStore'
 import { eatingWindow } from '@/utils/healthPlan'
-import { workoutPresets, MEAL_SHARE, type OtterMood, type HealthProfile, type MealKey, type FastingPlan } from '@/data/health'
+import { workoutPresets, MEAL_SHARE, type HealthProfile, type MealKey, type FastingPlan } from '@/data/health'
 import { weightApi } from '@/api'
-import type { AccessoryKey } from '@/data/accessories'
 import type { Exercise } from '@/data/exercises'
-import { dailyJoke } from '@/data/jokes'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const store = useHealthStore()
 
-const tabs = ['today', 'fast', 'fitness', 'grow'] as const
+const tabs = ['today', 'fast', 'fitness'] as const
 type Tab = (typeof tabs)[number]
 const activeTab = ref<Tab>('today')
 
@@ -52,36 +48,6 @@ const weekRate = computed(() => {
   return total ? Math.round((habitsDone.value / total) * 100) : 0
 })
 const burnedToday = computed(() => log.value?.workouts.reduce((s, w) => s + w.kcal, 0) ?? 0)
-
-// Otter mood now reflects how much of today is done (no recovery self-report).
-const dayProgress = computed(() => {
-  const l = log.value
-  if (!l) return 0
-  const habitsRatio = l.habits.length ? habitsDone.value / l.habits.length : 0
-  const waterRatio = Math.min(1, l.water / (l.waterGoal || 2000))
-  const ate = l.consumedKcal > 0 ? 1 : 0
-  const worked = l.workouts.length > 0 ? 1 : 0
-  return (habitsRatio + waterRatio + ate + worked) / 4
-})
-const mood = computed<OtterMood>(() =>
-  dayProgress.value >= 0.66 ? 'great' : dayProgress.value >= 0.25 ? 'good' : 'tired',
-)
-
-const weightProgress = computed(() => {
-  if (!log.value || !profile.value) return 0
-  const total = log.value.startWeightKg - profile.value.targetWeightKg
-  if (total <= 0) return 0
-  return Math.min(100, Math.max(0, Math.round(((log.value.startWeightKg - log.value.weightKg) / total) * 100)))
-})
-
-const greeting = computed(() => {
-  if (locale.value.startsWith('zh')) return dailyJoke() // 每日地獄梗
-  const h = new Date().getHours()
-  if (h < 5) return t('health.greet.night')
-  if (h < 11) return t('health.greet.morning')
-  if (h < 18) return t('health.greet.noon')
-  return t('health.greet.evening')
-})
 
 // ---- Gamification & coins ----
 const toastMsg = ref('')
@@ -184,23 +150,7 @@ function logWeight(payload: { date: string; kg: number }) {
   awardXp(5)
 }
 
-// ---- 養成 / 健身 ----
-const streakDays = computed(() => {
-  const created = profile.value?.createdAt
-  if (!created) return 1
-  const d0 = new Date(created)
-  if (Number.isNaN(d0.getTime())) return 1
-  return Math.max(1, Math.floor((Date.now() - d0.getTime()) / 86_400_000) + 1)
-})
-function equipAccessory(a: AccessoryKey) {
-  store.update((d) => { d.profile.accessory = a })
-}
-function addHabit(payload: { name: string; emoji: string }) {
-  store.update((d) => {
-    d.log.habits.push({ id: Date.now(), emoji: payload.emoji, key: `custom:${payload.name}`, done: false, streak: 0 })
-  })
-  awardXp(5)
-}
+// ---- 健身 ----
 function addExercise(ex: Exercise) {
   const now = new Date()
   const kcal = Math.round(ex.kcalPerMin * ex.defaultMin)
@@ -250,12 +200,6 @@ function addExercise(ex: Exercise) {
 
     <!-- 今日 -->
     <template v-if="activeTab === 'today'">
-      <CompanionCard
-        class="mb-5"
-        :animal="profile.animal" :name="profile.companionName" :mood="mood" :accessory="profile.accessory"
-        :level="log.level" :xp="log.xp" :xp-to-next="log.xpToNext" :greeting="greeting" :progress="weightProgress"
-      />
-
       <div class="mb-6 grid gap-4 lg:grid-cols-2">
         <WeightPlanCard
           :current="log.weightKg" :start="log.startWeightKg" :target="profile.targetWeightKg"
@@ -286,17 +230,9 @@ function addExercise(ex: Exercise) {
 
     <!-- 健身 -->
     <FitnessPanel
-      v-else-if="activeTab === 'fitness'"
+      v-else
       :burned-today="burnedToday" :workout-count="log.workouts.length" :injuries="profile.injuries" :days="log.workoutDays"
       @add="addExercise"
-    />
-
-    <!-- 養成 -->
-    <GrowPanel
-      v-else
-      :animal="profile.animal" :name="profile.companionName" :accessory="profile.accessory"
-      :level="log.level" :xp="log.xp" :xp-to-next="log.xpToNext" :streak-days="streakDays" :habits="log.habits"
-      @equip="equipAccessory" @toggle-habit="toggleHabit" @add-habit="addHabit"
     />
   </div>
 </template>
