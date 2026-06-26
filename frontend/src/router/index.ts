@@ -24,6 +24,7 @@ const router = createRouter({
         { path: '', name: 'overview', component: () => import('@/views/OverviewView.vue') },
         { path: 'life', name: 'life', component: () => import('@/views/LifeView.vue') },
         { path: 'health', name: 'health', component: () => import('@/views/HealthView.vue') },
+        { path: 'pet', name: 'pet', component: () => import('@/views/PetView.vue') },
         // 財務分析 now lives as a tab inside 生活管理. Keep the old path as a redirect.
         { path: 'finance', name: 'finance', redirect: { name: 'life', query: { tab: 'finance' } } },
         {

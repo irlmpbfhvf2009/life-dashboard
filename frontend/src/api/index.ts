@@ -250,6 +250,12 @@ export const englishStateApi = {
   put: (state: unknown) => request<void>(() => http.put('/api/english/state', state)),
 }
 
+// ---- Virtual pet (per-user JSON, cross-device) ----
+export const petStateApi = {
+  get: <T = unknown>() => request<T | null>(() => http.get('/api/pet/state')),
+  put: (state: unknown) => request<void>(() => http.put('/api/pet/state', state)),
+}
+
 // ---- Travel state (per-user trip wallet, cross-device sync) ----
 export const travelStateApi = {
   get: <T = unknown>() => request<T | null>(() => http.get('/api/travel/state')),

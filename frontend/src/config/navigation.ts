@@ -24,6 +24,7 @@ import {
   Languages,
   Calculator,
   Users,
+  PawPrint,
 } from 'lucide-vue-next'
 
 export type AppStatus = 'ACTIVE' | 'BETA' | 'DRAFT'
@@ -63,6 +64,8 @@ export const navGroups: NavGroup[] = [
   // 娛樂 hub: 命運 + 食物輪盤 (+ 遊戲 portal for players, in the sub-nav).
   { key: 'fun', label: '娛樂', icon: Gamepad2, to: '/fun' },
   { key: 'portfolio', label: '作品展示', icon: FolderGit2, to: '/portfolio' },
+  // Virtual pet — opt-in companion that strolls the bottom of every page.
+  { key: 'pet', label: '寵物', icon: PawPrint, to: '/pet' },
   // Role-gated — hidden unless the user has the matching role.
   { key: 'admin', label: '管理後台', icon: ShieldCheck, to: '/admin', requires: 'admin' },
 ]
