@@ -52,6 +52,23 @@ export interface Habit {
   createdAt: string
 }
 
+export type GoalStatus = 'ACTIVE' | 'DONE' | 'ARCHIVED'
+
+export interface Goal {
+  id: number
+  title: string
+  description: string | null
+  targetValue: number
+  currentValue: number
+  unit: string | null
+  deadline: string | null
+  status: GoalStatus
+  color: string | null
+  progressPct: number
+  daysLeft: number | null
+  createdAt: string
+}
+
 export interface WeightRecord {
   id: number
   date: string

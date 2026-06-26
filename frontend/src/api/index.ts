@@ -10,6 +10,7 @@ import type {
   FriendProfile,
   FriendRequest,
   GifPage,
+  Goal,
   Habit,
   MealType,
   MessageKind,
@@ -354,6 +355,35 @@ export const habitApi = {
   remove: (id: number) => request<void>(() => http.delete(`/api/habits/${id}`)),
   check: (id: number) => request<Habit>(() => http.post(`/api/habits/${id}/check`)),
   uncheck: (id: number) => request<Habit>(() => http.post(`/api/habits/${id}/uncheck`)),
+}
+
+// ---- Goals ----
+export const goalApi = {
+  list: () => request<Goal[]>(() => http.get('/api/goals')),
+  create: (body: {
+    title: string
+    description?: string
+    targetValue: number
+    unit?: string
+    deadline?: string | null
+    color?: string
+  }) => request<Goal>(() => http.post('/api/goals', body)),
+  update: (
+    id: number,
+    body: Partial<{
+      title: string
+      description: string
+      targetValue: number
+      currentValue: number
+      unit: string
+      deadline: string | null
+      status: 'ACTIVE' | 'DONE' | 'ARCHIVED'
+      color: string
+    }>,
+  ) => request<Goal>(() => http.patch(`/api/goals/${id}`, body)),
+  addProgress: (id: number, delta: number) =>
+    request<Goal>(() => http.post(`/api/goals/${id}/progress`, { delta })),
+  remove: (id: number) => request<void>(() => http.delete(`/api/goals/${id}`)),
 }
 
 // ---- Weights ----
