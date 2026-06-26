@@ -74,10 +74,7 @@ const fmt = (n: number) => nf.format(Math.round(n))
   <div>
     <PageHeader eyebrow="Trip Wallet" :title="$t('tv.expense.title')" :subtitle="$t('tv.expense.subtitle')" />
 
-    <div class="mb-6">
-      <DestinationPicker />
-      <p class="mt-2 text-sm text-ink-500">{{ $t('tv.common.current') }}：{{ destination.flag }} {{ destination.country }}・{{ $t('tv.expense.currencyOf', { code: currency.code, sym: currency.symbol }) }}</p>
-    </div>
+    <p class="mb-6 text-sm text-ink-500">{{ $t('tv.expense.currencyOf', { code: currency.code, sym: currency.symbol }) }}</p>
 
     <!-- Summary -->
     <div class="mb-6 grid gap-4 sm:grid-cols-3">

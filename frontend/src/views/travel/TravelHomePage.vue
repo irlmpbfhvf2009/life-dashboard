@@ -4,7 +4,6 @@ import { RouterLink } from 'vue-router'
 import { Plane, Languages, Wallet, Calculator, ArrowRight, CalendarDays, CalendarRange, ListChecks, Map, Siren, BookHeart, Share2 } from 'lucide-vue-next'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import SectionCard from '@/components/ui/SectionCard.vue'
-import DestinationPicker from '@/components/travel/DestinationPicker.vue'
 import DestinationWeather from '@/components/travel/DestinationWeather.vue'
 import TripSummary from '@/components/travel/TripSummary.vue'
 import { useTravelWallet } from '@/composables/useTravelWallet'
@@ -37,10 +36,6 @@ const tools = [
 <template>
   <div>
     <PageHeader eyebrow="Travel" :title="$t('tv.home.title')" :subtitle="$t('tv.home.subtitle')" />
-
-    <div class="mb-6">
-      <DestinationPicker />
-    </div>
 
     <!-- Hero / countdown -->
     <div class="mb-6 overflow-hidden rounded-2xl border border-ink-200 bg-gradient-to-br from-brand-500 to-brand-700 p-6 text-white">

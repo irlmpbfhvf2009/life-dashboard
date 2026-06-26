@@ -3,12 +3,11 @@ import { computed, onMounted, ref } from 'vue'
 import { ArrowRightLeft, Calculator, Users, RefreshCw, Loader2 } from 'lucide-vue-next'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import SectionCard from '@/components/ui/SectionCard.vue'
-import DestinationPicker from '@/components/travel/DestinationPicker.vue'
 import { useTravelWallet } from '@/composables/useTravelWallet'
 
 // Shares the active destination, currency and (per-currency) rate with the wallet.
 const wallet = useTravelWallet()
-const { destination, currency, rate } = wallet
+const { currency, rate } = wallet
 
 onMounted(() => {
   if (!wallet.rateAsOf[currency.value.code] && rate.value === currency.value.defaultRate) {
@@ -47,10 +46,7 @@ const fmt = (n: number) => nf.format(Math.round(n))
   <div>
     <PageHeader eyebrow="Tools" :title="$t('tv.tools.title')" :subtitle="$t('tv.tools.subtitle')" />
 
-    <div class="mb-6">
-      <DestinationPicker />
-      <p class="mt-2 text-sm text-ink-500">{{ $t('tv.common.current') }}：{{ destination.flag }} {{ destination.country }}・{{ currency.code }}（{{ currency.symbol }}）</p>
-    </div>
+    <p class="mb-6 text-sm text-ink-500">{{ currency.code }}（{{ currency.symbol }}）</p>
 
     <div class="grid gap-6 lg:grid-cols-2">
       <!-- Currency converter -->

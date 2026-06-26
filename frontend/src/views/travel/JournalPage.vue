@@ -7,13 +7,12 @@ import {
 import PageHeader from '@/components/ui/PageHeader.vue'
 import SectionCard from '@/components/ui/SectionCard.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
-import DestinationPicker from '@/components/travel/DestinationPicker.vue'
 import { useTravelJournal } from '@/composables/useTravelWallet'
 import { uploadJournalPhoto, deleteJournalPhoto } from '@/utils/storage'
 
 const { t } = useI18n()
 const journal = useTravelJournal()
-const { destination, destinationId, entries } = journal
+const { destinationId, entries } = journal
 
 const today = new Date().toISOString().slice(0, 10)
 
@@ -94,11 +93,6 @@ function fmtDate(iso: string) {
 <template>
   <div>
     <PageHeader eyebrow="Journal" :title="$t('tv.journal.title')" :subtitle="$t('tv.journal.subtitle')" />
-
-    <div class="mb-6">
-      <DestinationPicker />
-      <p class="mt-2 text-sm text-ink-500">{{ $t('tv.common.current') }}：{{ destination.flag }} {{ destination.country }}・{{ destination.city }}</p>
-    </div>
 
     <p v-if="error" class="mb-4 flex items-center gap-2 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">
       <AlertCircle class="h-4 w-4 shrink-0" /> {{ error }}

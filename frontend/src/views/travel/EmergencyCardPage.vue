@@ -6,7 +6,6 @@ import {
 } from 'lucide-vue-next'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import SectionCard from '@/components/ui/SectionCard.vue'
-import DestinationPicker from '@/components/travel/DestinationPicker.vue'
 import PhraseAudioButton from '@/components/travel/PhraseAudioButton.vue'
 import { useTripInfo, type TripInfo } from '@/composables/useTravelWallet'
 
@@ -49,8 +48,7 @@ function telHref(raw: string) {
   <div>
     <PageHeader eyebrow="Emergency" :title="$t('tv.emergency.title')" :subtitle="$t('tv.emergency.subtitle')" />
 
-    <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
-      <DestinationPicker />
+    <div class="mb-4 flex flex-wrap items-center justify-end gap-2">
       <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
         <WifiOff class="h-3.5 w-3.5" /> {{ $t('tv.emergency.offlineReady') }}
       </span>

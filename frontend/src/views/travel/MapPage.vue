@@ -6,7 +6,6 @@ import 'leaflet/dist/leaflet.css'
 import { Loader2, MapPin, CircleSlash } from 'lucide-vue-next'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import SectionCard from '@/components/ui/SectionCard.vue'
-import DestinationPicker from '@/components/travel/DestinationPicker.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import { useItinerary } from '@/composables/useTravelWallet'
 import { geoApi } from '@/api'
@@ -127,10 +126,6 @@ onUnmounted(() => {
 <template>
   <div>
     <PageHeader eyebrow="Map" :title="$t('tv.map.title')" :subtitle="$t('tv.map.subtitle')" />
-
-    <div class="mb-4">
-      <DestinationPicker />
-    </div>
 
     <EmptyState
       v-if="!items.length"

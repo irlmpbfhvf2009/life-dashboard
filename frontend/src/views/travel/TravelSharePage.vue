@@ -4,7 +4,6 @@ import { Share2, Link2, Copy, Check, ExternalLink, Trash2, Loader2, CalendarRang
 import PageHeader from '@/components/ui/PageHeader.vue'
 import SectionCard from '@/components/ui/SectionCard.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
-import DestinationPicker from '@/components/travel/DestinationPicker.vue'
 import { useItinerary, useTravelWallet } from '@/composables/useTravelWallet'
 import { travelShareApi, type ShareSummary } from '@/api'
 
@@ -104,11 +103,6 @@ onMounted(refresh)
 <template>
   <div>
     <PageHeader eyebrow="Share" :title="$t('tv.share.title')" :subtitle="$t('tv.share.subtitle')" />
-
-    <div class="mb-6">
-      <DestinationPicker />
-      <p class="mt-2 text-sm text-ink-500">{{ $t('tv.common.current') }}：{{ destination.flag }} {{ destination.country }}・{{ destination.city }}</p>
-    </div>
 
     <div class="grid gap-6 lg:grid-cols-2">
       <!-- Create -->
