@@ -1,8 +1,10 @@
 <script setup lang="ts">
+// Finance dashboard body, extracted from the old FinanceView so it can live as a
+// tab inside 生活管理 (alongside 待辦 / 心情日記). No PageHeader here — the host
+// (LifeView) renders the section title; the add button sits in this panel's own toolbar.
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Plus, TrendingDown, TrendingUp, Wallet, Receipt, CalendarDays, Trash2 } from 'lucide-vue-next'
-import PageHeader from '@/components/ui/PageHeader.vue'
 import StatCard from '@/components/ui/StatCard.vue'
 import SectionCard from '@/components/ui/SectionCard.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
@@ -105,13 +107,12 @@ async function remove(e: Expense) {
 </script>
 
 <template>
-  <PageHeader :eyebrow="t('finance.eyebrow')" :title="t('finance.title')" :subtitle="t('finance.subtitle')">
-    <template #actions>
-      <button class="btn-primary btn-sm gap-1.5" @click="showAdd = true">
-        <Plus class="h-3.5 w-3.5" /> {{ t('finance.add') }}
-      </button>
-    </template>
-  </PageHeader>
+  <div class="mb-4 flex items-center justify-between">
+    <p class="text-sm text-ink-500">{{ t('finance.subtitle') }}</p>
+    <button class="btn-primary btn-sm gap-1.5" @click="showAdd = true">
+      <Plus class="h-3.5 w-3.5" /> {{ t('finance.add') }}
+    </button>
+  </div>
 
   <LoadingState v-if="loading" :label="t('common.loading')" />
   <ErrorState v-else-if="error && !expenses.length" :message="error" @retry="load" />

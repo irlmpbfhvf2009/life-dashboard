@@ -3,6 +3,7 @@ export default {
     nav: {
       home: '여행 홈',
       phrasebook: '여행 회화',
+      food: '맛집 추천',
       itinerary: '일정표',
       map: '지도',
       packing: '짐 싸기',
@@ -12,7 +13,7 @@ export default {
       journal: '여행 일기',
       share: '일정 공유',
     },
-    common: { current: '현재', enter: '열기', loading: '불러오는 중…' },
+    common: { current: '현재', enter: '열기', loading: '불러오는 중…', destination: '목적지' },
     home: {
       title: '여행 도우미',
       subtitle: '목적지만 고르면 끝. 현지 표현, 여행 가계부, 환산·팁 계산을 한곳에서.',
@@ -41,6 +42,15 @@ export default {
       disabled: 'AI 번역이 비활성화되어 있어요 (백엔드에 GEMINI_API_KEY 필요). 아래 표현은 오프라인에서 사용할 수 있어요.',
       literal: '직역',
       polite: '더 공손하게',
+    },
+    food: {
+      title: '맛집 추천',
+      subtitle: '목적지를 고르면 AI가 현지 인기 음식을 추천해요. 음식 이름을 탭하면 현지 언어로 읽어줍니다.',
+      button: '추천 받기',
+      emptyTitle: '뭐 먹지?',
+      emptyDesc: '"추천 받기"를 누르면 AI가 현지 필수 음식을 보여줘요.',
+      empty: 'AI 추천이 없어요. 잠시 후 다시 시도하세요.',
+      disabled: 'AI 맛집 추천이 비활성화되어 있어요 (백엔드에 GEMINI_API_KEY 필요).',
     },
     itinerary: {
       title: '일정표',

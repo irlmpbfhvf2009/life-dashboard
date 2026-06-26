@@ -3,6 +3,7 @@ export default {
     nav: {
       home: '旅游首页',
       phrasebook: '旅游用语包',
+      food: '美食推荐',
       itinerary: '行程表',
       map: '行程地图',
       packing: '打包清单',
@@ -12,7 +13,7 @@ export default {
       journal: '旅游日记',
       share: '行程分享',
     },
-    common: { current: '当前', enter: '进入', loading: '加载中…' },
+    common: { current: '当前', enter: '进入', loading: '加载中…', destination: '目的地' },
     home: {
       title: '旅游助手',
       subtitle: '选好目的地，随身工具一次到位：当地用语、旅游记账与换算小费。',
@@ -41,6 +42,15 @@ export default {
       disabled: 'AI 即时翻译尚未启用（需要后端 GEMINI_API_KEY）。下方的情境短句可离线使用。',
       literal: '直译',
       polite: '更礼貌',
+    },
+    food: {
+      title: '美食推荐',
+      subtitle: '选好目的地，AI 推荐当地必吃；菜名点一下就念当地语言给店家听。',
+      button: '生成推荐',
+      emptyTitle: '想吃什么？',
+      emptyDesc: '点「生成推荐」，AI 会列出当地必吃美食。',
+      empty: 'AI 想不出推荐，稍后再试。',
+      disabled: 'AI 美食推荐尚未启用（需要后端 GEMINI_API_KEY）。',
     },
     itinerary: {
       title: '行程表',

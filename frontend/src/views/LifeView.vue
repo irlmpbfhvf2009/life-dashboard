@@ -1,15 +1,20 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import TodoPanel from '@/components/life/TodoPanel.vue'
 import MoodPanel from '@/components/life/MoodPanel.vue'
+import FinancePanel from '@/components/finance/FinancePanel.vue'
 
 const { t } = useI18n()
+const route = useRoute()
 
-const tabs = ['todos', 'mood'] as const
+const tabs = ['todos', 'mood', 'finance'] as const
 type Tab = (typeof tabs)[number]
-const activeTab = ref<Tab>('todos')
+// Allow deep-linking a tab via ?tab= (e.g. the old /finance route redirects here).
+const initial = tabs.includes(route.query.tab as Tab) ? (route.query.tab as Tab) : 'todos'
+const activeTab = ref<Tab>(initial)
 </script>
 
 <template>
@@ -25,5 +30,6 @@ const activeTab = ref<Tab>('todos')
   </div>
 
   <TodoPanel v-if="activeTab === 'todos'" />
-  <MoodPanel v-else />
+  <MoodPanel v-else-if="activeTab === 'mood'" />
+  <FinancePanel v-else />
 </template>

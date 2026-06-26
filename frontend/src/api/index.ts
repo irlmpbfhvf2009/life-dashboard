@@ -186,6 +186,9 @@ export const aiApi = {
   /** Suggest sightseeing spots for a destination over N days. */
   suggestSpots: (body: { place: string; days: number }) =>
     request<{ spots: SpotSuggestion[] }>(() => http.post('/api/ai/spots', body)),
+  /** Suggest must-try local dishes for a destination. */
+  suggestFood: (body: { place: string }) =>
+    request<{ dishes: FoodSuggestion[] }>(() => http.post('/api/ai/food', body)),
   dataLabAnalyze: (body: { profile: string }) =>
     request<DataInsight>(() => http.post('/api/ai/datalab/analyze', body)),
 }
@@ -201,6 +204,13 @@ export interface SpotSuggestion {
   area: string
   reason: string
   day: number
+}
+export interface FoodSuggestion {
+  name: string
+  nativeName: string
+  category: string
+  where: string
+  reason: string
 }
 
 // ---- Text-to-speech (server proxy → speaks any language without an OS voice) ----

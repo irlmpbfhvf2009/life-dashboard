@@ -5,7 +5,6 @@ import { Plus, Trash2, MapPin, CalendarRange, ExternalLink, Sparkles, Loader2, P
 import PageHeader from '@/components/ui/PageHeader.vue'
 import SectionCard from '@/components/ui/SectionCard.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
-import DestinationPicker from '@/components/travel/DestinationPicker.vue'
 import { useItinerary, useTravelWallet } from '@/composables/useTravelWallet'
 import { useWeather, type DailyForecast } from '@/composables/useWeather'
 import { weatherInfo } from '@/utils/weather'
@@ -74,11 +73,6 @@ function mapUrl(place: string) {
 <template>
   <div>
     <PageHeader eyebrow="Itinerary" :title="$t('tv.itinerary.title')" :subtitle="$t('tv.itinerary.subtitle')" />
-
-    <div class="mb-6">
-      <DestinationPicker />
-      <p class="mt-2 text-sm text-ink-500">{{ $t('tv.common.current') }}：{{ destination.flag }} {{ destination.country }}・{{ destination.city }}</p>
-    </div>
 
     <div class="grid gap-6 lg:grid-cols-5">
       <!-- Add + AI suggest -->

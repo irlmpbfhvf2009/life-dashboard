@@ -4,7 +4,6 @@ import { useI18n } from 'vue-i18n'
 import { Sparkles, Languages, Loader2, Lightbulb } from 'lucide-vue-next'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import SectionCard from '@/components/ui/SectionCard.vue'
-import DestinationPicker from '@/components/travel/DestinationPicker.vue'
 import PhraseAudioButton from '@/components/travel/PhraseAudioButton.vue'
 import { useTravelWallet } from '@/composables/useTravelWallet'
 import { aiApi, type PhraseTranslation } from '@/api'
@@ -48,15 +47,6 @@ const examples = ['機場到飯店多少錢', '我對花生過敏', '可以幫�
       :title="$t('tv.phrasebook.title')"
       :subtitle="$t('tv.phrasebook.subtitle')"
     />
-
-    <!-- Destination -->
-    <div class="mb-6">
-      <DestinationPicker />
-      <p class="mt-2 text-sm text-ink-500">
-        {{ $t('tv.common.current') }}：{{ destination.flag }} {{ destination.country }}・{{ destination.city }}
-        <span v-if="destination.blurb" class="text-ink-400">— {{ destination.blurb }}</span>
-      </p>
-    </div>
 
     <!-- AI live translate -->
     <SectionCard :title="$t('tv.phrasebook.aiTitle', { country: destination.country })" :icon="Sparkles" class="mb-6">

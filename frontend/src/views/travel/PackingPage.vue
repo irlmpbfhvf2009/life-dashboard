@@ -4,11 +4,9 @@ import { Plus, Trash2, ListChecks, Sparkles } from 'lucide-vue-next'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import SectionCard from '@/components/ui/SectionCard.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
-import DestinationPicker from '@/components/travel/DestinationPicker.vue'
 import { useTravelPacking } from '@/composables/useTravelWallet'
 
 const packing = useTravelPacking()
-const { destination } = packing
 
 const newItem = ref('')
 function addItem() {
@@ -21,11 +19,6 @@ function addItem() {
 <template>
   <div>
     <PageHeader eyebrow="Packing" :title="$t('tv.packing.title')" :subtitle="$t('tv.packing.subtitle')" />
-
-    <div class="mb-6">
-      <DestinationPicker />
-      <p class="mt-2 text-sm text-ink-500">{{ $t('tv.common.current') }}：{{ destination.flag }} {{ destination.country }}</p>
-    </div>
 
     <SectionCard :title="$t('tv.packing.list')" :icon="ListChecks">
       <template #action>

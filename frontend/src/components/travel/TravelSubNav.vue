@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Secondary navigation inside the Travel module. The global sidebar only lists
 // "旅遊"; this keeps the module's pages organized without polluting the app shell.
-import { Home, Languages, CalendarRange, Map, ListChecks, Wallet, Calculator, Siren, BookHeart, Share2 } from 'lucide-vue-next'
+import { Home, Languages, UtensilsCrossed, CalendarRange, Map, ListChecks, Wallet, Calculator, Siren, BookHeart, Share2 } from 'lucide-vue-next'
 
 interface Item { to: string; label: string; icon: typeof Home; exact?: boolean }
 
@@ -10,6 +10,7 @@ const ACTIVE = '!bg-brand-500 !text-white'
 const items: Item[] = [
   { to: '/travel', label: 'tv.nav.home', icon: Home, exact: true },
   { to: '/travel/phrasebook', label: 'tv.nav.phrasebook', icon: Languages },
+  { to: '/travel/food', label: 'tv.nav.food', icon: UtensilsCrossed },
   { to: '/travel/itinerary', label: 'tv.nav.itinerary', icon: CalendarRange },
   { to: '/travel/map', label: 'tv.nav.map', icon: Map },
   { to: '/travel/packing', label: 'tv.nav.packing', icon: ListChecks },

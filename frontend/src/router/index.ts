@@ -24,7 +24,8 @@ const router = createRouter({
         { path: '', name: 'overview', component: () => import('@/views/OverviewView.vue') },
         { path: 'life', name: 'life', component: () => import('@/views/LifeView.vue') },
         { path: 'health', name: 'health', component: () => import('@/views/HealthView.vue') },
-        { path: 'finance', name: 'finance', component: () => import('@/views/FinanceView.vue') },
+        // 財務分析 now lives as a tab inside 生活管理. Keep the old path as a redirect.
+        { path: 'finance', name: 'finance', redirect: { name: 'life', query: { tab: 'finance' } } },
         {
           path: 'ai', name: 'ai', component: () => import('@/views/ModuleLandingView.vue'),
           meta: { category: 'AI', eyebrow: 'AI Lab', title: 'AI 實驗室', subtitle: 'AI 股票研究、英文教練與資料分析工具（研究用途）。' },
@@ -60,6 +61,7 @@ const router = createRouter({
           children: [
             { path: '', name: 'travel', component: () => import('@/views/travel/TravelHomePage.vue') },
             { path: 'phrasebook', name: 'travel-phrasebook', component: () => import('@/views/travel/PhrasebookPage.vue') },
+            { path: 'food', name: 'travel-food', component: () => import('@/views/travel/FoodPage.vue') },
             { path: 'itinerary', name: 'travel-itinerary', component: () => import('@/views/travel/ItineraryPage.vue') },
             { path: 'map', name: 'travel-map', component: () => import('@/views/travel/MapPage.vue') },
             { path: 'packing', name: 'travel-packing', component: () => import('@/views/travel/PackingPage.vue') },
@@ -70,15 +72,36 @@ const router = createRouter({
             { path: 'share', name: 'travel-share', component: () => import('@/views/travel/TravelSharePage.vue') },
           ],
         },
-        // ---- Library (free public-domain e-books, read in-site) ----
-        { path: 'library', name: 'library', component: () => import('@/views/library/LibraryHomePage.vue') },
-        { path: 'library/read/:source/:id', name: 'library-read', component: () => import('@/views/library/ReaderPage.vue') },
         // ---- Social (friends + privacy-gated profile viewing) ----
         { path: 'social', name: 'social', component: () => import('@/views/social/SocialHubView.vue') },
         { path: 'social/u/:userId', name: 'social-profile', component: () => import('@/views/social/FriendProfileView.vue') },
-        { path: 'fate', name: 'fate', component: () => import('@/views/FateView.vue') },
-        { path: 'roulette', name: 'roulette', component: () => import('@/views/FoodRouletteView.vue') },
-        { path: 'knowledge', name: 'knowledge', component: () => import('@/views/KnowledgeView.vue') },
+        // ---- 知識 (筆記 + 書庫, module with its own sub-nav) ----
+        {
+          path: 'knowledge',
+          component: () => import('@/views/knowledge/KnowledgeLayout.vue'),
+          children: [
+            { path: '', name: 'knowledge', component: () => import('@/views/KnowledgeView.vue') },
+            { path: 'books', name: 'library', component: () => import('@/views/library/LibraryHomePage.vue') },
+          ],
+        },
+        // Reader is a focused full page — kept outside the sub-nav layout.
+        { path: 'knowledge/read/:source/:id', name: 'library-read', component: () => import('@/views/library/ReaderPage.vue') },
+        // Old library paths → redirect into 知識.
+        { path: 'library', redirect: '/knowledge/books' },
+        { path: 'library/read/:source/:id', redirect: (to) => `/knowledge/read/${to.params.source}/${to.params.id}` },
+        // ---- 娛樂 (命運 + 食物輪盤, module with its own sub-nav) ----
+        {
+          path: 'fun',
+          component: () => import('@/views/fun/FunLayout.vue'),
+          children: [
+            { path: '', redirect: '/fun/fate' },
+            { path: 'fate', name: 'fate', component: () => import('@/views/FateView.vue') },
+            { path: 'roulette', name: 'roulette', component: () => import('@/views/FoodRouletteView.vue') },
+          ],
+        },
+        // Old standalone paths → redirect into 娛樂.
+        { path: 'fate', redirect: '/fun/fate' },
+        { path: 'roulette', redirect: '/fun/roulette' },
         { path: 'portfolio', name: 'portfolio', component: () => import('@/views/PortfolioView.vue') },
         { path: 'settings', name: 'settings', component: () => import('@/views/SettingsView.vue') },
         { path: 'admin', name: 'admin', component: () => import('@/views/AdminView.vue'), meta: { requires: 'admin' } },

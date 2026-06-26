@@ -3,6 +3,7 @@ export default {
     nav: {
       home: 'Trip Home',
       phrasebook: 'Phrasebook',
+      food: 'Food',
       itinerary: 'Itinerary',
       map: 'Map',
       packing: 'Packing',
@@ -12,7 +13,7 @@ export default {
       journal: 'Journal',
       share: 'Share',
     },
-    common: { current: 'Current', enter: 'Open', loading: 'Loading…' },
+    common: { current: 'Current', enter: 'Open', loading: 'Loading…', destination: 'Destination' },
     home: {
       title: 'Travel Assistant',
       subtitle: 'Pick a destination and get everything in one place: local phrases, trip expenses and currency/tip tools.',
@@ -41,6 +42,15 @@ export default {
       disabled: 'AI translation is not enabled (backend needs GEMINI_API_KEY). The phrases below work offline.',
       literal: 'Literal',
       polite: 'Politer',
+    },
+    food: {
+      title: 'Food picks',
+      subtitle: 'Pick a destination and let AI recommend must-try local dishes; tap a dish to hear its name in the local language.',
+      button: 'Get picks',
+      emptyTitle: 'Hungry?',
+      emptyDesc: 'Tap "Get picks" and AI will list local must-eat dishes.',
+      empty: 'AI had no picks — try again in a moment.',
+      disabled: 'AI food picks are not enabled (backend needs GEMINI_API_KEY).',
     },
     itinerary: {
       title: 'Itinerary',

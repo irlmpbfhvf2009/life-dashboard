@@ -163,7 +163,7 @@ export default {
     eyebrow: 'Life',
     title: '生活管理',
     subtitle: '待辦與心情日記，記錄並回顧你的每一天。',
-    tabs: { todos: '待辦', mood: '心情日記' },
+    tabs: { todos: '待辦', mood: '心情日記', finance: '財務分析' },
   },
   portfolio: {
     eyebrow: 'Portfolio',

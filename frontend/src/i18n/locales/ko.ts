@@ -87,7 +87,7 @@ export default {
   },
   life: {
     eyebrow: 'Life', title: '생활 관리', subtitle: '할 일과 기분 일기로 매일을 기록하고 돌아보세요.',
-    tabs: { todos: '할 일', mood: '기분 일기' },
+    tabs: { todos: '할 일', mood: '기분 일기', finance: '재무 분석' },
   },
   portfolio: {
     eyebrow: 'Portfolio', title: '포트폴리오', subtitle: '엄선한 프로젝트와 작업물 — 이 스튜디오 자체부터.',

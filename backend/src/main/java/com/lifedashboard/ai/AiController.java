@@ -5,6 +5,8 @@ import com.lifedashboard.ai.dto.ChatRequest;
 import com.lifedashboard.ai.dto.CorrectionReply;
 import com.lifedashboard.ai.dto.DataInsightReply;
 import com.lifedashboard.ai.dto.DataInsightRequest;
+import com.lifedashboard.ai.dto.FoodReply;
+import com.lifedashboard.ai.dto.FoodRequest;
 import com.lifedashboard.ai.dto.PhraseReply;
 import com.lifedashboard.ai.dto.PhraseTranslateRequest;
 import com.lifedashboard.ai.dto.ReceiptReply;
@@ -27,6 +29,7 @@ public class AiController {
     private final PhraseCoachService phraseCoach;
     private final ReceiptService receiptService;
     private final SpotSuggestService spotSuggest;
+    private final FoodSuggestService foodSuggest;
     private final DataLabService dataLab;
 
     /** Whether in-app AI is configured — lets the UI show a setup hint instead of erroring. */
@@ -66,5 +69,11 @@ public class AiController {
     @PostMapping("/spots")
     public ApiResponse<SpotReply> spots(@Valid @RequestBody SpotRequest request) {
         return ApiResponse.ok(spotSuggest.suggest(request.place(), request.days()));
+    }
+
+    /** Suggest must-try local dishes for a destination (for the food page). */
+    @PostMapping("/food")
+    public ApiResponse<FoodReply> food(@Valid @RequestBody FoodRequest request) {
+        return ApiResponse.ok(foodSuggest.suggest(request.place()));
     }
 }

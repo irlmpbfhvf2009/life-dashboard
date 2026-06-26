@@ -5,6 +5,7 @@ export default {
     nav: {
       home: '旅遊首頁',
       phrasebook: '旅遊用語包',
+      food: '美食推薦',
       itinerary: '行程表',
       map: '行程地圖',
       packing: '打包清單',
@@ -14,7 +15,7 @@ export default {
       journal: '旅遊日記',
       share: '行程分享',
     },
-    common: { current: '目前', enter: '進入', loading: '載入中…' },
+    common: { current: '目前', enter: '進入', loading: '載入中…', destination: '目的地' },
     home: {
       title: '旅遊助手',
       subtitle: '選好目的地，隨身工具一次到位：當地用語、旅遊記帳與換算小費。',
@@ -43,6 +44,15 @@ export default {
       disabled: 'AI 即時翻譯尚未啟用（需要後端 GEMINI_API_KEY）。下方的情境短句可離線使用。',
       literal: '直譯',
       polite: '更禮貌',
+    },
+    food: {
+      title: '美食推薦',
+      subtitle: '選好目的地，AI 推薦在地必吃；菜名點一下就念當地語言給店家聽。',
+      button: '產生推薦',
+      emptyTitle: '想吃什麼？',
+      emptyDesc: '點「產生推薦」，AI 會列出當地必吃美食。',
+      empty: 'AI 想不出推薦，稍後再試。',
+      disabled: 'AI 美食推薦尚未啟用（需要後端 GEMINI_API_KEY）。',
     },
     itinerary: {
       title: '行程表',

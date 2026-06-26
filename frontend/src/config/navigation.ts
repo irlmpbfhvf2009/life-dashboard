@@ -6,7 +6,6 @@ import {
   Wallet,
   FlaskConical,
   Library,
-  BookMarked,
   FolderGit2,
   Gamepad2,
   ShieldCheck,
@@ -25,8 +24,6 @@ import {
   Languages,
   Calculator,
   Users,
-  Dices,
-  Utensils,
 } from 'lucide-vue-next'
 
 export type AppStatus = 'ACTIVE' | 'BETA' | 'DRAFT'
@@ -55,19 +52,18 @@ export interface StudioApp {
 /** Top-level sidebar — only big categories, never individual tools. */
 export const navGroups: NavGroup[] = [
   { key: 'overview', label: '總覽', icon: LayoutDashboard, to: '/' },
+  // 生活管理 hub: 待辦 / 心情日記 / 財務分析 (tabs inside the view).
   { key: 'life', label: '生活管理', icon: Sparkles, to: '/life' },
   { key: 'health', label: '健康減脂', icon: HeartPulse, to: '/health' },
-  { key: 'finance', label: '財務分析', icon: Wallet, to: '/finance' },
   { key: 'ai', label: 'AI 實驗室', icon: FlaskConical, to: '/ai' },
   { key: 'travel', label: '旅遊', icon: Plane, to: '/travel' },
   { key: 'social', label: '社交', icon: Users, to: '/social' },
-  { key: 'fate', label: '命運', icon: Dices, to: '/fate' },
-  { key: 'roulette', label: '食物輪盤', icon: Utensils, to: '/roulette' },
-  { key: 'library', label: '書庫', icon: BookMarked, to: '/library' },
-  { key: 'knowledge', label: '知識庫', icon: Library, to: '/knowledge' },
+  // 知識 hub: 筆記 + 書庫 (sub-nav inside the module).
+  { key: 'knowledge', label: '知識', icon: Library, to: '/knowledge' },
+  // 娛樂 hub: 命運 + 食物輪盤 (+ 遊戲 portal for players, in the sub-nav).
+  { key: 'fun', label: '娛樂', icon: Gamepad2, to: '/fun' },
   { key: 'portfolio', label: '作品展示', icon: FolderGit2, to: '/portfolio' },
   // Role-gated — hidden unless the user has the matching role.
-  { key: 'game', label: '遊戲', icon: Gamepad2, to: '/play', requires: 'player' },
   { key: 'admin', label: '管理後台', icon: ShieldCheck, to: '/admin', requires: 'admin' },
 ]
 

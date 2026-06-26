@@ -6,14 +6,13 @@ import PageHeader from '@/components/ui/PageHeader.vue'
 import SectionCard from '@/components/ui/SectionCard.vue'
 import StatCard from '@/components/ui/StatCard.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
-import DestinationPicker from '@/components/travel/DestinationPicker.vue'
 import { useTravelWallet, TRIP_CATEGORIES } from '@/composables/useTravelWallet'
 import { aiApi } from '@/api'
 import { fileToCompressedBase64 } from '@/utils/image'
 
 const { t } = useI18n()
 const wallet = useTravelWallet()
-const { destination, currency, rate, budget } = wallet
+const { currency, rate, budget } = wallet
 
 const today = new Date().toISOString().slice(0, 10)
 const form = ref({ date: today, category: TRIP_CATEGORIES[0] as string, amount: null as number | null, note: '' })

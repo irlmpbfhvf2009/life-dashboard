@@ -1,8 +1,12 @@
-// Multi-country travel data. Each destination carries its phrasebook (5 scenario
-// categories), a local cheat sheet, the language used for speech/AI translation,
-// and its currency + a default TWD rate. Phrase pronunciation is a friendly
-// approximation for a Chinese speaker, not strict IPA. Adding a country = adding
-// one entry here; the UI is fully destination-driven.
+// Multi-country, multi-region travel data. Each country has ONE shared profile
+// (phrasebook with 5 scenario categories, cheat sheet, currency, language) and a
+// list of regions (popular tourist areas). A "destination" the rest of the app
+// consumes is one region: it inherits the country profile and overrides only the
+// city name + coordinates + timezone. The primary region keeps the country's id
+// (e.g. `thailand`) so previously-saved trips stay linked; extra regions get a
+// suffixed id (e.g. `thailand-chiangmai`). Adding a region = adding one line.
+// The UI is fully destination-driven. Phrase pronunciation is a friendly
+// approximation for a Chinese speaker, not strict IPA.
 
 import {
   Hand, Car, UtensilsCrossed, ShoppingBag, Siren,
@@ -39,15 +43,43 @@ export interface Currency {
   defaultRate: number
 }
 
-export interface Destination {
-  id: string
-  country: string
+/** A popular area within a country. Inherits everything else from the profile. */
+export interface Region {
+  /** Id suffix; '' marks the primary region whose id == the country id. */
+  slug: string
+  /** Display name, "中文 Latin" — the Latin part feeds geocoding / AI spots. */
   city: string
+  lat: number
+  lon: number
+  timezone: string
+}
+
+/** Country-level profile: the phrasebook, currency and tips shared by all its regions. */
+export interface CountryProfile {
+  countryId: string
+  country: string
   flag: string
   blurb: string
   /** Google TTS language code (tl). */
   ttsLang: 'th' | 'ja' | 'ko' | 'vi' | 'zh-TW'
   /** Target language name for the AI translator's system prompt. */
+  translateLangName: string
+  currency: Currency
+  categories: PhraseCategory[]
+  cheatSheet: CheatItem[]
+  regions: Region[]
+}
+
+/** A single selectable destination (one region of one country). */
+export interface Destination {
+  id: string
+  /** Owning country id, for grouping in the picker. */
+  countryId: string
+  country: string
+  city: string
+  flag: string
+  blurb: string
+  ttsLang: 'th' | 'ja' | 'ko' | 'vi' | 'zh-TW'
   translateLangName: string
   currency: Currency
   /** City coordinates + IANA timezone, for weather and local time. */
@@ -59,18 +91,25 @@ export interface Destination {
 }
 
 // ---------------------------------------------------------------------------
-// Thailand · Bangkok
+// Thailand · 曼谷 / 芭達雅 / 清邁 / 普吉島 / 喀比 …
 // ---------------------------------------------------------------------------
-const thailand: Destination = {
-  id: 'thailand',
+const thailand: CountryProfile = {
+  countryId: 'thailand',
   country: '泰國',
-  city: '曼谷 Bangkok',
   flag: '🇹🇭',
   blurb: '泰語句尾加 ครับ(男)/ค่ะ(女) 更禮貌。',
   ttsLang: 'th',
   translateLangName: 'Thai',
   currency: { code: 'THB', symbol: '฿', defaultRate: 0.92 },
-  lat: 13.7563, lon: 100.5018, timezone: 'Asia/Bangkok',
+  regions: [
+    { slug: '', city: '曼谷 Bangkok', lat: 13.7563, lon: 100.5018, timezone: 'Asia/Bangkok' },
+    { slug: 'pattaya', city: '芭達雅 Pattaya', lat: 12.9236, lon: 100.8825, timezone: 'Asia/Bangkok' },
+    { slug: 'chiangmai', city: '清邁 Chiang Mai', lat: 18.7883, lon: 98.9853, timezone: 'Asia/Bangkok' },
+    { slug: 'phuket', city: '普吉島 Phuket', lat: 7.8804, lon: 98.3923, timezone: 'Asia/Bangkok' },
+    { slug: 'krabi', city: '喀比 Krabi', lat: 8.0863, lon: 98.9063, timezone: 'Asia/Bangkok' },
+    { slug: 'chiangrai', city: '清萊 Chiang Rai', lat: 19.9105, lon: 99.8406, timezone: 'Asia/Bangkok' },
+    { slug: 'ayutthaya', city: '大城 Ayutthaya', lat: 14.3692, lon: 100.5877, timezone: 'Asia/Bangkok' },
+  ],
   categories: [
     {
       key: 'basics', label: '基本問候', icon: Hand, hint: '萬用客套話。',
@@ -135,18 +174,25 @@ const thailand: Destination = {
 }
 
 // ---------------------------------------------------------------------------
-// Japan · Tokyo
+// Japan · 東京 / 大阪 / 京都 / 北海道 / 沖繩 …
 // ---------------------------------------------------------------------------
-const japan: Destination = {
-  id: 'japan',
+const japan: CountryProfile = {
+  countryId: 'japan',
   country: '日本',
-  city: '東京 Tokyo',
   flag: '🇯🇵',
   blurb: '禮貌、安靜、守秩序；不用給小費。',
   ttsLang: 'ja',
   translateLangName: 'Japanese',
   currency: { code: 'JPY', symbol: '¥', defaultRate: 0.21 },
-  lat: 35.6762, lon: 139.6503, timezone: 'Asia/Tokyo',
+  regions: [
+    { slug: '', city: '東京 Tokyo', lat: 35.6762, lon: 139.6503, timezone: 'Asia/Tokyo' },
+    { slug: 'osaka', city: '大阪 Osaka', lat: 34.6937, lon: 135.5023, timezone: 'Asia/Tokyo' },
+    { slug: 'kyoto', city: '京都 Kyoto', lat: 35.0116, lon: 135.7681, timezone: 'Asia/Tokyo' },
+    { slug: 'sapporo', city: '北海道（札幌）Sapporo', lat: 43.0618, lon: 141.3545, timezone: 'Asia/Tokyo' },
+    { slug: 'okinawa', city: '沖繩（那霸）Okinawa', lat: 26.2124, lon: 127.6809, timezone: 'Asia/Tokyo' },
+    { slug: 'fukuoka', city: '福岡 Fukuoka', lat: 33.5904, lon: 130.4017, timezone: 'Asia/Tokyo' },
+    { slug: 'nagoya', city: '名古屋 Nagoya', lat: 35.1815, lon: 136.9066, timezone: 'Asia/Tokyo' },
+  ],
   categories: [
     {
       key: 'basics', label: '基本問候', icon: Hand, hint: '「すみません」可同時表示不好意思/借過/叫人。',
@@ -211,18 +257,23 @@ const japan: Destination = {
 }
 
 // ---------------------------------------------------------------------------
-// Korea · Seoul
+// Korea · 首爾 / 釜山 / 濟州島 / 仁川
 // ---------------------------------------------------------------------------
-const korea: Destination = {
-  id: 'korea',
+const korea: CountryProfile = {
+  countryId: 'korea',
   country: '韓國',
-  city: '首爾 Seoul',
   flag: '🇰🇷',
   blurb: '長輩/店員面前用雙手收授更有禮。',
   ttsLang: 'ko',
   translateLangName: 'Korean',
   currency: { code: 'KRW', symbol: '₩', defaultRate: 0.024 },
-  lat: 37.5665, lon: 126.9780, timezone: 'Asia/Seoul',
+  regions: [
+    { slug: '', city: '首爾 Seoul', lat: 37.5665, lon: 126.9780, timezone: 'Asia/Seoul' },
+    { slug: 'busan', city: '釜山 Busan', lat: 35.1796, lon: 129.0756, timezone: 'Asia/Seoul' },
+    { slug: 'jeju', city: '濟州島 Jeju', lat: 33.4996, lon: 126.5312, timezone: 'Asia/Seoul' },
+    { slug: 'incheon', city: '仁川 Incheon', lat: 37.4563, lon: 126.7052, timezone: 'Asia/Seoul' },
+    { slug: 'gyeongju', city: '慶州 Gyeongju', lat: 35.8562, lon: 129.2247, timezone: 'Asia/Seoul' },
+  ],
   categories: [
     {
       key: 'basics', label: '基本問候', icon: Hand, hint: '句尾「-요 yo」是禮貌語氣。',
@@ -287,18 +338,24 @@ const korea: Destination = {
 }
 
 // ---------------------------------------------------------------------------
-// Vietnam · Ho Chi Minh City
+// Vietnam · 胡志明市 / 河內 / 峴港 / 芽莊 / 會安
 // ---------------------------------------------------------------------------
-const vietnam: Destination = {
-  id: 'vietnam',
+const vietnam: CountryProfile = {
+  countryId: 'vietnam',
   country: '越南',
-  city: '胡志明市 Ho Chi Minh',
   flag: '🇻🇳',
   blurb: '越南文是拉丁字母；過馬路穩穩前進別急停。',
   ttsLang: 'vi',
   translateLangName: 'Vietnamese',
   currency: { code: 'VND', symbol: '₫', defaultRate: 0.0013 },
-  lat: 10.8231, lon: 106.6297, timezone: 'Asia/Ho_Chi_Minh',
+  regions: [
+    { slug: '', city: '胡志明市 Ho Chi Minh', lat: 10.8231, lon: 106.6297, timezone: 'Asia/Ho_Chi_Minh' },
+    { slug: 'hanoi', city: '河內 Hanoi', lat: 21.0278, lon: 105.8342, timezone: 'Asia/Ho_Chi_Minh' },
+    { slug: 'danang', city: '峴港 Da Nang', lat: 16.0544, lon: 108.2022, timezone: 'Asia/Ho_Chi_Minh' },
+    { slug: 'nhatrang', city: '芽莊 Nha Trang', lat: 12.2388, lon: 109.1967, timezone: 'Asia/Ho_Chi_Minh' },
+    { slug: 'hoian', city: '會安 Hoi An', lat: 15.8801, lon: 108.3380, timezone: 'Asia/Ho_Chi_Minh' },
+    { slug: 'phuquoc', city: '富國島 Phu Quoc', lat: 10.2270, lon: 103.9670, timezone: 'Asia/Ho_Chi_Minh' },
+  ],
   categories: [
     {
       key: 'basics', label: '基本問候', icon: Hand, hint: '拼音是粗略發音提示，聲調以聽 TTS 為準。',
@@ -363,22 +420,43 @@ const vietnam: Destination = {
 }
 
 // ---------------------------------------------------------------------------
-// Taiwan · Nationwide (domestic trips). The traveller already speaks Mandarin,
-// so the phrasebook is Taiwanese Hokkien (台語) with Tâi-lô romanization — handy
-// for elders, night-market vendors and rural shops. The speak button uses the
-// zh-TW voice, so it reads the Han characters in Mandarin (a reference reading);
-// the 台羅拼音 line shows the actual Taiwanese pronunciation.
+// Taiwan · 全部縣市可選（國內旅遊）。旅人本身講華語，所以語句包是台語（台羅拼音）——
+// 對長輩、夜市攤販、在地小店開口更親切。發音鈕用 zh-TW 語音，會以華語朗讀漢字（參考用），
+// 台羅拼音那行才是實際台語發音。
 // ---------------------------------------------------------------------------
-const taiwan: Destination = {
-  id: 'taiwan',
+const taiwan: CountryProfile = {
+  countryId: 'taiwan',
   country: '台灣',
-  city: '全台 Taiwan',
   flag: '🇹🇼',
   blurb: '台語小幫手：對長輩、在地店家、夜市攤販開口更親切（發音鈕為華語朗讀參考，發音以台羅拼音為準）。',
   ttsLang: 'zh-TW',
   translateLangName: 'Taiwanese Hokkien (台語/台灣閩南語)',
   currency: { code: 'TWD', symbol: 'NT$', defaultRate: 1 },
-  lat: 25.0330, lon: 121.5654, timezone: 'Asia/Taipei',
+  // All 22 counties/cities. Primary keeps id `taiwan` (= 台北), so older trips stay linked.
+  regions: [
+    { slug: '', city: '台北市 Taipei', lat: 25.0330, lon: 121.5654, timezone: 'Asia/Taipei' },
+    { slug: 'newtaipei', city: '新北市 New Taipei', lat: 25.0169, lon: 121.4628, timezone: 'Asia/Taipei' },
+    { slug: 'keelung', city: '基隆市 Keelung', lat: 25.1276, lon: 121.7392, timezone: 'Asia/Taipei' },
+    { slug: 'taoyuan', city: '桃園市 Taoyuan', lat: 24.9936, lon: 121.3010, timezone: 'Asia/Taipei' },
+    { slug: 'hsinchu-city', city: '新竹市 Hsinchu City', lat: 24.8138, lon: 120.9675, timezone: 'Asia/Taipei' },
+    { slug: 'hsinchu-county', city: '新竹縣 Hsinchu County', lat: 24.8387, lon: 121.0177, timezone: 'Asia/Taipei' },
+    { slug: 'miaoli', city: '苗栗縣 Miaoli', lat: 24.5602, lon: 120.8214, timezone: 'Asia/Taipei' },
+    { slug: 'taichung', city: '台中市 Taichung', lat: 24.1477, lon: 120.6736, timezone: 'Asia/Taipei' },
+    { slug: 'changhua', city: '彰化縣 Changhua', lat: 24.0518, lon: 120.5161, timezone: 'Asia/Taipei' },
+    { slug: 'nantou', city: '南投縣 Nantou', lat: 23.9609, lon: 120.9719, timezone: 'Asia/Taipei' },
+    { slug: 'yunlin', city: '雲林縣 Yunlin', lat: 23.7092, lon: 120.4313, timezone: 'Asia/Taipei' },
+    { slug: 'chiayi-city', city: '嘉義市 Chiayi City', lat: 23.4801, lon: 120.4491, timezone: 'Asia/Taipei' },
+    { slug: 'chiayi-county', city: '嘉義縣 Chiayi County', lat: 23.4518, lon: 120.2555, timezone: 'Asia/Taipei' },
+    { slug: 'tainan', city: '台南市 Tainan', lat: 22.9999, lon: 120.2270, timezone: 'Asia/Taipei' },
+    { slug: 'kaohsiung', city: '高雄市 Kaohsiung', lat: 22.6273, lon: 120.3014, timezone: 'Asia/Taipei' },
+    { slug: 'pingtung', city: '屏東縣 Pingtung', lat: 22.5519, lon: 120.5487, timezone: 'Asia/Taipei' },
+    { slug: 'yilan', city: '宜蘭縣 Yilan', lat: 24.7021, lon: 121.7378, timezone: 'Asia/Taipei' },
+    { slug: 'hualien', city: '花蓮縣 Hualien', lat: 23.9871, lon: 121.6015, timezone: 'Asia/Taipei' },
+    { slug: 'taitung', city: '台東縣 Taitung', lat: 22.7583, lon: 121.1444, timezone: 'Asia/Taipei' },
+    { slug: 'penghu', city: '澎湖縣 Penghu', lat: 23.5712, lon: 119.5793, timezone: 'Asia/Taipei' },
+    { slug: 'kinmen', city: '金門縣 Kinmen', lat: 24.4368, lon: 118.3171, timezone: 'Asia/Taipei' },
+    { slug: 'lienchiang', city: '連江縣（馬祖）Matsu', lat: 26.1605, lon: 119.9499, timezone: 'Asia/Taipei' },
+  ],
   categories: [
     {
       key: 'basics', label: '基本問候', icon: Hand, hint: '台語問候常用「食飽未」當開場白。',
@@ -443,7 +521,44 @@ const taiwan: Destination = {
   ],
 }
 
-export const destinations: Destination[] = [thailand, japan, korea, vietnam, taiwan]
+const profiles: CountryProfile[] = [thailand, japan, korea, vietnam, taiwan]
+
+/** Explode a country profile into one Destination per region. */
+function expand(p: CountryProfile): Destination[] {
+  return p.regions.map((r) => ({
+    id: r.slug ? `${p.countryId}-${r.slug}` : p.countryId,
+    countryId: p.countryId,
+    country: p.country,
+    city: r.city,
+    flag: p.flag,
+    blurb: p.blurb,
+    ttsLang: p.ttsLang,
+    translateLangName: p.translateLangName,
+    currency: p.currency,
+    lat: r.lat,
+    lon: r.lon,
+    timezone: r.timezone,
+    categories: p.categories,
+    cheatSheet: p.cheatSheet,
+  }))
+}
+
+export const destinations: Destination[] = profiles.flatMap(expand)
+
+/** A country and its selectable regions, for the two-level destination picker. */
+export interface CountryGroup {
+  countryId: string
+  country: string
+  flag: string
+  regions: Destination[]
+}
+
+export const destinationGroups: CountryGroup[] = profiles.map((p) => ({
+  countryId: p.countryId,
+  country: p.country,
+  flag: p.flag,
+  regions: destinations.filter((d) => d.countryId === p.countryId),
+}))
 
 export function destinationById(id: string | null | undefined): Destination {
   return destinations.find((d) => d.id === id) ?? destinations[0]

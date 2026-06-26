@@ -87,7 +87,7 @@ export default {
   },
   life: {
     eyebrow: 'Life', title: 'จัดการชีวิต', subtitle: 'สิ่งที่ต้องทำและไดอารีอารมณ์ เพื่อบันทึกและทบทวนแต่ละวัน',
-    tabs: { todos: 'สิ่งที่ต้องทำ', mood: 'ไดอารีอารมณ์' },
+    tabs: { todos: 'สิ่งที่ต้องทำ', mood: 'ไดอารีอารมณ์', finance: 'วิเคราะห์การเงิน' },
   },
   portfolio: {
     eyebrow: 'Portfolio', title: 'ผลงาน', subtitle: 'โปรเจกต์และผลงานคัดสรร — เริ่มจากสตูดิโอนี้เอง',

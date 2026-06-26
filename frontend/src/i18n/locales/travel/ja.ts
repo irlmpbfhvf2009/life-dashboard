@@ -3,6 +3,7 @@ export default {
     nav: {
       home: '旅行ホーム',
       phrasebook: 'フレーズ集',
+      food: 'グルメ',
       itinerary: '行程表',
       map: '行程マップ',
       packing: '持ち物リスト',
@@ -12,7 +13,7 @@ export default {
       journal: '旅日記',
       share: '行程シェア',
     },
-    common: { current: '現在', enter: '開く', loading: '読み込み中…' },
+    common: { current: '現在', enter: '開く', loading: '読み込み中…', destination: '目的地' },
     home: {
       title: '旅行アシスタント',
       subtitle: '目的地を選ぶだけ。現地のフレーズ、旅の家計簿、換算・チップ計算がひとまとめに。',
@@ -41,6 +42,15 @@ export default {
       disabled: 'AI翻訳は未設定です（バックエンドにGEMINI_API_KEYが必要）。下のフレーズはオフラインで使えます。',
       literal: '直訳',
       polite: 'より丁寧',
+    },
+    food: {
+      title: 'グルメおすすめ',
+      subtitle: '目的地を選ぶとAIが現地の名物料理をおすすめ。料理名をタップすると現地の言葉で読み上げます。',
+      button: 'おすすめを見る',
+      emptyTitle: 'お腹すいた？',
+      emptyDesc: '「おすすめを見る」を押すと、AIが現地の名物料理を表示します。',
+      empty: 'AIのおすすめがありません。少し後でもう一度お試しください。',
+      disabled: 'AIグルメおすすめは未設定です（バックエンドにGEMINI_API_KEYが必要）。',
     },
     itinerary: {
       title: '行程表',
