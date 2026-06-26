@@ -1,14 +1,17 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import {
   FlaskConical, LineChart, GraduationCap, Bot, ArrowRight,
-  Sparkles, CheckCircle2, AlertTriangle, Loader2,
+  Sparkles, CheckCircle2, AlertTriangle, Loader2, Flame, ListTodo, RotateCcw,
 } from 'lucide-vue-next'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import SectionCard from '@/components/ui/SectionCard.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { aiApi } from '@/api'
+import { stockResearchApi } from '@/api/stockResearch'
+import { useEnglishStore } from '@/composables/useEnglishStore'
+import { formatDate } from '@/utils/format'
 import type { AppStatus } from '@/config/navigation'
 
 interface AiApp {
@@ -51,15 +54,35 @@ const apps: AiApp[] = [
   },
 ]
 
+// Personalised English-Coach progress (synced per-user, lightweight reactive reads).
+const english = useEnglishStore()
+const learnStats = computed(() => [
+  { key: 'streak', label: '連續學習', value: english.data.value?.streakDays ?? 0, unit: '天', icon: Flame, tint: 'text-rose-600 bg-rose-50' },
+  { key: 'mission', label: '今日任務', value: english.mission.value?.completedCount ?? 0, sub: `/ ${english.mission.value?.totalCount ?? 0}`, icon: ListTodo, tint: 'text-brand-600 bg-brand-50' },
+  { key: 'review', label: '待複習', value: english.dueReviews.value.length, unit: '項', icon: RotateCcw, tint: 'text-violet-600 bg-violet-50' },
+])
+
 // In-app AI runs on Gemini; surface whether the key is wired so users know
 // why the conversational features may be in fallback mode.
 const aiEnabled = ref<boolean | null>(null)
+
+// Live stock-pipeline snapshot, read straight from the GitHub-raw JSON.
+const stockPicks = ref<number | null>(null)
+const stockUpdated = ref<string | null>(null)
+
 onMounted(async () => {
   try {
     const res = await aiApi.status()
     aiEnabled.value = res.enabled
   } catch {
     aiEnabled.value = false
+  }
+  try {
+    const a = await stockResearchApi.analysis()
+    stockPicks.value = a.stocks?.length ?? 0
+    stockUpdated.value = a.updated_at ?? null
+  } catch {
+    // Pipeline JSON may be missing/unreachable — just omit the live line.
   }
 })
 </script>
@@ -100,6 +123,31 @@ onMounted(async () => {
       </div>
     </div>
 
+    <!-- Personalised learning progress -->
+    <RouterLink
+      to="/ai/english"
+      class="group mb-6 flex flex-col gap-4 rounded-2xl border border-ink-200 bg-surface p-5 shadow-card transition-all hover:border-brand-200 hover:shadow-card-hover sm:flex-row sm:items-center sm:justify-between"
+    >
+      <div class="flex items-center gap-2 text-sm font-semibold text-ink-700">
+        <GraduationCap class="h-4 w-4 text-brand-500" :stroke-width="2" />
+        <span>你的學習進度</span>
+        <ArrowRight class="h-3.5 w-3.5 text-brand-500 opacity-0 transition-opacity group-hover:opacity-100" />
+      </div>
+      <div class="grid grid-cols-3 gap-3">
+        <div v-for="s in learnStats" :key="s.key" class="flex items-center gap-2.5">
+          <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" :class="s.tint">
+            <component :is="s.icon" class="h-[18px] w-[18px]" :stroke-width="2" />
+          </span>
+          <div class="leading-tight">
+            <p class="text-lg font-bold text-ink-800">
+              {{ s.value }}<span v-if="s.unit" class="ml-0.5 text-xs font-medium text-ink-400">{{ s.unit }}</span><span v-if="s.sub" class="text-xs font-medium text-ink-400">{{ s.sub }}</span>
+            </p>
+            <p class="text-2xs text-ink-400">{{ s.label }}</p>
+          </div>
+        </div>
+      </div>
+    </RouterLink>
+
     <!-- App entries -->
     <div class="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <RouterLink
@@ -125,9 +173,16 @@ onMounted(async () => {
           </li>
         </ul>
 
-        <span class="mt-4 inline-flex items-center gap-1 border-t border-ink-100 pt-3 text-xs font-medium text-brand-600 opacity-0 transition-opacity group-hover:opacity-100">
-          進入 <ArrowRight class="h-3.5 w-3.5" />
-        </span>
+        <div class="mt-4 flex items-center justify-between border-t border-ink-100 pt-3">
+          <span class="text-2xs text-ink-400">
+            <template v-if="app.to === '/ai/stock' && stockPicks !== null">
+              今日 {{ stockPicks }} 檔精選<template v-if="stockUpdated"> · {{ formatDate(stockUpdated) }} 更新</template>
+            </template>
+          </span>
+          <span class="inline-flex items-center gap-1 text-xs font-medium text-brand-600 opacity-0 transition-opacity group-hover:opacity-100">
+            進入 <ArrowRight class="h-3.5 w-3.5" />
+          </span>
+        </div>
       </RouterLink>
     </div>
 
