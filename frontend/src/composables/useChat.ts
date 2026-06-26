@@ -181,7 +181,12 @@ export function useChat() {
     }
   }
 
-  async function deliver(body: { content?: string; kind?: MessageKind; attachmentUrl?: string }) {
+  type SendOpts = { replyToId?: number | null; forwardedFrom?: string | null }
+
+  async function deliver(body: {
+    content?: string; kind?: MessageKind; attachmentUrl?: string
+    replyToId?: number | null; forwardedFrom?: string | null
+  }) {
     if (activeId.value == null) return
     sending.value = true
     try {
@@ -199,14 +204,53 @@ export function useChat() {
     }
   }
 
-  async function send(content: string) {
+  async function send(content: string, opts: SendOpts = {}) {
     const text = content.trim()
     if (!text) return
-    await deliver({ content: text, kind: 'TEXT' })
+    await deliver({ content: text, kind: 'TEXT', ...opts })
   }
 
-  function sendAttachment(kind: MessageKind, attachmentUrl: string) {
-    return deliver({ kind, attachmentUrl })
+  function sendAttachment(kind: MessageKind, attachmentUrl: string, opts: SendOpts = {}) {
+    return deliver({ kind, attachmentUrl, ...opts })
+  }
+
+  /** Edit one of my own text messages. */
+  async function editMessage(messageId: number, content: string) {
+    if (activeId.value == null) return
+    const text = content.trim()
+    if (!text) return
+    try {
+      const updated = await chatApi.edit(activeId.value, messageId, text)
+      messages.value = messages.value.map((m) => (m.id === messageId ? updated : m))
+    } catch (e) {
+      error.value = (e as Error).message
+    }
+  }
+
+  /** Pin a message (or pass null to unpin). */
+  async function pinMessage(messageId: number | null) {
+    if (activeId.value == null) return
+    try {
+      await chatApi.pin(activeId.value, messageId)
+      await refreshConversations()
+    } catch (e) {
+      error.value = (e as Error).message
+    }
+  }
+
+  /** Forward a message to another conversation. */
+  async function forward(targetConvId: number, m: ChatMessage) {
+    try {
+      await chatApi.send(targetConvId, {
+        content: m.kind === 'TEXT' ? m.content : '',
+        kind: m.kind,
+        attachmentUrl: m.attachmentUrl ?? undefined,
+        forwardedFrom: m.forwardedFrom || m.senderName,
+      })
+      await refreshConversations()
+    } catch (e) {
+      error.value = (e as Error).message
+    }
   }
 
   async function startDm(userId: number) {
@@ -240,6 +284,46 @@ export function useChat() {
     else await refreshConversations()
   }
 
+  /** Unsend one of my messages (removes it for everyone). */
+  async function recall(messageId: number) {
+    if (activeId.value == null) return
+    const id = activeId.value
+    try {
+      await chatApi.recall(id, messageId)
+      messages.value = messages.value.filter((m) => m.id !== messageId)
+      const c = conversations.value.find((x) => x.id === id)
+      const last = messages.value[messages.value.length - 1]
+      if (c) c.lastMessage = last
+        ? { content: previewOf(last), senderName: last.senderName, createdAt: last.createdAt }
+        : null
+    } catch (e) {
+      error.value = (e as Error).message
+    }
+  }
+
+  /** Clear history for me only (the conversation stays in the list, emptied). */
+  async function clearHistory(id: number) {
+    try {
+      await chatApi.clearHistory(id)
+      if (activeId.value === id) messages.value = []
+      peerReadAt.value = null
+      await refreshConversations()
+    } catch (e) {
+      error.value = (e as Error).message
+    }
+  }
+
+  /** Remove the chat from my list (DM hide / group leave). */
+  async function deleteChat(id: number) {
+    try {
+      await chatApi.deleteChat(id)
+      if (activeId.value === id) backToList()
+      else await refreshConversations()
+    } catch (e) {
+      error.value = (e as Error).message
+    }
+  }
+
   return {
     // state
     open,
@@ -265,10 +349,17 @@ export function useChat() {
     backToList,
     send,
     sendAttachment,
+    editMessage,
+    pinMessage,
+    forward,
+    previewOf,
     startDm,
     createGroup,
     addMembers,
     leaveGroup,
+    recall,
+    clearHistory,
+    deleteChat,
     refreshConversations,
     meId,
   }

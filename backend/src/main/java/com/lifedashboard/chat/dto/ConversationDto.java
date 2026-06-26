@@ -16,7 +16,9 @@ public record ConversationDto(
         int memberCount,
         LastMessage lastMessage,
         long unreadCount,
-        Instant lastMessageAt
+        Instant lastMessageAt,
+        PinnedMessage pinnedMessage
 ) {
     public record LastMessage(String content, String senderName, Instant createdAt) {}
+    public record PinnedMessage(Long id, String preview, String senderName) {}
 }

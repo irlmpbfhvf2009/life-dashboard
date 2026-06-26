@@ -14,5 +14,10 @@ public record MessageDto(
         String kind,
         String content,
         String attachmentUrl,
-        Instant createdAt
+        Instant createdAt,
+        Long replyToId,
+        String replyToSender,
+        String replyToPreview,
+        Instant editedAt,
+        String forwardedFrom
 ) {}

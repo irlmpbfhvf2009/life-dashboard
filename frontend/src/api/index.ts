@@ -72,9 +72,22 @@ export const chatApi = {
   leave: (id: number) => request<void>(() => http.post(`/api/chat/conversations/${id}/leave`)),
   messages: (id: number, params?: { beforeId?: number; afterId?: number }) =>
     request<ChatMessage[]>(() => http.get(`/api/chat/conversations/${id}/messages`, { params })),
-  send: (id: number, body: { content?: string; kind?: MessageKind; attachmentUrl?: string }) =>
+  send: (id: number, body: { content?: string; kind?: MessageKind; attachmentUrl?: string; replyToId?: number | null; forwardedFrom?: string | null }) =>
     request<ChatMessage>(() => http.post(`/api/chat/conversations/${id}/messages`, body)),
+  edit: (id: number, messageId: number, content: string) =>
+    request<ChatMessage>(() => http.patch(`/api/chat/conversations/${id}/messages/${messageId}`, { content })),
+  pin: (id: number, messageId: number | null) =>
+    request<void>(() => http.post(`/api/chat/conversations/${id}/pin`, { messageId })),
   read: (id: number) => request<void>(() => http.post(`/api/chat/conversations/${id}/read`)),
+  /** Unsend my own message (removes it for everyone). */
+  recall: (id: number, messageId: number) =>
+    request<void>(() => http.delete(`/api/chat/conversations/${id}/messages/${messageId}`)),
+  /** Clear history for me only. */
+  clearHistory: (id: number) =>
+    request<void>(() => http.delete(`/api/chat/conversations/${id}/messages`)),
+  /** Remove the chat from my list (DM hide / group leave). */
+  deleteChat: (id: number) =>
+    request<void>(() => http.delete(`/api/chat/conversations/${id}`)),
   /** Watermark at least one other member has read past — drives the read-receipt ticks. */
   readState: (id: number) =>
     request<ChatReadState>(() => http.get(`/api/chat/conversations/${id}/read-state`)),

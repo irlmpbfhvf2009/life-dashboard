@@ -169,6 +169,12 @@ export interface ChatLastMessage {
   createdAt: string
 }
 
+export interface ChatPinnedMessage {
+  id: number
+  preview: string
+  senderName: string
+}
+
 export interface Conversation {
   id: number
   type: ConversationType
@@ -179,6 +185,7 @@ export interface Conversation {
   lastMessage: ChatLastMessage | null
   unreadCount: number
   lastMessageAt: string
+  pinnedMessage: ChatPinnedMessage | null
 }
 
 export type MessageKind = 'TEXT' | 'IMAGE' | 'GIF' | 'AUDIO'
@@ -193,6 +200,11 @@ export interface ChatMessage {
   content: string
   attachmentUrl: string | null
   createdAt: string
+  replyToId: number | null
+  replyToSender: string | null
+  replyToPreview: string | null
+  editedAt: string | null
+  forwardedFrom: string | null
 }
 
 /** Read receipt: the timestamp at least one other member has read past. */

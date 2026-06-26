@@ -62,17 +62,57 @@ public class ChatController {
         return ApiResponse.ok(chatService.getMessages(id, beforeId, afterId));
     }
 
-    /** kind = TEXT (default) | IMAGE | GIF | AUDIO. Attachments carry attachmentUrl. */
-    public record SendRequest(String content, String kind, String attachmentUrl) {}
+    /** kind = TEXT (default) | IMAGE | GIF | AUDIO. Attachments carry attachmentUrl.
+     *  replyToId quotes another message; forwardedFrom marks a forwarded copy. */
+    public record SendRequest(String content, String kind, String attachmentUrl,
+                              Long replyToId, String forwardedFrom) {}
 
     @PostMapping("/conversations/{id}/messages")
     public ApiResponse<MessageDto> send(@PathVariable Long id, @RequestBody SendRequest body) {
-        return ApiResponse.ok(chatService.sendMessage(id, body.content(), body.kind(), body.attachmentUrl()));
+        return ApiResponse.ok(chatService.sendMessage(id, body.content(), body.kind(),
+                body.attachmentUrl(), body.replyToId(), body.forwardedFrom()));
+    }
+
+    public record EditRequest(String content) {}
+
+    @PatchMapping("/conversations/{id}/messages/{messageId}")
+    public ApiResponse<MessageDto> edit(@PathVariable Long id, @PathVariable Long messageId,
+                                        @RequestBody EditRequest body) {
+        return ApiResponse.ok(chatService.editMessage(id, messageId, body.content()));
+    }
+
+    public record PinRequest(Long messageId) {}
+
+    @PostMapping("/conversations/{id}/pin")
+    public ApiResponse<Void> pin(@PathVariable Long id, @RequestBody PinRequest body) {
+        chatService.setPinned(id, body.messageId());
+        return ApiResponse.ok();
     }
 
     @PostMapping("/conversations/{id}/read")
     public ApiResponse<Void> read(@PathVariable Long id) {
         chatService.markRead(id);
+        return ApiResponse.ok();
+    }
+
+    /** Unsend my own message (removes it for everyone). */
+    @DeleteMapping("/conversations/{id}/messages/{messageId}")
+    public ApiResponse<Void> recall(@PathVariable Long id, @PathVariable Long messageId) {
+        chatService.recallMessage(id, messageId);
+        return ApiResponse.ok();
+    }
+
+    /** Clear history for me only. */
+    @DeleteMapping("/conversations/{id}/messages")
+    public ApiResponse<Void> clearHistory(@PathVariable Long id) {
+        chatService.clearHistory(id);
+        return ApiResponse.ok();
+    }
+
+    /** Remove the chat from my list (DM hide / group leave). */
+    @DeleteMapping("/conversations/{id}")
+    public ApiResponse<Void> deleteChat(@PathVariable Long id) {
+        chatService.deleteChat(id);
         return ApiResponse.ok();
     }
 

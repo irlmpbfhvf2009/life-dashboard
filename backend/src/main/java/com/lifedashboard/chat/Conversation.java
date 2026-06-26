@@ -45,4 +45,8 @@ public class Conversation {
     /** Time of the most recent message (or creation time). Drives list ordering. */
     @Column(name = "last_message_at", nullable = false)
     private Instant lastMessageAt;
+
+    /** Currently pinned message id (single pinned message per conversation), or null. */
+    @Column(name = "pinned_message_id")
+    private Long pinnedMessageId;
 }

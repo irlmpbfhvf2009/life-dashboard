@@ -53,8 +53,13 @@ public class ChatService {
         Map<Long, User> userCache = new HashMap<>();
         List<ConversationDto> result = new ArrayList<>();
         for (ConversationMember m : memberships) {
-            conversationRepository.findById(m.getConversationId())
-                    .ifPresent(c -> result.add(toDto(c, m, me, userCache)));
+            Conversation c = conversationRepository.findById(m.getConversationId()).orElse(null);
+            if (c == null) continue;
+            ChatMessage last = messageRepository.findFirstByConversationIdOrderByIdDesc(c.getId());
+            boolean hasVisible = last != null && visible(last, m);
+            // "Deleted" chats stay hidden until something new arrives.
+            if (Boolean.TRUE.equals(m.getHidden()) && !hasVisible) continue;
+            result.add(toDto(c, m, me, userCache));
         }
         result.sort(Comparator.comparing(ConversationDto::lastMessageAt).reversed());
         return result;
@@ -157,7 +162,7 @@ public class ChatService {
     public List<MessageDto> getMessages(Long conversationId, Long beforeId, Long afterId) {
         Long me = currentUserService.getCurrentUserId();
         Conversation c = requireConversation(conversationId);
-        requireMembership(c, me);
+        ConversationMember mine = requireMembership(c, me);
 
         List<ChatMessage> msgs;
         if (afterId != null) {
@@ -170,12 +175,22 @@ public class ChatService {
             msgs = new ArrayList<>(messageRepository.findTop50ByConversationIdOrderByIdDesc(conversationId));
             java.util.Collections.reverse(msgs);
         }
+        // Hide anything cleared by me ("clear history" is per-user).
         Map<Long, User> cache = new HashMap<>();
-        return msgs.stream().map(m -> toMessageDto(m, cache)).toList();
+        return msgs.stream()
+                .filter(m -> visible(m, mine))
+                .map(m -> toMessageDto(m, cache)).toList();
+    }
+
+    /** A message is visible to a member unless it predates their clear-history mark. */
+    private boolean visible(ChatMessage m, ConversationMember member) {
+        Instant cleared = member.getClearedAt();
+        return cleared == null || m.getCreatedAt().isAfter(cleared);
     }
 
     @Transactional
-    public MessageDto sendMessage(Long conversationId, String content, String kindStr, String attachmentUrl) {
+    public MessageDto sendMessage(Long conversationId, String content, String kindStr,
+                                  String attachmentUrl, Long replyToId, String forwardedFrom) {
         Long me = currentUserService.getCurrentUserId();
         Conversation c = requireConversation(conversationId);
         ConversationMember mine = requireMembership(c, me);
@@ -193,17 +208,30 @@ public class ChatService {
         }
         if (text.length() > MAX_CONTENT) text = text.substring(0, MAX_CONTENT);
 
+        // Only honor a reply that points at a message in this same conversation.
+        Long replyTo = null;
+        if (replyToId != null) {
+            ChatMessage target = messageRepository.findById(replyToId).orElse(null);
+            if (target != null && target.getConversationId().equals(conversationId)) replyTo = replyToId;
+        }
+        String forwarded = forwardedFrom == null || forwardedFrom.isBlank()
+                ? null : forwardedFrom.trim();
+        if (forwarded != null && forwarded.length() > 120) forwarded = forwarded.substring(0, 120);
+
         ChatMessage saved = messageRepository.save(ChatMessage.builder()
                 .conversationId(conversationId)
                 .senderId(me)
                 .kind(kind)
                 .content(text)
                 .attachmentUrl(attachment)
+                .replyToId(replyTo)
+                .forwardedFrom(forwarded)
                 .build());
         c.setLastMessageAt(saved.getCreatedAt());
         conversationRepository.save(c);
-        // Sending implicitly catches the sender up.
+        // Sending implicitly catches the sender up and un-hides a deleted chat.
         mine.setLastReadAt(saved.getCreatedAt());
+        mine.setHidden(false);
         memberRepository.save(mine);
 
         notifyRecipients(c, saved, me);
@@ -294,6 +322,102 @@ public class ChatService {
         Conversation c = requireConversation(conversationId);
         ConversationMember mine = requireMembership(c, me);
         mine.setLastReadAt(Instant.now());
+        mine.setHidden(false);
+        memberRepository.save(mine);
+    }
+
+    /** Unsend one of my own messages — removes it for everyone (Telegram-style). */
+    @Transactional
+    public void recallMessage(Long conversationId, Long messageId) {
+        Long me = currentUserService.getCurrentUserId();
+        Conversation c = requireConversation(conversationId);
+        requireMembership(c, me);
+        ChatMessage msg = messageRepository.findById(messageId)
+                .orElseThrow(() -> new ResourceNotFoundException("訊息不存在"));
+        if (!msg.getConversationId().equals(conversationId)) {
+            throw new ForbiddenException("訊息不屬於這個對話");
+        }
+        if (!msg.getSenderId().equals(me)) {
+            throw new ForbiddenException("只能收回自己的訊息");
+        }
+        // Pinned message being recalled → clear the pin.
+        if (Long.valueOf(messageId).equals(c.getPinnedMessageId())) {
+            c.setPinnedMessageId(null);
+            conversationRepository.save(c);
+        }
+        messageRepository.delete(msg);
+    }
+
+    /** Edit one of my own text messages. */
+    @Transactional
+    public MessageDto editMessage(Long conversationId, Long messageId, String content) {
+        Long me = currentUserService.getCurrentUserId();
+        Conversation c = requireConversation(conversationId);
+        requireMembership(c, me);
+        ChatMessage msg = messageRepository.findById(messageId)
+                .orElseThrow(() -> new ResourceNotFoundException("訊息不存在"));
+        if (!msg.getConversationId().equals(conversationId)) {
+            throw new ForbiddenException("訊息不屬於這個對話");
+        }
+        if (!msg.getSenderId().equals(me)) throw new ForbiddenException("只能編輯自己的訊息");
+        MessageKind kind = msg.getKind() == null ? MessageKind.TEXT : msg.getKind();
+        if (kind != MessageKind.TEXT) throw new IllegalArgumentException("只能編輯文字訊息");
+        String text = content == null ? "" : content.trim();
+        if (text.isEmpty()) throw new IllegalArgumentException("訊息不能為空");
+        if (text.length() > MAX_CONTENT) text = text.substring(0, MAX_CONTENT);
+        msg.setContent(text);
+        msg.setEditedAt(Instant.now());
+        messageRepository.save(msg);
+        return toMessageDto(msg, new HashMap<>());
+    }
+
+    /** Pin a message in the conversation (single pinned message); null clears it. */
+    @Transactional
+    public void setPinned(Long conversationId, Long messageId) {
+        Long me = currentUserService.getCurrentUserId();
+        Conversation c = requireConversation(conversationId);
+        requireMembership(c, me);
+        if (messageId != null) {
+            ChatMessage msg = messageRepository.findById(messageId)
+                    .orElseThrow(() -> new ResourceNotFoundException("訊息不存在"));
+            if (!msg.getConversationId().equals(conversationId)) {
+                throw new ForbiddenException("訊息不屬於這個對話");
+            }
+        }
+        c.setPinnedMessageId(messageId);
+        conversationRepository.save(c);
+    }
+
+    /** Clear history for me only — marks everything up to now as hidden. */
+    @Transactional
+    public void clearHistory(Long conversationId) {
+        Long me = currentUserService.getCurrentUserId();
+        Conversation c = requireConversation(conversationId);
+        ConversationMember mine = requireMembership(c, me);
+        Instant now = Instant.now();
+        mine.setClearedAt(now);
+        mine.setLastReadAt(now);
+        memberRepository.save(mine);
+    }
+
+    /** Remove a chat from my list: DM → hide (reappears on a new message);
+     *  GROUP → leave; PUBLIC → not allowed. */
+    @Transactional
+    public void deleteChat(Long conversationId) {
+        Long me = currentUserService.getCurrentUserId();
+        Conversation c = requireConversation(conversationId);
+        ConversationMember mine = requireMembership(c, me);
+        if (c.getType() == ConversationType.PUBLIC) {
+            throw new IllegalArgumentException("公開聊天室無法刪除");
+        }
+        if (c.getType() == ConversationType.GROUP) {
+            memberRepository.delete(mine); // leaving the group
+            return;
+        }
+        Instant now = Instant.now();
+        mine.setClearedAt(now);
+        mine.setLastReadAt(now);
+        mine.setHidden(true);
         memberRepository.save(mine);
     }
 
@@ -387,7 +511,7 @@ public class ChatService {
 
         ChatMessage last = messageRepository.findFirstByConversationIdOrderByIdDesc(c.getId());
         ConversationDto.LastMessage lastMessage = null;
-        if (last != null) {
+        if (last != null && visible(last, mine)) {
             User sender = user(last.getSenderId(), cache);
             lastMessage = new ConversationDto.LastMessage(preview(last), displayName(sender), last.getCreatedAt());
         }
@@ -396,15 +520,34 @@ public class ChatService {
                 c.getId(), effectiveRead(mine), me);
         int memberCount = (int) memberRepository.countByConversationId(c.getId());
 
+        ConversationDto.PinnedMessage pinned = null;
+        if (c.getPinnedMessageId() != null) {
+            ChatMessage pm = messageRepository.findById(c.getPinnedMessageId()).orElse(null);
+            if (pm != null && visible(pm, mine)) {
+                pinned = new ConversationDto.PinnedMessage(
+                        pm.getId(), preview(pm), displayName(user(pm.getSenderId(), cache)));
+            }
+        }
+
         return new ConversationDto(c.getId(), c.getType().name(), name, photoUrl, otherUserId,
-                memberCount, lastMessage, unread, c.getLastMessageAt());
+                memberCount, lastMessage, unread, c.getLastMessageAt(), pinned);
     }
 
     private MessageDto toMessageDto(ChatMessage m, Map<Long, User> cache) {
         User sender = user(m.getSenderId(), cache);
         String photo = sender == null ? null : sender.getPhotoUrl();
         MessageKind kind = m.getKind() == null ? MessageKind.TEXT : m.getKind();
+
+        String replyToSender = null, replyToPreview = null;
+        if (m.getReplyToId() != null) {
+            ChatMessage target = messageRepository.findById(m.getReplyToId()).orElse(null);
+            if (target != null) {
+                replyToSender = displayName(user(target.getSenderId(), cache));
+                replyToPreview = preview(target);
+            }
+        }
         return new MessageDto(m.getId(), m.getConversationId(), m.getSenderId(), displayName(sender), photo,
-                kind.name(), m.getContent(), m.getAttachmentUrl(), m.getCreatedAt());
+                kind.name(), m.getContent(), m.getAttachmentUrl(), m.getCreatedAt(),
+                m.getReplyToId(), replyToSender, replyToPreview, m.getEditedAt(), m.getForwardedFrom());
     }
 }

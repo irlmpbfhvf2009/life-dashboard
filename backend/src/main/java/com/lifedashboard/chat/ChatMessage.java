@@ -42,6 +42,18 @@ public class ChatMessage {
     @Column(columnDefinition = "text", nullable = false)
     private String content;
 
+    /** The message this one replies to (quoted), or null. */
+    @Column(name = "reply_to_id")
+    private Long replyToId;
+
+    /** Set when the message has been edited (shows an "edited" marker). */
+    @Column(name = "edited_at")
+    private Instant editedAt;
+
+    /** Original sender's name when this message was forwarded, else null. */
+    @Column(name = "forwarded_from", length = 120)
+    private String forwardedFrom;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

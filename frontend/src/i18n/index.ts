@@ -20,6 +20,13 @@ import tvZhCN from './locales/travel/zh-CN'
 import tvJa from './locales/travel/ja'
 import tvKo from './locales/travel/ko'
 import tvTh from './locales/travel/th'
+// Chat widget UI strings (namespace `chat`).
+import chatEn from './locales/chat/en'
+import chatZhTW from './locales/chat/zh-TW'
+import chatZhCN from './locales/chat/zh-CN'
+import chatJa from './locales/chat/ja'
+import chatKo from './locales/chat/ko'
+import chatTh from './locales/chat/th'
 
 export type Locale = 'zh-TW' | 'zh-CN' | 'en' | 'ja' | 'ko' | 'th'
 
@@ -56,12 +63,12 @@ export const i18n = createI18n({
   locale: detectInitialLocale(),
   fallbackLocale: 'en',
   messages: {
-    'zh-TW': { ...zhTW, ec: ecZhTW, ...tvZhTW },
-    'zh-CN': { ...zhCN, ec: ecZhCN, ...tvZhCN },
-    en: { ...en, ec: ecEn, ...tvEn },
-    ja: { ...ja, ec: ecJa, ...tvJa },
-    ko: { ...ko, ec: ecKo, ...tvKo },
-    th: { ...th, ec: ecTh, ...tvTh },
+    'zh-TW': { ...zhTW, ec: ecZhTW, ...tvZhTW, chat: chatZhTW },
+    'zh-CN': { ...zhCN, ec: ecZhCN, ...tvZhCN, chat: chatZhCN },
+    en: { ...en, ec: ecEn, ...tvEn, chat: chatEn },
+    ja: { ...ja, ec: ecJa, ...tvJa, chat: chatJa },
+    ko: { ...ko, ec: ecKo, ...tvKo, chat: chatKo },
+    th: { ...th, ec: ecTh, ...tvTh, chat: chatTh },
   },
 })
 

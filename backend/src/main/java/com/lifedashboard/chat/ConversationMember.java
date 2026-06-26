@@ -38,6 +38,15 @@ public class ConversationMember {
     @Column(name = "last_read_at")
     private Instant lastReadAt;
 
+    /** Messages at or before this are hidden from me ("clear history" — per-user). */
+    @Column(name = "cleared_at")
+    private Instant clearedAt;
+
+    /** Removed from my conversation list ("delete chat"); reappears on a new message.
+     *  Nullable in the DB (added via ddl-auto): null is treated as false. */
+    @Column(name = "hidden")
+    private Boolean hidden;
+
     @CreationTimestamp
     @Column(name = "joined_at", nullable = false, updatable = false)
     private Instant joinedAt;
