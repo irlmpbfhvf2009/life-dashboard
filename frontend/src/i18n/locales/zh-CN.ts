@@ -87,7 +87,7 @@ export default {
   },
   life: {
     eyebrow: 'Life', title: '生活管理', subtitle: '待办与心情日记，记录并回顾你的每一天。',
-    tabs: { todos: '待办', mood: '心情日记', finance: '财务分析' },
+    tabs: { todos: '待办', mood: '心情日记', finance: '财务分析', habits: '习惯养成' },
   },
   portfolio: {
     eyebrow: 'Portfolio', title: '作品展示', subtitle: '精选项目与技术作品，从这个工作台本身开始。',

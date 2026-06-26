@@ -99,8 +99,10 @@ infra/billing-guard/          費用自動關閉的 Cloud Function
     - **訊息音效 + 推播（完成）**：`composables/useNotify.ts`(Web Audio 合成「叮」聲，無音檔、可靜音、`localStorage` `chat-sound`)——`useChat` 在輪詢/開著對話偵測到他人新訊息時 `playPing()`。**背景推播＝FCM Web Push**：`composables/usePush.ts`(`getToken`＋VAPID，token 註冊到後端) + `public/firebase-messaging-sw.js`(compat SDK，config 由註冊 URL query 帶入，`onBackgroundMessage` 顯示通知、`notificationclick` 聚焦分頁)；後端 `com.lifedashboard.push`：`PushToken` 表 + `POST/DELETE /api/push/token`，`PushService` 在 `sendMessage` 後用 Admin SDK `FirebaseMessaging.sendEachForMulticastAsync` 推給其他成員(fire-and-forget、自動清除失效 token)。`FirebaseConfig` 加 `FirebaseMessaging` bean。ChatWidget header 有音效🔊與推播🔔兩個切換(推播須使用者手勢開啟＝要權限)。
     - **使用者待辦（多媒體＋推播）**：① **後端重新部署**(`gcloud run deploy --source backend`，`ddl-auto:update` 自動建 `push_tokens`、加 `chat_messages.kind/attachment_url`)；② **設 `GIPHY_API_KEY`**(developers.giphy.com 申請 → 存 Secret Manager `giphy-api-key` → `gcloud run services update ... --update-secrets GIPHY_API_KEY=giphy-api-key:latest`)否則 GIF 顯示「未啟用」；③ **FCM 設定**：Firebase Console→專案設定→Cloud Messaging→Web Push certificates 產生金鑰；前端 `.env.production.local` 補 `VITE_FIREBASE_MESSAGING_SENDER_ID`(=專案編號 463356502015)、`VITE_FIREBASE_VAPID_KEY`、(選)`VITE_FIREBASE_STORAGE_BUCKET`(後端 FCM 送出走既有 `FIREBASE_SERVICE_ACCOUNT_JSON`，免額外金鑰)；④ **Firebase Storage 規則**允許登入者寫自己的 `chat/{uid}/**`、登入者可讀(下載 URL 帶 token，跨使用者讀沒問題)；⑤ **前端重新部署**(`deploy-frontend.ps1`)。Service Worker/通知需 HTTPS(prod 已是)。
   - i18n：旅遊/英文家教/健康/財務/知識/生活 模組 6 語系皆已翻譯；總覽、書庫等核心頁刻意用 zh-TW 字面字串（非 i18n）。
-  - 仍佔位（ModuleLandingView）：**AI 實驗室 `/ai`** 落地頁（其下 `/ai/stock` 已完整；英文家教、資料分析待做）。
-- **Phase 3 未做**：習慣/目標/斷食/日記長文 等需要新資料表的功能（habits/habit_records/goals/journals/fasting_records/portfolio_projects…）對應的 Entity/Repository/Service/Controller；users 加 provider 欄。
+  - **AI 實驗室 `/ai` 落地頁已完成**（`AiLabHomePage.vue`，取代舊 `ModuleLandingView`）：Gemini 引擎狀態 Hero（即時打 `/api/ai/status`）＋「你的學習進度」三指標（連續天數/今日任務/待複習，讀 `useEnglishStore`）＋三張 app 卡（股票/英文/資料分析），股票卡顯示即時「今日 N 檔精選・更新日期」（讀 GitHub raw `analysis.json`）。其下 `/ai/stock`、`/ai/english`、`/ai/data-lab` 皆已完整。
+- **Phase 3 進行中**：
+  - **習慣養成（已完成，全棧）**：收在 **生活管理 `/life`** 的新分頁「習慣養成」（`LifeView` 第 2 個 tab，`components/life/HabitPanel.vue`）。後端 `com.lifedashboard.habit`：`Habit`（name/emoji/color/targetPerDay/sortOrder/archived）+ `HabitRecord`（habitId/userId/date/count，**(habit_id,date) 唯一**＝每天一列）。端點 `/api/habits`：`GET`（回每個習慣含 `todayCount/doneToday/streak/recentDays(7)`，streak＝連續達標天數，list 時一次撈近 60 天紀錄避免 N+1）、`POST`、`PATCH /{id}`、`DELETE /{id}`（連記錄一起刪）、`POST /{id}/check`（今日 +1，封頂 target）、`POST /{id}/uncheck`（清掉今日）。前端 `habitApi`＋型別 `Habit/HabitDayStatus`；卡片含 emoji 打卡鈕、連續天數火焰、近 7 天小格、顏色色票。**HabitPanel 刻意用 zh-TW 字面字串**（比照社交/總覽頁），只把分頁標籤 `life.tabs.habits` 補了 6 語。**使用者待辦：後端重新部署**（`gcloud run deploy --source backend`，`ddl-auto:update` 自動建 `habits`/`habit_records` 表）＋ 前端重新部署。
+  - **未做**：目標/斷食/日記長文（goals/journals/fasting_records/portfolio_projects…）對應的 Entity/Repository/Service/Controller；users 加 provider 欄。
 
 ## 旅遊：三個進階功能（已完成上線）
 緊急卡 / 行程分享 / 旅遊日記三個皆已實作完成，細節見上方 `/travel` 模組各 bullet。
@@ -151,12 +153,12 @@ infra/billing-guard/          費用自動關閉的 Cloud Function
 
 ## AI 英文家教（`/ai/english`，商業化學習模組，Phase 1+2 完成）
 - 四層架構：基礎學習 / AI 練習 / 口說 / 複習成長。巢狀路由掛在 `EnglishLayout`（含自有二級導航 `EnglishSubNav`，側邊欄只保留「AI 實驗室」大類）。
-- **13 頁中 12 頁已真實**：Home、對話室（三欄）、口說、句子修正、情境、單字、句型、文法、常錯庫、複習、學習進度。**唯一佔位剩**：學習路徑、程度檢測、每日任務獨立頁（用 `EnglishComingSoonPage` 讀 route meta）。
+- **全 13 頁皆已真實**（無佔位）：Home、對話室（三欄）、口說、句子修正、情境、單字、句型、文法、常錯庫、複習、學習進度、學習路徑、程度檢測、**每日任務（`DailyMissionsPage.vue`，複用 `DailyMissionCard`＋streak/完成度摘要，讀 `useEnglishStore`）**。佔位用的 `EnglishComingSoonPage.vue` 已刪。
 - **語音全用瀏覽器原生、零成本**：`composables/useSpeechSynthesis`（TTS 慢/正常）、`useSpeechRecognition`（STT）、`utils/pronunciation.compareSentence`（文字相似度，非音素級；UI 預留升級）。不支援時 `VoiceUnsupportedNotice` 降級成文字輸入。
 - **狀態 + 持久化**：`useEnglishStore`（localStorage 即時快取 + **背景同步到後端 `english_state`**，跨裝置；cloud 優先、失敗靜默降級）管 streak/任務/常錯庫/簡化 SM-2 複習。`api/english.ts` 內容走 mock、對話/修正走免費 Gemini（無金鑰 fallback mock 教練）。
 - **後端** `com.lifedashboard.english`：`english_state` 表（per-user JSON 文件）+ `GET/PUT /api/english/state`。內容（單字/句型/文法/情境）仍前端 mock（靜態、不需 per-user）。
 - **i18n 已完成**：所有 UI chrome 抽到 `ec` namespace（`src/i18n/locales/english/*.ts`，6 語），切語言整個模組翻譯。學習「內容」（單字意思/例句/文法解析/情境目標/程度檢測建議）刻意保留 zh-TW（教學內容，非 UI）。
-- **程度檢測/學習路徑已完成**；唯一佔位剩「每日任務」獨立頁（Home 已涵蓋）。
+- **程度檢測/學習路徑/每日任務皆已完成**，模組內已無佔位頁。
 - **待辦**：內容若要動態化或多語內容，再建細粒度後端表。
 
 ## 建議下一步

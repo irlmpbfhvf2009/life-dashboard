@@ -10,6 +10,7 @@ import type {
   FriendProfile,
   FriendRequest,
   GifPage,
+  Habit,
   MealType,
   MessageKind,
   MonthlyStats,
@@ -339,6 +340,20 @@ export const todoApi = {
     }>,
   ) => request<Todo>(() => http.patch(`/api/todos/${id}`, body)),
   remove: (id: number) => request<void>(() => http.delete(`/api/todos/${id}`)),
+}
+
+// ---- Habits ----
+export const habitApi = {
+  list: () => request<Habit[]>(() => http.get('/api/habits')),
+  create: (body: { name: string; emoji?: string; color?: string; targetPerDay?: number }) =>
+    request<Habit>(() => http.post('/api/habits', body)),
+  update: (
+    id: number,
+    body: Partial<{ name: string; emoji: string; color: string; targetPerDay: number; archived: boolean }>,
+  ) => request<Habit>(() => http.patch(`/api/habits/${id}`, body)),
+  remove: (id: number) => request<void>(() => http.delete(`/api/habits/${id}`)),
+  check: (id: number) => request<Habit>(() => http.post(`/api/habits/${id}/check`)),
+  uncheck: (id: number) => request<Habit>(() => http.post(`/api/habits/${id}/uncheck`)),
 }
 
 // ---- Weights ----

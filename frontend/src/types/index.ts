@@ -33,6 +33,25 @@ export interface Todo {
   updatedAt: string
 }
 
+export interface HabitDayStatus {
+  date: string
+  count: number
+  done: boolean
+}
+
+export interface Habit {
+  id: number
+  name: string
+  emoji: string | null
+  color: string | null
+  targetPerDay: number
+  todayCount: number
+  doneToday: boolean
+  streak: number
+  recentDays: HabitDayStatus[]
+  createdAt: string
+}
+
 export interface WeightRecord {
   id: number
   date: string

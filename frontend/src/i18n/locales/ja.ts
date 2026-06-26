@@ -87,7 +87,7 @@ export default {
   },
   life: {
     eyebrow: 'Life', title: 'ライフ管理', subtitle: 'ToDo と気分日記で、毎日を記録して振り返ります。',
-    tabs: { todos: 'ToDo', mood: '気分日記', finance: '家計分析' },
+    tabs: { todos: 'ToDo', mood: '気分日記', finance: '家計分析', habits: '習慣' },
   },
   portfolio: {
     eyebrow: 'Portfolio', title: 'ポートフォリオ', subtitle: '厳選したプロジェクトと作品 — このスタジオ自体から。',

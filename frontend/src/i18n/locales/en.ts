@@ -87,7 +87,7 @@ export default {
   },
   life: {
     eyebrow: 'Life', title: 'Life', subtitle: 'To-dos and a mood journal to record and revisit your days.',
-    tabs: { todos: 'To-dos', mood: 'Mood journal', finance: 'Finance' },
+    tabs: { todos: 'To-dos', mood: 'Mood journal', finance: 'Finance', habits: 'Habits' },
   },
   portfolio: {
     eyebrow: 'Portfolio', title: 'Portfolio', subtitle: 'Selected projects and work — starting with this studio itself.',
