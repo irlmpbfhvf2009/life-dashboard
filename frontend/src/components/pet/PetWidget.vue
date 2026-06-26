@@ -175,7 +175,8 @@ const moodLabel = computed(() => ({ great: '心情很好', good: '還不錯', ti
           :animal="pet.data.value.animal"
           :accessory="pet.data.value.accessory"
           :mood="phase === 'sleep' ? 'tired' : pet.mood.value"
-          :bob="phase === 'walk'"
+          :walking="phase === 'walk'"
+          :bob="phase === 'idle'"
         />
       </button>
       <!-- Sleep zzz -->

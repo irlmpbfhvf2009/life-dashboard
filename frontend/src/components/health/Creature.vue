@@ -5,8 +5,8 @@ import type { AccessoryKey } from '@/data/accessories'
 import type { OtterMood } from '@/data/health'
 
 const props = withDefaults(
-  defineProps<{ animal: AnimalKey; mood?: OtterMood; bob?: boolean; accessory?: AccessoryKey }>(),
-  { mood: 'good', bob: true, accessory: 'none' },
+  defineProps<{ animal: AnimalKey; mood?: OtterMood; bob?: boolean; accessory?: AccessoryKey; walking?: boolean }>(),
+  { mood: 'good', bob: true, accessory: 'none', walking: false },
 )
 
 const d = computed(() => animalDef(props.animal))
@@ -16,18 +16,24 @@ const d = computed(() => animalDef(props.animal))
   <svg
     viewBox="0 0 120 150"
     class="h-full w-full drop-shadow-sm"
-    :class="bob ? 'creature-bob' : ''"
+    :class="walking ? 'cr-walk' : (bob ? 'creature-bob' : '')"
     xmlns="http://www.w3.org/2000/svg"
     role="img"
     :aria-label="animal"
   >
-    <!-- body (drawn first so the head sits on top) -->
-    <ellipse cx="44" cy="142" rx="9" ry="6" :fill="d.ear" />
-    <ellipse cx="76" cy="142" rx="9" ry="6" :fill="d.ear" />
+    <!-- legs + arms (rigged groups that swing into a walk cycle), torso on top -->
+    <g class="cr-leg cr-leg-l">
+      <ellipse cx="46" cy="141" rx="7.5" ry="11" :fill="d.body" />
+      <ellipse cx="44" cy="149" rx="9" ry="5" :fill="d.ear" />
+    </g>
+    <g class="cr-leg cr-leg-r">
+      <ellipse cx="74" cy="141" rx="7.5" ry="11" :fill="d.body" />
+      <ellipse cx="76" cy="149" rx="9" ry="5" :fill="d.ear" />
+    </g>
+    <g class="cr-arm cr-arm-l"><ellipse cx="30" cy="118" rx="8" ry="12" :fill="d.body" /></g>
+    <g class="cr-arm cr-arm-r"><ellipse cx="90" cy="118" rx="8" ry="12" :fill="d.body" /></g>
     <ellipse cx="60" cy="116" rx="33" ry="31" :fill="d.body" />
     <ellipse cx="60" cy="124" rx="20" ry="17" :fill="d.snout" />
-    <ellipse cx="30" cy="118" rx="8" ry="12" :fill="d.body" />
-    <ellipse cx="90" cy="118" rx="8" ry="12" :fill="d.body" />
 
     <!-- ears -->
     <template v-if="d.earType === 'round'">
@@ -145,6 +151,7 @@ const d = computed(() => animalDef(props.animal))
 </template>
 
 <style scoped>
+/* Gentle idle float. */
 .creature-bob {
   animation: bob 3.2s ease-in-out infinite;
 }
@@ -152,7 +159,28 @@ const d = computed(() => animalDef(props.animal))
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-4px); }
 }
+
+/* ---- Walk cycle: legs + arms swing like a simple 2-bone rig ---- */
+.cr-leg, .cr-arm { transform-box: view-box; }
+.cr-leg-l { transform-origin: 46px 132px; }
+.cr-leg-r { transform-origin: 74px 132px; }
+.cr-arm-l { transform-origin: 32px 108px; }
+.cr-arm-r { transform-origin: 88px 108px; }
+
+.cr-walk { animation: cr-bodybob 0.46s ease-in-out infinite; }
+.cr-walk .cr-leg-l { animation: cr-step 0.46s ease-in-out infinite; }
+.cr-walk .cr-leg-r { animation: cr-step 0.46s ease-in-out infinite; animation-delay: -0.23s; }
+.cr-walk .cr-arm-l { animation: cr-swing 0.46s ease-in-out infinite; animation-delay: -0.23s; }
+.cr-walk .cr-arm-r { animation: cr-swing 0.46s ease-in-out infinite; }
+
+@keyframes cr-step { 0%, 100% { transform: rotate(16deg); } 50% { transform: rotate(-16deg); } }
+@keyframes cr-swing { 0%, 100% { transform: rotate(-10deg); } 50% { transform: rotate(10deg); } }
+/* Two little bounces per stride (one per footfall). */
+@keyframes cr-bodybob { 0%, 50%, 100% { transform: translateY(0); } 25%, 75% { transform: translateY(-1.6px); } }
+
 @media (prefers-reduced-motion: reduce) {
-  .creature-bob { animation: none; }
+  .creature-bob, .cr-walk,
+  .cr-walk .cr-leg-l, .cr-walk .cr-leg-r,
+  .cr-walk .cr-arm-l, .cr-walk .cr-arm-r { animation: none; }
 }
 </style>
