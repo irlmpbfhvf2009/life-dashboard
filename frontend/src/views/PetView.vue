@@ -4,6 +4,7 @@ import { PawPrint, Sparkles, Lock } from 'lucide-vue-next'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import SectionCard from '@/components/ui/SectionCard.vue'
 import Creature from '@/components/health/Creature.vue'
+import WalkingCreature from '@/components/pet/WalkingCreature.vue'
 import { usePet } from '@/composables/usePet'
 import { ANIMALS, animalDef } from '@/data/animals'
 import { ACCESSORIES } from '@/data/accessories'
@@ -45,8 +46,8 @@ function rename(e: Event) {
       <!-- Preview -->
       <SectionCard>
         <div class="flex flex-col items-center gap-3 py-2">
-          <div class="h-40 w-32">
-            <Creature :animal="pet.data.value.animal" :accessory="pet.data.value.accessory" :mood="pet.mood.value" :walking="true" />
+          <div class="h-28 w-44">
+            <WalkingCreature :animal="pet.data.value.animal" behavior="walk" />
           </div>
           <p class="text-base font-bold text-ink-800">{{ pet.data.value.name }}</p>
           <p class="text-xs text-ink-400">Lv.{{ level }} · {{ moodLabel }}</p>

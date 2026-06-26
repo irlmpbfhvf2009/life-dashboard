@@ -2,20 +2,20 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { Heart, Moon, Settings2, X } from 'lucide-vue-next'
-import Creature from '@/components/health/Creature.vue'
+import WalkingCreature, { type PetBehavior } from '@/components/pet/WalkingCreature.vue'
 import { usePet } from '@/composables/usePet'
 
 const pet = usePet()
 
-// ---- Walk state (mode A: strolls along the bottom of the viewport) ----
+// ---- Behaviour state machine + bottom-strip roaming (mode A) ----
 const x = ref(280)
 const facing = ref<1 | -1>(1)
-const phase = ref<'walk' | 'idle' | 'sleep'>('walk')
+const behavior = ref<PetBehavior>('walk')
 const popoverOpen = ref(false)
 const hearts = ref<number[]>([])
 
-const PET_W = 64
-const SPEED = 0.55 // px per frame (~33fps)
+const PET_W = 80 // side-view creature is landscape
+const SPEED = 0.5 // px per frame (~33fps)
 
 const reduceMotion = typeof window !== 'undefined'
   && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
@@ -23,6 +23,7 @@ const isMobile = ref(typeof window !== 'undefined' && window.innerWidth < 640)
 
 let timer: ReturnType<typeof setInterval> | undefined
 let phaseTimer: ReturnType<typeof setTimeout> | undefined
+let happyTimer: ReturnType<typeof setTimeout> | undefined
 
 function bounds() {
   const w = typeof window !== 'undefined' ? window.innerWidth : 1200
@@ -33,27 +34,39 @@ function bounds() {
   return { min: leftInset, max: Math.max(leftInset, w - PET_W - 88) }
 }
 
+// Pick a stationary "thing to do" with weights — common pottering, rarer naps.
+function pickIdleBehavior(): PetBehavior {
+  const r = Math.random()
+  if (r < 0.42) return 'idle'   // look around / breathe
+  if (r < 0.68) return 'sniff'  // sniff the ground
+  if (r < 0.86) return 'sit'    // sit a while
+  return 'sleep'                // nap
+}
+
+// How long to linger in each behaviour before walking again.
+function behaviorDuration(b: PetBehavior): number {
+  if (b === 'walk') return 3500 + Math.random() * 5000
+  if (b === 'sleep') return 5000 + Math.random() * 5000
+  if (b === 'sit') return 3000 + Math.random() * 3500
+  return 1800 + Math.random() * 2600 // idle / sniff
+}
+
 function scheduleNextPhase() {
   clearTimeout(phaseTimer)
-  // Mostly walking, with occasional pauses and a rare nap.
-  const r = Math.random()
-  if (phase.value === 'walk') {
-    phaseTimer = setTimeout(() => {
-      const n = Math.random()
-      phase.value = n < 0.18 ? 'sleep' : 'idle'
-      scheduleNextPhase()
-    }, 6000 + r * 6000)
-  } else {
-    phaseTimer = setTimeout(() => {
-      phase.value = 'walk'
+  const next = () => {
+    if (behavior.value === 'walk') {
+      behavior.value = pickIdleBehavior()
+    } else {
+      behavior.value = 'walk'
       if (Math.random() < 0.5) facing.value = facing.value === 1 ? -1 : 1
-      scheduleNextPhase()
-    }, phase.value === 'sleep' ? 4000 + r * 3000 : 1500 + r * 2500)
+    }
+    scheduleNextPhase()
   }
+  phaseTimer = setTimeout(next, behaviorDuration(behavior.value))
 }
 
 function step() {
-  if (phase.value !== 'walk') return
+  if (behavior.value !== 'walk') return
   const { min, max } = bounds()
   x.value += SPEED * facing.value
   if (x.value <= min) { x.value = min; facing.value = 1 }
@@ -70,15 +83,16 @@ function startRoaming() {
   x.value = bounds().min
   if (!reduceMotion && !isMobile.value) {
     if (!timer) timer = setInterval(step, 33)
-    phase.value = 'walk'
+    behavior.value = 'walk'
     scheduleNextPhase()
   } else {
-    phase.value = 'idle'
+    behavior.value = 'idle'
   }
 }
 function stopRoaming() {
   clearInterval(timer)
   clearTimeout(phaseTimer)
+  clearTimeout(happyTimer)
   timer = undefined
 }
 
@@ -103,6 +117,13 @@ function onPetClick() {
     const id = Date.now()
     hearts.value.push(id)
     setTimeout(() => { hearts.value = hearts.value.filter((h) => h !== id) }, 900)
+    // React: a happy little hop, then resume the normal routine.
+    if (!reduceMotion) {
+      behavior.value = 'happy'
+      clearTimeout(phaseTimer)
+      clearTimeout(happyTimer)
+      happyTimer = setTimeout(() => { behavior.value = 'walk'; scheduleNextPhase() }, 1500)
+    }
   }
 }
 
@@ -164,23 +185,17 @@ const moodLabel = computed(() => ({ great: '心情很好', good: '還不錯', ti
         <Heart class="h-4 w-4" fill="currentColor" :stroke-width="0" />
       </span>
 
-      <!-- The creature -->
+      <!-- The creature (faces its walking direction via scaleX) -->
       <button
-        class="block h-20 w-16 transition-transform active:scale-95"
+        class="block h-16 w-20 transition-transform active:scale-95"
         :style="{ transform: `scaleX(${facing})` }"
         :aria-label="`${pet.data.value.name}（${moodLabel}）`"
         @click="onPetClick"
       >
-        <Creature
-          :animal="pet.data.value.animal"
-          :accessory="pet.data.value.accessory"
-          :mood="phase === 'sleep' ? 'tired' : pet.mood.value"
-          :walking="phase === 'walk'"
-          :bob="phase === 'idle'"
-        />
+        <WalkingCreature :animal="pet.data.value.animal" :behavior="behavior" />
       </button>
       <!-- Sleep zzz -->
-      <span v-if="phase === 'sleep'" class="pet-zzz pointer-events-none absolute -right-1 top-0 text-xs font-bold text-ink-400">z</span>
+      <span v-if="behavior === 'sleep'" class="pet-zzz pointer-events-none absolute right-1 top-2 text-xs font-bold text-ink-400">z</span>
     </div>
   </div>
 </template>
