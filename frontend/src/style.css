@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -46,7 +46,16 @@
   }
   body {
     @apply bg-canvas text-ink-800;
-    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    /* Inter renders Latin/numerals; CJK glyphs fall through to Noto Sans TC so
+       Chinese text is consistent across OSes instead of using each device's
+       default (微軟正黑 / 蘋方 / …). */
+    font-family: 'Inter', 'Noto Sans TC', ui-sans-serif, system-ui, sans-serif;
+    /* Soft brand wash in the top corners adds depth without a flat slab look.
+       Low alpha keeps it subtle in both light and dark mode. */
+    background-image:
+      radial-gradient(880px 420px at 82% -10%, rgba(99, 102, 241, 0.10), transparent 60%),
+      radial-gradient(680px 380px at -5% 0%, rgba(139, 92, 246, 0.08), transparent 55%);
+    background-attachment: fixed;
   }
   * {
     -webkit-tap-highlight-color: transparent;
@@ -83,7 +92,8 @@
            disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-primary {
-    @apply btn bg-brand-600 text-white shadow-sm hover:bg-brand-700 active:bg-brand-800;
+    @apply btn bg-gradient-to-b from-brand-500 to-brand-600 text-white shadow-sm
+           hover:from-brand-600 hover:to-brand-700 active:from-brand-700 active:to-brand-800;
   }
   .btn-secondary {
     @apply btn border border-ink-200 bg-surface text-ink-700 hover:bg-ink-100 hover:border-ink-300;
@@ -107,7 +117,7 @@
   }
   .input {
     @apply w-full rounded-xl border border-ink-200 bg-surface px-3.5 py-2.5 text-sm text-ink-800 placeholder:text-ink-400
-           transition-shadow focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/10;
+           transition-[box-shadow,border-color] hover:border-ink-300 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/15;
   }
   .input-error {
     @apply border-rose-400 focus:border-rose-500 focus:ring-rose-500/10;
@@ -125,12 +135,29 @@
 
   /* ---- Sidebar ---- */
   .nav-item {
-    @apply flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-ink-500 transition-colors
+    @apply relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-ink-500 transition-colors
            hover:bg-ink-100 hover:text-ink-800;
   }
+  /* Active = soft brand-tinted pill + a left accent bar + coloured icon.
+     Reads clearly in light and dark without the heavier white-card look. */
   .nav-item-active {
-    @apply bg-surface text-brand-600 shadow-card border border-ink-200 dark:text-brand-300;
+    @apply bg-brand-500/10 font-semibold text-brand-700 dark:bg-brand-500/15 dark:text-brand-200
+           hover:bg-brand-500/10 hover:text-brand-700 dark:hover:text-brand-200;
   }
+  .nav-item-active::before {
+    content: '';
+    @apply absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full;
+    background-image: linear-gradient(to bottom, theme('colors.brand.500'), theme('colors.violet.600'));
+  }
+
+  /* ---- Coloured icon tints (stat cards, quick actions, list chips) ----
+     Opacity-based fills so they stay legible in both colour schemes. */
+  .tint-indigo  { @apply bg-brand-500/10 text-brand-600 dark:text-brand-300; }
+  .tint-violet  { @apply bg-violet-500/10 text-violet-600 dark:text-violet-300; }
+  .tint-amber   { @apply bg-amber-500/10 text-amber-600 dark:text-amber-300; }
+  .tint-sky     { @apply bg-sky-500/10 text-sky-600 dark:text-sky-300; }
+  .tint-rose    { @apply bg-rose-500/10 text-rose-600 dark:text-rose-300; }
+  .tint-emerald { @apply bg-emerald-500/10 text-emerald-600 dark:text-emerald-300; }
 
   /* ---- Typography helpers ---- */
   .section-title {

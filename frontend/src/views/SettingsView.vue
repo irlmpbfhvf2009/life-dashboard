@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { reactive, ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { LogOut, ShieldCheck } from 'lucide-vue-next'
+import { LogOut, ShieldCheck, Settings, Upload, Loader2 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
+import { uploadAvatar } from '@/utils/storage'
 import { usageApi } from '@/api'
 import type { UsageData } from '@/types'
 import PageHeader from '@/components/ui/PageHeader.vue'
@@ -14,6 +15,8 @@ const router = useRouter()
 
 const form = reactive({ displayName: '', photoUrl: '' })
 const saving = ref(false)
+const uploading = ref(false)
+const fileInput = ref<HTMLInputElement | null>(null)
 const message = ref<string | null>(null)
 const errorMsg = ref<string | null>(null)
 
@@ -52,6 +55,31 @@ async function save() {
   }
 }
 
+function triggerAvatar() {
+  fileInput.value?.click()
+}
+
+async function onAvatarChosen(ev: Event) {
+  const input = ev.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = '' // allow re-picking the same file
+  if (!file) return
+  uploading.value = true
+  message.value = null
+  errorMsg.value = null
+  try {
+    const url = await uploadAvatar(file)
+    form.photoUrl = url
+    // Persist immediately so the avatar updates in the sidebar/header right away.
+    await auth.updateProfile({ displayName: form.displayName.trim() || auth.displayName, photoUrl: url })
+    message.value = '頭像已更新'
+  } catch (e) {
+    errorMsg.value = (e as Error).message || '上傳失敗，請稍後再試'
+  } finally {
+    uploading.value = false
+  }
+}
+
 async function logout() {
   await auth.logout()
   router.push({ name: 'login' })
@@ -60,7 +88,7 @@ async function logout() {
 
 <template>
   <div class="max-w-3xl">
-    <PageHeader eyebrow="Settings" title="設定" subtitle="管理你的帳號與個人資料。">
+    <PageHeader :icon="Settings" eyebrow="Settings" title="設定" subtitle="管理你的帳號與個人資料。">
       <template #actions>
         <button class="btn-secondary text-rose-600 hover:bg-rose-50" @click="logout">
           <LogOut class="h-4 w-4" /> 登出
@@ -110,11 +138,35 @@ async function logout() {
       <SectionCard title="個人資料">
         <form class="space-y-4" @submit.prevent="save">
           <div>
+            <label class="label">頭像</label>
+            <div class="flex items-center gap-4">
+              <img
+                v-if="form.photoUrl"
+                :src="form.photoUrl"
+                alt=""
+                class="h-16 w-16 shrink-0 rounded-2xl object-cover ring-1 ring-ink-200"
+                referrerpolicy="no-referrer"
+              />
+              <span v-else class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-400 to-violet-500 text-2xl font-semibold text-white">
+                {{ auth.initials }}
+              </span>
+              <div class="space-y-1.5">
+                <button type="button" class="btn-secondary btn-sm gap-1.5" :disabled="uploading" @click="triggerAvatar">
+                  <Loader2 v-if="uploading" class="h-4 w-4 animate-spin" />
+                  <Upload v-else class="h-4 w-4" />
+                  {{ uploading ? '上傳中…' : '上傳頭像' }}
+                </button>
+                <p class="text-2xs text-ink-400">JPG / PNG，會自動裁切壓縮，建議正方形。</p>
+              </div>
+              <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onAvatarChosen" />
+            </div>
+          </div>
+          <div>
             <label class="label">顯示名稱</label>
             <input v-model="form.displayName" class="input" placeholder="你的名字" />
           </div>
           <div>
-            <label class="label">頭像網址</label>
+            <label class="label">或貼上頭像網址</label>
             <input v-model="form.photoUrl" class="input" placeholder="https://…" />
           </div>
           <div class="flex items-center gap-3">

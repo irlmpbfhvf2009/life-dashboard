@@ -9,7 +9,7 @@ const auth = useAuthStore()
 
 interface Item { to: string; label: string; icon: typeof Dices; exact?: boolean }
 
-const ACTIVE = '!bg-brand-500 !text-white'
+const ACTIVE = '!bg-gradient-to-r !from-brand-500 !to-violet-600 !text-white shadow-glow'
 
 const items: Item[] = [
   { to: '/fun/fate', label: '命運', icon: Dices },

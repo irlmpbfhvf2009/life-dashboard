@@ -134,7 +134,7 @@ const tabs: { key: Tab; label: string }[] = [
 
 <template>
   <div>
-    <PageHeader eyebrow="Social" title="社交" subtitle="加好友、互相查看分享的生活資料，自己決定要公開哪些。">
+    <PageHeader :icon="Users" eyebrow="Social" title="社交" subtitle="加好友、互相查看分享的生活資料，自己決定要公開哪些。">
       <template #actions>
         <button class="btn-secondary btn-sm gap-1.5" :disabled="loading" @click="loadAll">
           <RefreshCw class="h-3.5 w-3.5" :class="loading ? 'animate-spin' : ''" /> 重新整理

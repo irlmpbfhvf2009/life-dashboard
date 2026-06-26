@@ -124,7 +124,7 @@ async function submit() {
       <button
         v-for="f in (['all', 'active', 'done'] as const)" :key="f"
         class="rounded-lg px-3 py-1 font-medium transition-colors"
-        :class="filter === f ? 'bg-surface text-ink-900 shadow-card' : 'text-ink-500'"
+        :class="filter === f ? 'bg-surface text-brand-700 shadow-card' : 'text-ink-500'"
         @click="filter = f"
       >
         {{ t('todos.' + f) }}

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Plus, Search, Trash2, FileText, Save } from 'lucide-vue-next'
+import { Plus, Search, Trash2, FileText, Save, Library } from 'lucide-vue-next'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import LoadingState from '@/components/ui/LoadingState.vue'
@@ -110,7 +110,7 @@ function snippet(n: Note) {
 </script>
 
 <template>
-  <PageHeader :eyebrow="t('knowledge.eyebrow')" :title="t('knowledge.title')" :subtitle="t('knowledge.subtitle')">
+  <PageHeader :icon="Library" :eyebrow="t('knowledge.eyebrow')" :title="t('knowledge.title')" :subtitle="t('knowledge.subtitle')">
     <template #actions>
       <button class="btn-primary btn-sm gap-1.5" @click="createNote">
         <Plus class="h-3.5 w-3.5" /> {{ t('knowledge.newNote') }}

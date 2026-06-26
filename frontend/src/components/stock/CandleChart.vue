@@ -135,7 +135,7 @@ const legend = [
       <polyline v-if="show.ma5" :points="ma5Line" fill="none" :stroke="MA5_C" stroke-width="1.4" />
       <polyline v-if="show.ma20" :points="ma20Line" fill="none" :stroke="MA20_C" stroke-width="1.4" />
 
-      <text v-for="(l, i) in xLabels" :key="i" :x="l.x" :y="H - 5" fill="#9aa6b8" font-size="9" text-anchor="middle">{{ l.text }}</text>
+      <text v-for="(l, i) in xLabels" :key="i" :x="l.x" :y="H - 5" class="fill-ink-400" font-size="9" text-anchor="middle">{{ l.text }}</text>
     </svg>
 
     <div class="mt-2 flex flex-wrap items-center gap-3 text-2xs">

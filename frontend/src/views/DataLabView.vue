@@ -4,6 +4,9 @@ import { Bar } from 'vue-chartjs'
 import type { ChartData, ChartOptions } from 'chart.js'
 import '@/components/charts/registerCharts'
 import { UploadCloud, FileSpreadsheet, Sparkles, Wand2, TrendingUp, Lightbulb, Table2, Hash, Type } from 'lucide-vue-next'
+import { useTheme } from '@/composables/useTheme'
+
+const { theme } = useTheme()
 import PageHeader from '@/components/ui/PageHeader.vue'
 import SectionCard from '@/components/ui/SectionCard.vue'
 import { aiApi, type DataInsight } from '@/api'
@@ -67,11 +70,11 @@ const chartData = computed<ChartData<'bar'>>(() => {
     datasets: [{ data: vals, backgroundColor: '#6366f1', borderRadius: 3 }],
   }
 })
-const chartOptions: ChartOptions<'bar'> = {
+const chartOptions = computed<ChartOptions<'bar'>>(() => ({
   responsive: true, maintainAspectRatio: false,
   plugins: { legend: { display: false } },
-  scales: { x: { display: false }, y: { grid: { display: false }, ticks: { color: '#9aa6b8', font: { size: 10 } } } },
-}
+  scales: { x: { display: false }, y: { grid: { display: false }, ticks: { color: theme.value === 'dark' ? '#94a3b8' : '#64748b', font: { size: 10 } } } },
+}))
 
 async function analyze() {
   if (!headers.value.length || analyzing.value) return
@@ -92,7 +95,7 @@ const round = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1))
 </script>
 
 <template>
-  <PageHeader eyebrow="AI Lab" title="資料分析工具" subtitle="上傳 CSV，自動產生欄位統計與圖表，再讓 AI 給你白話洞察與下一步建議。">
+  <PageHeader :icon="Wand2" eyebrow="AI Lab" title="資料分析工具" subtitle="上傳 CSV，自動產生欄位統計與圖表，再讓 AI 給你白話洞察與下一步建議。">
     <template #actions>
       <label class="btn-primary btn-sm cursor-pointer gap-1.5">
         <UploadCloud class="h-3.5 w-3.5" /> 上傳 CSV

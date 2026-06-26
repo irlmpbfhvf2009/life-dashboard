@@ -3,6 +3,9 @@ import { computed } from 'vue'
 import { Line } from 'vue-chartjs'
 import type { ChartData, ChartOptions } from 'chart.js'
 import '@/components/charts/registerCharts'
+import { useTheme } from '@/composables/useTheme'
+
+const { theme } = useTheme()
 
 const props = withDefaults(
   defineProps<{
@@ -37,15 +40,18 @@ const chartData = computed<ChartData<'line'>>(() => ({
   ],
 }))
 
-const options: ChartOptions<'line'> = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: { legend: { display: false }, tooltip: { intersect: false, mode: 'index' } },
-  scales: {
-    x: { grid: { display: false }, ticks: { color: '#9aa6b8', font: { size: 10 } } },
-    y: { display: false, grace: '10%' },
-  },
-}
+const options = computed<ChartOptions<'line'>>(() => {
+  const axis = theme.value === 'dark' ? '#94a3b8' : '#64748b'
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { intersect: false, mode: 'index' } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: axis, font: { size: 10 } } },
+      y: { display: false, grace: '10%' },
+    },
+  }
+})
 </script>
 
 <template>

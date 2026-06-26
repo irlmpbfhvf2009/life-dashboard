@@ -75,30 +75,35 @@ const moodFace = (score: number) => moodFaces[Math.min(4, Math.max(0, Math.round
 const mealLabels: Record<string, string> = { BREAKFAST: '早餐', LUNCH: '午餐', DINNER: '晚餐', SNACK: '點心' }
 
 const quickActions = [
-  { label: '記一筆帳', icon: Wallet, to: '/finance' },
-  { label: '記體重', icon: Scale, to: '/health' },
-  { label: '記心情', icon: Smile, to: '/life' },
-  { label: '新增筆記', icon: BookOpen, to: '/knowledge' },
-  { label: '開啟 AI', icon: Bot, to: '/ai' },
+  { label: '記一筆帳', icon: Wallet, to: '/finance', tint: 'amber' as const },
+  { label: '記體重', icon: Scale, to: '/health', tint: 'emerald' as const },
+  { label: '記心情', icon: Smile, to: '/life', tint: 'rose' as const },
+  { label: '新增筆記', icon: BookOpen, to: '/knowledge', tint: 'sky' as const },
+  { label: '開啟 AI', icon: Bot, to: '/ai', tint: 'violet' as const },
 ]
 </script>
 
 <template>
   <div class="space-y-7">
     <!-- Hero -->
-    <section class="relative overflow-hidden rounded-2xl border border-ink-200 bg-gradient-to-br from-brand-600 via-brand-600 to-violet-600 p-6 text-white shadow-card sm:p-8">
-      <div class="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
-      <p class="text-sm text-white/70">{{ todayLabel }}</p>
-      <h1 class="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
+    <section class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-600 via-brand-600 to-violet-600 p-6 text-white shadow-[0_18px_40px_-16px_rgba(79,70,229,0.55)] sm:p-8">
+      <div class="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-white/15 blur-3xl" />
+      <div class="pointer-events-none absolute -bottom-24 left-1/3 h-64 w-64 rounded-full bg-violet-400/40 blur-3xl" />
+      <div
+        class="pointer-events-none absolute inset-0 opacity-60"
+        style="background-image: radial-gradient(rgba(255,255,255,0.12) 1px, transparent 1px); background-size: 22px 22px; mask-image: linear-gradient(135deg, #000, transparent 70%); -webkit-mask-image: linear-gradient(135deg, #000, transparent 70%);"
+      />
+      <p class="relative text-sm text-white/70">{{ todayLabel }}</p>
+      <h1 class="relative mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
         {{ greeting }}，{{ auth.displayName }}
       </h1>
-      <p class="mt-2 flex items-center gap-2 text-sm text-white/85">
+      <p class="relative mt-2 flex items-center gap-2 text-sm text-white/85">
         <Sparkles class="h-4 w-4" />
         <template v-if="loading">載入你的今日概況…</template>
         <template v-else-if="todoTotal">今天有 {{ todoTotal }} 件待辦，已完成 {{ todoDone }} 件，繼續加油。</template>
         <template v-else>今天還沒有安排待辦，隨手記下想做的事吧。</template>
       </p>
-      <div class="mt-5 flex flex-wrap gap-2.5">
+      <div class="relative mt-5 flex flex-wrap gap-2.5">
         <span class="inline-flex items-center gap-1.5 rounded-lg bg-white/15 px-3 py-1.5 text-sm backdrop-blur">
           <ListTodo class="h-4 w-4" /> 今日待辦 {{ todoDone }}/{{ todoTotal }}
         </span>
@@ -120,6 +125,7 @@ const quickActions = [
           :key="a.label"
           :label="a.label"
           :icon="a.icon"
+          :tint="a.tint"
           @click="router.push(a.to)"
         />
       </div>
@@ -127,12 +133,14 @@ const quickActions = [
 
     <!-- Stat row (real) -->
     <section class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-      <StatCard label="今日待辦" :value="`${todoDone}/${todoTotal}`" :icon="Target" sub="已完成 / 總數" />
-      <StatCard label="本月支出" :value="formatMoney(monthExpense)" :icon="Wallet" sub="本月累計" />
+      <StatCard label="今日待辦" :value="`${todoDone}/${todoTotal}`" :icon="Target" tint="indigo" :loading="loading" sub="已完成 / 總數" />
+      <StatCard label="本月支出" :value="formatMoney(monthExpense)" :icon="Wallet" tint="amber" :loading="loading" sub="本月累計" />
       <StatCard
         label="最新體重"
         :value="latestWeight !== null ? latestWeight + ' kg' : '—'"
         :icon="Scale"
+        tint="emerald"
+        :loading="loading"
         :trend="weightChange !== null ? { dir: weightChange <= 0 ? 'down' : 'up', value: Math.abs(weightChange) + ' kg', good: weightChange <= 0 } : undefined"
         sub="近 7 天變化"
       />
@@ -140,6 +148,8 @@ const quickActions = [
         label="近期心情"
         :value="avgMood !== null ? avgMood + '/5' : '—'"
         :icon="Smile"
+        tint="rose"
+        :loading="loading"
         sub="最近平均"
       />
     </section>

@@ -35,7 +35,7 @@ const tools = [
 
 <template>
   <div>
-    <PageHeader eyebrow="Travel" :title="$t('tv.home.title')" :subtitle="$t('tv.home.subtitle')" />
+    <PageHeader :icon="Plane" eyebrow="Travel" :title="$t('tv.home.title')" :subtitle="$t('tv.home.subtitle')" />
 
     <!-- Hero / countdown -->
     <div class="mb-6 overflow-hidden rounded-2xl border border-ink-200 bg-gradient-to-br from-brand-500 to-brand-700 p-6 text-white">

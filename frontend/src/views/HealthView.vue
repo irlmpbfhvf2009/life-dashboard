@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { PartyPopper, RotateCcw } from 'lucide-vue-next'
+import { PartyPopper, RotateCcw, HeartPulse } from 'lucide-vue-next'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import ProfileSetup from '@/components/health/ProfileSetup.vue'
 import CompanionCard from '@/components/health/CompanionCard.vue'
@@ -217,12 +217,12 @@ function addExercise(ex: Exercise) {
 <template>
   <!-- Profile gate / edit -->
   <div v-if="!store.isOnboarded.value || editing">
-    <PageHeader :eyebrow="t('health.eyebrow')" :title="t('health.title')" :subtitle="t('health.subtitle')" />
+    <PageHeader :icon="HeartPulse" :eyebrow="t('health.eyebrow')" :title="t('health.title')" :subtitle="t('health.subtitle')" />
     <ProfileSetup :initial="editing ? profile : null" @complete="onSetupComplete" />
   </div>
 
   <div v-else-if="log && profile && plan">
-    <PageHeader :eyebrow="t('health.eyebrow')" :title="t('health.title')" :subtitle="t('health.subtitle')">
+    <PageHeader :icon="HeartPulse" :eyebrow="t('health.eyebrow')" :title="t('health.title')" :subtitle="t('health.subtitle')">
       <template #actions>
         <button class="btn-secondary btn-sm gap-1.5" @click="resetAll">
           <RotateCcw class="h-3.5 w-3.5" /> {{ t('health.reset.button') }}
@@ -234,7 +234,7 @@ function addExercise(ex: Exercise) {
     <div class="mb-5 inline-flex rounded-2xl bg-ink-100 p-1">
       <button v-for="tab in tabs" :key="tab"
         class="rounded-xl px-4 py-1.5 text-sm font-medium transition-colors"
-        :class="activeTab === tab ? 'bg-surface text-ink-900 shadow-card' : 'text-ink-500 hover:text-ink-700'"
+        :class="activeTab === tab ? 'bg-surface text-brand-700 shadow-card' : 'text-ink-500 hover:text-ink-700'"
         @click="activeTab = tab">
         {{ t('health.tabs.' + tab) }}
       </button>

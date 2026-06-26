@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ExternalLink, Github, Star } from 'lucide-vue-next'
+import { ExternalLink, Github, Star, FolderGit2 } from 'lucide-vue-next'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import { projects } from '@/data/portfolio'
 
@@ -12,7 +12,7 @@ const rest = computed(() => projects.filter((p) => !p.featured))
 </script>
 
 <template>
-  <PageHeader :eyebrow="t('portfolio.eyebrow')" :title="t('portfolio.title')" :subtitle="t('portfolio.subtitle')" />
+  <PageHeader :icon="FolderGit2" :eyebrow="t('portfolio.eyebrow')" :title="t('portfolio.title')" :subtitle="t('portfolio.subtitle')" />
 
   <!-- Featured -->
   <div v-for="p in featured" :key="p.key" class="card mb-6 overflow-hidden p-0">

@@ -7,10 +7,18 @@
 // so we pass the (public) Firebase config to it via the registration URL query.
 
 import { ref } from 'vue'
-import { getMessaging, getToken, onMessage, isSupported, type Messaging } from 'firebase/messaging'
+import type { Messaging } from 'firebase/messaging'
 import { app, firebaseConfig, vapidKey } from '@/firebase'
 import { pushApi } from '@/api'
 import { useNotify } from './useNotify'
+
+// Lazily load the FCM SDK only when push is actually used (opt-in or re-attach),
+// so the ~messaging code stays out of the startup bundle.
+let fcmPromise: Promise<typeof import('firebase/messaging')> | null = null
+function fcm() {
+  if (!fcmPromise) fcmPromise = import('firebase/messaging')
+  return fcmPromise
+}
 
 const PERM = typeof Notification !== 'undefined' ? Notification.permission : 'denied'
 const pushEnabled = ref(localStorage.getItem('chat-push') === '1')
@@ -38,10 +46,11 @@ async function registerSw(): Promise<ServiceWorkerRegistration | undefined> {
   return navigator.serviceWorker.register(swUrl(), { scope: '/firebase-cloud-messaging-push-scope' })
 }
 
-function bindForeground() {
+async function bindForeground() {
   if (!messaging || foregroundBound) return
   foregroundBound = true
   const notify = useNotify()
+  const { onMessage } = await fcm()
   onMessage(messaging, (payload) => {
     notify.playPing()
     // Foreground messages don't pop an OS notification automatically; show one if
@@ -56,11 +65,12 @@ function bindForeground() {
 async function obtainAndRegisterToken(): Promise<boolean> {
   if (!vapidKey) throw new Error('尚未設定推播金鑰（VAPID）')
   const reg = await registerSw()
+  const { getMessaging, getToken } = await fcm()
   messaging = getMessaging(app)
   const token = await getToken(messaging, { vapidKey, serviceWorkerRegistration: reg })
   if (!token) return false
   await pushApi.register(token)
-  bindForeground()
+  await bindForeground()
   return true
 }
 
@@ -70,6 +80,7 @@ export function usePush() {
     if (busy.value) return false
     busy.value = true
     try {
+      const { isSupported } = await fcm()
       if (!(await isSupported())) throw new Error('此瀏覽器不支援推播通知')
       const perm = await Notification.requestPermission()
       permission.value = perm
@@ -96,6 +107,7 @@ export function usePush() {
   async function init() {
     if (!pushEnabled.value || permission.value !== 'granted') return
     try {
+      const { isSupported } = await fcm()
       if (!(await isSupported())) return
       await obtainAndRegisterToken()
     } catch {

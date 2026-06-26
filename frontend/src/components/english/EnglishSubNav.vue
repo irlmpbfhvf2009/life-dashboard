@@ -13,7 +13,7 @@ const { t } = useI18n()
 interface Item { to: string; label: string; icon: typeof Home; exact?: boolean }
 interface Group { label: string; items: Item[] }
 
-const ACTIVE = '!bg-brand-500 !text-white'
+const ACTIVE = '!bg-gradient-to-r !from-brand-500 !to-violet-600 !text-white shadow-glow'
 
 const groups: Group[] = [
   { label: '', items: [{ to: '/ai/english', label: 'ec.nav.home', icon: Home, exact: true }] },

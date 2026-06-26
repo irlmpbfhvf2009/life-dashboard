@@ -27,8 +27,7 @@ const router = createRouter({
         // 財務分析 now lives as a tab inside 生活管理. Keep the old path as a redirect.
         { path: 'finance', name: 'finance', redirect: { name: 'life', query: { tab: 'finance' } } },
         {
-          path: 'ai', name: 'ai', component: () => import('@/views/ModuleLandingView.vue'),
-          meta: { category: 'AI', eyebrow: 'AI Lab', title: 'AI 實驗室', subtitle: 'AI 股票研究、英文教練與資料分析工具（研究用途）。' },
+          path: 'ai', name: 'ai', component: () => import('@/views/AiLabHomePage.vue'),
         },
         { path: 'ai/stock', name: 'stock', component: () => import('@/views/StockResearchView.vue') },
         { path: 'ai/data-lab', name: 'data-lab', component: () => import('@/views/DataLabView.vue') },

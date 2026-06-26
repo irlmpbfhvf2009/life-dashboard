@@ -41,6 +41,27 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Split big, rarely-changing vendors into their own chunks so the entry
+        // stays small, downloads happen in parallel, and they cache long-term.
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return
+          // Keep messaging out of the eager firebase chunk so its dynamic import
+          // (only when the user enables push) stays a separate, lazy chunk.
+          if (id.includes('firebase/messaging') || id.includes('@firebase/messaging')) return
+          if (id.includes('firebase') || id.includes('@firebase')) return 'firebase'
+          if (id.includes('chart.js') || id.includes('vue-chartjs')) return 'charts'
+          if (id.includes('leaflet')) return 'leaflet'
+          if (
+            id.includes('/vue/') || id.includes('/@vue/') ||
+            id.includes('vue-router') || id.includes('pinia') || id.includes('vue-i18n')
+          ) return 'vue-vendor'
+        },
+      },
+    },
+  },
   server: {
     port: 5173,
   },

@@ -123,7 +123,7 @@ onMounted(load)
       <ArrowLeft class="h-4 w-4" /> 返回 AI 實驗室
     </RouterLink>
 
-    <PageHeader eyebrow="AI Lab · 潛力股戰情室" title="AI 股票研究模型" subtitle="技術 / 籌碼 / 基本面多因子評分與 AI 波段研究，資料每日自動更新。">
+    <PageHeader :icon="Activity" eyebrow="AI Lab · 潛力股戰情室" title="AI 股票研究模型" subtitle="技術 / 籌碼 / 基本面多因子評分與 AI 波段研究，資料每日自動更新。">
       <template #actions>
         <button class="btn-secondary btn-sm" :disabled="loading" @click="load">
           <RefreshCw class="h-4 w-4" :class="{ 'animate-spin': loading }" /> 重新整理

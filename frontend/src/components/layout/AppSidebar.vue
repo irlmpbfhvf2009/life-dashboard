@@ -27,10 +27,10 @@ const visibleGroups = computed(() =>
 </script>
 
 <template>
-  <div class="flex h-full flex-col bg-ink-50/80 px-4 py-5">
+  <div class="flex h-full flex-col bg-ink-50/70 px-4 py-5 backdrop-blur-xl">
     <!-- Brand -->
     <RouterLink to="/" class="mb-6 flex items-center gap-2.5 px-2" @click="emit('navigate')">
-      <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-violet-600 text-white shadow-sm">
+      <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-violet-600 text-white shadow-glow">
         <Command class="h-5 w-5" :stroke-width="2.25" />
       </span>
       <span class="leading-tight">
@@ -75,7 +75,7 @@ const visibleGroups = computed(() =>
           class="h-8 w-8 rounded-lg object-cover"
           referrerpolicy="no-referrer"
         />
-        <span v-else class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-100 text-sm font-semibold text-brand-700">
+        <span v-else class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-brand-400 to-violet-500 text-sm font-semibold text-white">
           {{ auth.initials }}
         </span>
         <span class="min-w-0 flex-1 leading-tight">

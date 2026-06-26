@@ -19,17 +19,25 @@ const percent = computed(() =>
   props.max > 0 ? Math.min(100, Math.round((props.value / props.max) * 100)) : 0,
 )
 const barClass: Record<string, string> = {
-  brand: 'bg-brand-500',
-  emerald: 'bg-emerald-500',
-  amber: 'bg-amber-500',
-  rose: 'bg-rose-500',
+  brand: 'bg-gradient-to-r from-brand-500 to-violet-500',
+  emerald: 'bg-gradient-to-r from-emerald-400 to-emerald-600',
+  amber: 'bg-gradient-to-r from-amber-400 to-amber-500',
+  rose: 'bg-gradient-to-r from-rose-400 to-rose-600',
+}
+const chipClass: Record<string, string> = {
+  brand: 'tint-indigo',
+  emerald: 'tint-emerald',
+  amber: 'tint-amber',
+  rose: 'tint-rose',
 }
 </script>
 
 <template>
-  <div class="card p-5">
+  <div class="card card-hover p-5">
     <div class="mb-3 flex items-center gap-2.5">
-      <component :is="icon" v-if="icon" class="h-4 w-4 text-ink-400" :stroke-width="2" />
+      <span v-if="icon" class="flex h-8 w-8 items-center justify-center rounded-lg" :class="chipClass[accent]">
+        <component :is="icon" class="h-[18px] w-[18px]" :stroke-width="2" />
+      </span>
       <h3 class="section-title">{{ title }}</h3>
     </div>
     <div class="flex items-end justify-between">

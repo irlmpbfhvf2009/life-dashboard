@@ -661,7 +661,7 @@ const canEdit = (m: ChatMessage) =>
                   <div
                     v-else-if="m.kind === 'AUDIO' && m.attachmentUrl"
                     class="rounded-2xl px-2 pb-0.5 pt-1.5"
-                    :class="m.senderId === chat.meId() ? 'bg-brand-500' : 'bg-ink-100'"
+                    :class="m.senderId === chat.meId() ? 'bg-gradient-to-br from-brand-500 to-brand-600' : 'bg-ink-100'"
                   >
                     <audio :src="m.attachmentUrl" controls preload="metadata" class="h-8 w-48 max-w-full" />
                     <div
@@ -682,7 +682,7 @@ const canEdit = (m: ChatMessage) =>
                   <div
                     v-else
                     class="relative block w-fit max-w-full whitespace-pre-wrap break-words rounded-2xl px-3 py-1.5 text-sm"
-                    :class="m.senderId === chat.meId() ? 'ml-auto bg-brand-500 text-white' : 'bg-ink-100 text-ink-800'"
+                    :class="m.senderId === chat.meId() ? 'ml-auto bg-gradient-to-br from-brand-500 to-brand-600 text-white' : 'bg-ink-100 text-ink-800'"
                   >{{ m.content }}<span
                       class="float-right ml-2 inline-flex select-none items-center gap-0.5 text-2xs"
                       :class="m.senderId === chat.meId() ? 'text-white/60' : 'text-ink-400'"
@@ -741,7 +741,7 @@ const canEdit = (m: ChatMessage) =>
               <span class="inline-block h-2.5 w-2.5 animate-pulse rounded-full bg-rose-500" />
               {{ t('chat.recording') }} {{ fmtDuration(recorder.seconds.value) }}
             </div>
-            <button class="btn-icon h-9 w-9 shrink-0 rounded-xl bg-brand-500 text-white" @click="toggleRecord()">
+            <button class="btn-icon h-9 w-9 shrink-0 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 text-white" @click="toggleRecord()">
               <Send class="h-4 w-4" />
             </button>
           </div>
@@ -779,7 +779,7 @@ const canEdit = (m: ChatMessage) =>
             <button
               v-if="draft.trim() || editing"
               type="submit"
-              class="btn-icon h-9 w-9 shrink-0 rounded-xl bg-brand-500 text-white disabled:opacity-50"
+              class="btn-icon h-9 w-9 shrink-0 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 text-white disabled:opacity-50"
               :disabled="sending"
             ><Check v-if="editing" class="h-4 w-4" /><Send v-else class="h-4 w-4" /></button>
             <button
@@ -1012,7 +1012,7 @@ const canEdit = (m: ChatMessage) =>
 
     <!-- Launcher (hidden on mobile when the full-screen panel is open — it has its own X) -->
     <button
-      class="relative h-14 w-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-pop transition-transform hover:scale-105 active:scale-95"
+      class="relative h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-violet-600 text-white shadow-glow transition-transform hover:scale-105 active:scale-95"
       :class="open ? 'hidden sm:flex' : 'flex'"
       :title="t('chat.title')"
       @click="chat.togglePanel()"

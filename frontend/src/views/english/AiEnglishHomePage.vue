@@ -42,7 +42,7 @@ const topMistakes = computed(() => store.mistakes.value.slice(0, 3))
 </script>
 
 <template>
-  <PageHeader eyebrow="AI English" :title="t('ec.home.title')" :subtitle="t('ec.home.subtitle')">
+  <PageHeader :icon="GraduationCap" eyebrow="AI English" :title="t('ec.home.title')" :subtitle="t('ec.home.subtitle')">
     <template #actions>
       <button class="btn-secondary btn-sm gap-1.5" @click="router.push('/ai/english/placement')">
         <Sparkles class="h-3.5 w-3.5" /> {{ t('ec.home.placement') }}

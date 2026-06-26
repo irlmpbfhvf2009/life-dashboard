@@ -19,6 +19,7 @@ export default {
           900: '#312e81',
         },
         violet: {
+          300: '#c4b5fd',
           400: '#a78bfa',
           500: '#8b5cf6',
           600: '#7c3aed',
@@ -42,16 +43,17 @@ export default {
         canvas: 'rgb(var(--canvas) / <alpha-value>)',
       },
       fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+        sans: ['Inter', 'Noto Sans TC', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
       },
       borderRadius: {
         xl: '0.875rem',
         '2xl': '1.125rem',
       },
       boxShadow: {
-        card: '0 1px 2px 0 rgba(16,24,40,0.04), 0 1px 3px 0 rgba(16,24,40,0.06)',
-        'card-hover': '0 4px 12px -2px rgba(16,24,40,0.08), 0 2px 6px -2px rgba(16,24,40,0.05)',
+        card: '0 1px 2px 0 rgba(16,24,40,0.04), 0 4px 12px -4px rgba(16,24,40,0.06)',
+        'card-hover': '0 10px 28px -10px rgba(16,24,40,0.16), 0 2px 6px -2px rgba(16,24,40,0.06)',
         pop: '0 12px 32px -8px rgba(16,24,40,0.22)',
+        glow: '0 6px 18px -4px rgba(99,102,241,0.45)',
       },
       fontSize: {
         '2xs': ['0.6875rem', { lineHeight: '1rem' }],

@@ -18,6 +18,18 @@ export async function uploadJournalPhoto(file: File, destinationId: string): Pro
   return getDownloadURL(r)
 }
 
+/** Upload a profile avatar (downscaled to 512px) and return its download URL. */
+export async function uploadAvatar(file: File): Promise<string> {
+  const uid = auth.currentUser?.uid
+  if (!uid) throw new Error('not signed in')
+  const blob = await fileToCompressedBlob(file, 512, 0.85)
+  const name = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`
+  const path = `avatars/${uid}/${name}`
+  const r = storageRef(storage, path)
+  await uploadBytes(r, blob, { contentType: 'image/jpeg' })
+  return getDownloadURL(r)
+}
+
 /** Upload a chat photo (compressed) and return its public download URL. */
 export async function uploadChatImage(file: File): Promise<string> {
   const uid = auth.currentUser?.uid

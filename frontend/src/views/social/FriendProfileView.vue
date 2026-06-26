@@ -68,7 +68,24 @@ const nothingShared = computed(() => {
     </button>
 
     <p v-if="error" class="rounded-xl bg-rose-500/10 px-4 py-3 text-sm text-rose-600 dark:text-rose-300">{{ error }}</p>
-    <p v-else-if="loading" class="text-sm text-ink-400">載入中…</p>
+    <!-- Loading skeleton -->
+    <div v-else-if="loading" class="space-y-6">
+      <div class="card flex items-center gap-4 p-6">
+        <div class="h-16 w-16 shrink-0 animate-pulse rounded-2xl bg-ink-100" />
+        <div class="flex-1 space-y-2.5">
+          <div class="h-5 w-40 animate-pulse rounded bg-ink-100" />
+          <div class="h-3.5 w-56 animate-pulse rounded bg-ink-100" />
+        </div>
+      </div>
+      <div class="card space-y-4 p-5">
+        <div class="h-4 w-28 animate-pulse rounded bg-ink-100" />
+        <div class="grid grid-cols-2 gap-4">
+          <div class="h-20 animate-pulse rounded-xl bg-ink-100" />
+          <div class="h-20 animate-pulse rounded-xl bg-ink-100" />
+        </div>
+        <div class="h-32 animate-pulse rounded-xl bg-ink-100" />
+      </div>
+    </div>
 
     <template v-else-if="profile">
       <!-- Identity header -->

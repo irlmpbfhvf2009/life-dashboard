@@ -49,6 +49,7 @@ infra/billing-guard/          費用自動關閉的 Cloud Function
 - 子導航元件命名慣例：`<模組>SubNav.vue` + `<模組>Layout.vue`（Layout＝`<SubNav/> + <RouterView/>`）。新增頁＝加一條 route + 一個 SubNav item。
 
 ## 進度（phased）
+- **2026-06 全站 UI 改版 + 命令面板/通知中心/載入優化**（詳見 `CHANGELOG.md`）：Noto Sans TC 中文字體、雙層陰影/`.tint-*` 色票、側欄漸層 active、Hero/卡片打磨、各模組漸層圖示頁首；新增頭像上傳（Storage `avatars/{uid}`，需加規則）、⌘K 命令面板（`CommandPalette`/`useCommandPalette`）、通知中心（`NotificationBell`）；`vite.config` manualChunks 拆包（入口 651→278KB）、FCM 動態 import、`vite:preloadError` 自動 reload、圖表隨 `useTheme` 切換色、a11y/焦點還原。
 - **Phase 1 已完成並上線**：設計系統、雙登入、AppShell/Sidebar/Header、總覽 Dashboard、App Center、AI 股票研究（完整）、設定、深色模式。
 - **舊功能頁已刪除**（Todos/Weights/Foods/Expenses/Moods/Notes 的舊 CRUD 頁）。
 - **AI 股票研究已完整**：今日 AI 精選（合併行情+K線+AI八面向）、雷達選股、AI 預判追蹤、過往分析；資料即時讀 GitHub raw。

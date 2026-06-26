@@ -5,7 +5,7 @@ import { FileText, BookMarked } from 'lucide-vue-next'
 
 interface Item { to: string; label: string; icon: typeof FileText; exact?: boolean }
 
-const ACTIVE = '!bg-brand-500 !text-white'
+const ACTIVE = '!bg-gradient-to-r !from-brand-500 !to-violet-600 !text-white shadow-glow'
 
 const items: Item[] = [
   { to: '/knowledge', label: '筆記', icon: FileText, exact: true },
