@@ -1,7 +1,7 @@
 <script setup lang="ts">
-// Secondary navigation for the 知識 module (筆記 + 書庫). The global sidebar only
-// lists 「知識」; this keeps notes and the e-book library under one roof.
-import { FileText, BookMarked } from 'lucide-vue-next'
+// Secondary navigation for the 知識 module (筆記 + 日記 + 書庫). The global sidebar
+// only lists 「知識」; this keeps notes, the diary and the e-book library together.
+import { FileText, BookMarked, BookHeart } from 'lucide-vue-next'
 
 interface Item { to: string; label: string; icon: typeof FileText; exact?: boolean }
 
@@ -9,6 +9,7 @@ const ACTIVE = '!bg-gradient-to-r !from-brand-500 !to-violet-600 !text-white sha
 
 const items: Item[] = [
   { to: '/knowledge', label: '筆記', icon: FileText, exact: true },
+  { to: '/knowledge/journal', label: '日記', icon: BookHeart },
   { to: '/knowledge/books', label: '書庫', icon: BookMarked },
 ]
 </script>

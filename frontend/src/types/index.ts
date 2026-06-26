@@ -52,6 +52,16 @@ export interface Habit {
   createdAt: string
 }
 
+export interface Journal {
+  id: number
+  title: string
+  content: string | null
+  entryDate: string
+  mood: string | null
+  createdAt: string
+  updatedAt: string
+}
+
 export interface FastingSession {
   id: number
   startAt: string

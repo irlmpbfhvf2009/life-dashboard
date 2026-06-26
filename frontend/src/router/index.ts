@@ -80,6 +80,7 @@ const router = createRouter({
           component: () => import('@/views/knowledge/KnowledgeLayout.vue'),
           children: [
             { path: '', name: 'knowledge', component: () => import('@/views/KnowledgeView.vue') },
+            { path: 'journal', name: 'journal', component: () => import('@/views/knowledge/JournalView.vue') },
             { path: 'books', name: 'library', component: () => import('@/views/library/LibraryHomePage.vue') },
           ],
         },

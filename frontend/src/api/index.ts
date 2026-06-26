@@ -14,6 +14,7 @@ import type {
   GifPage,
   Goal,
   Habit,
+  Journal,
   MealType,
   MessageKind,
   MonthlyStats,
@@ -447,4 +448,16 @@ export const noteApi = {
   update: (id: number, body: Partial<{ title: string; content: string }>) =>
     request<Note>(() => http.patch(`/api/notes/${id}`, body)),
   remove: (id: number) => request<void>(() => http.delete(`/api/notes/${id}`)),
+}
+
+// ---- Journals (long-form dated diary) ----
+export const journalApi = {
+  list: () => request<Journal[]>(() => http.get('/api/journals')),
+  create: (body: { title: string; content?: string; entryDate?: string; mood?: string }) =>
+    request<Journal>(() => http.post('/api/journals', body)),
+  update: (
+    id: number,
+    body: Partial<{ title: string; content: string; entryDate: string; mood: string }>,
+  ) => request<Journal>(() => http.patch(`/api/journals/${id}`, body)),
+  remove: (id: number) => request<void>(() => http.delete(`/api/journals/${id}`)),
 }
