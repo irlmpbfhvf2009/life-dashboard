@@ -49,6 +49,7 @@ infra/billing-guard/          費用自動關閉的 Cloud Function
 - 子導航元件命名慣例：`<模組>SubNav.vue` + `<模組>Layout.vue`（Layout＝`<SubNav/> + <RouterView/>`）。新增頁＝加一條 route + 一個 SubNav item。
 
 ## 進度（phased）
+- **2026-06 深色「AI 司令艙」視覺改版（已上線，使用者認可的方向，勿改回白底 SaaS 風）**：整站**深色為預設**（`index.html` no-flash 腳本＋`useTheme` 預設 dark，只在明確選 light 時退出；右上切換鈕仍在）。深色調色盤加深成藍黑 canvas，`.dark body` 疊紫→藍→青三層光暈＋細科技格線 backdrop。`style.css` 新增玻璃感工具類 `.glass`/`.glass-hover`/`.glow-edge`/`.text-gradient`，`tailwind.config` 加 `shadow-glass`/`glow-brand`/`glow-cyan`＋`pulse-glow` 動畫。**首頁 `OverviewView` 重構為五段**：① 今日 AI Brief 主卡片（摘要＋建議，皆由 `/api/dashboard` 真實數據**規則式推導**，非真 Gemini）② 快速紀錄（記帳/體重/心情/筆記/問 AI）③ 今日狀態（待辦/財務/健康/心情）④ AI 洞察卡 ⑤ 最近紀錄＋體重趨勢。其他模組頁僅跟著套深色底、版面未動（未來可逐頁深度玻璃化）。**可選加分**：把 AI Brief/洞察接真 Gemini（新後端端點彙整數據→生成自然語言）。
 - **2026-06 全站 UI 改版 + 命令面板/通知中心/載入優化**（詳見 `CHANGELOG.md`）：Noto Sans TC 中文字體、雙層陰影/`.tint-*` 色票、側欄漸層 active、Hero/卡片打磨、各模組漸層圖示頁首；新增頭像上傳（Storage `avatars/{uid}`，需加規則）、⌘K 命令面板（`CommandPalette`/`useCommandPalette`）、通知中心（`NotificationBell`）；`vite.config` manualChunks 拆包（入口 651→278KB）、FCM 動態 import、`vite:preloadError` 自動 reload、圖表隨 `useTheme` 切換色、a11y/焦點還原。
 - **Phase 1 已完成並上線**：設計系統、雙登入、AppShell/Sidebar/Header、總覽 Dashboard、App Center、AI 股票研究（完整）、設定、深色模式。
 - **舊功能頁已刪除**（Todos/Weights/Foods/Expenses/Moods/Notes 的舊 CRUD 頁）。
