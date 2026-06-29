@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-06-26 18:39",
+  "updated_at": "2026-06-29 20:18",
   "windows": [
     5,
     10,
@@ -111,27 +111,27 @@
       "windows": {
         "5": {
           "max_return_pct": 1.93,
-          "end_return_pct": -9.53,
+          "end_return_pct": -9.88,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         },
         "10": {
           "max_return_pct": 1.93,
-          "end_return_pct": -9.53,
+          "end_return_pct": -9.88,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         },
         "20": {
           "max_return_pct": 1.93,
-          "end_return_pct": -9.53,
+          "end_return_pct": -9.88,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         }
       },
-      "last_return_pct": -9.53,
+      "last_return_pct": -9.88,
       "status_overall": "evaluated"
     },
     {
@@ -153,27 +153,27 @@
       "windows": {
         "5": {
           "max_return_pct": 2.4,
-          "end_return_pct": -5.89,
+          "end_return_pct": -5.17,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         },
         "10": {
           "max_return_pct": 2.4,
-          "end_return_pct": -5.89,
+          "end_return_pct": -5.17,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         },
         "20": {
           "max_return_pct": 2.4,
-          "end_return_pct": -5.89,
+          "end_return_pct": -5.17,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         }
       },
-      "last_return_pct": -5.89,
+      "last_return_pct": -5.17,
       "status_overall": "evaluated"
     },
     {
@@ -195,27 +195,27 @@
       "windows": {
         "5": {
           "max_return_pct": 9.98,
-          "end_return_pct": -1.85,
+          "end_return_pct": -0.25,
           "hit": true,
           "days_to_hit": 1,
           "status": "hit"
         },
         "10": {
           "max_return_pct": 9.98,
-          "end_return_pct": -1.85,
+          "end_return_pct": -0.25,
           "hit": true,
           "days_to_hit": 1,
           "status": "hit"
         },
         "20": {
           "max_return_pct": 9.98,
-          "end_return_pct": -1.85,
+          "end_return_pct": -0.25,
           "hit": true,
           "days_to_hit": 1,
           "status": "hit"
         }
       },
-      "last_return_pct": -1.85,
+      "last_return_pct": -0.25,
       "status_overall": "evaluated"
     },
     {
@@ -237,27 +237,27 @@
       "windows": {
         "5": {
           "max_return_pct": 4.36,
-          "end_return_pct": -5.52,
+          "end_return_pct": -7.85,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         },
         "10": {
           "max_return_pct": 4.36,
-          "end_return_pct": -5.52,
+          "end_return_pct": -7.85,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         },
         "20": {
           "max_return_pct": 4.36,
-          "end_return_pct": -5.52,
+          "end_return_pct": -7.85,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         }
       },
-      "last_return_pct": -5.52,
+      "last_return_pct": -7.85,
       "status_overall": "evaluated"
     },
     {
@@ -328,20 +328,20 @@
         },
         "10": {
           "max_return_pct": 2.33,
-          "end_return_pct": -10.63,
+          "end_return_pct": -7.28,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         },
         "20": {
           "max_return_pct": 2.33,
-          "end_return_pct": -10.63,
+          "end_return_pct": -7.28,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         }
       },
-      "last_return_pct": -10.63,
+      "last_return_pct": -7.28,
       "status_overall": "evaluated"
     },
     {
@@ -370,20 +370,20 @@
         },
         "10": {
           "max_return_pct": 7.66,
-          "end_return_pct": -4.68,
+          "end_return_pct": -4.47,
           "hit": true,
           "days_to_hit": 1,
           "status": "hit"
         },
         "20": {
           "max_return_pct": 7.66,
-          "end_return_pct": -4.68,
+          "end_return_pct": -4.47,
           "hit": true,
           "days_to_hit": 1,
           "status": "hit"
         }
       },
-      "last_return_pct": -4.68,
+      "last_return_pct": -4.47,
       "status_overall": "evaluated"
     },
     {
@@ -412,20 +412,20 @@
         },
         "10": {
           "max_return_pct": 0.39,
-          "end_return_pct": -3.78,
+          "end_return_pct": -2.74,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         },
         "20": {
           "max_return_pct": 0.39,
-          "end_return_pct": -3.78,
+          "end_return_pct": -2.74,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         }
       },
-      "last_return_pct": -3.78,
+      "last_return_pct": -2.74,
       "status_overall": "evaluated"
     },
     {
@@ -454,20 +454,20 @@
         },
         "10": {
           "max_return_pct": 5.54,
-          "end_return_pct": -15.05,
+          "end_return_pct": -17.24,
           "hit": true,
           "days_to_hit": 2,
           "status": "hit"
         },
         "20": {
           "max_return_pct": 5.54,
-          "end_return_pct": -15.05,
+          "end_return_pct": -17.24,
           "hit": true,
           "days_to_hit": 2,
           "status": "hit"
         }
       },
-      "last_return_pct": -15.05,
+      "last_return_pct": -17.24,
       "status_overall": "evaluated"
     },
     {
@@ -496,20 +496,20 @@
         },
         "10": {
           "max_return_pct": 20.51,
-          "end_return_pct": 3.07,
+          "end_return_pct": -4.33,
           "hit": true,
           "days_to_hit": 2,
           "status": "hit"
         },
         "20": {
           "max_return_pct": 20.51,
-          "end_return_pct": 3.07,
+          "end_return_pct": -4.33,
           "hit": true,
           "days_to_hit": 2,
           "status": "hit"
         }
       },
-      "last_return_pct": 3.07,
+      "last_return_pct": -4.33,
       "status_overall": "evaluated"
     },
     {
@@ -538,20 +538,20 @@
         },
         "10": {
           "max_return_pct": 5.79,
-          "end_return_pct": -8.55,
+          "end_return_pct": -6.71,
           "hit": true,
           "days_to_hit": 3,
           "status": "hit"
         },
         "20": {
           "max_return_pct": 5.79,
-          "end_return_pct": -8.55,
+          "end_return_pct": -6.71,
           "hit": true,
           "days_to_hit": 3,
           "status": "hit"
         }
       },
-      "last_return_pct": -8.55,
+      "last_return_pct": -6.71,
       "status_overall": "evaluated"
     },
     {
@@ -580,20 +580,20 @@
         },
         "10": {
           "max_return_pct": 3.88,
-          "end_return_pct": 1.0,
+          "end_return_pct": -1.25,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         },
         "20": {
           "max_return_pct": 3.88,
-          "end_return_pct": 1.0,
+          "end_return_pct": -1.25,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         }
       },
-      "last_return_pct": 1.0,
+      "last_return_pct": -1.25,
       "status_overall": "evaluated"
     },
     {
@@ -622,20 +622,20 @@
         },
         "10": {
           "max_return_pct": 47.39,
-          "end_return_pct": 28.7,
+          "end_return_pct": 31.74,
           "hit": true,
           "days_to_hit": 1,
           "status": "hit"
         },
         "20": {
           "max_return_pct": 47.39,
-          "end_return_pct": 28.7,
+          "end_return_pct": 31.74,
           "hit": true,
           "days_to_hit": 1,
           "status": "hit"
         }
       },
-      "last_return_pct": 28.7,
+      "last_return_pct": 31.74,
       "status_overall": "evaluated"
     }
   ]
