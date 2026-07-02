@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-07-01 18:57",
+  "updated_at": "2026-07-02 18:20",
   "windows": [
     5,
     10,
@@ -12,57 +12,57 @@
   "summary": {
     "5": {
       "window_days": 5,
-      "matured": 12,
+      "matured": 13,
       "hits": 7,
-      "misses": 5,
-      "hit_rate_pct": 58.3,
-      "avg_days_to_target": 2.0,
+      "misses": 6,
+      "hit_rate_pct": 53.8,
+      "avg_days_to_target": 1.9,
       "in_progress": 1,
       "avg_win_pct": 5.0,
-      "avg_loss_pct": -6.26,
-      "avg_max_return_pct": 10.13,
-      "expectancy_pct": 0.31
+      "avg_loss_pct": -6.92,
+      "avg_max_return_pct": 8.49,
+      "expectancy_pct": -0.5
     },
     "10": {
       "window_days": 10,
-      "matured": 8,
-      "hits": 7,
+      "matured": 9,
+      "hits": 8,
       "misses": 1,
-      "hit_rate_pct": 87.5,
-      "avg_days_to_target": 2.0,
+      "hit_rate_pct": 88.9,
+      "avg_days_to_target": 2.8,
       "in_progress": 5,
       "avg_win_pct": 5.0,
       "avg_loss_pct": 1.88,
-      "avg_max_return_pct": 15.82,
-      "expectancy_pct": 4.61
+      "avg_max_return_pct": 13.11,
+      "expectancy_pct": 4.65
     },
     "20": {
       "window_days": 20,
-      "matured": 7,
-      "hits": 7,
+      "matured": 8,
+      "hits": 8,
       "misses": 0,
       "hit_rate_pct": 100.0,
-      "avg_days_to_target": 2.0,
+      "avg_days_to_target": 2.8,
       "in_progress": 6,
       "avg_win_pct": 5.0,
       "avg_loss_pct": null,
-      "avg_max_return_pct": 17.52,
+      "avg_max_return_pct": 16.11,
       "expectancy_pct": 5.0
     }
   },
   "benchmark": {
     "5": {
       "window_days": 5,
-      "matured": 4,
+      "matured": 5,
       "hits": 2,
-      "misses": 2,
-      "hit_rate_pct": 50.0,
+      "misses": 3,
+      "hit_rate_pct": 40.0,
       "avg_days_to_target": 3.0,
       "in_progress": 1,
       "avg_win_pct": 5.0,
-      "avg_loss_pct": -3.0,
-      "avg_max_return_pct": 3.74,
-      "expectancy_pct": 1.0
+      "avg_loss_pct": -1.5,
+      "avg_max_return_pct": 3.32,
+      "expectancy_pct": 1.1
     },
     "10": {
       "window_days": 10,
@@ -71,7 +71,7 @@
       "misses": 0,
       "hit_rate_pct": 100.0,
       "avg_days_to_target": 3.0,
-      "in_progress": 3,
+      "in_progress": 4,
       "avg_win_pct": 5.0,
       "avg_loss_pct": null,
       "avg_max_return_pct": 5.99,
@@ -84,7 +84,7 @@
       "misses": 0,
       "hit_rate_pct": 100.0,
       "avg_days_to_target": 3.0,
-      "in_progress": 3,
+      "in_progress": 4,
       "avg_win_pct": 5.0,
       "avg_loss_pct": null,
       "avg_max_return_pct": 5.99,
@@ -92,6 +92,90 @@
     }
   },
   "detail": [
+    {
+      "date": "2026-07-01",
+      "code": "8150",
+      "name": "南茂",
+      "total_score": 31.0,
+      "scores": {
+        "fundamental": "改善",
+        "valuation": "合理",
+        "chips": "偏多",
+        "technical": "多頭",
+        "industry": "成長",
+        "catalyst": "有利多",
+        "expectation": "超預期",
+        "risk": "中"
+      },
+      "entry_price": 107.0,
+      "windows": {
+        "5": {
+          "max_return_pct": 5.14,
+          "end_return_pct": 1.4,
+          "hit": true,
+          "days_to_hit": 1,
+          "status": "hit"
+        },
+        "10": {
+          "max_return_pct": 5.14,
+          "end_return_pct": 1.4,
+          "hit": true,
+          "days_to_hit": 1,
+          "status": "hit"
+        },
+        "20": {
+          "max_return_pct": 5.14,
+          "end_return_pct": 1.4,
+          "hit": true,
+          "days_to_hit": 1,
+          "status": "hit"
+        }
+      },
+      "last_return_pct": 1.4,
+      "status_overall": "evaluated"
+    },
+    {
+      "date": "2026-07-01",
+      "code": "2377",
+      "name": "微星",
+      "total_score": 31.0,
+      "scores": {
+        "fundamental": "改善",
+        "valuation": "便宜",
+        "chips": "中性",
+        "technical": "多頭",
+        "industry": "成長",
+        "catalyst": "有利多",
+        "expectation": "超預期",
+        "risk": "中"
+      },
+      "entry_price": 145.5,
+      "windows": {
+        "5": {
+          "max_return_pct": 1.03,
+          "end_return_pct": -1.72,
+          "hit": false,
+          "days_to_hit": null,
+          "status": "open"
+        },
+        "10": {
+          "max_return_pct": 1.03,
+          "end_return_pct": -1.72,
+          "hit": false,
+          "days_to_hit": null,
+          "status": "open"
+        },
+        "20": {
+          "max_return_pct": 1.03,
+          "end_return_pct": -1.72,
+          "hit": false,
+          "days_to_hit": null,
+          "status": "open"
+        }
+      },
+      "last_return_pct": -1.72,
+      "status_overall": "evaluated"
+    },
     {
       "date": "2026-06-25",
       "code": "6831",
@@ -110,28 +194,28 @@
       "entry_price": 881.0,
       "windows": {
         "5": {
-          "max_return_pct": 8.4,
-          "end_return_pct": 2.5,
+          "max_return_pct": 10.1,
+          "end_return_pct": 8.51,
           "hit": true,
           "days_to_hit": 4,
           "status": "hit"
         },
         "10": {
-          "max_return_pct": 8.4,
-          "end_return_pct": 2.5,
+          "max_return_pct": 10.1,
+          "end_return_pct": 8.51,
           "hit": true,
           "days_to_hit": 4,
           "status": "hit"
         },
         "20": {
-          "max_return_pct": 8.4,
-          "end_return_pct": 2.5,
+          "max_return_pct": 10.1,
+          "end_return_pct": 8.51,
           "hit": true,
           "days_to_hit": 4,
           "status": "hit"
         }
       },
-      "last_return_pct": 2.5,
+      "last_return_pct": 8.51,
       "status_overall": "evaluated"
     },
     {
@@ -153,27 +237,27 @@
       "windows": {
         "5": {
           "max_return_pct": 2.4,
-          "end_return_pct": -10.7,
+          "end_return_pct": -10.22,
           "hit": false,
           "days_to_hit": null,
-          "status": "open"
+          "status": "miss"
         },
         "10": {
           "max_return_pct": 2.4,
-          "end_return_pct": -10.7,
+          "end_return_pct": -10.22,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         },
         "20": {
           "max_return_pct": 2.4,
-          "end_return_pct": -10.7,
+          "end_return_pct": -10.22,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         }
       },
-      "last_return_pct": -10.7,
+      "last_return_pct": -10.22,
       "status_overall": "evaluated"
     },
     {
@@ -195,27 +279,27 @@
       "windows": {
         "5": {
           "max_return_pct": 15.64,
-          "end_return_pct": 9.36,
+          "end_return_pct": 2.22,
           "hit": true,
           "days_to_hit": 1,
           "status": "hit"
         },
         "10": {
           "max_return_pct": 15.64,
-          "end_return_pct": 9.36,
+          "end_return_pct": 2.22,
           "hit": true,
           "days_to_hit": 1,
           "status": "hit"
         },
         "20": {
           "max_return_pct": 15.64,
-          "end_return_pct": 9.36,
+          "end_return_pct": 2.22,
           "hit": true,
           "days_to_hit": 1,
           "status": "hit"
         }
       },
-      "last_return_pct": 9.36,
+      "last_return_pct": 2.22,
       "status_overall": "evaluated"
     },
     {
@@ -244,20 +328,20 @@
         },
         "10": {
           "max_return_pct": 4.36,
-          "end_return_pct": -16.57,
+          "end_return_pct": -15.41,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         },
         "20": {
           "max_return_pct": 4.36,
-          "end_return_pct": -16.57,
+          "end_return_pct": -15.41,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         }
       },
-      "last_return_pct": -16.57,
+      "last_return_pct": -15.41,
       "status_overall": "evaluated"
     },
     {
@@ -286,20 +370,20 @@
         },
         "10": {
           "max_return_pct": 0.83,
-          "end_return_pct": -2.08,
+          "end_return_pct": -2.5,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         },
         "20": {
           "max_return_pct": 0.83,
-          "end_return_pct": -2.08,
+          "end_return_pct": -2.5,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         }
       },
-      "last_return_pct": -2.08,
+      "last_return_pct": -2.5,
       "status_overall": "evaluated"
     },
     {
@@ -327,21 +411,21 @@
           "status": "miss"
         },
         "10": {
-          "max_return_pct": 3.49,
-          "end_return_pct": 1.46,
-          "hit": false,
-          "days_to_hit": null,
-          "status": "open"
+          "max_return_pct": 5.09,
+          "end_return_pct": 2.47,
+          "hit": true,
+          "days_to_hit": 9,
+          "status": "hit"
         },
         "20": {
-          "max_return_pct": 3.49,
-          "end_return_pct": 1.46,
-          "hit": false,
-          "days_to_hit": null,
-          "status": "open"
+          "max_return_pct": 5.09,
+          "end_return_pct": 2.47,
+          "hit": true,
+          "days_to_hit": 9,
+          "status": "hit"
         }
       },
-      "last_return_pct": 1.46,
+      "last_return_pct": 2.47,
       "status_overall": "evaluated"
     },
     {
@@ -370,20 +454,20 @@
         },
         "10": {
           "max_return_pct": 7.66,
-          "end_return_pct": 4.26,
+          "end_return_pct": 6.81,
           "hit": true,
           "days_to_hit": 1,
           "status": "hit"
         },
         "20": {
           "max_return_pct": 7.66,
-          "end_return_pct": 4.26,
+          "end_return_pct": 6.81,
           "hit": true,
           "days_to_hit": 1,
           "status": "hit"
         }
       },
-      "last_return_pct": 4.26,
+      "last_return_pct": 6.81,
       "status_overall": "evaluated"
     },
     {
@@ -412,20 +496,20 @@
         },
         "10": {
           "max_return_pct": 0.39,
-          "end_return_pct": -4.3,
+          "end_return_pct": -4.56,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         },
         "20": {
           "max_return_pct": 0.39,
-          "end_return_pct": -4.3,
+          "end_return_pct": -4.56,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         }
       },
-      "last_return_pct": -4.3,
+      "last_return_pct": -4.56,
       "status_overall": "evaluated"
     },
     {
@@ -454,62 +538,20 @@
         },
         "10": {
           "max_return_pct": 5.54,
-          "end_return_pct": -17.24,
+          "end_return_pct": -16.09,
           "hit": true,
           "days_to_hit": 2,
           "status": "hit"
         },
         "20": {
           "max_return_pct": 5.54,
-          "end_return_pct": -17.24,
+          "end_return_pct": -16.09,
           "hit": true,
           "days_to_hit": 2,
           "status": "hit"
         }
       },
-      "last_return_pct": -17.24,
-      "status_overall": "evaluated"
-    },
-    {
-      "date": "2026-06-16",
-      "code": "8150",
-      "name": "南茂",
-      "total_score": 32.0,
-      "scores": {
-        "fundamental": "改善",
-        "valuation": "合理",
-        "chips": "偏多",
-        "technical": "多頭",
-        "industry": "成長",
-        "catalyst": "有利多",
-        "expectation": "超預期",
-        "risk": "中"
-      },
-      "entry_price": 94.6,
-      "windows": {
-        "5": {
-          "max_return_pct": 20.51,
-          "end_return_pct": 8.88,
-          "hit": true,
-          "days_to_hit": 2,
-          "status": "hit"
-        },
-        "10": {
-          "max_return_pct": 20.51,
-          "end_return_pct": 13.11,
-          "hit": true,
-          "days_to_hit": 2,
-          "status": "hit"
-        },
-        "20": {
-          "max_return_pct": 20.51,
-          "end_return_pct": 13.11,
-          "hit": true,
-          "days_to_hit": 2,
-          "status": "hit"
-        }
-      },
-      "last_return_pct": 13.11,
+      "last_return_pct": -16.09,
       "status_overall": "evaluated"
     },
     {
@@ -545,13 +587,13 @@
         },
         "20": {
           "max_return_pct": 5.79,
-          "end_return_pct": -8.82,
+          "end_return_pct": -7.37,
           "hit": true,
           "days_to_hit": 3,
           "status": "hit"
         }
       },
-      "last_return_pct": -8.82,
+      "last_return_pct": -7.37,
       "status_overall": "evaluated"
     },
     {
@@ -587,13 +629,13 @@
         },
         "20": {
           "max_return_pct": 3.88,
-          "end_return_pct": 1.88,
+          "end_return_pct": 2.63,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         }
       },
-      "last_return_pct": 1.88,
+      "last_return_pct": 2.63,
       "status_overall": "evaluated"
     },
     {
@@ -628,14 +670,14 @@
           "status": "hit"
         },
         "20": {
-          "max_return_pct": 59.13,
-          "end_return_pct": 59.13,
+          "max_return_pct": 73.91,
+          "end_return_pct": 71.3,
           "hit": true,
           "days_to_hit": 1,
           "status": "hit"
         }
       },
-      "last_return_pct": 59.13,
+      "last_return_pct": 71.3,
       "status_overall": "evaluated"
     }
   ]
