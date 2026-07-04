@@ -1,81 +1,57 @@
 {
-  "updated_at": "2026-07-03 18:18",
+  "updated_at": "2026-07-04 09:14",
   "windows": [
     5,
     10,
     20
   ],
   "target_pct": 5.0,
-  "ai_pick_min": 28.0,
-  "note": "只計 AI 評分 total_score>=28/40 的『AI 看好標的』。命中＝AI 分析日後 N 個交易日內盤中曾漲≥5%；命中率只計已到期樣本。",
+  "ai_pick_min": 30.0,
+  "ai_veto": true,
+  "note": "只計 AI 評分 total_score>=30/40 且通過否決規則(籌碼偏空/技術非多頭/高風險且估值偏貴)的『AI 看好標的』。命中率(hit_rate_pct)＝盤中曾漲≥5%(會高估)；建議看 win_rate_end_pct(期末收紅)、end_expectancy_pct(期末平均報酬)、realized_expectancy_pct(停利停損模擬)。只計已到期樣本。",
   "benchmark_name": "0050 台灣50",
   "summary": {
     "5": {
       "window_days": 5,
-      "matured": 13,
-      "hits": 7,
-      "misses": 6,
-      "hit_rate_pct": 53.8,
-      "avg_days_to_target": 1.9,
+      "matured": 4,
+      "hits": 2,
+      "misses": 2,
+      "hit_rate_pct": 50.0,
+      "avg_days_to_target": 1.0,
       "in_progress": 1,
       "avg_win_pct": 5.0,
-      "avg_loss_pct": -6.92,
-      "avg_max_return_pct": 8.49,
-      "expectancy_pct": -0.5
+      "avg_loss_pct": -9.91,
+      "avg_max_return_pct": 14.82,
+      "expectancy_pct": -2.45,
+      "end_expectancy_pct": 3.49,
+      "end_expectancy_ex_outlier_pct": -7.23,
+      "median_end_pct": -1.87,
+      "win_rate_end_pct": 25.0,
+      "realized_expectancy_pct": -1.5,
+      "stop_pct": 8.0,
+      "exit_target_n": 2,
+      "exit_stop_n": 2
     },
     "10": {
       "window_days": 10,
-      "matured": 11,
-      "hits": 8,
-      "misses": 3,
-      "hit_rate_pct": 72.7,
-      "avg_days_to_target": 2.8,
-      "in_progress": 3,
-      "avg_win_pct": 5.0,
-      "avg_loss_pct": 0.02,
-      "avg_max_return_pct": 11.01,
-      "expectancy_pct": 3.64
-    },
-    "20": {
-      "window_days": 20,
-      "matured": 8,
-      "hits": 8,
+      "matured": 2,
+      "hits": 2,
       "misses": 0,
       "hit_rate_pct": 100.0,
-      "avg_days_to_target": 2.8,
-      "in_progress": 6,
-      "avg_win_pct": 5.0,
-      "avg_loss_pct": null,
-      "avg_max_return_pct": 16.35,
-      "expectancy_pct": 5.0
-    }
-  },
-  "benchmark": {
-    "5": {
-      "window_days": 5,
-      "matured": 5,
-      "hits": 2,
-      "misses": 3,
-      "hit_rate_pct": 40.0,
-      "avg_days_to_target": 3.0,
-      "in_progress": 1,
-      "avg_win_pct": 5.0,
-      "avg_loss_pct": -1.5,
-      "avg_max_return_pct": 3.32,
-      "expectancy_pct": 1.1
-    },
-    "10": {
-      "window_days": 10,
-      "matured": 3,
-      "hits": 2,
-      "misses": 1,
-      "hit_rate_pct": 66.7,
-      "avg_days_to_target": 3.0,
+      "avg_days_to_target": 1.0,
       "in_progress": 3,
       "avg_win_pct": 5.0,
-      "avg_loss_pct": 0.98,
-      "avg_max_return_pct": 5.55,
-      "expectancy_pct": 3.66
+      "avg_loss_pct": null,
+      "avg_max_return_pct": 32.13,
+      "expectancy_pct": 5.0,
+      "end_expectancy_pct": 28.63,
+      "end_expectancy_ex_outlier_pct": -1.87,
+      "median_end_pct": 59.13,
+      "win_rate_end_pct": 50.0,
+      "realized_expectancy_pct": 5.0,
+      "stop_pct": 8.0,
+      "exit_target_n": 2,
+      "exit_stop_n": 0
     },
     "20": {
       "window_days": 20,
@@ -83,15 +59,108 @@
       "hits": 2,
       "misses": 0,
       "hit_rate_pct": 100.0,
-      "avg_days_to_target": 3.0,
-      "in_progress": 4,
+      "avg_days_to_target": 1.0,
+      "in_progress": 3,
       "avg_win_pct": 5.0,
       "avg_loss_pct": null,
-      "avg_max_return_pct": 5.99,
-      "expectancy_pct": 5.0
+      "avg_max_return_pct": 39.52,
+      "expectancy_pct": 5.0,
+      "end_expectancy_pct": 34.71,
+      "end_expectancy_ex_outlier_pct": -1.87,
+      "median_end_pct": 71.3,
+      "win_rate_end_pct": 50.0,
+      "realized_expectancy_pct": 5.0,
+      "stop_pct": 8.0,
+      "exit_target_n": 2,
+      "exit_stop_n": 0
+    }
+  },
+  "benchmark": {
+    "5": {
+      "window_days": 5,
+      "matured": 3,
+      "hits": 1,
+      "misses": 2,
+      "hit_rate_pct": 33.3,
+      "avg_days_to_target": 3.0,
+      "in_progress": 1,
+      "avg_win_pct": 5.0,
+      "avg_loss_pct": -0.3,
+      "avg_max_return_pct": 2.0,
+      "expectancy_pct": 1.47,
+      "end_expectancy_pct": 0.19,
+      "end_expectancy_ex_outlier_pct": 0.19,
+      "median_end_pct": 1.18,
+      "win_rate_end_pct": 66.7,
+      "realized_expectancy_pct": -1.7,
+      "stop_pct": 8.0,
+      "exit_target_n": 1,
+      "exit_stop_n": 1
+    },
+    "10": {
+      "window_days": 10,
+      "matured": 1,
+      "hits": 1,
+      "misses": 0,
+      "hit_rate_pct": 100.0,
+      "avg_days_to_target": 3.0,
+      "in_progress": 3,
+      "avg_win_pct": 5.0,
+      "avg_loss_pct": null,
+      "avg_max_return_pct": 6.04,
+      "expectancy_pct": 5.0,
+      "end_expectancy_pct": 3.58,
+      "end_expectancy_ex_outlier_pct": 3.58,
+      "median_end_pct": 3.58,
+      "win_rate_end_pct": 100.0,
+      "realized_expectancy_pct": 5.0,
+      "stop_pct": 8.0,
+      "exit_target_n": 1,
+      "exit_stop_n": 0
+    },
+    "20": {
+      "window_days": 20,
+      "matured": 1,
+      "hits": 1,
+      "misses": 0,
+      "hit_rate_pct": 100.0,
+      "avg_days_to_target": 3.0,
+      "in_progress": 3,
+      "avg_win_pct": 5.0,
+      "avg_loss_pct": null,
+      "avg_max_return_pct": 6.04,
+      "expectancy_pct": 5.0,
+      "end_expectancy_pct": 2.74,
+      "end_expectancy_ex_outlier_pct": 2.74,
+      "median_end_pct": 2.74,
+      "win_rate_end_pct": 100.0,
+      "realized_expectancy_pct": 5.0,
+      "stop_pct": 8.0,
+      "exit_target_n": 1,
+      "exit_stop_n": 0
     }
   },
   "detail": [
+    {
+      "date": "2026-07-04",
+      "code": "3711",
+      "name": "日月光投控",
+      "total_score": 31.0,
+      "scores": {
+        "fundamental": "改善",
+        "valuation": "偏貴",
+        "chips": "偏多",
+        "technical": "多頭",
+        "industry": "成長",
+        "catalyst": "有利多",
+        "expectation": "超預期",
+        "risk": "中"
+      },
+      "entry_price": null,
+      "windows": {},
+      "last_return_pct": null,
+      "status_overall": "no_data"
+    },
     {
       "date": "2026-07-01",
       "code": "8150",
@@ -114,21 +183,30 @@
           "end_return_pct": -1.87,
           "hit": true,
           "days_to_hit": 1,
-          "status": "hit"
+          "status": "hit",
+          "realized_pct": 5.0,
+          "exit_reason": "target",
+          "exit_day": 1
         },
         "10": {
           "max_return_pct": 5.14,
           "end_return_pct": -1.87,
           "hit": true,
           "days_to_hit": 1,
-          "status": "hit"
+          "status": "hit",
+          "realized_pct": 5.0,
+          "exit_reason": "target",
+          "exit_day": 1
         },
         "20": {
           "max_return_pct": 5.14,
           "end_return_pct": -1.87,
           "hit": true,
           "days_to_hit": 1,
-          "status": "hit"
+          "status": "hit",
+          "realized_pct": 5.0,
+          "exit_reason": "target",
+          "exit_day": 1
         }
       },
       "last_return_pct": -1.87,
@@ -178,48 +256,6 @@
     },
     {
       "date": "2026-06-25",
-      "code": "6831",
-      "name": "邁科",
-      "total_score": 28.0,
-      "scores": {
-        "fundamental": "改善",
-        "valuation": "偏貴",
-        "chips": "中性",
-        "technical": "多頭",
-        "industry": "成長",
-        "catalyst": "有利多",
-        "expectation": "超預期",
-        "risk": "高"
-      },
-      "entry_price": 881.0,
-      "windows": {
-        "5": {
-          "max_return_pct": 10.1,
-          "end_return_pct": 8.51,
-          "hit": true,
-          "days_to_hit": 4,
-          "status": "hit"
-        },
-        "10": {
-          "max_return_pct": 10.1,
-          "end_return_pct": 4.77,
-          "hit": true,
-          "days_to_hit": 4,
-          "status": "hit"
-        },
-        "20": {
-          "max_return_pct": 10.1,
-          "end_return_pct": 4.77,
-          "hit": true,
-          "days_to_hit": 4,
-          "status": "hit"
-        }
-      },
-      "last_return_pct": 4.77,
-      "status_overall": "evaluated"
-    },
-    {
-      "date": "2026-06-25",
       "code": "6770",
       "name": "力積電",
       "total_score": 30.0,
@@ -240,66 +276,33 @@
           "end_return_pct": -10.22,
           "hit": false,
           "days_to_hit": null,
-          "status": "miss"
+          "status": "miss",
+          "realized_pct": -8.0,
+          "exit_reason": "stop",
+          "exit_day": 4
         },
         "10": {
           "max_return_pct": 2.4,
           "end_return_pct": -11.78,
           "hit": false,
           "days_to_hit": null,
-          "status": "open"
+          "status": "open",
+          "realized_pct": -8.0,
+          "exit_reason": "stop",
+          "exit_day": 4
         },
         "20": {
           "max_return_pct": 2.4,
           "end_return_pct": -11.78,
           "hit": false,
           "days_to_hit": null,
-          "status": "open"
+          "status": "open",
+          "realized_pct": -8.0,
+          "exit_reason": "stop",
+          "exit_day": 4
         }
       },
       "last_return_pct": -11.78,
-      "status_overall": "evaluated"
-    },
-    {
-      "date": "2026-06-25",
-      "code": "3189",
-      "name": "景碩",
-      "total_score": 28.0,
-      "scores": {
-        "fundamental": "改善",
-        "valuation": "偏貴",
-        "chips": "中性",
-        "technical": "多頭",
-        "industry": "成長",
-        "catalyst": "有利多",
-        "expectation": "超預期",
-        "risk": "高"
-      },
-      "entry_price": 812.0,
-      "windows": {
-        "5": {
-          "max_return_pct": 15.64,
-          "end_return_pct": 2.22,
-          "hit": true,
-          "days_to_hit": 1,
-          "status": "hit"
-        },
-        "10": {
-          "max_return_pct": 15.64,
-          "end_return_pct": 2.59,
-          "hit": true,
-          "days_to_hit": 1,
-          "status": "hit"
-        },
-        "20": {
-          "max_return_pct": 15.64,
-          "end_return_pct": 2.59,
-          "hit": true,
-          "days_to_hit": 1,
-          "status": "hit"
-        }
-      },
-      "last_return_pct": 2.59,
       "status_overall": "evaluated"
     },
     {
@@ -324,318 +327,33 @@
           "end_return_pct": -9.59,
           "hit": false,
           "days_to_hit": null,
-          "status": "miss"
+          "status": "miss",
+          "realized_pct": -8.0,
+          "exit_reason": "stop",
+          "exit_day": 4
         },
         "10": {
           "max_return_pct": 4.36,
           "end_return_pct": -17.15,
           "hit": false,
           "days_to_hit": null,
-          "status": "open"
+          "status": "open",
+          "realized_pct": -8.0,
+          "exit_reason": "stop",
+          "exit_day": 4
         },
         "20": {
           "max_return_pct": 4.36,
           "end_return_pct": -17.15,
           "hit": false,
           "days_to_hit": null,
-          "status": "open"
+          "status": "open",
+          "realized_pct": -8.0,
+          "exit_reason": "stop",
+          "exit_day": 4
         }
       },
       "last_return_pct": -17.15,
-      "status_overall": "evaluated"
-    },
-    {
-      "date": "2026-06-20",
-      "code": "9958",
-      "name": "世紀鋼",
-      "total_score": 28.0,
-      "scores": {
-        "fundamental": "改善",
-        "valuation": "便宜",
-        "chips": "中性",
-        "technical": "盤整",
-        "industry": "持平",
-        "catalyst": "有利多",
-        "expectation": "超預期",
-        "risk": "中"
-      },
-      "entry_price": 120.0,
-      "windows": {
-        "5": {
-          "max_return_pct": 0.83,
-          "end_return_pct": -6.67,
-          "hit": false,
-          "days_to_hit": null,
-          "status": "miss"
-        },
-        "10": {
-          "max_return_pct": 0.83,
-          "end_return_pct": 0.0,
-          "hit": false,
-          "days_to_hit": null,
-          "status": "miss"
-        },
-        "20": {
-          "max_return_pct": 0.83,
-          "end_return_pct": 0.0,
-          "hit": false,
-          "days_to_hit": null,
-          "status": "open"
-        }
-      },
-      "last_return_pct": 0.0,
-      "status_overall": "evaluated"
-    },
-    {
-      "date": "2026-06-20",
-      "code": "2049",
-      "name": "上銀",
-      "total_score": 29.0,
-      "scores": {
-        "fundamental": "改善",
-        "valuation": "偏貴",
-        "chips": "偏多",
-        "technical": "盤整",
-        "industry": "成長",
-        "catalyst": "有利多",
-        "expectation": "超預期",
-        "risk": "中"
-      },
-      "entry_price": 343.5,
-      "windows": {
-        "5": {
-          "max_return_pct": 2.33,
-          "end_return_pct": -10.63,
-          "hit": false,
-          "days_to_hit": null,
-          "status": "miss"
-        },
-        "10": {
-          "max_return_pct": 5.09,
-          "end_return_pct": 1.89,
-          "hit": true,
-          "days_to_hit": 9,
-          "status": "hit"
-        },
-        "20": {
-          "max_return_pct": 5.09,
-          "end_return_pct": 1.89,
-          "hit": true,
-          "days_to_hit": 9,
-          "status": "hit"
-        }
-      },
-      "last_return_pct": 1.89,
-      "status_overall": "evaluated"
-    },
-    {
-      "date": "2026-06-18",
-      "code": "6257",
-      "name": "矽格",
-      "total_score": 29.0,
-      "scores": {
-        "fundamental": "改善",
-        "valuation": "合理",
-        "chips": "中性",
-        "technical": "多頭",
-        "industry": "成長",
-        "catalyst": "有利多",
-        "expectation": "超預期",
-        "risk": "中"
-      },
-      "entry_price": 235.0,
-      "windows": {
-        "5": {
-          "max_return_pct": 7.66,
-          "end_return_pct": -4.68,
-          "hit": true,
-          "days_to_hit": 1,
-          "status": "hit"
-        },
-        "10": {
-          "max_return_pct": 9.57,
-          "end_return_pct": 8.3,
-          "hit": true,
-          "days_to_hit": 1,
-          "status": "hit"
-        },
-        "20": {
-          "max_return_pct": 9.57,
-          "end_return_pct": 8.3,
-          "hit": true,
-          "days_to_hit": 1,
-          "status": "hit"
-        }
-      },
-      "last_return_pct": 8.3,
-      "status_overall": "evaluated"
-    },
-    {
-      "date": "2026-06-18",
-      "code": "2880",
-      "name": "華南金",
-      "total_score": 28.0,
-      "scores": {
-        "fundamental": "改善",
-        "valuation": "合理",
-        "chips": "偏多",
-        "technical": "多頭",
-        "industry": "持平",
-        "catalyst": "有利多",
-        "expectation": "符合預期",
-        "risk": "低"
-      },
-      "entry_price": 38.35,
-      "windows": {
-        "5": {
-          "max_return_pct": 0.39,
-          "end_return_pct": -3.78,
-          "hit": false,
-          "days_to_hit": null,
-          "status": "miss"
-        },
-        "10": {
-          "max_return_pct": 0.39,
-          "end_return_pct": -1.83,
-          "hit": false,
-          "days_to_hit": null,
-          "status": "miss"
-        },
-        "20": {
-          "max_return_pct": 0.39,
-          "end_return_pct": -1.83,
-          "hit": false,
-          "days_to_hit": null,
-          "status": "open"
-        }
-      },
-      "last_return_pct": -1.83,
-      "status_overall": "evaluated"
-    },
-    {
-      "date": "2026-06-17",
-      "code": "6209",
-      "name": "今國光",
-      "total_score": 28.0,
-      "scores": {
-        "fundamental": "改善",
-        "valuation": "合理",
-        "chips": "偏空",
-        "technical": "多頭",
-        "industry": "成長",
-        "catalyst": "有利多",
-        "expectation": "超預期",
-        "risk": "中"
-      },
-      "entry_price": 95.7,
-      "windows": {
-        "5": {
-          "max_return_pct": 5.54,
-          "end_return_pct": -6.58,
-          "hit": true,
-          "days_to_hit": 2,
-          "status": "hit"
-        },
-        "10": {
-          "max_return_pct": 5.54,
-          "end_return_pct": -16.09,
-          "hit": true,
-          "days_to_hit": 2,
-          "status": "hit"
-        },
-        "20": {
-          "max_return_pct": 5.54,
-          "end_return_pct": -16.41,
-          "hit": true,
-          "days_to_hit": 2,
-          "status": "hit"
-        }
-      },
-      "last_return_pct": -16.41,
-      "status_overall": "evaluated"
-    },
-    {
-      "date": "2026-06-16",
-      "code": "8131",
-      "name": "福懋科",
-      "total_score": 30.0,
-      "scores": {
-        "fundamental": "改善",
-        "valuation": "便宜",
-        "chips": "偏多",
-        "technical": "盤整",
-        "industry": "成長",
-        "catalyst": "有利多",
-        "expectation": "超預期",
-        "risk": "中"
-      },
-      "entry_price": 76.0,
-      "windows": {
-        "5": {
-          "max_return_pct": 5.79,
-          "end_return_pct": -1.45,
-          "hit": true,
-          "days_to_hit": 3,
-          "status": "hit"
-        },
-        "10": {
-          "max_return_pct": 5.79,
-          "end_return_pct": -8.82,
-          "hit": true,
-          "days_to_hit": 3,
-          "status": "hit"
-        },
-        "20": {
-          "max_return_pct": 5.79,
-          "end_return_pct": -1.58,
-          "hit": true,
-          "days_to_hit": 3,
-          "status": "hit"
-        }
-      },
-      "last_return_pct": -1.58,
-      "status_overall": "evaluated"
-    },
-    {
-      "date": "2026-06-16",
-      "code": "2527",
-      "name": "宏璟",
-      "total_score": 29.0,
-      "scores": {
-        "fundamental": "改善",
-        "valuation": "便宜",
-        "chips": "中性",
-        "technical": "多頭",
-        "industry": "持平",
-        "catalyst": "有利多",
-        "expectation": "超預期",
-        "risk": "中"
-      },
-      "entry_price": 39.95,
-      "windows": {
-        "5": {
-          "max_return_pct": 2.75,
-          "end_return_pct": -0.63,
-          "hit": false,
-          "days_to_hit": null,
-          "status": "miss"
-        },
-        "10": {
-          "max_return_pct": 3.88,
-          "end_return_pct": 1.88,
-          "hit": false,
-          "days_to_hit": null,
-          "status": "miss"
-        },
-        "20": {
-          "max_return_pct": 3.88,
-          "end_return_pct": 3.13,
-          "hit": false,
-          "days_to_hit": null,
-          "status": "open"
-        }
-      },
-      "last_return_pct": 3.13,
       "status_overall": "evaluated"
     },
     {
@@ -660,21 +378,30 @@
           "end_return_pct": 35.65,
           "hit": true,
           "days_to_hit": 1,
-          "status": "hit"
+          "status": "hit",
+          "realized_pct": 5.0,
+          "exit_reason": "target",
+          "exit_day": 1
         },
         "10": {
           "max_return_pct": 59.13,
           "end_return_pct": 59.13,
           "hit": true,
           "days_to_hit": 1,
-          "status": "hit"
+          "status": "hit",
+          "realized_pct": 5.0,
+          "exit_reason": "target",
+          "exit_day": 1
         },
         "20": {
           "max_return_pct": 73.91,
           "end_return_pct": 71.3,
           "hit": true,
           "days_to_hit": 1,
-          "status": "hit"
+          "status": "hit",
+          "realized_pct": 5.0,
+          "exit_reason": "target",
+          "exit_day": 1
         }
       },
       "last_return_pct": 71.3,

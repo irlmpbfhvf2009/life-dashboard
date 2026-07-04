@@ -46,7 +46,27 @@ ARCHIVE_FILE = PUBLIC_DIR / "analysis_archive.json"
 AI_PERF_FILE = PUBLIC_DIR / "ai_performance.json"
 
 TW_TZ = timezone(timedelta(hours=8))
-AI_PICK_MIN = float(os.environ.get("AI_PICK_MIN", "28"))   # total_score 門檻（滿分40）
+# total_score 門檻（滿分40）。回測顯示 28-30 分區平均為負、≥31 才明顯轉正 → 由 28 提高到 30。
+AI_PICK_MIN = float(os.environ.get("AI_PICK_MIN", "30"))
+# 否決規則（過往回測中這些訊號組合的期末報酬明顯偏負）。設 AI_VETO=0 可關閉。
+AI_VETO = os.environ.get("AI_VETO", "1") != "0"
+
+
+def vetoed(scores: dict) -> Optional[str]:
+    """回傳否決原因；None＝通過。scores 為各面向的 verdict 字串。"""
+    if not AI_VETO:
+        return None
+    chips = scores.get("chips")
+    tech = scores.get("technical")
+    risk = scores.get("risk")
+    val = scores.get("valuation")
+    if chips == "偏空":
+        return "籌碼偏空"          # 例：今國光 收 -16%
+    if tech in ("盤整", "空頭"):
+        return "技術非多頭"        # 盤整組回測平均 -2.3%
+    if risk == "高" and val in ("偏貴", "偏高"):
+        return "高風險且估值偏貴"  # 例：力積電/上銀 大幅回檔
+    return None
 
 
 def entry_on(df: Optional[pd.DataFrame], date: str) -> Optional[float]:
@@ -80,16 +100,24 @@ def load_ai_picks() -> list[dict]:
         return []
     stocks = arch.get("stocks", {}) if isinstance(arch, dict) else {}
     picks = []
+    vetoed_n = 0
     for code, s in stocks.items():
         ts = track.safe_float(s.get("total_score"))
         date = s.get("analyzed_at")
         if ts is None or not date or ts < AI_PICK_MIN:
             continue
+        scores = {k: (v or {}).get("verdict") for k, v in (s.get("scores") or {}).items()}
+        reason = vetoed(scores)
+        if reason:
+            vetoed_n += 1
+            print(f"   ⛔ 否決 {code} {s.get('name','')}（{reason}）")
+            continue
         picks.append({
             "date": date, "code": str(code), "name": s.get("name", ""),
-            "total_score": ts,
-            "scores": {k: (v or {}).get("verdict") for k, v in (s.get("scores") or {}).items()},
+            "total_score": ts, "scores": scores,
         })
+    if vetoed_n:
+        print(f"   否決規則濾掉 {vetoed_n} 檔")
     return picks
 
 
@@ -100,7 +128,12 @@ def write_ai_performance(summary: dict, details: list[dict], benchmark: Optional
         "windows": track.WINDOWS,
         "target_pct": track.TARGET_PCT,
         "ai_pick_min": AI_PICK_MIN,
-        "note": f"只計 AI 評分 total_score>={AI_PICK_MIN:.0f}/40 的『AI 看好標的』。命中＝AI 分析日後 N 個交易日內盤中曾漲≥{track.TARGET_PCT:.0f}%；命中率只計已到期樣本。",
+        "ai_veto": AI_VETO,
+        "note": (
+            f"只計 AI 評分 total_score>={AI_PICK_MIN:.0f}/40 且通過否決規則(籌碼偏空/技術非多頭/高風險且估值偏貴)的『AI 看好標的』。"
+            f"命中率(hit_rate_pct)＝盤中曾漲≥{track.TARGET_PCT:.0f}%(會高估)；"
+            f"建議看 win_rate_end_pct(期末收紅)、end_expectancy_pct(期末平均報酬)、realized_expectancy_pct(停利停損模擬)。只計已到期樣本。"
+        ),
         "benchmark_name": track.BENCH_NAME,
         "summary": summary,
         "benchmark": benchmark,
@@ -176,8 +209,12 @@ def main() -> int:
             line += f"，命中率 {s['hit_rate_pct']}%"
             if b.get("hit_rate_pct") is not None:
                 line += f"(基準 {b['hit_rate_pct']}%)"
-        if s["expectancy_pct"] is not None:
-            line += f"，期望值 {s['expectancy_pct']:+}%"
+        if s.get("win_rate_end_pct") is not None:
+            line += f"，期末收紅 {s['win_rate_end_pct']}%"
+        if s.get("end_expectancy_pct") is not None:
+            line += f"，期末期望 {s['end_expectancy_pct']:+}%"
+        if s.get("realized_expectancy_pct") is not None:
+            line += f"，停利停損期望 {s['realized_expectancy_pct']:+}%"
         line += f"；進行中 {s['in_progress']}"
         print(line)
     return 0

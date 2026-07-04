@@ -51,6 +51,8 @@ TW_TZ = timezone(timedelta(hours=8))
 WINDOWS = sorted({int(x) for x in os.environ.get("TRACK_WINDOWS", "5,10,20").split(",") if x.strip()})
 MAX_WINDOW = max(WINDOWS) if WINDOWS else 20
 TARGET_PCT = float(os.environ.get("TRACK_TARGET_PCT", "5"))
+# 停損門檻（正數，代表 -X%）。實境化出場模擬用：進場後盤中跌破 -STOP_PCT% 視為停損出場。
+STOP_PCT = float(os.environ.get("TRACK_STOP_PCT", "8"))
 BATCH_SIZE = 40
 BENCH_CODE = os.environ.get("TRACK_BENCHMARK", "0050")   # 基準：元大台灣50（同視窗比較有無 alpha）
 BENCH_NAME = "0050 台灣50"
@@ -206,7 +208,10 @@ def evaluate_pick(pick: dict, df: Optional[pd.DataFrame]) -> dict:
 
     highs = future["High"].astype(float)
     closes = future["Close"].astype(float)
+    # Low 用於停損模擬；缺欄時退回用 Close 近似（保守，較不會誤判停損）
+    lows = future["Low"].astype(float) if "Low" in future.columns else closes
     target = entry * (1.0 + TARGET_PCT / 100.0)
+    stop = entry * (1.0 - STOP_PCT / 100.0)
     out["last_return_pct"] = round((float(closes.iloc[-1]) - entry) / entry * 100.0, 2)
     out["status_overall"] = "evaluated"
 
@@ -218,6 +223,7 @@ def evaluate_pick(pick: dict, df: Optional[pd.DataFrame]) -> dict:
             continue
         max_high = float(wh.max())
         wc = closes.head(w)
+        wl = lows.head(w)
         end_ret = round((float(wc.iloc[-1]) - entry) / entry * 100.0, 2)  # 視窗結束時實際報酬
         rec = {"max_return_pct": round((max_high - entry) / entry * 100.0, 2), "end_return_pct": end_ret}
         hit_mask = (wh >= target).values
@@ -227,6 +233,26 @@ def evaluate_pick(pick: dict, df: Optional[pd.DataFrame]) -> dict:
             rec.update({"hit": False, "days_to_hit": None, "status": "miss"})
         else:
             rec.update({"hit": False, "days_to_hit": None, "status": "open"})
+
+        # ── 實境化出場模擬：逐日看盤中，停利/停損先到先出；同日皆觸及保守算停損先 ──
+        realized = None
+        exit_reason = None
+        exit_day = None
+        for i in range(bars):
+            hit_stop = float(wl.iloc[i]) <= stop
+            hit_tgt = float(wh.iloc[i]) >= target
+            if hit_stop:
+                realized, exit_reason, exit_day = -STOP_PCT, "stop", i + 1
+                break
+            if hit_tgt:
+                realized, exit_reason, exit_day = TARGET_PCT, "target", i + 1
+                break
+        if realized is None and bars >= w:
+            realized, exit_reason = end_ret, "timeout"  # 視窗到期未觸發 → 期末平倉
+        if realized is not None:
+            rec["realized_pct"] = round(float(realized), 2)
+            rec["exit_reason"] = exit_reason
+            rec["exit_day"] = exit_day
         out["windows"][str(w)] = rec
     return out
 
@@ -245,13 +271,29 @@ def summarize(details: list[dict]) -> dict:
         days = [r["days_to_hit"] for r in hits if r.get("days_to_hit")]
         in_prog = [r for r in recs if r.get("status") == "open"]
 
-        # 期望值（簡單策略：達標出在 +TARGET%，未達標抱到視窗末出在期末報酬）
+        # 舊版期望值（樂觀：假設每次命中都完美賣在盤中 +TARGET%，未達標抱到期末）→ 保留供相容，但會高估
         miss_ends = [r["end_return_pct"] for r in misses if r.get("end_return_pct") is not None]
         avg_loss = round(sum(miss_ends) / len(miss_ends), 2) if miss_ends else None  # 落空時平均報酬(常為負)
         max_rets = [r["max_return_pct"] for r in matured if r.get("max_return_pct") is not None]
         avg_max = round(sum(max_rets) / len(max_rets), 2) if max_rets else None
-        realized = [TARGET_PCT] * len(hits) + miss_ends  # 每筆實現報酬
+        realized = [TARGET_PCT] * len(hits) + miss_ends  # 每筆實現報酬（樂觀）
         expectancy = round(sum(realized) / len(realized), 2) if realized else None
+
+        # ── 誠實指標 ──
+        # 1) 期末報酬（純收盤，不假設任何理想出場）
+        end_rets = sorted(r["end_return_pct"] for r in matured if r.get("end_return_pct") is not None)
+        end_exp = round(sum(end_rets) / len(end_rets), 2) if end_rets else None
+        median_end = end_rets[len(end_rets) // 2] if end_rets else None
+        win_end = round(sum(1 for r in end_rets if r > 0) / len(end_rets) * 100.0, 1) if end_rets else None
+        # 期末報酬剔除離群（>2倍目標的暴衝，避免單一飆股撐起整體）
+        end_ex = [r for r in end_rets if r < TARGET_PCT * 4]
+        end_exp_ex = round(sum(end_ex) / len(end_ex), 2) if end_ex else None
+        # 2) 實境化出場（停利 +TARGET% / 停損 -STOP% 先到先出，否則期末平倉）
+        real_list = [r["realized_pct"] for r in matured if r.get("realized_pct") is not None]
+        real_exp = round(sum(real_list) / len(real_list), 2) if real_list else None
+        exits = [r.get("exit_reason") for r in matured]
+        stop_n = sum(1 for e in exits if e == "stop")
+        tgt_n = sum(1 for e in exits if e == "target")
 
         summary[key] = {
             "window_days": w,
@@ -264,7 +306,16 @@ def summarize(details: list[dict]) -> dict:
             "avg_win_pct": TARGET_PCT,            # 達標出場固定 +TARGET%
             "avg_loss_pct": avg_loss,             # 落空時平均報酬（含負）
             "avg_max_return_pct": avg_max,        # 平均最大漲幅（看潛在空間）
-            "expectancy_pct": expectancy,         # 每筆期望報酬（>0 才長期賺）
+            "expectancy_pct": expectancy,         # 舊版期望值（樂觀、會高估，保留相容）
+            # 誠實指標（建議看板改用這幾個）
+            "end_expectancy_pct": end_exp,        # 純期末平均報酬（最保守誠實）
+            "end_expectancy_ex_outlier_pct": end_exp_ex,  # 剔除暴衝離群後的期末平均
+            "median_end_pct": median_end,         # 期末報酬中位數（抗離群）
+            "win_rate_end_pct": win_end,          # 期末真正收紅比例（非盤中觸及）
+            "realized_expectancy_pct": real_exp,  # 停利/停損模擬後每筆期望報酬
+            "stop_pct": STOP_PCT,
+            "exit_target_n": tgt_n,               # 觸及停利出場筆數
+            "exit_stop_n": stop_n,                # 觸及停損出場筆數
         }
     return summary
 
@@ -275,7 +326,13 @@ def write_performance(summary: dict, details: list[dict], benchmark: Optional[di
         "updated_at": datetime.now(TW_TZ).strftime("%Y-%m-%d %H:%M"),
         "windows": WINDOWS,
         "target_pct": TARGET_PCT,
-        "note": f"命中＝進場後 N 個交易日內盤中曾漲≥{TARGET_PCT:.0f}%；命中率只計已到期樣本。期望值＝達標出在+{TARGET_PCT:.0f}%、未達標抱到視窗末，每筆平均報酬。",
+        "stop_pct": STOP_PCT,
+        "note": (
+            f"命中率(hit_rate_pct)＝盤中曾漲≥{TARGET_PCT:.0f}%，會高估(盤中觸及即算，可能收黑)。"
+            f"建議看誠實指標：win_rate_end_pct＝期末真正收紅比例；end_expectancy_pct＝純期末平均報酬；"
+            f"realized_expectancy_pct＝停利+{TARGET_PCT:.0f}%/停損-{STOP_PCT:.0f}%先到先出的模擬期望；"
+            f"median_end_pct/…_ex_outlier＝抗單一飆股離群。只計已到期樣本。"
+        ),
         "benchmark_name": BENCH_NAME,
         "summary": summary,
         "benchmark": benchmark,
@@ -355,8 +412,12 @@ def main() -> int:
             line += f"，命中率 {s['hit_rate_pct']}%"
             if b.get("hit_rate_pct") is not None:
                 line += f"(基準 {b['hit_rate_pct']}%)"
-        if s["expectancy_pct"] is not None:
-            line += f"，期望值 {s['expectancy_pct']:+}%"
+        if s.get("win_rate_end_pct") is not None:
+            line += f"，期末收紅 {s['win_rate_end_pct']}%"
+        if s.get("end_expectancy_pct") is not None:
+            line += f"，期末期望 {s['end_expectancy_pct']:+}%"
+        if s.get("realized_expectancy_pct") is not None:
+            line += f"，停利停損期望 {s['realized_expectancy_pct']:+}%"
         line += f"；進行中 {s['in_progress']}"
         print(line)
     return 0
