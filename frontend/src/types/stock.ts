@@ -64,7 +64,16 @@ export interface PerfWindow {
   avg_win_pct: number | null
   avg_loss_pct: number | null
   avg_max_return_pct: number | null
-  expectancy_pct: number | null
+  expectancy_pct: number | null // 舊版樂觀期望值（會高估，保留相容）
+  // 誠實指標（2026-07 起）
+  end_expectancy_pct?: number | null // 純期末平均報酬
+  end_expectancy_ex_outlier_pct?: number | null // 剔除暴衝離群後
+  median_end_pct?: number | null // 期末報酬中位數
+  win_rate_end_pct?: number | null // 期末真正收紅比例（非盤中觸及）
+  realized_expectancy_pct?: number | null // 停利/停損模擬後每筆期望
+  stop_pct?: number | null
+  exit_target_n?: number | null
+  exit_stop_n?: number | null
 }
 
 export interface TrackWindow {
@@ -73,6 +82,9 @@ export interface TrackWindow {
   hit: boolean
   days_to_hit: number | null
   status: string // "open" | "hit" | ...
+  realized_pct?: number | null
+  exit_reason?: string // "target" | "stop" | "timeout"
+  exit_day?: number | null
 }
 
 export interface TrackDetail {

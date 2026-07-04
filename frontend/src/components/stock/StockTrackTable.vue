@@ -17,6 +17,20 @@ function maxGain(r: TrackDetail): number | null {
     .filter((v): v is number => v != null)
   return vals.length ? Math.max(...vals) : null
 }
+
+// 每個視窗的實際結果（誠實版）：停利 / 停損 / 期末報酬 / 進行中
+type CellKind = 'target' | 'stop' | 'timeout' | 'open' | 'none'
+function cell(r: TrackDetail, w: number): { kind: CellKind; label: string; value: number | null } {
+  const win = r.windows[String(w)]
+  if (!win) return { kind: 'none', label: '', value: null }
+  const reason = win.exit_reason
+  if (reason === 'target') return { kind: 'target', label: `停利 +${win.realized_pct}%`, value: win.realized_pct ?? null }
+  if (reason === 'stop') return { kind: 'stop', label: `停損 ${win.realized_pct}%`, value: win.realized_pct ?? null }
+  if (reason === 'timeout') return { kind: 'timeout', label: '期末', value: win.end_return_pct ?? null }
+  // 舊資料或未到期
+  if (win.status === 'hit') return { kind: 'target', label: '曾達標', value: win.end_return_pct ?? null }
+  return { kind: 'open', label: '進行中', value: null }
+}
 </script>
 
 <template>
@@ -42,7 +56,7 @@ function maxGain(r: TrackDetail): number | null {
               <span class="ml-1.5 text-2xs text-ink-400">{{ r.code }}</span>
             </td>
             <td class="px-4 py-3 text-right">
-              <span class="font-bold" :class="r.total_score >= 28 ? 'text-emerald-600' : 'text-ink-700'">
+              <span class="font-bold" :class="r.total_score >= 30 ? 'text-emerald-600' : 'text-ink-700'">
                 {{ r.total_score }}</span><span class="text-2xs text-ink-400">/40</span>
             </td>
             <td class="px-4 py-3 text-right tabular-nums text-ink-600">{{ r.entry_price.toFixed(2) }}</td>
@@ -62,11 +76,18 @@ function maxGain(r: TrackDetail): number | null {
               <span v-else class="text-ink-300">—</span>
             </td>
             <td v-for="w in windows" :key="w" class="px-3 py-3 text-center">
-              <template v-if="r.windows[String(w)]">
-                <span v-if="r.windows[String(w)].hit" class="badge-rose">
-                  命中 {{ r.windows[String(w)].days_to_hit }}d
+              <template v-if="cell(r, w).kind !== 'none'">
+                <span v-if="cell(r, w).kind === 'open'" class="badge-amber">進行中</span>
+                <span
+                  v-else
+                  class="inline-block rounded-md px-2 py-0.5 text-2xs font-semibold tabular-nums"
+                  :class="twPriceClass(cell(r, w).value ?? 0)"
+                >
+                  <template v-if="cell(r, w).kind === 'timeout'">
+                    期末 {{ (cell(r, w).value ?? 0) >= 0 ? '+' : '' }}{{ cell(r, w).value }}%
+                  </template>
+                  <template v-else>{{ cell(r, w).label }}</template>
                 </span>
-                <span v-else class="badge-amber">進行中</span>
               </template>
               <span v-else class="text-ink-300">—</span>
             </td>

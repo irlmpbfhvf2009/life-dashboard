@@ -47,6 +47,12 @@ async function load() {
   }
 }
 
+// 帶正負號的百分比顯示；null/undefined → '—'
+function fmtSigned(v: number | null | undefined): string {
+  if (v === null || v === undefined) return '—'
+  return `${v >= 0 ? '+' : ''}${v}%`
+}
+
 // Merge AI analysis with its radar/quote data by stock code.
 const radarByCode = computed<Record<string, RadarStock>>(() => {
   const map: Record<string, RadarStock> = {}
@@ -145,27 +151,41 @@ onMounted(load)
       <!-- Performance -->
       <section v-if="performance">
         <div class="mb-3 flex flex-wrap items-center gap-2">
-          <p class="eyebrow">命中率績效</p>
+          <p class="eyebrow">實際績效（誠實版）</p>
           <span v-if="smallSample" class="badge-amber">樣本仍少，僅供參考</span>
         </div>
         <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <div v-for="w in performance.windows" :key="w" class="card p-5">
-            <p class="text-2xs text-ink-400">{{ w }} 日命中率</p>
+            <p class="text-2xs text-ink-400">{{ w }} 日・期末真正收紅</p>
             <p class="mt-1.5 text-3xl font-bold text-ink-900">
-              {{ performance.summary[String(w)]?.hit_rate_pct ?? '—' }}<span class="text-base text-ink-400">%</span>
+              {{ performance.summary[String(w)]?.win_rate_end_pct ?? '—' }}<span class="text-base text-ink-400">%</span>
             </p>
+            <div class="mt-2 space-y-0.5 text-2xs">
+              <p class="flex justify-between">
+                <span class="text-ink-400">期末平均</span>
+                <span class="font-semibold tabular-nums" :class="twPriceClass(performance.summary[String(w)]?.end_expectancy_pct ?? 0)">{{ fmtSigned(performance.summary[String(w)]?.end_expectancy_pct) }}</span>
+              </p>
+              <p class="flex justify-between">
+                <span class="text-ink-400">停利停損模擬</span>
+                <span class="font-semibold tabular-nums" :class="twPriceClass(performance.summary[String(w)]?.realized_expectancy_pct ?? 0)">{{ fmtSigned(performance.summary[String(w)]?.realized_expectancy_pct) }}</span>
+              </p>
+              <p class="flex justify-between border-t border-ink-100 pt-0.5 text-ink-400">
+                <span>盤中觸及率</span>
+                <span class="tabular-nums">{{ performance.summary[String(w)]?.hit_rate_pct ?? '—' }}%</span>
+              </p>
+            </div>
             <p class="mt-1.5 text-2xs text-ink-400">
-              已到期 {{ performance.summary[String(w)]?.matured }} 筆中命中 {{ performance.summary[String(w)]?.hits }}・進行中 {{ performance.summary[String(w)]?.in_progress }}
+              到期 {{ performance.summary[String(w)]?.matured }}・進行 {{ performance.summary[String(w)]?.in_progress }}
             </p>
           </div>
-          <div class="card flex flex-col justify-center gap-1 p-5">
-            <p class="flex items-center gap-1.5 text-2xs text-ink-400"><Target class="h-3.5 w-3.5" /> 命中定義</p>
-            <p class="text-sm font-semibold text-ink-800">N 日內盤中曾漲 ≥ {{ performance.target_pct }}%</p>
-            <p class="text-2xs text-ink-400">只計 AI 評分 ≥ {{ performance.ai_pick_min }}/40 的看好標的</p>
+          <div class="card flex flex-col justify-center gap-1.5 p-5">
+            <p class="flex items-center gap-1.5 text-2xs text-ink-400"><Target class="h-3.5 w-3.5" /> 指標定義</p>
+            <p class="text-sm font-semibold text-ink-800">期末收紅＝視窗到期時實際收盤賺錢的比例</p>
+            <p class="text-2xs text-ink-400">停利停損模擬：停利 +{{ performance.target_pct }}% / 停損 −{{ performance.summary[String(performance.windows[0])]?.stop_pct ?? 8 }}% 先到先出。只計 AI ≥ {{ performance.ai_pick_min }}/40 看好標的。</p>
           </div>
         </div>
         <p class="mt-2.5 text-2xs leading-relaxed text-ink-400">
-          命中率只計算「已到期」樣本（5 日視窗約需一週、20 日約一個月才到期），未到期的標的列入「進行中」、不影響分母。同一檔若在 5 日內命中，10/20 日視窗亦同步計命中，故三欄常一致。樣本累積越多、數字越可信。
+          改用「期末真正收盤報酬」評估，取代舊的「盤中曾漲 ≥ {{ performance.target_pct }}%」——後者只要盤中觸及就算命中、即使當天收黑，會高估績效（保留為「盤中觸及率」供對照）。只計已到期樣本（5 日約一週、20 日約一個月到期），未到期列「進行」、不影響分母。樣本越多越可信。
         </p>
       </section>
 
@@ -258,7 +278,7 @@ onMounted(load)
         <!-- Track record -->
         <div v-else-if="tab === 'track'">
           <p class="mb-3 text-sm text-ink-500">
-            AI 看好的股（八面向評分 ≥ {{ performance?.ai_pick_min }}/40）事後真實表現——命中＝預判日後視窗內盤中曾漲 ≥ {{ performance?.target_pct }}%。
+            AI 看好的股（八面向評分 ≥ {{ performance?.ai_pick_min }}/40）事後真實表現——每個視窗顯示實際出場結果：停利（+{{ performance?.target_pct }}%）、停損、或期末收盤報酬；未到期為「進行中」。
           </p>
           <StockTrackTable
             v-if="performance?.detail?.length"
