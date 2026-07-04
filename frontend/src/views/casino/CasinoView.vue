@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useWallet } from '@/composables/useWallet'
 import SlotMachine from '@/components/casino/SlotMachine.vue'
 import SethSlot from '@/components/casino/SethSlot.vue'
+import Seth2Slot from '@/components/casino/Seth2Slot.vue'
 
 const auth = useAuthStore()
 const { coins, refresh } = useWallet()
@@ -24,8 +25,8 @@ const CATEGORIES = [
 ]
 const activeCat = ref('electronic')
 
-// Which electronic game is open in full-screen play ('seth' | 'classic' | null = lobby).
-const openGame = ref<'seth' | 'classic' | null>(null)
+// Which electronic game is open in full-screen play ('seth2' | 'seth' | 'classic' | null = lobby).
+const openGame = ref<'seth2' | 'seth' | 'classic' | null>(null)
 
 // Placeholder game tiles for flavour.
 const TILES = ['农庄争霸', '凤凰传奇', '动物王国', '亚瑟王', '超级巨星', 'Candy Dreams', '三重辣椒', 'Fruit Nova']
@@ -117,7 +118,10 @@ onMounted(() => { if (auth.isAuthenticated) refresh() })
       <!-- Electronic = working slot machines -->
       <template v-if="activeCat === 'electronic'">
         <!-- A game is open: play it full-width -->
-        <div v-if="openGame === 'seth'" class="mx-auto max-w-xl">
+        <div v-if="openGame === 'seth2'" class="mx-auto max-w-xl">
+          <Seth2Slot @back="openGame = null" />
+        </div>
+        <div v-else-if="openGame === 'seth'" class="mx-auto max-w-xl">
           <SethSlot @back="openGame = null" />
         </div>
         <div v-else-if="openGame === 'classic'" class="mx-auto max-w-lg">
@@ -131,7 +135,18 @@ onMounted(() => { if (auth.isAuthenticated) refresh() })
         <template v-else>
           <h2 class="mb-3 text-lg font-bold">🎰 电子 · 老虎機</h2>
           <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-            <!-- Featured: Seth tumble slot -->
+            <!-- Featured: Seth II awakening tumble slot -->
+            <button
+              class="group relative col-span-2 flex aspect-[2/1] flex-col items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-[#5a1a10] via-[#3a1208] to-[#140602] text-center ring-1 ring-amber-400/50 transition hover:ring-amber-300 sm:col-span-1 sm:aspect-[4/3]"
+              @click="openGame = 'seth2'"
+            >
+              <span class="absolute right-1.5 top-1.5 rounded bg-red-500 px-1.5 py-0.5 text-[9px] font-black text-white">NEW</span>
+              <span class="text-4xl drop-shadow">👁️</span>
+              <span class="mt-1 px-2 text-sm font-bold text-amber-200">戰神賽特II 覺醒之力</span>
+              <span class="mt-0.5 text-[10px] text-white/50">選台 · 覺醒倍數 · 三檔購買</span>
+            </button>
+
+            <!-- Seth tumble slot -->
             <button
               class="group relative col-span-2 flex aspect-[2/1] flex-col items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-[#3a1d6e] via-[#241555] to-[#0c0822] text-center ring-1 ring-amber-400/40 transition hover:ring-amber-300 sm:col-span-1 sm:aspect-[4/3]"
               @click="openGame = 'seth'"

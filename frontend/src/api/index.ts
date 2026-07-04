@@ -146,12 +146,34 @@ export interface SethSpinResult {
 }
 export interface SethSpinOptions { ante?: boolean; buyBonus?: boolean }
 
+// Seth II tumble slot — cell.type: 0–8 pay symbols (low→high), 9 = scatter, 10 = multiplier orb.
+export type Seth2Buy = 'NONE' | 'FREE' | 'AWAKEN' | 'IMMORTAL'
+export interface Seth2Round {
+  type: 'BASE' | 'FREE'
+  tumbles: SethTumble[]
+  multiplier: number
+  pay: number
+  spinIndex: number
+  spinTotal: number
+  awakened: boolean
+}
+export interface Seth2SpinResult {
+  bet: number
+  cost: number
+  rounds: Seth2Round[]
+  freeSpins: number
+  totalPayout: number
+  balance: number
+}
+
 export const gameApi = {
   spin: (bet: number) => request<SpinResult>(() => http.post('/api/game/slot/spin', { bet })),
   sethSpin: (bet: number, opts: SethSpinOptions = {}) =>
     request<SethSpinResult>(() => http.post('/api/game/seth/spin', {
       bet, ante: opts.ante ?? false, buyBonus: opts.buyBonus ?? false,
     })),
+  seth2Spin: (bet: number, buy: Seth2Buy = 'NONE') =>
+    request<Seth2SpinResult>(() => http.post('/api/game/seth2/spin', { bet, buy })),
 }
 
 // ---- Admin (root-admin only) ----
