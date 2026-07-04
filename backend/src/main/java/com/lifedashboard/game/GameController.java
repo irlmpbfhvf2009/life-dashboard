@@ -31,7 +31,7 @@ public class GameController {
         return ApiResponse.ok(sethSlotService.spin(request.bet(), request.ante(), request.buyBonus()));
     }
 
-    /** "戰神賽特II・覺醒之力" tumble slot — resolved server-side like /seth/spin. */
+    /** "荷魯斯覺醒・神眼之力" tumble slot — resolved server-side like /seth/spin. */
     @PostMapping("/seth2/spin")
     public ApiResponse<Seth2SpinResult> seth2Spin(@Valid @RequestBody Seth2SpinRequest request) {
         return ApiResponse.ok(seth2SlotService.spin(request.bet(), request.buy()));

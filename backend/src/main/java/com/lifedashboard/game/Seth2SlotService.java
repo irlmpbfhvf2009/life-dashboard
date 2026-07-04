@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * "戰神賽特II・覺醒之力" — the sequel tumble slot (virtual coins, learning only).
+ * "荷魯斯覺醒・神眼之力" — the sequel tumble slot (virtual coins, learning only).
  * Same server-authoritative design as {@link SethSlotService}: the whole cascade
  * sequence is resolved here and returned as replayable frames.
  *

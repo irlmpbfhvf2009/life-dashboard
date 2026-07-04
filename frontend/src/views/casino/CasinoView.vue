@@ -6,6 +6,7 @@ import { useWallet } from '@/composables/useWallet'
 import SlotMachine from '@/components/casino/SlotMachine.vue'
 import SethSlot from '@/components/casino/SethSlot.vue'
 import Seth2Slot from '@/components/casino/Seth2Slot.vue'
+import Seth2Symbol from '@/components/casino/Seth2Symbol.vue'
 
 const auth = useAuthStore()
 const { coins, refresh } = useWallet()
@@ -135,14 +136,14 @@ onMounted(() => { if (auth.isAuthenticated) refresh() })
         <template v-else>
           <h2 class="mb-3 text-lg font-bold">🎰 电子 · 老虎機</h2>
           <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-            <!-- Featured: Seth II awakening tumble slot -->
+            <!-- Featured: Horus awakening tumble slot -->
             <button
               class="group relative col-span-2 flex aspect-[2/1] flex-col items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-[#5a1a10] via-[#3a1208] to-[#140602] text-center ring-1 ring-amber-400/50 transition hover:ring-amber-300 sm:col-span-1 sm:aspect-[4/3]"
               @click="openGame = 'seth2'"
             >
               <span class="absolute right-1.5 top-1.5 rounded bg-red-500 px-1.5 py-0.5 text-[9px] font-black text-white">NEW</span>
-              <span class="text-4xl drop-shadow">👁️</span>
-              <span class="mt-1 px-2 text-sm font-bold text-amber-200">戰神賽特II 覺醒之力</span>
+              <span class="block h-12 w-12 drop-shadow-[0_0_10px_rgba(255,190,60,0.6)]"><Seth2Symbol :type="8" /></span>
+              <span class="mt-1 px-2 text-sm font-bold text-amber-200">荷魯斯覺醒 · 神眼之力</span>
               <span class="mt-0.5 text-[10px] text-white/50">選台 · 覺醒倍數 · 三檔購買</span>
             </button>
 
