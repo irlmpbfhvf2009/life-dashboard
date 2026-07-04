@@ -11,6 +11,7 @@ import type { DashboardData } from '@/types'
 import type { BriefInsight } from '@/api'
 import TrendChartCard from '@/components/ui/TrendChartCard.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
+import HeroScene from '@/components/three/HeroScene.vue'
 import { formatDate, formatMoney } from '@/utils/format'
 
 const auth = useAuthStore()
@@ -192,9 +193,11 @@ const statusTiles = computed(() => [
 <template>
   <div class="space-y-6">
     <!-- 1 ── 今日 AI Brief ───────────────────────────────────────────── -->
-    <section class="glass glow-edge relative overflow-hidden rounded-3xl p-6 sm:p-8">
+    <section v-reveal class="glass glow-edge relative overflow-hidden rounded-3xl p-6 sm:p-8">
       <div class="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-brand-500/20 blur-3xl" />
       <div class="pointer-events-none absolute -bottom-28 left-10 h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl" />
+      <!-- 3D particle ambience behind the brief -->
+      <HeroScene :opacity="0.5" />
 
       <div class="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
         <div class="min-w-0">
@@ -243,13 +246,14 @@ const statusTiles = computed(() => [
     </section>
 
     <!-- 2 ── 快速紀錄 ─────────────────────────────────────────────────── -->
-    <section>
+    <section v-reveal="60">
       <p class="mb-3 flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-wider text-ink-400">
         <Zap class="h-3.5 w-3.5 text-cyan-300" /> 快速紀錄
       </p>
       <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <button
           v-for="a in quickActions" :key="a.label"
+          v-tilt="9"
           class="glass glass-hover group flex flex-col items-center gap-2.5 rounded-2xl p-4 text-center ring-focus"
           @click="router.push(a.to)"
         >
@@ -262,13 +266,14 @@ const statusTiles = computed(() => [
     </section>
 
     <!-- 3 ── 今日狀態 ─────────────────────────────────────────────────── -->
-    <section>
+    <section v-reveal="120">
       <p class="mb-3 flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-wider text-ink-400">
         <Activity class="h-3.5 w-3.5 text-brand-300" /> 今日狀態
       </p>
       <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <button
           v-for="s in statusTiles" :key="s.key"
+          v-tilt
           class="glass glass-hover group flex flex-col gap-3 rounded-2xl p-4 text-left ring-focus"
           @click="router.push(s.to)"
         >
@@ -290,7 +295,7 @@ const statusTiles = computed(() => [
     </section>
 
     <!-- 4 ── AI 洞察 ─────────────────────────────────────────────────── -->
-    <section v-if="insights.length || loading">
+    <section v-if="insights.length || loading" v-reveal="160">
       <p class="mb-3 flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-wider text-ink-400">
         <Brain class="h-3.5 w-3.5 text-violet-300" /> AI 洞察
       </p>
@@ -316,7 +321,7 @@ const statusTiles = computed(() => [
     </section>
 
     <!-- 5 ── 最近紀錄與趨勢 ───────────────────────────────────────────── -->
-    <section>
+    <section v-reveal="200">
       <p class="mb-3 flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-wider text-ink-400">
         <TrendingUp class="h-3.5 w-3.5 text-cyan-300" /> 最近紀錄與趨勢
       </p>

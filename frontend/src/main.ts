@@ -4,6 +4,8 @@ import App from './App.vue'
 import router from './router'
 import { i18n } from './i18n'
 import { initTheme } from './composables/useTheme'
+import { vTilt } from './directives/tilt'
+import { vReveal } from './directives/reveal'
 import './style.css'
 
 initTheme()
@@ -12,6 +14,8 @@ const app = createApp(App)
 app.use(createPinia())
 app.use(router)
 app.use(i18n)
+app.directive('tilt', vTilt)
+app.directive('reveal', vReveal)
 app.mount('#app')
 
 // A fresh deploy renames lazily-loaded chunks. If this tab was open from a prior

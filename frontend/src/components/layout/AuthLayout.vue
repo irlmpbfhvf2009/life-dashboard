@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Command, Sparkles, HeartPulse, LineChart, ShieldCheck } from 'lucide-vue-next'
+import HeroScene from '@/components/three/HeroScene.vue'
 
 const highlights = [
   { icon: Sparkles, text: '生活、日記、習慣、目標一站整合' },
@@ -12,9 +13,11 @@ const highlights = [
 <template>
   <div class="flex min-h-screen bg-ink-50">
     <!-- Brand / marketing panel -->
-    <div class="relative hidden w-1/2 overflow-hidden bg-gradient-to-br from-brand-700 via-brand-600 to-violet-600 lg:flex lg:flex-col lg:justify-between lg:p-12">
+    <div class="relative hidden w-1/2 overflow-hidden bg-gradient-to-br from-[#181433] via-brand-700 to-violet-800 lg:flex lg:flex-col lg:justify-between lg:p-12">
       <div class="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
       <div class="pointer-events-none absolute -bottom-32 -left-16 h-96 w-96 rounded-full bg-violet-400/20 blur-3xl" />
+      <!-- Interactive 3D ambience (particle wave + wireframe solids, mouse parallax) -->
+      <HeroScene :opacity="0.9" />
 
       <div class="relative flex items-center gap-3 text-white">
         <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 backdrop-blur">

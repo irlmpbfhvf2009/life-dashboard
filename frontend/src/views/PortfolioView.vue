@@ -15,7 +15,7 @@ const rest = computed(() => projects.filter((p) => !p.featured))
   <PageHeader :icon="FolderGit2" :eyebrow="t('portfolio.eyebrow')" :title="t('portfolio.title')" :subtitle="t('portfolio.subtitle')" />
 
   <!-- Featured -->
-  <div v-for="p in featured" :key="p.key" class="card mb-6 overflow-hidden p-0">
+  <div v-for="p in featured" :key="p.key" v-reveal class="card mb-6 overflow-hidden p-0">
     <div class="flex flex-col gap-6 p-6 sm:flex-row sm:items-center">
       <div class="flex h-24 w-24 shrink-0 items-center justify-center rounded-3xl bg-gradient-to-br text-5xl shadow-card" :class="p.gradient">
         {{ p.emoji }}
@@ -45,7 +45,7 @@ const rest = computed(() => projects.filter((p) => !p.featured))
 
   <!-- Grid -->
   <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-    <article v-for="p in rest" :key="p.key" class="card card-hover flex flex-col p-5">
+    <article v-for="(p, i) in rest" :key="p.key" v-tilt v-reveal="i * 70" class="card card-hover flex flex-col p-5">
       <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br text-2xl" :class="p.gradient">
         {{ p.emoji }}
       </div>

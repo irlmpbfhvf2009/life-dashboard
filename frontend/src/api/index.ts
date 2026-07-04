@@ -245,12 +245,6 @@ export const englishStateApi = {
   put: (state: unknown) => request<void>(() => http.put('/api/english/state', state)),
 }
 
-// ---- Virtual pet (per-user JSON, cross-device) ----
-export const petStateApi = {
-  get: <T = unknown>() => request<T | null>(() => http.get('/api/pet/state')),
-  put: (state: unknown) => request<void>(() => http.put('/api/pet/state', state)),
-}
-
 // ---- Fat-loss plan (per-user training/diet 課表, cross-device sync) ----
 export const planStateApi = {
   get: <T = unknown>() => request<T | null>(() => http.get('/api/plan/state')),

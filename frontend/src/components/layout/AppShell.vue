@@ -5,7 +5,6 @@ import AppSidebar from './AppSidebar.vue'
 import AppHeader from './AppHeader.vue'
 import ChatWidget from '@/components/chat/ChatWidget.vue'
 import CommandPalette from '@/components/ui/CommandPalette.vue'
-import PetWidget from '@/components/pet/PetWidget.vue'
 
 const sidebarOpen = ref(false)
 </script>
@@ -49,9 +48,6 @@ const sidebarOpen = ref(false)
 
     <!-- Floating chat (DMs / groups / public room) — always available in the shell -->
     <ChatWidget />
-
-    <!-- Site-wide virtual pet — strolls along the bottom when enabled -->
-    <PetWidget />
 
     <!-- ⌘K command palette — mounted once; opened by the header search or shortcut -->
     <CommandPalette />

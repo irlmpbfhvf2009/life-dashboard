@@ -8,6 +8,7 @@ import {
 import PageHeader from '@/components/ui/PageHeader.vue'
 import SectionCard from '@/components/ui/SectionCard.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
+import HeroScene from '@/components/three/HeroScene.vue'
 import { aiApi } from '@/api'
 import { stockResearchApi } from '@/api/stockResearch'
 import { useEnglishStore } from '@/composables/useEnglishStore'
@@ -96,9 +97,10 @@ onMounted(async () => {
       subtitle="AI 股票研究、英文教練與資料分析工具，皆為研究與學習用途。"
     />
 
-    <!-- Hero / engine status -->
-    <div class="mb-6 overflow-hidden rounded-2xl border border-ink-200 bg-gradient-to-br from-brand-500 to-violet-600 p-6 text-white">
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <!-- Hero / engine status (with 3D particle ambience) -->
+    <div v-reveal class="relative mb-6 overflow-hidden rounded-2xl border border-ink-200 bg-gradient-to-br from-[#241b52] via-brand-600 to-violet-700 p-6 text-white">
+      <HeroScene :opacity="0.75" />
+      <div class="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div class="flex items-center gap-2 text-white/80">
             <Sparkles class="h-4 w-4" />
@@ -151,10 +153,12 @@ onMounted(async () => {
     <!-- App entries -->
     <div class="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <RouterLink
-        v-for="app in apps"
+        v-for="(app, i) in apps"
         :key="app.to"
+        v-tilt
+        v-reveal="i * 90"
         :to="app.to"
-        class="group flex flex-col rounded-2xl border border-ink-200 bg-surface p-5 shadow-card transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-card-hover ring-focus"
+        class="group flex flex-col rounded-2xl border border-ink-200 bg-surface p-5 shadow-card transition-all hover:border-brand-200 hover:shadow-card-hover ring-focus"
       >
         <div class="mb-4 flex items-start justify-between">
           <span class="flex h-11 w-11 items-center justify-center rounded-xl" :class="app.tint">

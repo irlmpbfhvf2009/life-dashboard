@@ -2,7 +2,7 @@
 // cache (synchronous, offline-safe); the backend (/api/plan/state) is a
 // background sync layer so the plan follows the user across devices. Backend
 // failures degrade silently. Module-scope singleton — state survives route
-// changes. Mirrors useEnglishStore / usePet.
+// changes. Mirrors useEnglishStore.
 
 import { computed, reactive, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
