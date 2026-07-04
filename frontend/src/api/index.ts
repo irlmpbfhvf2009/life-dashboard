@@ -256,6 +256,18 @@ export const petStateApi = {
   put: (state: unknown) => request<void>(() => http.put('/api/pet/state', state)),
 }
 
+// ---- Fat-loss plan (per-user training/diet 課表, cross-device sync) ----
+export const planStateApi = {
+  get: <T = unknown>() => request<T | null>(() => http.get('/api/plan/state')),
+  put: (state: unknown) => request<void>(() => http.put('/api/plan/state', state)),
+}
+
+// ---- Health doc (per-user profile + daily log, cross-device sync) ----
+export const healthStateApi = {
+  get: <T = unknown>() => request<T | null>(() => http.get('/api/health/state')),
+  put: (state: unknown) => request<void>(() => http.put('/api/health/state', state)),
+}
+
 // ---- Travel state (per-user trip wallet, cross-device sync) ----
 export const travelStateApi = {
   get: <T = unknown>() => request<T | null>(() => http.get('/api/travel/state')),

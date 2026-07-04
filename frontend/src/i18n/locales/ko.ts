@@ -32,7 +32,7 @@ export default {
     workoutNames: { walk: '걷기', run: '달리기', strength: '근력 운동', yoga: '요가', bike: '자전거', swim: '수영' },
     sections: { dailyActions: '오늘의 활동' },
     reset: { button: '초기화', confirm: '건강 데이터를 지우고 다시 설정할까요?' },
-    tabs: { today: '오늘', fast: '단식', fitness: '운동', grow: '성장' },
+    tabs: { today: '오늘', plan: '감량 플랜', fast: '단식', fitness: '운동', grow: '성장' },
     fasting: {
       title: '간헐적 단식', plan: '플랜', remaining: '남은 시간', eatingWindow: '식사 시간대',
       start: '단식 시작', end: '단식 종료', stageRange: '단식 {from}–{to}시간',

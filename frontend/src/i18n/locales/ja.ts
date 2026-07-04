@@ -32,7 +32,7 @@ export default {
     workoutNames: { walk: 'ウォーキング', run: 'ランニング', strength: '筋トレ', yoga: 'ヨガ', bike: 'サイクリング', swim: '水泳' },
     sections: { dailyActions: '毎日の行動' },
     reset: { button: 'リセット', confirm: '健康データを消して、もう一度設定しますか？' },
-    tabs: { today: '今日', fast: '断食', fitness: 'フィット', grow: '育成' },
+    tabs: { today: '今日', plan: '減量プラン', fast: '断食', fitness: 'フィット', grow: '育成' },
     fasting: {
       title: 'プチ断食', plan: 'プラン', remaining: '残り時間', eatingWindow: '食事時間帯',
       start: '断食開始', end: '断食終了', stageRange: '断食 {from}–{to} 時間',

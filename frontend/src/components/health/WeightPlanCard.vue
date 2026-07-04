@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Scale, Plus, Minus } from 'lucide-vue-next'
+import { Scale, Plus, Minus, History, Trash2 } from 'lucide-vue-next'
 import TrendChartCard from '@/components/ui/TrendChartCard.vue'
 import type { WeightPoint } from '@/data/health'
 
@@ -12,7 +12,10 @@ const props = defineProps<{
   createdAt: string
   history: WeightPoint[]
 }>()
-const emit = defineEmits<{ log: [payload: { date: string; kg: number }] }>()
+const emit = defineEmits<{
+  log: [payload: { date: string; kg: number }]
+  remove: [date: string]
+}>()
 
 const { t } = useI18n()
 
@@ -48,6 +51,13 @@ function save() {
   if (entry.value > 0) emit('log', { date: entryDate.value, kg: Math.round(entry.value * 10) / 10 })
   open.value = false
 }
+
+// ---- History (newest first) with per-record delete ----
+const showHistory = ref(false)
+const historyDesc = computed(() => [...props.history].sort((a, b) => b.date.localeCompare(a.date)))
+function removeEntry(date: string) {
+  if (window.confirm(`刪除 ${date} 的體重紀錄？`)) emit('remove', date)
+}
 </script>
 
 <template>
@@ -59,6 +69,9 @@ function save() {
       </div>
       <div class="flex items-center gap-2">
         <span class="inline-flex items-center rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-300">{{ t('health.weightPlan.progress', { n: progress }) }}</span>
+        <button v-if="history.length" class="btn-icon h-7 w-7 rounded-full bg-ink-100 text-ink-500" title="歷史紀錄" @click="showHistory = !showHistory">
+          <History class="h-4 w-4" />
+        </button>
         <button class="btn-icon h-7 w-7 rounded-full bg-emerald-500/10 text-emerald-600" :title="t('health.weightPlan.log')" @click="open = !open; entry = current">
           <Plus class="h-4 w-4" />
         </button>
@@ -118,6 +131,22 @@ function save() {
         <p class="text-2xs text-ink-400">{{ t('health.weightPlan.range') }}</p>
         <p class="text-sm font-semibold text-ink-800">{{ stats.min }}–{{ stats.max }}</p>
       </div>
+    </div>
+
+    <!-- History list with per-record delete -->
+    <div v-if="showHistory && historyDesc.length" class="mt-4 rounded-2xl bg-ink-50 p-2">
+      <ul class="max-h-56 divide-y divide-ink-100 overflow-y-auto">
+        <li v-for="p in historyDesc" :key="p.date" class="group flex items-center justify-between px-2 py-2">
+          <span class="text-xs text-ink-500">{{ p.date }}</span>
+          <span class="ml-auto mr-3 text-sm font-semibold text-ink-800">{{ p.kg }} kg</span>
+          <button
+            class="text-ink-300 transition-colors hover:text-rose-500"
+            :title="t('common.delete')" @click="removeEntry(p.date)"
+          >
+            <Trash2 class="h-4 w-4" />
+          </button>
+        </li>
+      </ul>
     </div>
   </div>
 </template>
