@@ -121,32 +121,10 @@ export const walletApi = {
   get: () => request<WalletDto>(() => http.get('/api/wallet')),
 }
 
-// ---- Game (slot machine — spins resolved server-side) ----
-export interface SpinResult { reels: number[]; bet: number; payout: number; balance: number }
-
-// Seth tumble slot — the full cascade sequence is resolved server-side.
-// cell.type: 0–7 = pay symbols (low→high), 8 = scatter, 9 = multiplier orb (value = ×N).
+// ---- Game (荷魯斯覺醒 tumble slot — spins resolved server-side) ----
+// cell.type: 0–8 pay symbols (low→high), 9 = scatter, 10 = multiplier orb (value = ×N).
 export interface SethCell { type: number; value: number }
 export interface SethTumble { grid: SethCell[]; winPositions: number[]; pay: number }
-export interface SethRound {
-  type: 'BASE' | 'FREE'
-  tumbles: SethTumble[]
-  multiplier: number
-  pay: number
-  spinIndex: number
-  spinTotal: number
-}
-export interface SethSpinResult {
-  bet: number
-  cost: number
-  rounds: SethRound[]
-  freeSpins: number
-  totalPayout: number
-  balance: number
-}
-export interface SethSpinOptions { ante?: boolean; buyBonus?: boolean }
-
-// Seth II tumble slot — cell.type: 0–8 pay symbols (low→high), 9 = scatter, 10 = multiplier orb.
 export type Seth2Buy = 'NONE' | 'FREE' | 'AWAKEN' | 'IMMORTAL'
 export interface Seth2Round {
   type: 'BASE' | 'FREE'
@@ -167,11 +145,6 @@ export interface Seth2SpinResult {
 }
 
 export const gameApi = {
-  spin: (bet: number) => request<SpinResult>(() => http.post('/api/game/slot/spin', { bet })),
-  sethSpin: (bet: number, opts: SethSpinOptions = {}) =>
-    request<SethSpinResult>(() => http.post('/api/game/seth/spin', {
-      bet, ante: opts.ante ?? false, buyBonus: opts.buyBonus ?? false,
-    })),
   seth2Spin: (bet: number, buy: Seth2Buy = 'NONE') =>
     request<Seth2SpinResult>(() => http.post('/api/game/seth2/spin', { bet, buy })),
 }

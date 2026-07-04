@@ -114,11 +114,10 @@ export const useAuthStore = defineStore('auth', {
     async loadProfile() {
       try {
         this.profile = await userApi.me()
-        // First-time users get the default role for the portal they're on
-        // (casino → player, Studio → studio). Idempotent server-side.
+        // First-time users get the studio role (the standalone game portal is
+        // gone; the arcade page grants the player role itself). Idempotent.
         if (this.profile && !this.profile.isStudio && !this.profile.isPlayer && !this.profile.isAdmin) {
-          const source = window.location.pathname.startsWith('/play') ? 'game' : 'studio'
-          this.profile = await userApi.source(source)
+          this.profile = await userApi.source('studio')
         }
       } catch (e) {
         this.error = (e as Error).message

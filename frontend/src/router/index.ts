@@ -9,9 +9,6 @@ const router = createRouter({
     { path: '/register', name: 'register', component: () => import('@/views/auth/RegisterView.vue'), meta: { public: true } },
     { path: '/forgot-password', name: 'forgot-password', component: () => import('@/views/auth/ForgotPasswordView.vue'), meta: { public: true } },
 
-    // ---- Standalone game portal (its own full-page app, own email auth) ----
-    { path: '/play', name: 'play', component: () => import('@/views/casino/CasinoView.vue'), meta: { casino: true } },
-
     // ---- Public read-only shared trip (no login, no app shell) ----
     { path: '/t/:token', name: 'public-trip', component: () => import('@/views/public/PublicTripView.vue'), meta: { open: true } },
 
@@ -90,7 +87,7 @@ const router = createRouter({
         // Old library paths → redirect into 知識.
         { path: 'library', redirect: '/knowledge/books' },
         { path: 'library/read/:source/:id', redirect: (to) => `/knowledge/read/${to.params.source}/${to.params.id}` },
-        // ---- 娛樂 (命運 + 食物輪盤, module with its own sub-nav) ----
+        // ---- 娛樂 (命運 + 食物輪盤 + 遊戲, module with its own sub-nav) ----
         {
           path: 'fun',
           component: () => import('@/views/fun/FunLayout.vue'),
@@ -98,11 +95,15 @@ const router = createRouter({
             { path: '', redirect: '/fun/fate' },
             { path: 'fate', name: 'fate', component: () => import('@/views/FateView.vue') },
             { path: 'roulette', name: 'roulette', component: () => import('@/views/FoodRouletteView.vue') },
+            // 遊戲娛樂城 — legacy game-only accounts may lack the studio role,
+            // so this one page opts out of the studio gate (server still authorizes).
+            { path: 'games', name: 'games', component: () => import('@/views/fun/GamesView.vue'), meta: { studio: false } },
           ],
         },
         // Old standalone paths → redirect into 娛樂.
         { path: 'fate', redirect: '/fun/fate' },
         { path: 'roulette', redirect: '/fun/roulette' },
+        { path: 'play', redirect: '/fun/games' },
         { path: 'portfolio', name: 'portfolio', component: () => import('@/views/PortfolioView.vue') },
         { path: 'settings', name: 'settings', component: () => import('@/views/SettingsView.vue') },
         { path: 'admin', name: 'admin', component: () => import('@/views/AdminView.vue'), meta: { requires: 'admin' } },
@@ -117,8 +118,6 @@ router.beforeEach(async (to) => {
   if (!authStore.initialized) {
     await authStore.initAuthListener()
   }
-  // Casino portal is always reachable (it has its own login UI inside).
-  if (to.meta.casino) return true
   // Public read-only pages (e.g. shared trips) are reachable by anyone, logged
   // in or not, and must never bounce to login or the role-based home.
   if (to.meta.open) return true
@@ -133,11 +132,12 @@ router.beforeEach(async (to) => {
   const isStudio = authStore.isStudio || import.meta.env.DEV
 
   if (to.meta.public && authStore.isAuthenticated) {
-    return { name: isStudio ? 'overview' : 'play' }
+    return { name: isStudio ? 'overview' : 'games' }
   }
-  // Studio access requires the studio role — others go to the game portal.
+  // Studio access requires the studio role — legacy game-only accounts land on
+  // the arcade page (the one shell page that opts out of the studio gate).
   if (to.meta.studio && !isStudio) {
-    return { name: 'play' }
+    return { name: 'games' }
   }
   // Admin-only routes.
   if (to.meta.requires === 'admin' && !authStore.isAdmin) {

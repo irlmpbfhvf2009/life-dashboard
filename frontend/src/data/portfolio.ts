@@ -52,6 +52,6 @@ export const projects: PortfolioProject[] = [
     tags: ['Vue 3', 'Spring Security', 'Anti-tamper'],
     gradient: 'from-rose-500 to-pink-500',
     emoji: '🎰',
-    link: 'https://life-dashboard-blue-omega.vercel.app/play',
+    link: 'https://life-dashboard-blue-omega.vercel.app/fun/games',
   },
 ]
