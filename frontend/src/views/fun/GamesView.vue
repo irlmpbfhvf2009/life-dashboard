@@ -81,12 +81,6 @@ onMounted(async () => {
     </div>
 
     <template v-else>
-      <!-- Jackpot banner -->
-      <div class="mb-4 flex flex-col items-center justify-center gap-1 rounded-2xl bg-gradient-to-r from-[#1b2a4a] via-[#22386a] to-[#1b2a4a] py-6 ring-1 ring-amber-400/25">
-        <p class="text-xs text-amber-300/80">獎池累積</p>
-        <p class="font-mono text-3xl font-black tracking-widest text-amber-300">30,245,457</p>
-      </div>
-
       <!-- Category tabs -->
       <div class="mb-4 flex gap-2">
         <button
