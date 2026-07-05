@@ -54,11 +54,12 @@ interface Fish {
 
 interface Bullet { x: number; y: number; vx: number; vy: number; life: number }
 interface Particle {
-  kind: 'bubble' | 'ring' | 'spark' | 'coin' | 'text'
+  kind: 'bubble' | 'ring' | 'spark' | 'coin' | 'text' | 'burst' | 'star'
   x: number; y: number; vx: number; vy: number
   age: number; life: number; size: number
   color?: string; text?: string
   tx?: number; ty?: number // coin target
+  rot?: number
 }
 
 export interface EngineCallbacks {
@@ -229,8 +230,19 @@ export class FishEngine {
     this.cb.sound.kill(tier)
     this.cb.sound.coins(4 + tier * 5)
     if (tier === 2) this.shake = 0.5
+    // gold flash burst at the kill point
+    this.parts.push({
+      kind: 'burst', x: f.x, y: f.y, vx: 0, vy: 0,
+      age: 0, life: 0.45 + tier * 0.15, size: f.spec.hitR * f.scale * (2.2 + tier),
+    })
+    // rotating starburst spokes
+    this.parts.push({
+      kind: 'star', x: f.x, y: f.y, vx: 0, vy: 0,
+      age: 0, life: 0.5 + tier * 0.2, size: f.spec.hitR * f.scale * (2.6 + tier * 1.2),
+      rot: Math.random() * Math.PI,
+    })
     // coin burst toward the HUD (top-left)
-    const n = 6 + tier * 6
+    const n = 6 + tier * 8
     for (let i = 0; i < n; i++) {
       const a = Math.random() * Math.PI * 2
       const sp = 60 + Math.random() * 160
@@ -239,6 +251,17 @@ export class FishEngine {
         vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 60,
         age: 0, life: 0.9 + Math.random() * 0.4, size: 5 + Math.random() * 4,
         tx: 70, ty: 30,
+      })
+    }
+    // gold sparks
+    for (let i = 0; i < 10 + tier * 8; i++) {
+      const a = Math.random() * Math.PI * 2
+      const sp = 90 + Math.random() * 220
+      this.parts.push({
+        kind: 'spark', x: f.x, y: f.y,
+        vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+        age: 0, life: 0.4 + Math.random() * 0.35, size: 2 + Math.random() * 3,
+        color: Math.random() < 0.5 ? 'rgba(255,215,90,1)' : 'rgba(255,245,200,1)',
       })
     }
     this.floatText(f.x, f.y - f.spec.hitR - 8, `+${win.toLocaleString()}`)
@@ -576,6 +599,37 @@ export class FishEngine {
         ctx.strokeStyle = 'rgba(160,100,10,0.8)'
         ctx.lineWidth = 1
         ctx.stroke()
+        ctx.restore()
+      } else if (p.kind === 'burst') {
+        const k = 1 - lifeP
+        const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * (0.4 + lifeP * 0.8))
+        g.addColorStop(0, `rgba(255,250,220,${0.85 * k})`)
+        g.addColorStop(0.4, `rgba(255,210,80,${0.55 * k})`)
+        g.addColorStop(1, 'rgba(255,180,40,0)')
+        ctx.fillStyle = g
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, p.size * (0.4 + lifeP * 0.8), 0, Math.PI * 2)
+        ctx.fill()
+      } else if (p.kind === 'star') {
+        const k = 1 - lifeP
+        ctx.save()
+        ctx.translate(p.x, p.y)
+        ctx.rotate((p.rot || 0) + lifeP * 1.4)
+        ctx.globalCompositeOperation = 'lighter'
+        for (let i = 0; i < 8; i++) {
+          ctx.rotate(Math.PI / 4)
+          const len = p.size * (0.35 + lifeP * 0.9) * (i % 2 ? 0.62 : 1)
+          const g = ctx.createLinearGradient(0, 0, len, 0)
+          g.addColorStop(0, `rgba(255,240,170,${0.8 * k})`)
+          g.addColorStop(1, 'rgba(255,220,90,0)')
+          ctx.fillStyle = g
+          ctx.beginPath()
+          ctx.moveTo(0, -p.size * 0.035)
+          ctx.lineTo(len, 0)
+          ctx.lineTo(0, p.size * 0.035)
+          ctx.closePath()
+          ctx.fill()
+        }
         ctx.restore()
       } else if (p.kind === 'text') {
         ctx.save()

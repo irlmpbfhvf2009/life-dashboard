@@ -19,20 +19,71 @@ export interface FishSpec {
 
 // ---------------------------------------------------------------- helpers
 
-function eye(ctx: Ctx, x: number, y: number, r: number, iris = '#1a1c2e') {
+/** Thick cartoon outline colour — the "arcade thick-paint" look. */
+const INK = 'rgba(22,16,34,0.88)'
+
+/** Stroke the CURRENT path with the cartoon outline (call right after fill). */
+function outline(ctx: Ctx, s: number, k = 1) {
+  ctx.strokeStyle = INK
+  ctx.lineWidth = Math.max(1.2, s * 0.028 * k)
+  ctx.lineJoin = 'round'
+  ctx.stroke()
+}
+
+/** Big expressive cartoon eye: white, coloured iris ring, pupil, double sparkle. */
+function eye(ctx: Ctx, x: number, y: number, r: number, iris = '#2b7bd4') {
   ctx.fillStyle = '#ffffff'
   ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill()
-  ctx.fillStyle = iris
-  ctx.beginPath(); ctx.arc(x + r * 0.22, y, r * 0.62, 0, Math.PI * 2); ctx.fill()
-  ctx.fillStyle = 'rgba(255,255,255,0.9)'
-  ctx.beginPath(); ctx.arc(x + r * 0.05, y - r * 0.3, r * 0.24, 0, Math.PI * 2); ctx.fill()
+  ctx.strokeStyle = INK
+  ctx.lineWidth = Math.max(1, r * 0.22)
+  ctx.stroke()
+  const ig = ctx.createRadialGradient(x + r * 0.18, y - r * 0.1, r * 0.05, x + r * 0.18, y, r * 0.66)
+  ig.addColorStop(0, iris)
+  ig.addColorStop(1, '#141224')
+  ctx.fillStyle = ig
+  ctx.beginPath(); ctx.arc(x + r * 0.18, y, r * 0.62, 0, Math.PI * 2); ctx.fill()
+  ctx.fillStyle = '#0c0a18'
+  ctx.beginPath(); ctx.arc(x + r * 0.22, y, r * 0.3, 0, Math.PI * 2); ctx.fill()
+  ctx.fillStyle = 'rgba(255,255,255,0.95)'
+  ctx.beginPath(); ctx.arc(x + r * 0.02, y - r * 0.32, r * 0.26, 0, Math.PI * 2); ctx.fill()
+  ctx.fillStyle = 'rgba(255,255,255,0.7)'
+  ctx.beginPath(); ctx.arc(x + r * 0.4, y + r * 0.26, r * 0.12, 0, Math.PI * 2); ctx.fill()
 }
 
 function gloss(ctx: Ctx, s: number, h: number) {
-  ctx.fillStyle = 'rgba(255,255,255,0.18)'
+  ctx.fillStyle = 'rgba(255,255,255,0.22)'
   ctx.beginPath()
-  ctx.ellipse(s * 0.08, -h * 0.28, s * 0.3, h * 0.18, -0.15, 0, Math.PI * 2)
+  ctx.ellipse(s * 0.08, -h * 0.3, s * 0.3, h * 0.16, -0.15, 0, Math.PI * 2)
   ctx.fill()
+}
+
+/** Rows of overlapping scale arcs, clipped to the body by the caller. */
+function scales(ctx: Ctx, s: number, color = 'rgba(255,255,255,0.14)') {
+  ctx.strokeStyle = color
+  ctx.lineWidth = Math.max(0.8, s * 0.012)
+  const r = s * 0.075
+  for (let row = -2; row <= 2; row++) {
+    for (let col = -3; col <= 3; col++) {
+      const x = col * r * 1.7 + (row % 2 ? r * 0.85 : 0) - s * 0.04
+      const y = row * r * 1.25
+      ctx.beginPath()
+      ctx.arc(x, y, r, Math.PI * 0.15, Math.PI * 0.85)
+      ctx.stroke()
+    }
+  }
+}
+
+/** Radiating rays on a fin/tail — the striation lines real arcade art has. */
+function finRays(ctx: Ctx, n: number, x0: number, y0: number, spread: [number, number], len: number, s: number) {
+  ctx.strokeStyle = 'rgba(20,14,30,0.32)'
+  ctx.lineWidth = Math.max(0.8, s * 0.012)
+  for (let i = 0; i < n; i++) {
+    const a = spread[0] + (i / (n - 1)) * (spread[1] - spread[0])
+    ctx.beginPath()
+    ctx.moveTo(x0, y0)
+    ctx.lineTo(x0 + Math.cos(a) * len, y0 + Math.sin(a) * len)
+    ctx.stroke()
+  }
 }
 
 interface GenericCfg {
@@ -41,6 +92,8 @@ interface GenericCfg {
   tail?: number                   // tail size multiplier
   dorsal?: number                 // dorsal height multiplier (0 = none)
   eyeX?: number; eyeR?: number
+  iris?: string
+  scaly?: boolean                 // overlay scale arcs
   pattern?: (ctx: Ctx, s: number, h: number, t: number) => void
   mouth?: 'smile' | 'open'
 }
@@ -62,6 +115,8 @@ function genericFish(ctx: Ctx, s: number, t: number, cfg: GenericCfg) {
   ctx.quadraticCurveTo(-s * 0.12 * tailK, 0, -s * 0.3 * tailK, h * 0.62 * tailK)
   ctx.quadraticCurveTo(-s * 0.24 * tailK, h * 0.5 * tailK, s * 0.04, 0)
   ctx.fill()
+  outline(ctx, s)
+  finRays(ctx, 4, s * 0.02, 0, [Math.PI * 0.78, Math.PI * 1.22], s * 0.3 * tailK, s)
   ctx.restore()
 
   // dorsal fin
@@ -73,6 +128,8 @@ function genericFish(ctx: Ctx, s: number, t: number, cfg: GenericCfg) {
     ctx.quadraticCurveTo(-s * 0.02, -h * (0.3 + 0.72 * dk), s * 0.14, -h * 0.32)
     ctx.closePath()
     ctx.fill()
+    outline(ctx, s)
+    finRays(ctx, 4, -s * 0.05, -h * 0.32, [-Math.PI * 0.62, -Math.PI * 0.34], h * 0.6 * dk, s)
   }
   // ventral fin
   ctx.fillStyle = cfg.fin
@@ -81,12 +138,14 @@ function genericFish(ctx: Ctx, s: number, t: number, cfg: GenericCfg) {
   ctx.quadraticCurveTo(-s * 0.04, h * 0.62, s * 0.1, h * 0.32)
   ctx.closePath()
   ctx.fill()
+  outline(ctx, s)
 
   // body
   const g = ctx.createLinearGradient(0, -h * 0.6, 0, h * 0.6)
   g.addColorStop(0, cfg.dark)
-  g.addColorStop(0.5, cfg.base)
-  g.addColorStop(1, cfg.belly)
+  g.addColorStop(0.45, cfg.base)
+  g.addColorStop(0.8, cfg.belly)
+  g.addColorStop(1, cfg.base)
   ctx.fillStyle = g
   ctx.beginPath()
   ctx.moveTo(s * 0.5, 0)
@@ -96,14 +155,26 @@ function genericFish(ctx: Ctx, s: number, t: number, cfg: GenericCfg) {
   ctx.quadraticCurveTo(s * 0.3, h * 0.62, s * 0.5, 0)
   ctx.closePath()
   ctx.fill()
+  outline(ctx, s, 1.25)
 
-  // pattern, clipped to the body path (still current)
-  if (cfg.pattern) {
-    ctx.save()
-    ctx.clip()
-    cfg.pattern(ctx, s, h, t)
-    ctx.restore()
-  }
+  // pattern + scales, clipped to the body path (still current)
+  ctx.save()
+  ctx.clip()
+  if (cfg.pattern) cfg.pattern(ctx, s, h, t)
+  if (cfg.scaly) scales(ctx, s)
+  // rim light along the spine
+  ctx.strokeStyle = 'rgba(255,255,255,0.4)'
+  ctx.lineWidth = Math.max(1, s * 0.02)
+  ctx.beginPath()
+  ctx.moveTo(s * 0.34, -h * 0.42)
+  ctx.quadraticCurveTo(s * 0.05, -h * 0.6, -s * 0.16, -h * 0.44)
+  ctx.stroke()
+  // belly shadow
+  ctx.fillStyle = 'rgba(20,10,30,0.12)'
+  ctx.beginPath()
+  ctx.ellipse(-s * 0.02, h * 0.5, s * 0.4, h * 0.22, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.restore()
   gloss(ctx, s, h)
 
   // pectoral fin (small sway)
@@ -116,11 +187,13 @@ function genericFish(ctx: Ctx, s: number, t: number, cfg: GenericCfg) {
   ctx.quadraticCurveTo(-s * 0.2, h * 0.14, -s * 0.24, h * 0.34)
   ctx.quadraticCurveTo(-s * 0.05, h * 0.2, 0, 0)
   ctx.fill()
+  outline(ctx, s, 0.8)
   ctx.restore()
 
   // mouth
-  ctx.strokeStyle = 'rgba(30,20,20,0.55)'
-  ctx.lineWidth = Math.max(1, s * 0.014)
+  ctx.strokeStyle = INK
+  ctx.lineWidth = Math.max(1.2, s * 0.022)
+  ctx.lineCap = 'round'
   ctx.beginPath()
   if (cfg.mouth === 'open') {
     ctx.arc(s * 0.42, h * 0.08, s * 0.05, -0.6, 1.6)
@@ -129,7 +202,7 @@ function genericFish(ctx: Ctx, s: number, t: number, cfg: GenericCfg) {
   }
   ctx.stroke()
 
-  eye(ctx, s * (cfg.eyeX ?? 0.28), -h * 0.16, s * (cfg.eyeR ?? 0.055))
+  eye(ctx, s * (cfg.eyeX ?? 0.28), -h * 0.16, s * (cfg.eyeR ?? 0.07), cfg.iris)
 }
 
 // vertical band helper (clownfish etc.)
@@ -146,7 +219,8 @@ function band(ctx: Ctx, x: number, w: number, h: number, color: string, edge?: s
 
 function drawClownfish(ctx: Ctx, s: number, t: number) {
   genericFish(ctx, s, t, {
-    h: 0.52, dark: '#e2601a', base: '#ff8c2e', belly: '#ffc37a', fin: '#f07018',
+    h: 0.52, dark: '#e2601a', base: '#ff9436', belly: '#ffc37a', fin: '#f07018',
+    iris: '#c05a10',
     pattern: (c, ss, hh) => {
       band(c, ss * 0.2, ss * 0.12, hh, '#fff7ec', '#26160c')
       band(c, -ss * 0.14, ss * 0.14, hh, '#fff7ec', '#26160c')
@@ -156,7 +230,8 @@ function drawClownfish(ctx: Ctx, s: number, t: number) {
 
 function drawDamselfish(ctx: Ctx, s: number, t: number) {
   genericFish(ctx, s, t, {
-    h: 0.5, dark: '#1c48b8', base: '#2f7bff', belly: '#9cd2ff', fin: '#ffd23e',
+    h: 0.5, dark: '#1c48b8', base: '#3585ff', belly: '#9cd2ff', fin: '#ffd23e',
+    iris: '#1c48b8', scaly: true,
     pattern: (c, ss, hh) => {
       c.fillStyle = 'rgba(10,30,90,0.35)'
       c.beginPath(); c.ellipse(-ss * 0.05, -hh * 0.3, ss * 0.34, hh * 0.22, 0.1, 0, Math.PI * 2); c.fill()
@@ -167,7 +242,7 @@ function drawDamselfish(ctx: Ctx, s: number, t: number) {
 function drawAngelfish(ctx: Ctx, s: number, t: number) {
   genericFish(ctx, s, t, {
     h: 0.92, dark: '#d9a410', base: '#ffd23e', belly: '#fff0b8', fin: '#f2b520',
-    tail: 0.8, dorsal: 1.35, eyeX: 0.3, eyeR: 0.05,
+    tail: 0.8, dorsal: 1.35, eyeX: 0.3, eyeR: 0.065, iris: '#b07808',
     pattern: (c, ss, hh) => {
       c.fillStyle = 'rgba(20,24,40,0.82)'
       c.save(); c.rotate(0.12)
@@ -197,17 +272,18 @@ function drawPuffer(ctx: Ctx, s: number, t: number) {
   ctx.save()
   ctx.scale(puff, puff)
   // spikes
-  ctx.fillStyle = '#d98f12'
   for (let i = 0; i < 12; i++) {
     const a = (i / 12) * Math.PI * 2 + 0.26
     ctx.save()
     ctx.rotate(a)
+    ctx.fillStyle = '#d98f12'
     ctx.beginPath()
     ctx.moveTo(r * 0.86, -r * 0.1)
     ctx.lineTo(r * 1.22, 0)
     ctx.lineTo(r * 0.86, r * 0.1)
     ctx.closePath()
     ctx.fill()
+    outline(ctx, r * 1.6, 0.8)
     ctx.restore()
   }
   // body
@@ -217,6 +293,7 @@ function drawPuffer(ctx: Ctx, s: number, t: number) {
   g.addColorStop(1, '#e8961c')
   ctx.fillStyle = g
   ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill()
+  outline(ctx, r * 2.6, 1.1)
   // belly
   ctx.fillStyle = 'rgba(255,250,225,0.85)'
   ctx.beginPath(); ctx.ellipse(r * 0.1, r * 0.42, r * 0.62, r * 0.4, 0, 0, Math.PI * 2); ctx.fill()
@@ -256,8 +333,8 @@ function drawLanternfish(ctx: Ctx, s: number, t: number) {
   ctx.beginPath(); ctx.arc(lx, ly, s * 0.05, 0, Math.PI * 2); ctx.fill()
 
   genericFish(ctx, s, t, {
-    h: 0.6, dark: '#6e1030', base: '#a52050', belly: '#d86a86', fin: '#87183e',
-    mouth: 'open', eyeR: 0.07, eyeX: 0.26,
+    h: 0.6, dark: '#6e1030', base: '#b02458', belly: '#d86a86', fin: '#87183e',
+    mouth: 'open', eyeR: 0.085, eyeX: 0.26, iris: '#40e8d0',
     pattern: (c, ss, hh) => {
       c.fillStyle = 'rgba(255,150,170,0.25)'
       c.beginPath(); c.ellipse(0, hh * 0.2, ss * 0.36, hh * 0.3, 0, 0, Math.PI * 2); c.fill()
@@ -309,6 +386,29 @@ function drawJellyfish(ctx: Ctx, s: number, t: number) {
   ctx.quadraticCurveTo(r * 0.5, r * 0.42, 0, r * 0.3)
   ctx.quadraticCurveTo(-r * 0.5, r * 0.42, -r, r * 0.18)
   ctx.fill()
+  ctx.strokeStyle = 'rgba(150,40,120,0.55)'
+  ctx.lineWidth = r * 0.06
+  ctx.stroke()
+  // frilled skirt edge
+  ctx.strokeStyle = 'rgba(255,200,235,0.8)'
+  ctx.lineWidth = r * 0.05
+  ctx.beginPath()
+  for (let i = 0; i <= 8; i++) {
+    const x = -r + (i / 8) * r * 2
+    const y = r * (0.2 + (i % 2 ? 0.1 : 0.02))
+    if (i === 0) ctx.moveTo(x, y)
+    else ctx.quadraticCurveTo(x - r * 0.125, r * 0.36, x, y)
+  }
+  ctx.stroke()
+  // cute face on the bell
+  eye(ctx, -r * 0.3, -r * 0.12, r * 0.13, '#c04a9a')
+  eye(ctx, r * 0.3, -r * 0.12, r * 0.13, '#c04a9a')
+  ctx.strokeStyle = 'rgba(140,40,100,0.75)'
+  ctx.lineWidth = r * 0.05
+  ctx.lineCap = 'round'
+  ctx.beginPath()
+  ctx.arc(0, r * 0.02, r * 0.14, 0.35, Math.PI - 0.35)
+  ctx.stroke()
   // inner glow dots
   ctx.fillStyle = 'rgba(255,255,255,0.7)'
   ;[[-0.4, -0.25], [0, -0.4], [0.4, -0.25]].forEach(([px, py]) => {
@@ -338,8 +438,8 @@ function drawLionfish(ctx: Ctx, s: number, t: number) {
     ctx.restore()
   }
   genericFish(ctx, s, t, {
-    h: 0.52, dark: '#8c2a1c', base: '#c85838', belly: '#f0c9a8', fin: '#a03424',
-    eyeR: 0.05,
+    h: 0.52, dark: '#8c2a1c', base: '#d05e3a', belly: '#f0c9a8', fin: '#a03424',
+    eyeR: 0.06, iris: '#a83418',
     pattern: (c, ss, hh) => {
       c.fillStyle = 'rgba(250,235,215,0.75)'
       for (let i = 0; i < 5; i++) {
@@ -378,6 +478,7 @@ function drawTurtle(ctx: Ctx, s: number, t: number) {
   ctx.beginPath()
   ctx.ellipse(-L * 0.08, 0, L * 0.78, L * 0.56, 0, 0, Math.PI * 2)
   ctx.fill()
+  outline(ctx, L * 2, 1.1)
   // shell plates
   ctx.strokeStyle = 'rgba(15,60,25,0.55)'
   ctx.lineWidth = s * 0.016
@@ -401,7 +502,14 @@ function drawTurtle(ctx: Ctx, s: number, t: number) {
   ctx.beginPath()
   ctx.ellipse(L * 0.82, -L * 0.08, L * 0.26, L * 0.2, -0.2, 0, Math.PI * 2)
   ctx.fill()
-  eye(ctx, L * 0.9, -L * 0.14, L * 0.06)
+  outline(ctx, L * 1.6, 0.9)
+  ctx.strokeStyle = INK
+  ctx.lineWidth = Math.max(1, L * 0.035)
+  ctx.lineCap = 'round'
+  ctx.beginPath()
+  ctx.arc(L * 0.96, -L * 0.02, L * 0.08, 0.4, 1.4)
+  ctx.stroke()
+  eye(ctx, L * 0.88, -L * 0.14, L * 0.085, '#3f8a3a')
   // near flippers
   flip(L * 0.34, L * 0.42, 0.7, true)
   flip(-L * 0.5, L * 0.4, 2.4, false)
@@ -447,13 +555,21 @@ function drawRay(ctx: Ctx, s: number, t: number) {
   ctx.quadraticCurveTo(-L * 0.75, 0, -L * 0.55, L * 0.22)
   ctx.quadraticCurveTo(L * 0.3, L * 0.4, L * 0.85, 0)
   ctx.fill()
+  outline(ctx, L * 2, 1)
   // spots
   ctx.fillStyle = 'rgba(180,220,255,0.5)'
   ;[[0.15, -0.12], [-0.15, 0.05], [0.02, 0.16], [-0.32, -0.08]].forEach(([px, py]) => {
     ctx.beginPath(); ctx.arc(L * px, L * py, L * 0.06, 0, Math.PI * 2); ctx.fill()
   })
   wing(1)
-  eye(ctx, L * 0.6, -L * 0.16, L * 0.075)
+  eye(ctx, L * 0.6, -L * 0.16, L * 0.09, '#1d3f6b')
+  // sly grin
+  ctx.strokeStyle = INK
+  ctx.lineWidth = Math.max(1.2, L * 0.035)
+  ctx.lineCap = 'round'
+  ctx.beginPath()
+  ctx.arc(L * 0.62, L * 0.06, L * 0.12, 0.3, Math.PI - 0.9)
+  ctx.stroke()
 }
 
 function drawSailfish(ctx: Ctx, s: number, t: number) {
@@ -504,6 +620,7 @@ function drawSailfish(ctx: Ctx, s: number, t: number) {
   ctx.quadraticCurveTo(s * 0.1, h * 0.55, s * 0.28, h * 0.06)
   ctx.closePath()
   ctx.fill()
+  outline(ctx, s, 0.9)
   // bill
   ctx.fillStyle = '#2e2a6e'
   ctx.beginPath()
@@ -512,7 +629,8 @@ function drawSailfish(ctx: Ctx, s: number, t: number) {
   ctx.lineTo(s * 0.26, h * 0.08)
   ctx.closePath()
   ctx.fill()
-  eye(ctx, s * 0.18, -h * 0.14, s * 0.032)
+  outline(ctx, s, 0.7)
+  eye(ctx, s * 0.18, -h * 0.14, s * 0.042, '#4a3ac0')
 }
 
 function drawLobster(ctx: Ctx, s: number, t: number) {
@@ -590,8 +708,17 @@ function drawLobster(ctx: Ctx, s: number, t: number) {
   ctx.beginPath()
   ctx.ellipse(L * 0.22, 0, L * 0.55, L * 0.3, 0, 0, Math.PI * 2)
   ctx.fill()
+  outline(ctx, L * 2, 1)
+  // carapace segments
+  ctx.strokeStyle = 'rgba(100,16,6,0.55)'
+  ctx.lineWidth = L * 0.035
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath()
+    ctx.arc(L * (0.32 - i * 0.18), 0, L * 0.26, -Math.PI * 0.42, Math.PI * 0.42)
+    ctx.stroke()
+  }
   gloss(ctx, s * 0.5, s * 0.28)
-  eye(ctx, L * 0.62, -L * 0.14, L * 0.07)
+  eye(ctx, L * 0.62, -L * 0.14, L * 0.085, '#a02818')
   ctx.restore()
 }
 
@@ -599,7 +726,7 @@ function drawPomfret(ctx: Ctx, s: number, t: number) {
   const shimmer = 0.5 + Math.sin(t * 4) * 0.5
   genericFish(ctx, s, t, {
     h: 0.78, dark: '#c8860a', base: '#ffcf3e', belly: '#fff3c4', fin: '#e8a416',
-    tail: 1.1, dorsal: 1.1, eyeR: 0.05,
+    tail: 1.1, dorsal: 1.1, eyeR: 0.06, iris: '#a87808', scaly: true,
     pattern: (c, ss, hh) => {
       c.fillStyle = `rgba(255,255,255,${0.12 + shimmer * 0.15})`
       c.save(); c.rotate(-0.5)
@@ -648,6 +775,7 @@ function sharkBody(ctx: Ctx, s: number, t: number, top: string, mid: string, bel
   ctx.quadraticCurveTo(s * 0.3, h * 0.72, s * 0.5, h * 0.05)
   ctx.closePath()
   ctx.fill()
+  outline(ctx, s, 1.15)
   // mouth — jagged white teeth in a grin
   ctx.fillStyle = 'rgba(60,10,20,0.85)'
   ctx.beginPath()
@@ -688,7 +816,7 @@ function sharkBody(ctx: Ctx, s: number, t: number, top: string, mid: string, bel
   ctx.fill()
   ctx.restore()
   // mean eye
-  eye(ctx, s * 0.3, -h * 0.28, s * 0.038, '#301418')
+  eye(ctx, s * 0.3, -h * 0.28, s * 0.045, '#8c2020')
   ctx.strokeStyle = 'rgba(20,20,40,0.6)'
   ctx.lineWidth = s * 0.012
   ctx.beginPath()
@@ -743,41 +871,88 @@ function drawDragonKing(ctx: Ctx, s: number, t: number) {
   ctx.fillStyle = aura
   ctx.beginPath(); ctx.arc(0, 0, s * 0.7, 0, Math.PI * 2); ctx.fill()
 
-  // serpentine body — chain of segments along a sine wave
-  const seg = 11
-  for (let i = seg - 1; i >= 0; i--) {
-    const p = i / (seg - 1)
-    const x = s * (0.34 - p * 0.8)
-    const y = Math.sin(t * 4 - p * 3.6) * h * 0.65 * p
-    const r = h * (0.9 - p * 0.55)
-    const g = ctx.createRadialGradient(x - r * 0.2, y - r * 0.3, r * 0.15, x, y, r)
-    g.addColorStop(0, '#ffd968')
-    g.addColorStop(0.6, '#f29b1d')
-    g.addColorStop(1, '#c04f0a')
-    ctx.fillStyle = g
-    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill()
-    // dorsal flame fins
-    if (i > 0 && i < seg - 1) {
-      ctx.fillStyle = `rgba(255,90,40,${0.75 - p * 0.4})`
-      ctx.beginPath()
-      ctx.moveTo(x - r * 0.4, y - r * 0.75)
-      ctx.quadraticCurveTo(x, y - r * 1.9 - Math.sin(t * 6 + i) * r * 0.24, x + r * 0.42, y - r * 0.72)
-      ctx.closePath()
-      ctx.fill()
-    }
+  // serpentine body — one continuous tapered ribbon along a sine wave
+  const N = 22
+  const cx = (p: number) => s * (0.34 - p * 0.82)
+  const cy = (p: number) => Math.sin(t * 4 - p * 3.6) * h * 0.65 * p
+  const cr = (p: number) => h * (0.82 - p * 0.62)
+  // dorsal fin membrane (behind body): spiky sail following the spine
+  ctx.fillStyle = 'rgba(255,96,44,0.85)'
+  ctx.beginPath()
+  ctx.moveTo(cx(0.06), cy(0.06) - cr(0.06) * 0.8)
+  for (let i = 1; i <= 9; i++) {
+    const p = 0.06 + (i / 9) * 0.86
+    const x = cx(p), y = cy(p) - cr(p) * 0.75
+    const spike = cr(p) * (2.3 + Math.sin(t * 6 + i * 1.3) * 0.35)
+    ctx.quadraticCurveTo(x + s * 0.035, y - spike, x, y)
   }
-  // tail flame
-  const tx = -s * 0.48, ty = Math.sin(t * 4 - 3.8) * h * 0.6
-  ctx.fillStyle = 'rgba(255,120,40,0.8)'
-  for (let i = -1; i <= 1; i++) {
+  ctx.lineTo(cx(0.94), cy(0.94))
+  for (let i = 9; i >= 0; i--) {
+    const p = 0.06 + (i / 9) * 0.86
+    ctx.lineTo(cx(p), cy(p))
+  }
+  ctx.closePath()
+  ctx.fill()
+  outline(ctx, s, 0.5)
+  // body ribbon: top edge nose→tail, bottom edge tail→nose
+  const bodyGrad = ctx.createLinearGradient(s * 0.4, -h, -s * 0.5, h)
+  bodyGrad.addColorStop(0, '#ffd968')
+  bodyGrad.addColorStop(0.5, '#f2a51d')
+  bodyGrad.addColorStop(1, '#c04f0a')
+  ctx.fillStyle = bodyGrad
+  ctx.beginPath()
+  ctx.moveTo(cx(0), cy(0) - cr(0))
+  for (let i = 1; i <= N; i++) { const p = i / N; ctx.lineTo(cx(p), cy(p) - cr(p)) }
+  for (let i = N; i >= 0; i--) { const p = i / N; ctx.lineTo(cx(p), cy(p) + cr(p)) }
+  ctx.closePath()
+  ctx.fill()
+  outline(ctx, s, 1)
+  // scales + belly plates clipped to the ribbon (path still current)
+  ctx.save()
+  ctx.clip()
+  ctx.strokeStyle = 'rgba(255,240,180,0.45)'
+  for (let i = 1; i < 14; i++) {
+    const p = i / 14
+    const r = cr(p)
+    ctx.lineWidth = Math.max(1, r * 0.12)
+    ctx.beginPath()
+    ctx.arc(cx(p) + r * 0.5, cy(p), r * 0.85, -Math.PI * 0.42, Math.PI * 0.42)
+    ctx.stroke()
+  }
+  // belly plates
+  ctx.strokeStyle = 'rgba(120,50,8,0.45)'
+  for (let i = 1; i < 18; i++) {
+    const p = i / 18
+    const r = cr(p)
+    ctx.lineWidth = Math.max(1, r * 0.1)
+    ctx.beginPath()
+    ctx.moveTo(cx(p) - r * 0.2, cy(p) + r * 0.45)
+    ctx.quadraticCurveTo(cx(p), cy(p) + r * 1.05, cx(p) + r * 0.3, cy(p) + r * 0.45)
+    ctx.stroke()
+  }
+  // spine highlight
+  ctx.strokeStyle = 'rgba(255,255,220,0.5)'
+  ctx.lineWidth = Math.max(1, h * 0.08)
+  ctx.beginPath()
+  ctx.moveTo(cx(0.04), cy(0.04) - cr(0.04) * 0.55)
+  for (let i = 1; i <= 12; i++) { const p = 0.04 + (i / 12) * 0.7; ctx.lineTo(cx(p), cy(p) - cr(p) * 0.55) }
+  ctx.stroke()
+  ctx.restore()
+  // tail — flowing twin-flame fin
+  const tp = 1
+  const tx = cx(tp), ty = cy(tp)
+  const ta = Math.sin(t * 5) * 0.2
+  ctx.fillStyle = 'rgba(255,120,40,0.9)'
+  for (const dir of [-1, 1]) {
     ctx.save()
     ctx.translate(tx, ty)
-    ctx.rotate(i * 0.5 + Math.sin(t * 5) * 0.15)
+    ctx.rotate(ta + dir * 0.42)
     ctx.beginPath()
     ctx.moveTo(0, 0)
-    ctx.quadraticCurveTo(-s * 0.14, -h * 0.4, -s * 0.24, 0)
-    ctx.quadraticCurveTo(-s * 0.14, h * 0.2, 0, 0)
+    ctx.quadraticCurveTo(-s * 0.16, dir * -h * 0.7, -s * 0.3, dir * -h * 0.3 + Math.sin(t * 6 + dir) * h * 0.16)
+    ctx.quadraticCurveTo(-s * 0.16, dir * h * 0.08, 0, 0)
     ctx.fill()
+    outline(ctx, s, 0.5)
     ctx.restore()
   }
   // head
@@ -790,16 +965,25 @@ function drawDragonKing(ctx: Ctx, s: number, t: number) {
   ctx.beginPath()
   ctx.ellipse(hx, 0, h * 1.15, h * 0.85, 0, 0, Math.PI * 2)
   ctx.fill()
-  // horns
+  outline(ctx, h * 3, 1)
+  // antler-style horns, swept back over the body
   ctx.fillStyle = '#ffe9b0'
   for (const dir of [-1, 1]) {
     ctx.save()
-    ctx.translate(hx - h * 0.3, -h * 0.62)
-    ctx.rotate(-0.7 + dir * 0.22)
+    ctx.translate(hx - h * 0.32, -h * 0.6)
+    ctx.rotate(-1.35 + dir * 0.2)
     ctx.beginPath()
     ctx.moveTo(0, 0)
-    ctx.quadraticCurveTo(-h * 0.3, -h * 0.8, -h * 0.14, -h * 1.25)
-    ctx.quadraticCurveTo(h * 0.06, -h * 0.7, h * 0.16, -h * 0.05)
+    ctx.quadraticCurveTo(-h * 0.5, -h * 0.7, -h * 0.4, -h * 1.5)
+    ctx.quadraticCurveTo(-h * 0.05, -h * 0.85, h * 0.2, -h * 0.05)
+    ctx.closePath()
+    ctx.fill()
+    outline(ctx, h * 2, 0.7)
+    // fork
+    ctx.beginPath()
+    ctx.moveTo(-h * 0.16, -h * 0.5)
+    ctx.quadraticCurveTo(-h * 0.72, -h * 0.75, -h * 0.85, -h * 0.62)
+    ctx.quadraticCurveTo(-h * 0.5, -h * 0.42, -h * 0.1, -h * 0.3)
     ctx.closePath()
     ctx.fill()
     ctx.restore()

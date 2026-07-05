@@ -243,15 +243,16 @@ const displayName = computed(() => auth.profile?.displayName || auth.profile?.em
       <div class="grid gap-4 sm:grid-cols-3">
         <button
           v-for="(r, i) in ROOMS" :key="r.key"
-          class="group relative overflow-hidden rounded-2xl p-4 pb-5 text-center ring-1 ring-amber-300/30 transition hover:ring-amber-300/80 hover:shadow-[0_0_28px_rgba(80,220,255,0.25)]"
+          class="fh-roomcard group relative overflow-hidden rounded-2xl p-4 pb-5 text-center transition hover:shadow-[0_0_32px_rgba(255,200,80,0.35)]"
           :style="{ background: `linear-gradient(165deg, ${r.palette.top}, ${r.palette.bottom})` }"
           @click="enterRoom(r)"
         >
-          <div class="mx-auto grid h-36 w-36 place-items-center rounded-full bg-black/25 ring-2 ring-amber-300/50 transition group-hover:scale-105">
+          <span class="fh-shine" aria-hidden="true" />
+          <div class="fh-marquee mx-auto grid h-36 w-36 place-items-center rounded-full bg-black/25 transition group-hover:scale-105">
             <canvas :ref="(el) => { previewCanvases[i] = el as HTMLCanvasElement | null; runPreviews() }" class="h-32 w-32" />
           </div>
-          <p class="mt-3 rounded-full bg-black/30 px-3 py-0.5 text-xs font-bold text-cyan-100/90 ring-1 ring-cyan-200/30 inline-block">{{ r.sub }}</p>
-          <p class="mt-2 text-xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-b from-amber-100 to-amber-400 drop-shadow">{{ r.name }}</p>
+          <p class="mt-3 inline-block rounded-full bg-black/30 px-3 py-0.5 text-xs font-bold text-cyan-100/90 ring-1 ring-cyan-200/30">{{ r.sub }}</p>
+          <p class="fh-goldtext mt-2 text-xl font-black tracking-widest drop-shadow">{{ r.name }}</p>
         </button>
       </div>
       <p class="mt-4 text-center text-2xs text-cyan-100/40">虛擬遊戲幣 · 每發子彈按底注扣款 · 命中由伺服器判定（RTP 94%）</p>
@@ -355,6 +356,54 @@ const displayName = computed(() => auth.profile?.displayName || auth.profile?.em
 }
 .fh-ctrlbtn {
   @apply flex flex-col items-center gap-0.5 rounded-xl bg-black/50 px-3.5 py-1.5 text-[10px] font-bold text-cyan-100/90 ring-1 ring-cyan-300/40 backdrop-blur-sm transition hover:bg-black/70;
+}
+.fh-roomcard {
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  box-shadow: 0 0 0 2px rgba(255, 196, 60, 0.55), inset 0 0 22px rgba(0, 0, 0, 0.35);
+}
+.fh-roomcard:hover {
+  box-shadow: 0 0 0 2px rgba(255, 220, 120, 0.95), 0 0 32px rgba(255, 200, 80, 0.35), inset 0 0 22px rgba(0, 0, 0, 0.35);
+}
+/* marquee ring: rotating gold light dots around the fish porthole */
+.fh-marquee {
+  position: relative;
+  border: 3px solid rgba(255, 200, 80, 0.7);
+}
+.fh-marquee::before {
+  content: '';
+  position: absolute;
+  inset: -9px;
+  border-radius: 9999px;
+  background:
+    repeating-conic-gradient(rgba(255, 226, 130, 0.95) 0deg 6deg, transparent 6deg 30deg);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 6px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 6px));
+  animation: fh-marquee-spin 4s linear infinite;
+}
+@keyframes fh-marquee-spin {
+  to { transform: rotate(360deg); }
+}
+/* gold gradient title text */
+.fh-goldtext {
+  background: linear-gradient(180deg, #fff3c0 0%, #ffd24a 45%, #b9770e 75%, #ffe9a0 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 1px 0 rgba(70, 40, 0, 0.8));
+}
+/* diagonal shine sweep across the card */
+.fh-shine {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.18) 45%, transparent 60%);
+  background-size: 260% 100%;
+  animation: fh-shine-sweep 3.4s ease-in-out infinite;
+}
+@keyframes fh-shine-sweep {
+  0%, 55% { background-position: 120% 0; }
+  100% { background-position: -140% 0; }
 }
 .fh-bubble {
   position: absolute;
