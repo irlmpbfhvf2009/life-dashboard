@@ -144,9 +144,15 @@ export interface Seth2SpinResult {
   balance: number
 }
 
+// ---- Fish hunter (深海獵金 — kills rolled server-side per batched volley) ----
+// wins[] aligns with the hits[] sent: 0 = fish survived, >0 = payout credited.
+export interface FishVolleyResult { cost: number; totalWin: number; wins: number[]; balance: number }
+
 export const gameApi = {
   seth2Spin: (bet: number, buy: Seth2Buy = 'NONE') =>
     request<Seth2SpinResult>(() => http.post('/api/game/seth2/spin', { bet, buy })),
+  fishVolley: (bet: number, shots: number, hits: number[]) =>
+    request<FishVolleyResult>(() => http.post('/api/game/fish/volley', { bet, shots, hits })),
 }
 
 // ---- Admin (root-admin only) ----
