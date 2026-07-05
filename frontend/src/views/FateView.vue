@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { Dices, RotateCcw, Check, X } from 'lucide-vue-next'
 import PageHeader from '@/components/ui/PageHeader.vue'
 
@@ -18,47 +18,66 @@ const history = ref<HistoryEntry[]>([])
 const yesCount = computed(() => history.value.filter((h) => h.result === 'YES').length)
 const noCount = computed(() => history.value.filter((h) => h.result === 'NO').length)
 
-let rollTimer: ReturnType<typeof setInterval> | null = null
+// ---- 3D die ----------------------------------------------------------
+// A real CSS cube: 3 YES faces + 3 NO faces. To land on a face we rotate the
+// cube to that face's inverse orientation, plus a few full 360° tumbles.
+interface DieFace { label: Face; rx: number; ry: number }
+const FACES: DieFace[] = [
+  { label: 'YES', rx: 0, ry: 0 },      // front
+  { label: 'NO', rx: 0, ry: 180 },     // back
+  { label: 'NO', rx: 0, ry: -90 },     // right
+  { label: 'YES', rx: 0, ry: 90 },     // left
+  { label: 'YES', rx: -90, ry: 0 },    // top
+  { label: 'NO', rx: 90, ry: 0 },      // bottom
+]
+
+// Running rotation totals so every roll keeps spinning the same direction.
+const rotX = ref(-18)
+const rotY = ref(32)
+const cubeStyle = computed(() => ({
+  transform: `rotateX(${rotX.value}deg) rotateY(${rotY.value}deg)`,
+}))
+
 let settleTimer: ReturnType<typeof setTimeout> | null = null
 
-function roll() {
+async function roll() {
   if (rolling.value) return
   rolling.value = true
   result.value = null
 
-  // Flicker between faces while "rolling" for tactile feedback.
-  rollTimer = setInterval(() => {
-    result.value = Math.random() < 0.5 ? 'YES' : 'NO'
-  }, 80)
+  // Pick the winning face, then aim the cube at it with extra full tumbles.
+  const face = FACES[Math.floor(Math.random() * FACES.length)]
+  const spinsX = 360 * (2 + Math.floor(Math.random() * 2))
+  const spinsY = 360 * (2 + Math.floor(Math.random() * 2))
+
+  // Let the .is-rolling transition class land in its own frame first —
+  // changing class + transform together makes the browser skip the transition
+  // (the cube would teleport to the result instead of tumbling). setTimeout
+  // instead of rAF so it also fires in background tabs.
+  await nextTick()
+  setTimeout(() => {
+    rotX.value = rotX.value - (rotX.value % 360) + spinsX + face.rx
+    rotY.value = rotY.value - (rotY.value % 360) + spinsY + face.ry
+  }, 50)
 
   settleTimer = setTimeout(() => {
-    if (rollTimer) clearInterval(rollTimer)
-    rollTimer = null
-    const final: Face = Math.random() < 0.5 ? 'YES' : 'NO'
-    result.value = final
+    result.value = face.label
     rolling.value = false
     history.value.unshift({
-      result: final,
+      result: face.label,
       at: new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
     })
     if (history.value.length > 12) history.value = history.value.slice(0, 12)
-  }, 900)
+  }, 1750)
 }
 
 function reset() {
-  if (rollTimer) clearInterval(rollTimer)
   if (settleTimer) clearTimeout(settleTimer)
-  rollTimer = null
   settleTimer = null
   rolling.value = false
   result.value = null
   history.value = []
 }
-
-const faceClass = computed(() => {
-  if (!result.value) return 'is-idle'
-  return result.value === 'YES' ? 'is-yes' : 'is-no'
-})
 </script>
 
 <template>
@@ -80,16 +99,26 @@ const faceClass = computed(() => {
         class="input mb-8 w-full max-w-md text-center"
       />
 
-      <!-- The die -->
-      <div
-        class="fate-die mb-8 flex h-44 w-44 select-none items-center justify-center rounded-[2rem] shadow-card transition-transform"
-        :class="[faceClass, { 'fate-die--rolling': rolling }]"
-      >
-        <Dices v-if="result === null" class="h-16 w-16 opacity-40" />
-        <div v-else class="flex flex-col items-center gap-1">
-          <component :is="result === 'YES' ? Check : X" class="h-12 w-12" :stroke-width="2.5" />
-          <span class="text-3xl font-black tracking-wide">{{ result }}</span>
+      <!-- The 3D die -->
+      <div class="fate-scene mb-8 select-none">
+        <div class="fate-bouncer" :class="{ 'is-rolling': rolling }">
+          <div
+            class="fate-cube"
+            :class="{ 'is-idle': !rolling && result === null, 'is-rolling': rolling }"
+            :style="cubeStyle"
+          >
+            <div
+              v-for="(f, i) in FACES" :key="i"
+              class="fate-face" :class="f.label === 'YES' ? 'is-yes' : 'is-no'"
+              :style="{ transform: `rotateY(${-f.ry}deg) rotateX(${-f.rx}deg) translateZ(var(--half))` }"
+            >
+              <component :is="f.label === 'YES' ? Check : X" class="h-10 w-10" :stroke-width="3" />
+              <span class="text-xl font-black tracking-widest">{{ f.label }}</span>
+              <span class="fate-face-gloss" aria-hidden="true" />
+            </div>
+          </div>
         </div>
+        <div class="fate-shadow" :class="{ 'is-rolling': rolling }" aria-hidden="true" />
       </div>
 
       <!-- Verdict line -->
@@ -158,23 +187,105 @@ const faceClass = computed(() => {
 </template>
 
 <style scoped>
-.fate-die {
-  background: var(--surface-2, #f4f4f5);
-  color: var(--ink-400, #a1a1aa);
+/* ---- 3D die scene ---- */
+.fate-scene {
+  --size: 10.5rem;
+  --half: calc(var(--size) / 2);
+  position: relative;
+  width: var(--size);
+  height: calc(var(--size) + 2.5rem);
+  perspective: 900px;
+  perspective-origin: 50% 30%;
 }
-.fate-die.is-yes {
-  background: linear-gradient(135deg, #34d399, #059669);
+.fate-bouncer {
+  width: var(--size);
+  height: var(--size);
+  transform-style: preserve-3d;
+}
+.fate-bouncer.is-rolling {
+  animation: fate-bounce 1.65s cubic-bezier(0.3, 0.6, 0.4, 1);
+}
+@keyframes fate-bounce {
+  0% { transform: translateY(0); }
+  18% { transform: translateY(-3.4rem); }
+  42% { transform: translateY(0.2rem); }
+  58% { transform: translateY(-1.6rem); }
+  74% { transform: translateY(0.15rem); }
+  86% { transform: translateY(-0.5rem); }
+  100% { transform: translateY(0); }
+}
+.fate-cube {
+  position: relative;
+  width: var(--size);
+  height: var(--size);
+  transform-style: preserve-3d;
+}
+.fate-cube.is-rolling {
+  transition: transform 1.65s cubic-bezier(0.16, 0.84, 0.32, 1.02);
+}
+.fate-cube.is-idle {
+  animation: fate-idle 9s linear infinite;
+}
+@keyframes fate-idle {
+  from { transform: rotateX(-18deg) rotateY(32deg); }
+  to { transform: rotateX(-18deg) rotateY(392deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fate-cube.is-idle { animation: none; }
+  .fate-bouncer.is-rolling { animation: none; }
+  .fate-cube.is-rolling { transition-duration: 0.3s; }
+}
+.fate-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border-radius: 1.4rem;
   color: #fff;
+  backface-visibility: hidden;
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.28), inset 0 -1.6rem 2.4rem rgba(0, 0, 0, 0.28);
+  overflow: hidden;
 }
-.fate-die.is-no {
-  background: linear-gradient(135deg, #fb7185, #e11d48);
-  color: #fff;
+.fate-face.is-yes {
+  background:
+    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.38), transparent 46%),
+    linear-gradient(135deg, #34d399, #059669 55%, #036c4e);
 }
-.fate-die--rolling {
-  animation: fate-shake 0.18s ease-in-out infinite;
+.fate-face.is-no {
+  background:
+    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.36), transparent 46%),
+    linear-gradient(135deg, #fb7185, #e11d48 55%, #9f1136);
 }
-@keyframes fate-shake {
-  0%, 100% { transform: rotate(-6deg) scale(1.02); }
-  50% { transform: rotate(6deg) scale(1.05); }
+.fate-face-gloss {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.3) 0%, transparent 38%);
+  pointer-events: none;
+}
+/* floor shadow */
+.fate-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: calc(var(--size) * 0.9);
+  height: 1.1rem;
+  transform: translateX(-50%);
+  border-radius: 9999px;
+  background: radial-gradient(closest-side, rgba(10, 10, 30, 0.45), transparent);
+  filter: blur(4px);
+}
+.fate-shadow.is-rolling {
+  animation: fate-shadow 1.65s cubic-bezier(0.3, 0.6, 0.4, 1);
+}
+@keyframes fate-shadow {
+  0% { transform: translateX(-50%) scale(1); opacity: 1; }
+  18% { transform: translateX(-50%) scale(0.55); opacity: 0.5; }
+  42% { transform: translateX(-50%) scale(1.05); opacity: 1; }
+  58% { transform: translateX(-50%) scale(0.72); opacity: 0.65; }
+  74% { transform: translateX(-50%) scale(1.03); opacity: 1; }
+  100% { transform: translateX(-50%) scale(1); opacity: 1; }
 }
 </style>
