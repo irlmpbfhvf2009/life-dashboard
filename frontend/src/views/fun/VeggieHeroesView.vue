@@ -3,7 +3,7 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
-  gs, api, ensureSocket, createRoom, joinRoom, leaveRoom, bindEngine, unbindEngine, pushToast,
+  gs, api, ensureSocket, disconnectSocket, createRoom, joinRoom, leaveRoom, bindEngine, unbindEngine, pushToast,
 } from '@/game/net'
 import { engine } from '@/game/render'
 import { useGameSound, playMusic, stopMusic, sfx } from '@/game/sound'
@@ -234,6 +234,8 @@ onBeforeUnmount(() => {
   engine.stop()
   unbindEngine()
   stopMusic()
+  // 離開遊戲頁就斷線（session 保留，回來會自動重連進房）— 避免掛著的分頁讓 Cloud Run 一直計費
+  disconnectSocket()
 })
 
 function exitGame() {

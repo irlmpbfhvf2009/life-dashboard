@@ -8,8 +8,8 @@ const PORT = Number(process.env.PORT ?? 3001)
 
 const http = createServer((req, res) => {
   if (req.url === '/health') {
-    res.writeHead(200, { 'content-type': 'application/json' })
-    res.end(JSON.stringify({ ok: true, rooms: rooms.size, uptime: process.uptime() }))
+    res.writeHead(200, { 'content-type': 'application/json', 'access-control-allow-origin': '*' })
+    res.end(JSON.stringify({ ok: true, rooms: rooms.size, sockets: io.engine.clientsCount, uptime: process.uptime() }))
     return
   }
   res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8' })
@@ -54,6 +54,8 @@ io.on('connection', (socket: Socket) => {
 
   socket.on('room:create', (req: { name: string; config: RoomConfig }, ack) => {
     try {
+      // 成本保險：單 instance 房間總量上限（免費層保護）
+      if (rooms.size >= 50) { ack?.({ ok: false, error: '伺服器房間已滿，請稍後再試' }); return }
       const code = genCode()
       const r = new Room(io, code, req?.config ?? { mode: 'standard', difficulty: 0, maxPlayers: 4 })
       rooms.set(code, r)

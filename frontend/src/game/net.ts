@@ -73,23 +73,62 @@ export function loadSession(): Session | null {
 }
 export function clearSession(): void { localStorage.removeItem('veggie-session') }
 
+// ---------------------------------------------------------------- 閒置斷線保護
+// Cloud Run 對 WebSocket 是「連著就整台計費」— 不在房間 / 分頁背景太久就主動斷線，
+// 回來（任何操作或分頁回前景）會自動重連 + 用 session token 重新進房。
+const IDLE_MS = 5 * 60_000
+let noRoomSince = 0
+let hiddenSince = 0
+let idleWatch: ReturnType<typeof setInterval> | null = null
+
+export function disconnectSocket(): void {
+  if (socket?.connected) socket.disconnect()
+  gs.connected = false
+}
+
+function startIdleWatch(): void {
+  if (idleWatch) return
+  idleWatch = setInterval(() => {
+    if (!socket?.connected) return
+    const now = Date.now()
+    if (gs.room) noRoomSince = 0
+    else if (!noRoomSince) noRoomSince = now
+    if (noRoomSince && now - noRoomSince > IDLE_MS) disconnectSocket()
+    else if (hiddenSince && now - hiddenSince > IDLE_MS) disconnectSocket()
+  }, 30_000)
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      hiddenSince = Date.now()
+    } else {
+      hiddenSince = 0
+      if (socket && !socket.connected) socket.connect()   // 回前景自動重連
+    }
+  })
+}
+
 export function ensureSocket(): Socket {
-  if (socket) return socket
+  if (socket) {
+    if (!socket.connected) socket.connect()
+    return socket
+  }
   gs.connecting = true
   socket = io(SERVER_URL, { transports: ['websocket', 'polling'], reconnection: true })
+  startIdleWatch()
 
   socket.on('connect', () => {
     gs.connected = true
     gs.connecting = false
-    // 自動重連進房
+    noRoomSince = 0
+    // 有 session 一律嘗試重新進房（涵蓋：閒置斷線後回來、Cloud Run 60 分鐘斷線、行動網路切換）
     const sess = loadSession()
-    if (sess && !gs.room) {
+    if (sess) {
       socket!.emit('room:reconnect', sess, (r: { ok: boolean; room?: RoomInfo; playerId?: string }) => {
         if (r.ok && r.room) {
           gs.room = r.room
           gs.playerId = r.playerId!
         } else {
           clearSession()
+          if (gs.room) resetToHome()   // 房間已不存在 → 回首頁
         }
       })
     }
