@@ -337,7 +337,7 @@ export class Game {
       perPlayer[p.id] = {
         kills: p.wave.kills, gold: p.wave.gold, xp: Math.round(p.wave.xp),
         dmgTaken: Math.round(p.wave.dmgTaken), rescues: p.wave.rescues, downs: p.wave.downs,
-        dps: Math.round(p.wave.dmgDealt / Math.max(1, this.time)),
+        dmg: Math.round(p.total.dmgDealt),
       }
       downs += p.wave.downs
       dmgTaken += p.wave.dmgTaken
@@ -423,7 +423,7 @@ export class Game {
       perPlayer[p.id] = {
         kills: p.total.kills, gold: p.total.gold, xp: Math.round(p.total.xp),
         dmgTaken: Math.round(p.total.dmgTaken), rescues: p.total.rescues, downs: p.total.downs,
-        dps: 0,
+        dmg: Math.round(p.total.dmgDealt),
       }
     }
     const summary: GameOverSummary = {
@@ -1130,7 +1130,7 @@ export class Game {
         gold: p.gold,
         xp: Math.round(p.xp), nxp: xpForLevel(p.level),
         dn: p.downedCount, pu: p.pendingLevelups,
-        dps: Math.round(p.wave.dmgDealt / Math.max(1, this.time)),
+        dmg: Math.round(p.total.dmgDealt),
         fx: p.fx || undefined,
       })),
       enemies: this.enemies.map(e => ({

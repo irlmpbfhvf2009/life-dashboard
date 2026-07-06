@@ -280,7 +280,7 @@ export function damageBoss(g: Game, dmg: number, ownerId?: string, srcX?: number
   d = Math.max(1, Math.round(d))
   b.hp -= d
   g.ev({ t: 'hit', i: -1, d, x: Math.round(b.x), y: Math.round(b.y) })
-  if (owner) owner.wave.dmgDealt += d
+  if (owner) { owner.wave.dmgDealt += d; owner.total.dmgDealt += d }
   if (b.hp <= 0) {
     b.hp = 0
     g.ev({ t: 'bossDead' })

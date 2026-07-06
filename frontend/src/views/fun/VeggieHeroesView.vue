@@ -870,7 +870,7 @@ const fmtTime = (s: number) => {
             <div class="mt-0.5 h-1 overflow-hidden rounded-full bg-white/10">
               <div class="h-full bg-sky-300" :style="{ width: (gs.hud.xp / Math.max(1, gs.hud.nxp) * 100) + '%' }" />
             </div>
-            <p class="mt-0.5 text-right text-[10px] font-black text-orange-300">⚔️ {{ gs.hud.dps.toLocaleString() }} DPS</p>
+            <p class="mt-0.5 text-right text-[10px] font-black text-orange-300">🗡️ 傷害 {{ gs.hud.dmg.toLocaleString() }}</p>
           </div>
           <div v-for="m in gs.hud.mates" :key="m.id" class="rounded-lg bg-black/40 px-2 py-1 backdrop-blur-sm">
             <div class="flex justify-between text-[10px]">
@@ -1028,7 +1028,7 @@ const fmtTime = (s: number) => {
             <div class="mt-2 space-y-1 text-left text-[11px]">
               <div v-for="(st, pid) in gs.inter.settlement.perPlayer" :key="pid" class="flex justify-between rounded bg-white/5 px-2 py-1">
                 <span class="font-bold" :class="pid === gs.playerId ? 'text-amber-300' : 'text-white/70'">{{ playerName2(String(pid)) }}</span>
-                <span class="text-white/50">擊殺{{ st.kills }} · 金{{ st.gold }} · 傷{{ st.dmgTaken }} · 救{{ st.rescues }}</span>
+                <span class="text-white/50">擊殺{{ st.kills }} · 傷害{{ st.dmg.toLocaleString() }} · 受傷{{ st.dmgTaken }} · 救{{ st.rescues }}</span>
               </div>
             </div>
           </div>
@@ -1187,7 +1187,7 @@ const fmtTime = (s: number) => {
           <div class="mt-4 space-y-1.5 text-left text-xs">
             <div v-for="(st, pid) in gs.over.perPlayer" :key="pid" class="flex justify-between rounded-lg bg-white/5 px-3 py-2">
               <span class="font-bold" :class="pid === gs.playerId ? 'text-amber-300' : 'text-white/80'">{{ playerName2(String(pid)) }}</span>
-              <span class="text-white/50">擊殺{{ st.kills }} · 金{{ st.gold }} · 倒地{{ st.downs }} · 救援{{ st.rescues }}</span>
+              <span class="text-white/50">擊殺{{ st.kills }} · 傷害{{ st.dmg.toLocaleString() }} · 倒地{{ st.downs }} · 救援{{ st.rescues }}</span>
             </div>
           </div>
           <div class="mt-6 space-y-2">

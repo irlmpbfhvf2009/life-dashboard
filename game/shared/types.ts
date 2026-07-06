@@ -326,7 +326,7 @@ export interface PlayerSnap {
   xp: number; nxp: number // 目前經驗 / 升級所需
   dn: number              // downedCount
   pu: number              // 待選升級數
-  dps: number             // 本波 DPS（傷害/秒）
+  dmg: number             // 整局累計總傷害量
   fx?: string             // 短暫狀態: 'dash'|'rage'|...
 }
 
@@ -421,7 +421,7 @@ export interface WaveSettlement {
   missionDone: boolean
   perPlayer: Record<string, {
     kills: number; gold: number; xp: number; dmgTaken: number
-    rescues: number; downs: number; dps: number
+    rescues: number; downs: number; dmg: number
   }>
   teamGrade: 'S' | 'A' | 'B' | 'C'
   rewards: string[]

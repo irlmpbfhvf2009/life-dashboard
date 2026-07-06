@@ -363,7 +363,7 @@ export function damageEnemyImpl(g: Game, e: SEnemy, dmg: number, opts: DamageOpt
   }
   if (d > 0) {
     g.ev({ t: 'hit', i: e.i, d, crit: opts.crit ? 1 : undefined, x: Math.round(e.x), y: Math.round(e.y) })
-    if (opts.ownerId) { const o = g.players.get(opts.ownerId); if (o) o.wave.dmgDealt += d }
+    if (opts.ownerId) { const o = g.players.get(opts.ownerId); if (o) { o.wave.dmgDealt += d; o.total.dmgDealt += d } }
   }
   if (e.hp <= 0) {
     killEnemy(g, e, opts.ownerId ?? null)
