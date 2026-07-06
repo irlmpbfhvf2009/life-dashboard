@@ -326,6 +326,7 @@ export interface PlayerSnap {
   xp: number; nxp: number // 目前經驗 / 升級所需
   dn: number              // downedCount
   pu: number              // 待選升級數
+  dps: number             // 本波 DPS（傷害/秒）
   fx?: string             // 短暫狀態: 'dash'|'rage'|...
 }
 

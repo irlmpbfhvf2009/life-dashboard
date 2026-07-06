@@ -9,7 +9,8 @@ import {
 import { voice, joinVoice, leaveVoice, toggleMute as toggleVoiceMute } from '@/game/voice'
 import { useHaptics } from '@/game/haptics'
 import { useAuthStore } from '@/stores/auth'
-import { veggieApi, type VeggieBoard } from '@/api'
+import { veggieApi, socialApi, chatApi, type VeggieBoard } from '@/api'
+import type { SocialUser } from '@/types'
 import { engine, EMOTES } from '@/game/render'
 import { useGameSound, playMusic, stopMusic, sfx } from '@/game/sound'
 import Portrait from '@/game/Portrait.vue'
@@ -117,6 +118,44 @@ watch(() => gs.room?.code, async (code) => {
     qrUrl.value = await QR.toDataURL(inviteLink.value, { width: 220, margin: 1, color: { dark: '#1a1208', light: '#fff8e8' } })
   } catch { /* QR 失敗仍可用房號/連結 */ }
 }, { immediate: true })
+
+// ---------------------------------------------------------------- 接工作台社交
+const showInvite = ref(false)
+const friends = ref<SocialUser[]>([])
+const friendsLoading = ref(false)
+const invited = ref<Set<number>>(new Set())
+async function openInvite() {
+  showInvite.value = true
+  friendsLoading.value = true
+  try { friends.value = await socialApi.friends() } catch { friends.value = [] }
+  friendsLoading.value = false
+}
+async function inviteFriend(f: SocialUser) {
+  if (invited.value.has(f.userId)) return
+  try {
+    const conv = await chatApi.createDm(f.userId)
+    await chatApi.send(conv.id, { content: `🥬 來玩菜菜勇者團！房號 ${gs.room!.code}\n${inviteLink.value}` })
+    invited.value = new Set(invited.value).add(f.userId)
+    sfx.click()
+  } catch { pushToast('邀請失敗，稍後再試', 'warn') }
+}
+
+const shared = ref(false)
+async function shareResult() {
+  if (!gs.over || shared.value) return
+  const o = gs.over
+  const rankTxt = submitResult.value ? `，排行榜第 ${submitResult.value.rank} 名` : ''
+  const txt = `🥬 菜菜勇者團 · ${modeName(o.mode)}${o.victory ? ' 通關 🏆' : ''}！撐到第 ${o.wave} 波、擊殺 ${o.totalKills}${rankTxt}。一起來玩 → ${location.origin}/veggie`
+  try {
+    const convs = await chatApi.conversations()
+    const pub = convs.find(c => c.type === 'PUBLIC')
+    if (!pub) { pushToast('找不到公開聊天室', 'warn'); return }
+    await chatApi.send(pub.id, { content: txt })
+    shared.value = true
+    pushToast('已分享到公開聊天室 🎉', 'good')
+  } catch { pushToast('分享失敗，稍後再試', 'warn') }
+}
+watch(() => gs.over, (o) => { if (o) shared.value = false })
 
 const copied = ref(false)
 async function copyLink() {
@@ -574,6 +613,33 @@ const fmtTime = (s: number) => {
       </div>
     </div>
 
+    <!-- ============================================================ 邀請好友 overlay -->
+    <div v-if="showInvite" class="absolute inset-0 z-[70] flex flex-col overflow-y-auto bg-[#0d1a0d]/95 px-5 py-6 backdrop-blur" style="touch-action: pan-y;">
+      <div class="mx-auto w-full max-w-md">
+        <div class="mb-3 flex items-center justify-between">
+          <h2 class="text-xl font-black text-emerald-300">👥 邀請好友</h2>
+          <button class="rounded-lg bg-white/10 px-3 py-1.5 text-sm text-white/70" @click="showInvite = false">關閉 ✕</button>
+        </div>
+        <p class="mb-3 text-xs text-white/40">會透過工作台私訊把房號與邀請連結傳給好友</p>
+        <div v-if="friendsLoading" class="py-10 text-center text-sm text-white/40">載入中…</div>
+        <div v-else-if="friends.length" class="space-y-2">
+          <div v-for="f in friends" :key="f.userId" class="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2.5">
+            <img v-if="f.photoUrl" :src="f.photoUrl" class="h-9 w-9 rounded-full object-cover">
+            <span v-else class="grid h-9 w-9 place-items-center rounded-full bg-white/10">🧑</span>
+            <span class="flex-1 truncate font-bold text-white/80">{{ f.displayName ?? f.email }}</span>
+            <button
+              class="shrink-0 rounded-lg px-3 py-1.5 text-xs font-black active:scale-95"
+              :class="invited.has(f.userId) ? 'bg-white/10 text-emerald-300' : 'bg-emerald-500/40 text-emerald-100'"
+              @click="inviteFriend(f)"
+            >{{ invited.has(f.userId) ? '✅ 已邀請' : '邀請' }}</button>
+          </div>
+        </div>
+        <div v-else class="py-10 text-center text-sm text-white/40">
+          還沒有好友，先去工作台的「社交」加好友吧
+        </div>
+      </div>
+    </div>
+
     <!-- ============================================================ 大廳 -->
     <div v-else-if="screen === 'lobby'" class="flex flex-1 flex-col items-center overflow-y-auto px-5 py-6" style="touch-action: pan-y;">
       <button class="absolute left-3 top-3 rounded-lg bg-white/10 px-3 py-1.5 text-xs text-white/70" @click="exitGame">← 離開</button>
@@ -585,6 +651,9 @@ const fmtTime = (s: number) => {
           <p class="text-xs leading-relaxed text-white/50">朋友掃 QR 或開連結，輸入房號即可加入</p>
           <button class="w-full rounded-lg bg-white/10 px-3 py-2 text-xs font-bold text-sky-300 active:scale-95" @click="copyLink">
             {{ copied ? '✅ 已複製' : '🔗 複製邀請連結' }}
+          </button>
+          <button v-if="auth.isAuthenticated" class="w-full rounded-lg bg-emerald-500/20 px-3 py-2 text-xs font-bold text-emerald-300 active:scale-95" @click="openInvite">
+            👥 邀請好友
           </button>
         </div>
       </div>
@@ -801,6 +870,7 @@ const fmtTime = (s: number) => {
             <div class="mt-0.5 h-1 overflow-hidden rounded-full bg-white/10">
               <div class="h-full bg-sky-300" :style="{ width: (gs.hud.xp / Math.max(1, gs.hud.nxp) * 100) + '%' }" />
             </div>
+            <p class="mt-0.5 text-right text-[10px] font-black text-orange-300">⚔️ {{ gs.hud.dps.toLocaleString() }} DPS</p>
           </div>
           <div v-for="m in gs.hud.mates" :key="m.id" class="rounded-lg bg-black/40 px-2 py-1 backdrop-blur-sm">
             <div class="flex justify-between text-[10px]">
@@ -1125,6 +1195,12 @@ const fmtTime = (s: number) => {
               class="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 py-3 font-black active:scale-95"
               @click="boardMode = gs.over.mode as any; boardPlayers = gs.begin?.players.length ?? 1; openBoard()"
             >🏆 查看排行榜</button>
+            <button
+              v-if="auth.isAuthenticated"
+              class="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 py-3 font-black active:scale-95"
+              :disabled="shared"
+              @click="shareResult"
+            >{{ shared ? '✅ 已分享到聊天室' : '📣 分享戰績到公開聊天室' }}</button>
             <button
               v-if="gs.over.victory && isHost && (gs.over.mode === 'standard' || gs.over.mode === 'quick')"
               class="w-full rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-600 py-3 font-black active:scale-95"

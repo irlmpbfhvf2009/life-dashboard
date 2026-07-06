@@ -1130,6 +1130,7 @@ export class Game {
         gold: p.gold,
         xp: Math.round(p.xp), nxp: xpForLevel(p.level),
         dn: p.downedCount, pu: p.pendingLevelups,
+        dps: Math.round(p.wave.dmgDealt / Math.max(1, this.time)),
         fx: p.fx || undefined,
       })),
       enemies: this.enemies.map(e => ({
