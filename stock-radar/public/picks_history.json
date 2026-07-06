@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-07-04 09:14",
+  "updated_at": "2026-07-06 19:49",
   "picks": [
     {
       "date": "2026-06-16",
@@ -7978,6 +7978,99 @@
         "inst20d": null,
         "industry": "弱勢族群",
         "margin_chg": 3.4,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-07-06",
+      "code": "1503",
+      "name": "士電",
+      "entry_price": 241.5,
+      "score": 60.3,
+      "signals": {
+        "composite": 60.3,
+        "breakdown": {
+          "chips": 50.0,
+          "tech": 91.1,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 58.1,
+        "change_pct": 1.47,
+        "foreign_lots": 0,
+        "trust_lots": 0,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": null,
+        "margin_chg": null,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-07-06",
+      "code": "2382",
+      "name": "廣達",
+      "entry_price": 378.0,
+      "score": 56.8,
+      "signals": {
+        "composite": 56.8,
+        "breakdown": {
+          "chips": 50.0,
+          "tech": 77.2,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 58.1,
+        "change_pct": 0.27,
+        "foreign_lots": 0,
+        "trust_lots": 0,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": null,
+        "margin_chg": null,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-07-06",
+      "code": "1513",
+      "name": "中興電",
+      "entry_price": 178.5,
+      "score": 49.7,
+      "signals": {
+        "composite": 49.7,
+        "breakdown": {
+          "chips": 50.0,
+          "tech": 48.9,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 58.3,
+        "change_pct": 1.13,
+        "foreign_lots": 0,
+        "trust_lots": 0,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": null,
+        "margin_chg": null,
         "attn_mom": null,
         "attn_trend": null
       }
