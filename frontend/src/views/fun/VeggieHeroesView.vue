@@ -4,12 +4,13 @@ import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   gs, api, ensureSocket, disconnectSocket, createRoom, joinRoom, leaveRoom,
-  bindEngine, unbindEngine, bindChatBubble, pushToast,
+  bindEngine, unbindEngine, bindChatBubble, bindEmote, pushToast,
 } from '@/game/net'
 import { voice, joinVoice, leaveVoice, toggleMute as toggleVoiceMute } from '@/game/voice'
+import { useHaptics } from '@/game/haptics'
 import { useAuthStore } from '@/stores/auth'
 import { veggieApi, type VeggieBoard } from '@/api'
-import { engine } from '@/game/render'
+import { engine, EMOTES } from '@/game/render'
 import { useGameSound, playMusic, stopMusic, sfx } from '@/game/sound'
 import Portrait from '@/game/Portrait.vue'
 import { CHARACTERS, CHARACTER_MAP } from '@game/content/characters'
@@ -25,6 +26,7 @@ const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const { muted, musicOn, toggleMute, toggleMusic } = useGameSound()
+const { on: hapticsOn, supported: hapticsSupported, toggle: toggleHaptics } = useHaptics()
 
 // ---------------------------------------------------------------- 畫面狀態
 const screen = computed(() => {
@@ -303,10 +305,34 @@ function onVoiceBtn() {
 }
 watch(() => voice.error, (e) => { if (e) pushToast(e, 'warn') })
 
+// 快捷表情
+const emotePalette = ref(false)
+const emotes = EMOTES
+function sendEmote(n: number) {
+  api.emote(n)
+  engine.showEmote(gs.playerId, n)   // 本機立即顯示
+  emotePalette.value = false
+}
+
+// 暫停（單人）
+const isSolo = computed(() => (gs.begin?.players.length ?? gs.room?.players.length ?? 1) === 1)
+function togglePause() {
+  if (!isSolo.value) return
+  api.pause(!gs.paused)
+}
+
+// 陣亡觀戰
+const spectating = computed(() => gs.hud.status === 'dead' && gs.hud.mates.some(m => m.st === 'alive' || m.st === 'downed'))
+const spectateName = computed(() => {
+  const m = gs.hud.mates.find(m => m.id === engine.spectateId)
+  return m?.name ?? gs.hud.mates.find(m => m.st === 'alive')?.name ?? ''
+})
+
 watch(screen, async (s) => {
   if (s === 'game') {
     await nextTick()
     bindChatBubble((id, text) => engine.say(id, text))
+    bindEmote((id, n) => engine.showEmote(id, n))
     if (gameCanvas.value) {
       bindEngine({
         snap: (snap) => engine.applySnapshot(snap),
@@ -324,6 +350,7 @@ watch(screen, async (s) => {
     engine.stop()
     unbindEngine()
     bindChatBubble(null)
+    bindEmote(null)
     if (s === 'lobby' || s === 'select') playMusic('lobby')
     if (s === 'home') stopMusic()
   }
@@ -333,6 +360,8 @@ const submitResult = ref<{ best: boolean; rank: number } | null>(null)
 watch(() => gs.over, async (o) => {
   if (!o) return
   if (o.victory) sfx.victory(); else sfx.defeat()
+  const { haptics } = await import('@/game/haptics')
+  haptics.gameover()
   // 紀錄最高波數（本機）
   const key = `veggie-best-${o.mode}`
   const prev = Number(localStorage.getItem(key) ?? 0)
@@ -795,7 +824,7 @@ const fmtTime = (s: number) => {
         </div>
       </div>
 
-      <!-- 聊天 / 語音 / 音效 / 音樂 — 放在小地圖下方（右上） -->
+      <!-- 聊天 / 表情 / 語音 / 音效 / 音樂 / 暫停 — 放在小地圖下方（右上） -->
       <div class="absolute right-2 top-[184px] flex flex-col items-end gap-1.5">
         <button
           class="grid h-9 w-9 place-items-center rounded-full text-base active:scale-90"
@@ -804,11 +833,40 @@ const fmtTime = (s: number) => {
         >💬</button>
         <button
           class="grid h-9 w-9 place-items-center rounded-full text-base active:scale-90"
+          :class="emotePalette ? 'bg-amber-500/70' : 'bg-black/45'"
+          @click="emotePalette = !emotePalette"
+        >😀</button>
+        <button
+          class="grid h-9 w-9 place-items-center rounded-full text-base active:scale-90"
           :class="voice.enabled ? (voice.muted ? 'bg-rose-500/60' : 'bg-emerald-500/60') : 'bg-black/45'"
           @click="onVoiceBtn"
         >{{ voice.enabled && voice.muted ? '🙊' : '🎙️' }}</button>
         <button class="grid h-9 w-9 place-items-center rounded-full bg-black/45 text-base active:scale-90" @click="toggleMusic">{{ musicOn ? '🎵' : '🔇' }}</button>
         <button class="grid h-9 w-9 place-items-center rounded-full bg-black/45 text-base active:scale-90" @click="toggleMute">{{ muted ? '🔕' : '🔔' }}</button>
+        <button v-if="hapticsSupported" class="grid h-9 w-9 place-items-center rounded-full bg-black/45 text-base active:scale-90" @click="toggleHaptics">{{ hapticsOn ? '📳' : '📴' }}</button>
+        <button v-if="isSolo" class="grid h-9 w-9 place-items-center rounded-full bg-black/45 text-base active:scale-90" @click="togglePause">⏸️</button>
+      </div>
+
+      <!-- 表情選盤 -->
+      <div v-if="emotePalette" class="absolute right-12 top-[184px] z-20 grid grid-cols-4 gap-1.5 rounded-2xl bg-black/70 p-2 backdrop-blur">
+        <button
+          v-for="(e, i) in emotes" :key="i"
+          class="grid h-10 w-10 place-items-center rounded-xl bg-white/10 text-xl active:scale-90"
+          @click="sendEmote(i)"
+        >{{ e }}</button>
+      </div>
+
+      <!-- 陣亡觀戰橫幅 -->
+      <div v-if="spectating" class="pointer-events-none absolute inset-x-0 top-1/3 text-center">
+        <p class="text-xl font-black text-white/80 drop-shadow">👻 觀戰中</p>
+        <p class="text-sm text-white/50">正在觀看 {{ spectateName }}｜等待團隊復活或本波結束</p>
+      </div>
+
+      <!-- 暫停覆蓋（單人） -->
+      <div v-if="gs.paused" class="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/80 backdrop-blur">
+        <p class="text-3xl font-black text-white">⏸️ 已暫停</p>
+        <button class="mt-4 rounded-xl bg-gradient-to-r from-lime-500 to-emerald-600 px-8 py-3 text-lg font-black active:scale-95" @click="togglePause">▶️ 繼續</button>
+        <button class="mt-2 rounded-xl bg-white/10 px-8 py-2.5 font-bold text-white/70 active:scale-95" @click="confirmExit">🚪 離開</button>
       </div>
 
       <!-- 技能按鈕 -->

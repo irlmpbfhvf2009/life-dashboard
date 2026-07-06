@@ -7,7 +7,10 @@ import { CHARACTER_MAP } from '@game/content/characters'
 import { WEAPON_MAP, weaponStatsAt } from '@game/content/weapons'
 import { drawCharacter, drawEnemy, drawBoss, drawDrop, drawObjective, drawProjectile, drawOrbitWeapon, drawDroneCraft } from './art'
 import { sfx, playMusic } from './sound'
+import { haptics } from './haptics'
 import { gs, api, type WaveStartInfo } from './net'
+
+export const EMOTES = ['👍', '😆', '🆘', '❤️', '🎉', '😱', '🙏', '💪']
 
 const SNAP_DT = 0.1
 const MAX_PARTICLES = 220
@@ -80,6 +83,15 @@ export class Engine {
   say(playerId: string, text: string): void {
     this.bubbles.set(playerId, { text: text.slice(0, 24), until: this.time + 4 })
   }
+
+  /** 快捷表情（頭上大 emoji，2.5 秒） */
+  emote = new Map<string, { emoji: string; until: number }>()
+  showEmote(playerId: string, n: number): void {
+    this.emote.set(playerId, { emoji: EMOTES[n] ?? '👍', until: this.time + 2.5 })
+  }
+
+  /** 陣亡觀戰目標（自己死亡時鏡頭跟隨的隊友 id） */
+  spectateId: string | null = null
 
   /** 依區域+波數種子生成地面裝飾（草叢/土斑/石頭/水漬），全客戶端一致 */
   private genDecor(zone: string, wave: number): void {
@@ -175,7 +187,7 @@ export class Engine {
           }
           break
         case 'phit': {
-          if (ev.id === gs.playerId) { this.shake = Math.min(this.shake + 5, 12); sfx.hit() }
+          if (ev.id === gs.playerId) { this.shake = Math.min(this.shake + 5, 12); sfx.hit(); haptics.hit() }
           break
         }
         case 'shoot': {
@@ -206,7 +218,7 @@ export class Engine {
           break
         }
         case 'lvup':
-          if (ev.id === gs.playerId) sfx.levelup()
+          if (ev.id === gs.playerId) { sfx.levelup(); haptics.levelup() }
           {
             const p = this.players.get(ev.id)
             if (p) this.burst(p.tx, p.ty, 14, '#ffe66d', 3)
@@ -214,6 +226,7 @@ export class Engine {
           break
         case 'down': {
           sfx.down()
+          if (ev.id === gs.playerId) haptics.down()
           const p = this.players.get(ev.id)
           if (p) this.burst(p.tx, p.ty, 12, '#ef5350', 3)
           break
@@ -230,7 +243,7 @@ export class Engine {
           if (ev.kind === 'lightning') { sfx.lightning(); this.burst(ev.x, ev.y, 10, '#ffe66d', 4) }
           break
         }
-        case 'bossSpawn': this.shake = 8; break
+        case 'bossSpawn': this.shake = 8; haptics.boss(); break
         case 'bossSkill': if (ev.s === 'shieldBreak') { sfx.explosion(); this.shake = 8 } break
         case 'bossDead': sfx.bossDead(); this.shake = 14; break
         case 'objSpawn': this.objectives.set(ev.o.i, ev.o); break
@@ -340,11 +353,23 @@ export class Engine {
     this.aoes = this.aoes.filter(a => a.life > 0)
     if (this.shake > 0) this.shake = Math.max(0, this.shake - dt * 26)
 
-    // 鏡頭
+    // 鏡頭：自己陣亡時觀戰隊友（鏡頭跟著活著的人）
+    let focusX = this.myX, focusY = this.myY
+    const meP = this.players.get(gs.playerId)
+    if (meP && meP.status === 'dead') {
+      let target = this.spectateId ? this.players.get(this.spectateId) : null
+      if (!target || target.status === 'dead') {
+        target = [...this.players.values()].find(p => p.id !== gs.playerId && (p.status === 'alive' || p.status === 'downed')) ?? null
+        this.spectateId = target?.id ?? null
+      }
+      if (target) { focusX = target.x; focusY = target.y }
+    } else {
+      this.spectateId = null
+    }
     const cw = this.canvas?.clientWidth ?? 400
     const ch = this.canvas?.clientHeight ?? 700
-    const targX = Math.max(0, Math.min(this.arena.w - cw, this.myX - cw / 2))
-    const targY = Math.max(0, Math.min(this.arena.h - ch, this.myY - ch / 2))
+    const targX = Math.max(0, Math.min(this.arena.w - cw, focusX - cw / 2))
+    const targY = Math.max(0, Math.min(this.arena.h - ch, focusY - ch / 2))
     this.camX += (targX - this.camX) * Math.min(1, dt * 7)
     this.camY += (targY - this.camY) * Math.min(1, dt * 7)
   }
@@ -637,6 +662,17 @@ export class Engine {
       if (p.sh > 0) {
         g.fillStyle = '#4fc3f7'
         g.fillRect(-22, -28, 44 * Math.min(1, p.sh / p.mhp), 3)
+      }
+      // 快捷表情（頭上大 emoji，彈跳）
+      const em = this.emote.get(p.id)
+      if (em && em.until > this.time) {
+        const age = 2.5 - (em.until - this.time)
+        const pop = age < 0.2 ? age / 0.2 : 1
+        g.globalAlpha = Math.min(1, (em.until - this.time) * 2)
+        g.font = `${Math.round(26 * pop)}px sans-serif`
+        g.textAlign = 'center'; g.textBaseline = 'middle'
+        g.fillText(em.emoji, 0, -58 - Math.sin(age * 4) * 3)
+        g.globalAlpha = 1
       }
       // 聊天氣泡
       const bub = this.bubbles.get(p.id)

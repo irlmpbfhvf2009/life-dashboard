@@ -448,10 +448,21 @@ export class Game {
     this.startWave(this.wave + 1)
   }
 
+  /** 單人暫停（多人不允許，避免卡住其他玩家） */
+  paused = false
+  onPause(playerId: string, paused: boolean): void {
+    if (this.playerCount !== 1) return
+    if (!this.players.has(playerId)) return
+    this.paused = paused
+    this.lastTickAt = Date.now()   // 避免恢復時 dt 暴衝
+    this.host.emit('game:paused', paused)
+  }
+
   // ================================================================ 主迴圈
 
   private tick(): void {
     const now = Date.now()
+    if (this.paused) { this.lastTickAt = now; return }
     const dt = Math.min((now - this.lastTickAt) / 1000, 0.1)
     this.lastTickAt = now
     const t0 = performance.now()

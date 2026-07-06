@@ -50,6 +50,8 @@ export interface ClientToServer {
   'inter:ready': () => void
   /** 標準/快速模式通關後，房主選擇進入無盡模式續戰 */
   'room:endless': () => void
+  /** 單人遊戲暫停/繼續（多人不允許） */
+  'game:pause': (paused: boolean) => void
 
   // ---- 聊天 / 語音（WebRTC signaling 由 server 轉發）
   'chat:send': (p: { text: string }) => void
@@ -91,6 +93,10 @@ export interface ServerToClient {
   'chat:msg': (p: { id: string; name: string; text: string }) => void
   'voice:members': (ids: string[]) => void
   'voice:signal': (p: { from: string; data: unknown }) => void
+  /** 快捷表情廣播（n = 表情索引） */
+  'game:emote': (p: { id: string; n: number }) => void
+  /** 單人暫停狀態變更 */
+  'game:paused': (paused: boolean) => void
   /** 每個玩家目前的武器清單（給 client 畫環繞刀刃/無人機等貼身武器的視覺） */
   'game:loadouts': (loadouts: { id: string; weapons: { id: string; level: number }[] }[]) => void
 }

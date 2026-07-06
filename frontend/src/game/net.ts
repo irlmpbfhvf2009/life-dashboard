@@ -44,6 +44,7 @@ export const gs = reactive({
   chat: [] as { seq: number; id: string; name: string; text: string; at: number }[],
   voiceMembers: [] as string[],
   loadouts: {} as Record<string, { id: string; level: number }[]>,
+  paused: false,
   // HUD 低頻鏡射（由快照更新，10Hz 小物件 OK）
   hud: {
     wave: 0, left: 0, hp: 0, maxHp: 0, shield: 0, gold: 0, lv: 1, xp: 0, nxp: 10,
@@ -191,8 +192,13 @@ export function ensureSocket(): Socket {
     for (const l of list) map[l.id] = l.weapons
     gs.loadouts = map
   })
+  socket.on('game:emote', (p: { id: string; n: number }) => onEmote?.(p.id, p.n))
+  socket.on('game:paused', (paused: boolean) => { gs.paused = paused })
   return socket
 }
+
+let onEmote: ((id: string, n: number) => void) | null = null
+export function bindEmote(fn: ((id: string, n: number) => void) | null): void { onEmote = fn }
 
 function syncHud(s: Snapshot): void {
   const me = s.players.find(p => p.id === gs.playerId)
@@ -295,5 +301,7 @@ export const api = {
   voiceJoin: () => socket?.emit('voice:join'),
   voiceLeave: () => socket?.emit('voice:leave'),
   voiceSignal: (to: string, data: unknown) => socket?.emit('voice:signal', { to, data }),
+  emote: (n: number) => socket?.emit('game:emote', n),
+  pause: (paused: boolean) => socket?.emit('game:pause', paused),
   debug: (cmd: DebugCmd) => socket?.emit('debug:cmd', cmd),
 }

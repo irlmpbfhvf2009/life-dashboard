@@ -137,6 +137,12 @@ io.on('connection', (socket: Socket) => {
     if (!text) return
     io.to(r.code).emit('chat:msg', { id: player.id, name: player.name, text })
   })
+  socket.on('game:emote', (n: number) => {
+    const r = room()
+    if (!r || !r.players.has(pid())) return
+    io.to(r.code).emit('game:emote', { id: pid(), n: Math.max(0, Math.min(11, Number(n) || 0)) })
+  })
+  socket.on('game:pause', (paused: boolean) => game()?.onPause(pid(), !!paused))
   socket.on('voice:join', () => room()?.voiceJoin(pid()))
   socket.on('voice:leave', () => room()?.voiceLeave(pid()))
   socket.on('voice:signal', (p: { to: string; data: unknown }) => {
