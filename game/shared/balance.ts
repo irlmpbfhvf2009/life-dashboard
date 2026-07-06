@@ -54,25 +54,26 @@ export function isBossWave(mode: Mode, wave: number): 'mini' | 'big' | null {
 /** 生成預算：整波要生出的「怪物點數」總量（怪物 tier 消耗 1/2/4 點）
  *  30 秒短波 = 同樣預算擠進更短時間 → 密度自然更高 */
 export function spawnBudget(wave: number, players: number): number {
-  const base = 18 + wave * 6.5 + Math.max(0, wave - 10) * 4
+  // 前期溫和、中後段陡升（避免第 1~2 波就被淹死，但 5 波後很硬）
+  const base = 14 + wave * 8 + Math.max(0, wave - 5) * 6
   return Math.round(base * PLAYER_SCALING[players].count)
 }
 
 /** 怪物血量隨波數成長（另乘人數 hp、難度 enemyHp、無盡加成） */
 export function enemyHpScale(wave: number): number {
-  let s = 1 + (wave - 1) * 0.27
-  if (wave > 10) s += (wave - 10) * 0.15
-  if (wave > 20) s += (wave - 20) * 0.3   // 無盡加壓
+  let s = 1 + (wave - 1) * 0.36
+  if (wave > 10) s += (wave - 10) * 0.22
+  if (wave > 20) s += (wave - 20) * 0.4   // 無盡加壓
   return s
 }
 export function enemyDmgScale(wave: number): number {
-  return 1 + (wave - 1) * 0.08 + Math.max(0, wave - 20) * 0.07
+  return 1 + (wave - 1) * 0.11 + Math.max(0, wave - 20) * 0.08
 }
 
 /** 菁英機率（每次生成擲骰；導演可調） */
 export function eliteChance(wave: number): number {
-  if (wave < 3) return 0
-  return Math.min(0.03 + (wave - 3) * 0.015, 0.22)
+  if (wave < 2) return 0.02
+  return Math.min(0.06 + (wave - 2) * 0.02, 0.3)
 }
 
 /** 無盡模式全局詞綴：每 10 波 +1 */
@@ -104,8 +105,8 @@ export const DOWNED = {
 
 export function caps(players: number) {
   return {
-    enemies: [0, 45, 55, 62, 70][players] ?? 70,
-    elites: [0, 3, 4, 5, 6][players] ?? 6,
+    enemies: [0, 60, 72, 82, 92][players] ?? 92,
+    elites: [0, 5, 6, 7, 8][players] ?? 8,
     drops: 90,
     enemyProjectiles: 36,
     // 客戶端視覺（render.ts 遵守）
@@ -146,8 +147,8 @@ export const SHOP = {
   priceWaveGrowth: 0.08,        // 價格隨波數上浮
   sellPct: 0.8,
   maxWeapons: 6,
-  teamReviveBasePrice: 45,
-  teamRevivePriceGrowth: 25,
+  teamReviveBasePrice: 28,
+  teamRevivePriceGrowth: 16,
 }
 
 // ------------------------------------------------- 難度導演
@@ -156,8 +157,8 @@ export const DIRECTOR = {
   interval: 3,                  // 每 3 秒評估
   // 壓力值 0~100 → 5 級門檻
   levels: [18, 38, 62, 82],     // <18=1太簡單 <38=2 <62=3理想 <82=4偏難 else 5瀕滅
-  spawnMult: { 1: 1.45, 2: 1.2, 3: 1.0, 4: 0.75, 5: 0.35 } as Record<number, number>,
-  healDropMult: { 1: 0.4, 2: 0.7, 3: 1.0, 4: 1.8, 5: 3.0 } as Record<number, number>,
+  spawnMult: { 1: 1.4, 2: 1.2, 3: 1.05, 4: 0.8, 5: 0.4 } as Record<number, number>,
+  healDropMult: { 1: 0.35, 2: 0.6, 3: 1.0, 4: 1.8, 5: 3.0 } as Record<number, number>,
   eliteAllowed: { 1: true, 2: true, 3: true, 4: false, 5: false } as Record<number, boolean>,
   rewardMult: { 1: 1.15, 2: 1.05, 3: 1.0, 4: 1.0, 5: 1.0 } as Record<number, number>,
   /** Level 5：暫停普通怪生成秒數、清除低價值小怪數 */

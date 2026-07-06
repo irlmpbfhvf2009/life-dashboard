@@ -144,6 +144,45 @@ function useSkill() {
   const dir = engine.moveDir.active ? engine.moveDir : { x: 0, y: -1 }
   api.skill(engine.myX + dir.x * 300, engine.myY + dir.y * 300)
 }
+
+// ---------------------------------------------------------------- 鍵盤操作（電腦瀏覽器）
+// WASD / 方向鍵移動，空白鍵放技能。手機用拖曳搖桿，兩者可並存。
+const keys = new Set<string>()
+const MOVE_KEYS: Record<string, [number, number]> = {
+  w: [0, -1], arrowup: [0, -1], s: [0, 1], arrowdown: [0, 1],
+  a: [-1, 0], arrowleft: [-1, 0], d: [1, 0], arrowright: [1, 0],
+}
+function applyKeyMove() {
+  let x = 0, y = 0
+  for (const k of keys) { const v = MOVE_KEYS[k]; if (v) { x += v[0]; y += v[1] } }
+  if (x === 0 && y === 0) { engine.moveDir.active = false; return }
+  const d = Math.hypot(x, y)
+  engine.moveDir = { x: x / d, y: y / d, active: true }
+}
+function typingInField() {
+  const el = document.activeElement
+  return el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')
+}
+function onKeyDown(e: KeyboardEvent) {
+  if (screen.value !== 'game' || gs.inter || gs.over) return
+  const k = e.key.toLowerCase()
+  if ((k === ' ' || k === 'spacebar') && !typingInField()) { e.preventDefault(); useSkill(); return }
+  if (MOVE_KEYS[k] && !typingInField()) { e.preventDefault(); keys.add(k); applyKeyMove() }
+}
+function onKeyUp(e: KeyboardEvent) {
+  const k = e.key.toLowerCase()
+  if (MOVE_KEYS[k]) { keys.delete(k); applyKeyMove() }
+}
+onMounted(() => {
+  window.addEventListener('keydown', onKeyDown)
+  window.addEventListener('keyup', onKeyUp)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeyDown)
+  window.removeEventListener('keyup', onKeyUp)
+})
+// 離開戰鬥畫面時清掉按鍵狀態，避免卡住移動
+watch(screen, (s) => { if (s !== 'game') { keys.clear(); engine.moveDir.active = false } })
 const myChar = computed(() => CHARACTER_MAP.get(gs.begin?.players.find(p => p.id === gs.playerId)?.charId ?? ''))
 const skillCdPct = computed(() => {
   const max = myChar.value?.active.cooldown ?? 10
@@ -847,13 +886,9 @@ const fmtTime = (s: number) => {
             </div>
           </div>
 
-          <!-- 下一關（路線隨機） -->
-          <div class="mt-3 rounded-2xl border border-white/10 bg-white/5 p-3 text-center">
-            <p class="text-sm font-black text-orange-300">
-              🗺️ 下一關路線隨機
-              <span v-if="gs.inter.bossNext" class="ml-1 text-rose-400">⚠️ 下一波 BOSS</span>
-            </p>
-            <p class="mt-0.5 text-[11px] text-white/40">進場時揭曉，準備好就出發！</p>
+          <!-- Boss 預警（下一波是 Boss 時才顯示） -->
+          <div v-if="gs.inter.bossNext" class="mt-3 rounded-2xl border border-rose-500/40 bg-rose-600/10 p-3 text-center">
+            <p class="text-sm font-black text-rose-300">⚠️ 下一波是 BOSS，準備好再出發！</p>
           </div>
 
           <!-- Ready -->

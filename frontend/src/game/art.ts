@@ -3,6 +3,7 @@
 import { CHARACTER_MAP } from '@game/content/characters'
 import { ENEMY_MAP } from '@game/content/enemies'
 import { BOSS_MAP } from '@game/content/bosses'
+import { WEAPON_MAP } from '@game/content/weapons'
 
 type Ctx = CanvasRenderingContext2D
 
@@ -770,6 +771,54 @@ function drawProp(g: Ctx, kind: string, s: number): void {
       ellipse(g, s * 0.2, -s * 0.22, s * 0.09, s * 0.08); g.fill()
       break
   }
+}
+
+/** 貼身武器視覺：環繞刀刃（迴旋斧）— 圍著玩家轉的斧刃 */
+export function drawOrbitWeapon(g: Ctx, weaponId: string, radius: number, count: number, t: number): void {
+  const [body, accent] = WEAPON_MAP.get(weaponId)?.palette ?? ['#ff9f43', '#b0682a']
+  const spin = t * 3.2
+  for (let k = 0; k < count; k++) {
+    const ang = spin + (k / count) * Math.PI * 2
+    const x = Math.cos(ang) * radius
+    const y = Math.sin(ang) * radius
+    g.save()
+    g.translate(x, y)
+    g.rotate(ang + Math.PI / 2)
+    // 斧刃
+    outlined(g, body, gg => {
+      gg.beginPath()
+      gg.moveTo(0, -9)
+      gg.quadraticCurveTo(11, -5, 9, 6)
+      gg.quadraticCurveTo(3, 3, 0, 9)
+      gg.quadraticCurveTo(-3, 3, -9, 6)
+      gg.quadraticCurveTo(-11, -5, 0, -9)
+    }, 2)
+    g.fillStyle = accent
+    g.fillRect(-1.5, -3, 3, 12)
+    g.restore()
+  }
+  // 殘影軌跡
+  g.strokeStyle = 'rgba(255,255,255,0.12)'
+  g.lineWidth = 3
+  g.beginPath(); g.arc(0, 0, radius, 0, Math.PI * 2); g.stroke()
+}
+
+/** 貼身武器視覺：無人機 — 跟著玩家飛的小飛機 */
+export function drawDroneCraft(g: Ctx, idx: number, t: number): void {
+  const ang = t * 2.2 + idx * 2.3
+  const x = Math.cos(ang) * 52
+  const y = Math.sin(ang) * 52 - 30
+  g.save()
+  g.translate(x, y)
+  // 螺旋槳閃爍
+  g.fillStyle = 'rgba(180,230,255,0.4)'
+  ellipse(g, 0, -8, 14 * (0.6 + Math.abs(Math.sin(t * 30)) * 0.4), 3); g.fill()
+  outlined(g, '#4fc3f7', gg => ellipse(gg, 0, 0, 9, 7), 2)
+  g.fillStyle = '#0288d1'
+  ellipse(g, 0, 1, 4, 3); g.fill()
+  g.fillStyle = '#fff'
+  ellipse(g, -1.5, -0.5, 1.5, 1.5); g.fill()
+  g.restore()
 }
 
 /** 武器投射物（客戶端純視覺） */

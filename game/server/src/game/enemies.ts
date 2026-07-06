@@ -110,7 +110,7 @@ export function spawnerTick(g: Game, dt: number): void {
   if (g.spawner.timer > 0 || g.spawner.budgetLeft <= 0) return
 
   // 每次生成一小群（30 秒短波 → 群體更大、鋪得更快）
-  const groupSize = Math.min(3 + Math.floor(g.wave / 4), 7)
+  const groupSize = Math.min(4 + Math.floor(g.wave / 3), 10)
   const pos = edgeSpawnPos(g)
   for (let k = 0; k < groupSize && g.spawner.budgetLeft > 0; k++) {
     const pick = pickFromPool(g)

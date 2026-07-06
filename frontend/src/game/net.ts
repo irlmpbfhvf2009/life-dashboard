@@ -43,6 +43,7 @@ export const gs = reactive({
   toasts: [] as { id: number; msg: string; kind: string }[],
   chat: [] as { seq: number; id: string; name: string; text: string; at: number }[],
   voiceMembers: [] as string[],
+  loadouts: {} as Record<string, { id: string; level: number }[]>,
   // HUD 低頻鏡射（由快照更新，10Hz 小物件 OK）
   hud: {
     wave: 0, left: 0, hp: 0, maxHp: 0, shield: 0, gold: 0, lv: 1, xp: 0, nxp: 10,
@@ -157,6 +158,7 @@ export function ensureSocket(): Socket {
     gs.begin = b
     gs.over = null
     gs.inter = null
+    gs.loadouts = Object.fromEntries(b.players.map(p => [p.id, p.weapons]))
   })
   socket.on('wave:start', (w: WaveStartInfo) => {
     gs.waveInfo = w
@@ -184,6 +186,11 @@ export function ensureSocket(): Socket {
     onVoiceMembers?.(ids)
   })
   socket.on('voice:signal', (p: { from: string; data: unknown }) => onVoiceSignal?.(p.from, p.data))
+  socket.on('game:loadouts', (list: { id: string; weapons: { id: string; level: number }[] }[]) => {
+    const map: Record<string, { id: string; level: number }[]> = {}
+    for (const l of list) map[l.id] = l.weapons
+    gs.loadouts = map
+  })
   return socket
 }
 

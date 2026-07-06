@@ -4,8 +4,8 @@ import type { Snapshot, GameEv, EnemySpawnEv, ObjectiveSnap } from '@game/types'
 import { ZONE_MAP } from '@game/content/zones'
 import { mulberry32, hashSeed } from '@game/rng'
 import { CHARACTER_MAP } from '@game/content/characters'
-import { WEAPON_MAP } from '@game/content/weapons'
-import { drawCharacter, drawEnemy, drawBoss, drawDrop, drawObjective, drawProjectile } from './art'
+import { WEAPON_MAP, weaponStatsAt } from '@game/content/weapons'
+import { drawCharacter, drawEnemy, drawBoss, drawDrop, drawObjective, drawProjectile, drawOrbitWeapon, drawDroneCraft } from './art'
 import { sfx, playMusic } from './sound'
 import { gs, api, type WaveStartInfo } from './net'
 
@@ -606,6 +606,21 @@ export class Engine {
         moving: p.id === gs.playerId ? this.moveDir.active : undefined,
         flash: p.fx === 'dash' || p.fx === 'rage',
       })
+      // 貼身武器視覺（環繞刀刃 / 無人機）— 依伺服器廣播的 loadout 繪製
+      if (p.status !== 'dead' && p.status !== 'downed') {
+        const weapons = gs.loadouts[p.id] ?? []
+        let droneIdx = 0
+        for (const w of weapons) {
+          const data = WEAPON_MAP.get(w.id)
+          if (!data) continue
+          if (data.behavior === 'orbit') {
+            const st = weaponStatsAt(data, w.level)
+            drawOrbitWeapon(g, w.id, st.radius ?? 90, Math.max(1, st.projectileCount), this.time)
+          } else if (data.behavior === 'drone') {
+            drawDroneCraft(g, droneIdx++, this.time)
+          }
+        }
+      }
       // 名牌 + 血條
       g.globalAlpha = 1
       g.font = 'bold 11px sans-serif'

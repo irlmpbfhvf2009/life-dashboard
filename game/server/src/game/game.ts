@@ -311,6 +311,15 @@ export class Game {
       duration: this.duration,
       boss: bossInfo,
     })
+    this.broadcastLoadouts()
+  }
+
+  /** 廣播每個玩家的武器清單（client 用來畫貼身武器：環繞刀刃/無人機） */
+  broadcastLoadouts(): void {
+    this.host.emit('game:loadouts', [...this.players.values()].map(p => ({
+      id: p.id,
+      weapons: p.weapons.map(w => ({ id: w.data.id, level: w.level })),
+    })))
   }
 
   private endWave(): void {
@@ -322,6 +331,8 @@ export class Game {
 
     const perPlayer: WaveSettlement['perPlayer'] = {}
     let downs = 0
+    let dmgTaken = 0
+    let maxHpSum = 0
     for (const p of this.players.values()) {
       perPlayer[p.id] = {
         kills: p.wave.kills, gold: p.wave.gold, xp: Math.round(p.wave.xp),
@@ -329,12 +340,20 @@ export class Game {
         dps: Math.round(p.wave.dmgDealt / Math.max(1, this.time)),
       }
       downs += p.wave.downs
+      dmgTaken += p.wave.dmgTaken
+      maxHpSum += p.stats.maxHp
       this.totalKills += p.wave.kills
     }
+    // 評分不再「無倒地就一定 S」——把受創程度也算進去（挨越多打分越低）。
+    // hitRatio = 本波受到的傷害 / 全隊最大生命，>=某比例就扣等第。
+    const missionOk = this.mission?.done ?? true
+    const hitRatio = dmgTaken / Math.max(1, maxHpSum)
+    let score = 100
+    score -= downs * 35
+    score -= Math.min(60, hitRatio * 55)          // 毫髮無傷 → 幾乎不扣；被打爆 → 大扣
+    if (!missionOk) score -= 25
     const grade: WaveSettlement['teamGrade'] =
-      downs === 0 && (this.mission?.done ?? true) ? 'S'
-        : downs <= 1 && (this.mission?.done ?? true) ? 'A'
-        : downs <= 2 ? 'B' : 'C'
+      score >= 88 ? 'S' : score >= 68 ? 'A' : score >= 45 ? 'B' : 'C'
     this.settlement = {
       wave: this.wave, missionDone: this.mission?.done ?? true,
       perPlayer, teamGrade: grade, rewards,
@@ -493,6 +512,16 @@ export class Game {
     }
   }
 
+  /** 靠近就打壞地圖物件（木箱/木桶/補血草…）— 走過去就會自動撞破，不用等武器剛好瞄到 */
+  private breakNearbyProps(p: SPlayer, dt: number): void {
+    for (const o of this.objectives) {
+      if (o.t !== 'prop' || o.s === 2 || o.hp <= 0) continue
+      if (dist2(p.x, p.y, o.x, o.y) < (o.r + 40) ** 2) {
+        this.damageObjective(o, 30 * dt)          // 約 0.5 秒撞破一個
+      }
+    }
+  }
+
   private playersTick(dt: number): void {
     const now = this.time
     for (const p of this.players.values()) {
@@ -503,6 +532,8 @@ export class Game {
         this.reviveTick(p, dt)
         continue
       }
+
+      this.breakNearbyProps(p, dt)
 
       // 移動（client 位置 + server 限速）
       const haste = p.buffs.hasteUntil > now ? p.buffs.hasteAmt : 0
@@ -1044,6 +1075,7 @@ export class Game {
     }
     if (this.boss) replay.push({ t: 'bossSpawn', id: this.boss.data.id, name: this.boss.data.name, title: this.boss.data.title, mhp: this.boss.maxHp })
     this.host.emitTo(playerId, 'game:ev', replay)
+    this.broadcastLoadouts()
     if (this.phase === 'intermission') this.pushInterState()
   }
 
