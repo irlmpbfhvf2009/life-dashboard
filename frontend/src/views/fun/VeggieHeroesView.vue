@@ -142,6 +142,9 @@ function pickWeapon(id: string) {
 const WEAPON_EMOJI: Record<string, string> = {
   pea_gun: '🌱', knife: '🔪', spin_axe: '🪓', hammer: '🔨', fireball: '🔥', ice_shard: '❄️',
   lightning: '⚡', mine: '💣', turret_gun: '🗼', heal_orb: '💚', poison_flask: '🧪', drone: '🛸',
+  // 進化型
+  pea_minigun: '🌿', knife_fan: '🌀', axe_cyclone: '🌪️', meteor: '☄️', blizzard: '🌨️',
+  tesla_storm: '🌩️', gatling_turret: '🏯', plague_cloud: '☠️', drone_swarm: '🛸',
 }
 const ROLE_NAME: Record<string, string> = { tank: '坦克', dps: '輸出', support: '輔助', engineer: '工程', control: '控場', gambler: '賭運' }
 

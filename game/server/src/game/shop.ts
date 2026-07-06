@@ -86,8 +86,8 @@ export function generateShopOffers(g: Game, p: SPlayer): void {
   while (p.shopOffers.length < SHOP.offers) {
     const roll = g.rng()
     if (roll < 0.38) {
-      // 武器（已滿級的不再出現）
-      const pool = WEAPONS.filter(w => {
+      // 武器（進化型不進商店；已滿級的不再出現）
+      const pool = WEAPONS.filter(w => !w.evolvedForm).filter(w => {
         const owned = p.weapons.find(x => x.data.id === w.id)
         return !owned || owned.level < w.maxLevel
       }).filter(w => special || w.tier <= (g.wave < 5 ? 2 : 3))
@@ -168,6 +168,27 @@ export function addWeapon(g: Game, p: SPlayer, weaponId: string): string | null 
   return null
 }
 
+/** 武器進化：滿級 + 擁有指定升級（id 或 tag）→ 自動變成進化型。中場每次刷新都檢查一次。 */
+export function checkEvolutions(g: Game, p: SPlayer): boolean {
+  let changed = false
+  for (const w of p.weapons) {
+    const evo = w.data.evolution
+    if (!evo || w.data.evolvedForm || w.level < w.data.maxLevel) continue
+    const met = p.upgrades.has(evo.requires)
+      || [...p.upgrades.keys()].some(id => UPGRADE_MAP.get(id)?.tags.includes(evo.requires))
+    if (!met) continue
+    const into = WEAPON_MAP.get(evo.into)
+    if (!into) continue
+    w.data = into
+    w.level = 1
+    w.cdLeft = 0
+    w.hitMemo = new Map()
+    g.broadcastToast(`✨ ${p.name} 的武器進化 → ${into.name}！`, 'good')
+    changed = true
+  }
+  return changed
+}
+
 // -------------------------------------------------------- 寶箱
 
 export function rollChestOptions(g: Game, p: SPlayer): ChestPending['options'] {
@@ -187,7 +208,8 @@ export function rollChestOptions(g: Game, p: SPlayer): ChestPending['options'] {
           break
         }
         case 'weapon': {
-          const w = WEAPONS[Math.floor(g.rng() * WEAPONS.length)]
+          const pool = WEAPONS.filter(x => !x.evolvedForm)
+          const w = pool[Math.floor(g.rng() * pool.length)]
           opts.push({ rewardId: cr.id, detail: `武器：${w.name}`, refId: w.id })
           break
         }

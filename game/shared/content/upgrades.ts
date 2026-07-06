@@ -110,6 +110,21 @@ export const UPGRADES: UpgradeData[] = [
   U('l_phoenix', '不死菜心', '倒地後原地自動復活一次（每局）', 'legendary', 'legendary', { specialEffect: 'phoenix', maxStacks: 1 }),
   U('l_pulse', '大地脈衝', '每 10 秒對全場敵人釋放一次衝擊波', 'legendary', 'legendary', { specialEffect: 'pulse10s', maxStacks: 1 }),
   U('l_boom', '連鎖收割', '擊殺怪物有 8% 機率觸發範圍爆炸', 'legendary', 'legendary', { specialEffect: 'killExplode', maxStacks: 1 }),
+  U('l_juggernaut', '不動要塞', '最大生命 +120', 'legendary', 'legendary', { statMods: { maxHp: 120 }, maxStacks: 1 }),
+  U('l_berserk', '嗜血狂戰', '傷害 +30%、攻速 +20%', 'legendary', 'legendary', { statMods: { damage: 0.3, attackSpeed: 0.2 }, maxStacks: 1 }),
+
+  // ============================== 追加基礎/吸血（純數值，擴充 build 空間）
+  U('life1', '嗜血', '每擊殺回復 1 生命', 'common', 'stat', { statMods: { lifeOnKill: 1 }, maxStacks: 3 }),
+  U('life2', '飢餓收割', '每擊殺回復 2 生命', 'rare', 'stat', { statMods: { lifeOnKill: 2 }, maxStacks: 3 }),
+  U('dmg4', '狂暴之力', '傷害 +12%', 'common', 'stat', { statMods: { damage: 0.12 }, maxStacks: 5 }),
+  U('critd2', '致命一擊', '暴擊傷害 +40%', 'rare', 'stat', { statMods: { critDamage: 0.4 }, maxStacks: 3 }),
+  U('crit3', '鷹眼', '暴擊率 +8%', 'rare', 'stat', { statMods: { critChance: 0.08 }, maxStacks: 3 }),
+  U('area2', '領域擴張', '範圍效果 +12%', 'rare', 'stat', { statMods: { area: 0.12 }, maxStacks: 3 }),
+  U('pick2', '磁化外套', '拾取範圍 +50', 'rare', 'stat', { statMods: { pickupRange: 50 }, maxStacks: 3 }),
+  U('spd3', '疾風之靴', '移動速度 +10%', 'rare', 'stat', { statMods: { moveSpeed: 0.1 }, maxStacks: 3 }),
+  U('gold2', '黃金之手', '金幣獲得 +25%', 'rare', 'stat', { statMods: { goldGain: 0.25 }, maxStacks: 3 }),
+  U('hp3', '巨根之軀', '最大生命 +45', 'epic', 'stat', { statMods: { maxHp: 45 }, maxStacks: 3 }),
+  U('regen3', '不竭生機', '每秒回復 +2', 'epic', 'stat', { statMods: { regen: 2 }, maxStacks: 2 }),
 ]
 
 export const UPGRADE_MAP = new Map(UPGRADES.map(u => [u.id, u]))

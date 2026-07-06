@@ -93,7 +93,10 @@ export interface WeaponData {
   tags: string[]
   price: number           // 商店基準價（隨波數上浮）
   tier: 1 | 2 | 3
-  evolution?: { requiresUpgradeTag: string; into: string }
+  /** 滿級後，若玩家擁有 requires（升級 id 或任一已持有升級的 tag），自動進化成 into 這把武器 */
+  evolution?: { requires: string; into: string }
+  /** 進化型武器：不會出現在商店/寶箱池，只能由進化取得 */
+  evolvedForm?: boolean
   palette: [string, string]
 }
 

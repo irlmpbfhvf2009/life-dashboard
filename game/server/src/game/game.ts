@@ -34,7 +34,7 @@ import {
 import {
   rollLevelupChoices, applyUpgrade, generateShopOffers, buyOffer, refreshShop,
   sellWeapon, addWeapon, applyChestChoice, teamShopVote, teamReviveVote,
-  rollTeamRewardOptions, applyTeamReward,
+  rollTeamRewardOptions, applyTeamReward, checkEvolutions,
 } from './shop'
 
 export interface GameHost {
@@ -1085,7 +1085,7 @@ export class Game {
     const p = this.players.get(playerId)
     if (!p) return
     switch (cmd.c) {
-      case 'skipWave': if (this.phase === 'combat') { this.bossDefeated = true; this.time = this.duration } break
+      case 'skipWave': if (this.phase === 'combat') { this.bossDefeated = true; this.time = this.duration; this.enemies = []; if (this.boss) this.boss.hp = 0 } break
       case 'gold': p.gold += cmd.n; break
       case 'xp': gainXp(this, p, cmd.n); break
       case 'spawn': {
@@ -1154,6 +1154,10 @@ export class Game {
 
   pushInterState(): void {
     if (this.phase !== 'intermission') return
+    // 進化檢查：滿級武器 + 擁有指定升級 → 自動進化（放這裡確保買完/選完升級立刻觸發）
+    let evolved = false
+    for (const p of this.players.values()) if (checkEvolutions(this, p)) evolved = true
+    if (evolved) this.broadcastLoadouts()
     for (const p of this.players.values()) {
       if (!p.connected || !p.socketId) continue
       const view: IntermissionView = {

@@ -183,6 +183,34 @@ export function drawCharacter(g: Ctx, charId: string, size: number, t: number, o
       face(g, s, opts.downed ? 'ko' : 'happy')
       break
     }
+    case 'assassin_sprout': {
+      // 細長豆芽身
+      outlined(g, body, gg => {
+        gg.beginPath()
+        gg.moveTo(-s * 0.28, s * 0.5)
+        gg.quadraticCurveTo(-s * 0.36, -s * 0.2, -s * 0.14, -s * 0.42)
+        gg.quadraticCurveTo(0, -s * 0.52, s * 0.14, -s * 0.42)
+        gg.quadraticCurveTo(s * 0.36, -s * 0.2, s * 0.28, s * 0.5)
+        gg.closePath()
+      })
+      // 兩片芽葉
+      leaf(g, -s * 0.12, -s * 0.4, s * 0.26, leafC, -0.6)
+      leaf(g, s * 0.12, -s * 0.4, s * 0.26, leafC, 0.6)
+      // 忍者頭巾（遮住上半，露眼）
+      outlined(g, accent, gg => { gg.beginPath(); gg.rect(-s * 0.34, -s * 0.24, s * 0.68, s * 0.16) }, 2)
+      // 飄帶
+      g.strokeStyle = accent; g.lineWidth = s * 0.05
+      g.beginPath(); g.moveTo(s * 0.3, -s * 0.16); g.quadraticCurveTo(s * 0.6, -s * 0.05 + Math.sin(t * 6) * s * 0.06, s * 0.5, s * 0.15); g.stroke()
+      // 眼（銳利）
+      g.fillStyle = '#fff'
+      ellipse(g, -s * 0.13, -s * 0.02, s * 0.08, s * 0.05); g.fill()
+      ellipse(g, s * 0.13, -s * 0.02, s * 0.08, s * 0.05); g.fill()
+      g.fillStyle = OUTLINE
+      ellipse(g, -s * 0.11, -s * 0.02, s * 0.04, s * 0.04); g.fill()
+      ellipse(g, s * 0.15, -s * 0.02, s * 0.04, s * 0.04); g.fill()
+      if (opts.downed) { face(g, s, 'ko') }
+      break
+    }
     default:
       outlined(g, body, gg => ellipse(gg, 0, 0, s * 0.46, s * 0.48))
       face(g, s, opts.downed ? 'ko' : 'happy')
@@ -824,9 +852,9 @@ export function drawDroneCraft(g: Ctx, idx: number, t: number): void {
 /** 武器投射物（客戶端純視覺） */
 export function drawProjectile(g: Ctx, weaponId: string, t: number): void {
   switch (weaponId) {
-    case 'pea_gun':
+    case 'pea_gun': case 'pea_minigun':
       outlined(g, '#7bc043', gg => ellipse(gg, 0, 0, 5, 5), 1.5); break
-    case 'knife':
+    case 'knife': case 'knife_fan':
       g.save(); g.rotate(t * 20)
       outlined(g, '#cfd8dc', gg => { gg.beginPath(); gg.moveTo(0, -8); gg.lineTo(3, 4); gg.lineTo(-3, 4); gg.closePath() }, 1.5)
       g.restore(); break
@@ -835,11 +863,21 @@ export function drawProjectile(g: Ctx, weaponId: string, t: number): void {
       outlined(g, '#ff6b35', gg => ellipse(gg, 0, 0, 7, 7), 1.5)
       g.fillStyle = '#ffe66d'
       ellipse(g, 0, 0, 3.5, 3.5); g.fill(); break
-    case 'ice_shard':
+    case 'meteor':
+      g.shadowColor = '#ff5722'; g.shadowBlur = 16
+      outlined(g, '#ff5722', gg => ellipse(gg, 0, 0, 11, 11), 2)
+      g.fillStyle = '#ffe66d'; ellipse(g, 0, 0, 6, 6); g.fill()
+      // 尾焰
+      g.fillStyle = 'rgba(255,120,40,0.5)'; ellipse(g, 0, 10, 5, 9); g.fill(); break
+    case 'ice_shard': case 'blizzard':
       outlined(g, '#a8e0ff', gg => { gg.beginPath(); gg.moveTo(0, -8); gg.lineTo(4, 2); gg.lineTo(0, 8); gg.lineTo(-4, 2); gg.closePath() }, 1.5); break
-    case 'turret_gun': case 'drone':
+    case 'turret_gun': case 'drone': case 'drone_swarm': case 'gatling_turret':
       outlined(g, '#ffe66d', gg => ellipse(gg, 0, 0, 3.5, 3.5), 1.2); break
-    default:
-      outlined(g, '#fff', gg => ellipse(gg, 0, 0, 4, 4), 1.5)
+    default: {
+      // 進化型/未知武器 → 用武器色盤畫發光彈
+      const pal = WEAPON_MAP.get(weaponId)?.palette
+      if (pal) { g.shadowColor = pal[0]; g.shadowBlur = 8; outlined(g, pal[0], gg => ellipse(gg, 0, 0, 6, 6), 1.5) }
+      else outlined(g, '#fff', gg => ellipse(gg, 0, 0, 4, 4), 1.5)
+    }
   }
 }

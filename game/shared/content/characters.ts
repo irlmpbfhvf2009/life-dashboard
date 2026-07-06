@@ -74,6 +74,19 @@ export const CHARACTERS: CharacterData[] = [
     rarity: 'common',
     palette: ['#b58fd1', '#8f63b8', '#e0c2f0'],
   },
+  {
+    id: 'assassin_sprout',
+    name: '刺客豆芽',
+    description: '暴擊流刺客。攻速快、暴擊爆表，但皮薄如紙，靠身法吃飯。',
+    role: 'dps',
+    baseStats: { maxHp: 82, armor: 0, moveSpeed: 184, damage: 1.05, attackSpeed: 1.12, critChance: 0.2, critDamage: 1.8, pickupRange: 78, regen: 0.2 },
+    passive: { description: '暴擊率額外 +8%、暴擊傷害 +30%', mods: { critChance: 0.08, critDamage: 0.3 } },
+    active: { id: 'charge', name: '瞬步斬', description: '朝拖曳方向瞬移，斬擊路徑上的敵人', cooldown: 7, params: { dist: 320, damage: 30, knockback: 150 } },
+    startWeapons: ['knife', 'ice_shard', 'drone'],
+    unlockCondition: '通關快速模式',
+    rarity: 'rare',
+    palette: ['#c5e1a5', '#7cb342', '#33691e'],
+  },
 ]
 
 export const CHARACTER_MAP = new Map(CHARACTERS.map(c => [c.id, c]))
