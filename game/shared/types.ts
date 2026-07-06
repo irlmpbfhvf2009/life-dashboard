@@ -349,7 +349,7 @@ export interface DropSpawnEv {
 
 export interface ObjectiveSnap {
   i: number
-  t: 'crystal' | 'cart' | 'point' | 'nest' | 'rune' | 'pillar' | 'base' | 'guardChest' | 'prop'
+  t: 'crystal' | 'cart' | 'point' | 'nest' | 'rune' | 'pillar' | 'base' | 'guardChest' | 'prop' | 'trap'
   x: number; y: number
   hp?: number; mhp?: number
   pg?: number                    // 進度 0~1（踩點/符文）

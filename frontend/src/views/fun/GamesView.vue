@@ -3,7 +3,7 @@
 // the old standalone /play portal. Two categories: 電子 (Horus tumble slot) and
 // 捕魚 (深海獵金 fish hunter).
 import { ref, onMounted } from 'vue'
-import { Coins, Gamepad2 } from 'lucide-vue-next'
+import { Coins } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import { useWallet } from '@/composables/useWallet'
 import { userApi } from '@/api'
@@ -57,16 +57,8 @@ onMounted(async () => {
 
 <template>
   <div>
-    <!-- Header -->
-    <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
-        <span class="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-rose-500 to-pink-600 text-white shadow-lg">
-          <Gamepad2 class="h-5 w-5" />
-        </span>
-        <div>
-          <h2 class="text-lg font-bold text-ink-900">遊戲娛樂城</h2>
-        </div>
-      </div>
+    <!-- Header — 只保留遊戲幣餘額 -->
+    <div class="mb-4 flex justify-end">
       <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-400 px-3 py-1.5 text-sm font-bold text-[#1c0f06] shadow">
         <Coins class="h-4 w-4" /> {{ coins.toLocaleString() }}
       </span>

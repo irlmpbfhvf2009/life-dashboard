@@ -103,14 +103,14 @@ export function edgeSpawnPos(g: Game): { x: number; y: number } {
 
 /** 生成器 tick：把整波預算平均撒在波次時間內，受導演倍率調節 */
 export function spawnerTick(g: Game, dt: number): void {
-  if (g.time < 1) return
-  if (g.time > g.duration - 3 && !g.boss) return          // 收尾不再生
+  if (g.time < 0.5) return
+  if (g.time >= g.duration && !g.boss) return             // 倒數結束後不再生，剩下的怪要清光
   if (g.director.spawnPauseUntil > g.time) return
   g.spawner.timer -= dt * spawnMult(g)
   if (g.spawner.timer > 0 || g.spawner.budgetLeft <= 0) return
 
-  // 每次生成一小群
-  const groupSize = Math.min(2 + Math.floor(g.wave / 5), 5)
+  // 每次生成一小群（30 秒短波 → 群體更大、鋪得更快）
+  const groupSize = Math.min(3 + Math.floor(g.wave / 4), 7)
   const pos = edgeSpawnPos(g)
   for (let k = 0; k < groupSize && g.spawner.budgetLeft > 0; k++) {
     const pick = pickFromPool(g)

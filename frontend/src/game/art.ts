@@ -668,6 +668,52 @@ export function drawObjective(g: Ctx, t: string, r: number, time: number, opts: 
       }
       break
     }
+    case 'trap': {
+      const active = opts.state === 1
+      const pulse = active ? 0.5 + Math.sin(time * 14) * 0.3 : 0.28 + Math.sin(time * 3) * 0.08
+      const col = opts.k === 'fire' ? '255,110,60' : opts.k === 'poison' ? '156,204,101' : '176,190,200'
+      // 危險區底
+      g.fillStyle = `rgba(${col},${active ? 0.3 : 0.14})`
+      g.beginPath(); g.arc(0, 0, s, 0, Math.PI * 2); g.fill()
+      g.strokeStyle = `rgba(${col},${pulse})`
+      g.lineWidth = 2.5
+      g.setLineDash([6, 5])
+      g.beginPath(); g.arc(0, 0, s, time * 0.5, time * 0.5 + Math.PI * 2); g.stroke()
+      g.setLineDash([])
+      if (opts.k === 'poison') {
+        // 毒泡
+        for (let i = 0; i < 4; i++) {
+          const a = time * 1.5 + i * 1.6
+          g.fillStyle = `rgba(${col},0.5)`
+          g.beginPath(); g.arc(Math.cos(a) * s * 0.4, Math.sin(a) * s * 0.35, 3, 0, Math.PI * 2); g.fill()
+        }
+      } else if (opts.k === 'fire') {
+        for (let i = 0; i < 5; i++) {
+          const a = time * 3 + i * 1.3
+          g.fillStyle = `rgba(255,200,80,${0.4 + Math.sin(a) * 0.2})`
+          g.beginPath(); g.arc(Math.cos(a) * s * 0.35, Math.sin(a * 1.2) * s * 0.3, 4, 0, Math.PI * 2); g.fill()
+        }
+      } else {
+        // 尖刺
+        g.fillStyle = `rgba(200,210,220,${active ? 0.95 : 0.6})`
+        g.strokeStyle = OUTLINE
+        g.lineWidth = 1.2
+        for (let i = 0; i < 6; i++) {
+          const a = (i / 6) * Math.PI * 2
+          const bx = Math.cos(a) * s * 0.4, by = Math.sin(a) * s * 0.4
+          g.beginPath()
+          g.moveTo(bx, by)
+          g.lineTo(bx + Math.cos(a - 0.3) * s * 0.28, by + Math.sin(a - 0.3) * s * 0.28)
+          g.lineTo(bx + Math.cos(a) * s * (active ? 0.55 : 0.4), by + Math.sin(a) * s * (active ? 0.55 : 0.4))
+          g.closePath(); g.fill(); g.stroke()
+        }
+      }
+      g.fillStyle = `rgba(${col},0.9)`
+      g.font = `${s * 0.5}px sans-serif`
+      g.textAlign = 'center'; g.textBaseline = 'middle'
+      g.fillText('⚠', 0, 0)
+      break
+    }
   }
   // 血條（可破壞物）
   if (opts.hpPct !== undefined && opts.hpPct < 1 && opts.hpPct > 0 && t !== 'prop') {

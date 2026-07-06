@@ -164,7 +164,7 @@ export interface SDrop {
 
 export interface SObjective {
   i: number
-  t: 'crystal' | 'cart' | 'point' | 'nest' | 'rune' | 'pillar' | 'base' | 'guardChest' | 'prop'
+  t: 'crystal' | 'cart' | 'point' | 'nest' | 'rune' | 'pillar' | 'base' | 'guardChest' | 'prop' | 'trap'
   x: number; y: number
   hp: number; maxHp: number
   pg: number

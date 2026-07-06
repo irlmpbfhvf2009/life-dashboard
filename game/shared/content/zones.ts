@@ -53,8 +53,42 @@ export const ZONES: ZoneData[] = [
     bg: { top: '#2b2016', bottom: '#16100a', accent: '#ff9f43' },
     musicMood: 'market',
   },
+  {
+    id: 'frost_greenhouse',
+    name: '冰霜溫室',
+    description: '結霜的玻璃暖房。滑溜地面、成群的疾風蚊與盾殼蟲，中後段的硬仗。',
+    enemyPool: [
+      { id: 'gnat', w: 6 },
+      { id: 'shieldbug', w: 5 },
+      { id: 'grub', w: 4 },
+      { id: 'spitter', w: 4, fromWave: 6 },
+      { id: 'hopper', w: 4, fromWave: 5 },
+      { id: 'broodmother', w: 2, fromWave: 8 },
+    ],
+    props: ['crate', 'bush', 'healHerb', 'coinBox'],
+    propCount: 12,
+    bg: { top: '#16283a', bottom: '#0a141f', accent: '#7ec8ff' },
+    musicMood: 'forest',
+  },
+  {
+    id: 'scorched_field',
+    name: '焦土農田',
+    description: '被烈日烤乾的裂地。爆爆菇與毒液蛞蝓成群，火與毒的煉獄。',
+    enemyPool: [
+      { id: 'slug', w: 4 },
+      { id: 'boomer', w: 6, fromWave: 4 },
+      { id: 'toxicap', w: 5, fromWave: 5 },
+      { id: 'hopper', w: 4 },
+      { id: 'spitter', w: 3, fromWave: 6 },
+      { id: 'broodmother', w: 2, fromWave: 7 },
+    ],
+    props: ['barrel', 'coinBox', 'crate', 'mushroom'],
+    propCount: 13,
+    bg: { top: '#3a1f12', bottom: '#1c0d06', accent: '#ff7a3c' },
+    musicMood: 'market',
+  },
 ]
 
 export const ZONE_MAP = new Map(ZONES.map(z => [z.id, z]))
-/** 波次推進的區域輪替（路線選擇可覆寫） */
-export const ZONE_ORDER = ['farm', 'mushroom_forest', 'ruined_market']
+/** 波次推進的區域輪替（每 2 波換一區；路線選擇可覆寫） */
+export const ZONE_ORDER = ['farm', 'mushroom_forest', 'ruined_market', 'frost_greenhouse', 'scorched_field']

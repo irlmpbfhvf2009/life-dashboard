@@ -29,7 +29,7 @@ import { spawnBoss, bossTick } from './boss'
 import { dropsTick, vacuumAll, spawnDrop, healPlayer, applyItem, gainGold, gainXp } from './drops'
 import {
   rollMission, setupMission, missionTick, grantMissionRewards,
-  eventTick, setupEventObjects, strikesTick, spawnProps, onPropDestroyed, removeObjective,
+  eventTick, setupEventObjects, strikesTick, spawnProps, spawnTraps, trapsTick, onPropDestroyed, removeObjective,
 } from './missions'
 import {
   rollLevelupChoices, applyUpgrade, generateShopOffers, buyOffer, refreshShop,
@@ -221,7 +221,7 @@ export class Game {
     this.nextRouteMods = defaultRouteMods()
 
     // 區域輪替（每 4 波換一區）
-    this.zone = ZONE_MAP.get(ZONE_ORDER[Math.floor((wave - 1) / 4) % ZONE_ORDER.length])!
+    this.zone = ZONE_MAP.get(ZONE_ORDER[Math.floor((wave - 1) / 2) % ZONE_ORDER.length])!
 
     // 事件（平衡規則：高危不連續、Boss 前一波不出）
     this.event = null
@@ -275,8 +275,9 @@ export class Game {
     this.nextShopDiscount = 0
     this.nextRareBoost = 0
 
-    // 地圖物件
+    // 地圖物件 + 隨機陷阱
     spawnProps(this)
+    spawnTraps(this)
     setupEventObjects(this)
 
     // 路線覆寫：毒霧地形
@@ -352,7 +353,8 @@ export class Game {
       if (p.pendingLevelups > 0 && !p.levelupChoices.length) rollLevelupChoices(this, p)
       generateShopOffers(this, p)
     }
-    this.routeOffers = shuffleR(this.rng, ROUTES.slice()).slice(0, 3).map(r => ({ routeId: r.id, votes: new Set<string>() }))
+    // 路線改隨機（不投票）— 先決定好下一關路線，中場只顯示結果
+    this.routeOffers = []
     this.team.teamShopVotes.clear()
     this.team.reviveVotes.clear()
 
@@ -368,11 +370,9 @@ export class Game {
   }
 
   private startNextWave(): void {
-    // 結算路線投票（同票 → 房主票優先，否則第一名）
-    if (this.routeOffers.length) {
-      let best = this.routeOffers[0]
-      for (const r of this.routeOffers) if (r.votes.size > best.votes.size) best = r
-      const route = ROUTES.find(r => r.id === best.routeId)
+    // 下一關路線隨機（不投票）
+    {
+      const route = ROUTES[Math.floor(this.rng() * ROUTES.length)]
       if (route) {
         this.nextRouteMods = { ...defaultRouteMods(), ...route.mods, rareChance: route.mods.rareChance ?? 0 } as RouteMods
         this.nextRouteMods.goldMult = route.mods.goldMult ?? 1
@@ -380,7 +380,7 @@ export class Game {
         this.nextRouteMods.rewardMult = route.mods.rewardMult ?? 1
         this.nextRouteMods.chestMult = route.mods.chestMult ?? 0
         this.nextRouteMods.rangedBias = route.mods.rangedBias ?? 0
-        this.broadcastToast(`前往：${route.name}`, 'info')
+        this.broadcastToast(`前往：${route.name}（${route.reward}）`, 'info')
       }
     }
     // 團隊獎勵結算（多數決）
@@ -450,6 +450,7 @@ export class Game {
       enemyProjsTick(this, dt)
       dropsTick(this, dt)
       missionTick(this, dt)
+      trapsTick(this, dt)
       eventTick(this, dt)
       strikesTick(this)
       this.fogTick(dt)
@@ -765,7 +766,13 @@ export class Game {
       if (this.bossDefeated) this.endWave()
       return
     }
-    if (this.time >= this.duration) this.endWave()
+    // 30 秒倒數結束後，還要把場上怪物清光才進下一關
+    if (this.time >= this.duration && this.enemies.length === 0) this.endWave()
+  }
+
+  /** 給 HUD：倒數已結束、正在清尾怪 */
+  get clearingPhase(): boolean {
+    return this.phase === 'combat' && this.time >= this.duration && !isBossWave(this.mode, this.wave)
   }
 
   private checkWipe(): void {

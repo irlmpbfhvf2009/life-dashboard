@@ -1,7 +1,7 @@
 // 任務目標 + 地圖事件 hook + 地圖物件（objectives）。
 // 全部任務支援 1~4 人：count 型乘 killTargetScale、機關型查 OBJECT_COUNT。
 import { MISSIONS, ENEMY_MAP, ITEMS } from '../../../shared/content/index'
-import { MISSION, OBJECT_COUNT, PLAYER_SCALING, ARENA } from '../../../shared/balance'
+import { MISSION, OBJECT_COUNT, PLAYER_SCALING, ARENA, TRAPS } from '../../../shared/balance'
 import { weightedR, intR } from '../../../shared/rng'
 import type { MissionData } from '../../../shared/types'
 import type { SObjective } from './state'
@@ -34,6 +34,44 @@ export function spawnProps(g: Game): void {
       x: 100 + g.rng() * (ARENA.w - 200), y: 100 + g.rng() * (ARENA.h - 200),
       hp: 14, maxHp: 14, pg: 0, r: 22, s: 0,
     })
+  }
+}
+
+// -------------------------------------------------------- 隨機陷阱（尖刺/毒沼，站上去持續扣血）
+const TRAP_KINDS = ['spike', 'poison', 'fire']
+
+export function spawnTraps(g: Game): void {
+  if (g.wave < TRAPS.fromWave) return
+  const n = TRAPS.count(g.wave)
+  const cx = ARENA.w / 2, cy = ARENA.h / 2
+  for (let k = 0; k < n; k++) {
+    let x = 0, y = 0
+    for (let tries = 0; tries < 6; tries++) {
+      x = 120 + g.rng() * (ARENA.w - 240)
+      y = 120 + g.rng() * (ARENA.h - 240)
+      if (dist2(x, y, cx, cy) > TRAPS.minDistFromCenter ** 2) break
+    }
+    spawnObjective(g, {
+      t: 'trap', k: TRAP_KINDS[Math.floor(g.rng() * TRAP_KINDS.length)],
+      x, y, hp: 1, maxHp: 1, pg: 0, r: TRAPS.radius, s: 0,
+    })
+  }
+}
+
+export function trapsTick(g: Game, dt: number): void {
+  for (const o of g.objectives) {
+    if (o.t !== 'trap') continue
+    o.tick -= dt
+    if (o.tick > 0) continue
+    o.tick = TRAPS.tickInterval
+    o.s = 0
+    for (const p of g.players.values()) {
+      if (p.status !== 'alive') continue
+      if (dist2(p.x, p.y, o.x, o.y) < o.r * o.r) {
+        o.s = 1                                   // 有人踩到 → client 顯示啟動
+        g.damagePlayer(p, TRAPS.damage * (o.k === 'fire' ? 1.4 : 1))
+      }
+    }
   }
 }
 

@@ -40,8 +40,8 @@ export class Room {
     this.code = code
     this.config = {
       mode: config.mode ?? 'standard',
-      difficulty: clamp(config.difficulty ?? 0, 0, 2),
-      maxPlayers: clamp(config.maxPlayers ?? 4, 1, 4),
+      difficulty: 2,                               // 固定夢魘難度（不再讓玩家選）
+      maxPlayers: clamp(config.maxPlayers ?? 1, 1, 4),
     }
     this.cleanupTimer = setInterval(() => this.sweep(), 10_000)
   }
@@ -163,7 +163,7 @@ export class Room {
   setConfig(playerId: string, cfg: Partial<RoomConfig>): void {
     if (playerId !== this.hostId || this.phase !== 'lobby') return
     if (cfg.mode) this.config.mode = cfg.mode
-    if (cfg.difficulty !== undefined) this.config.difficulty = clamp(cfg.difficulty, 0, 2)
+    // 難度固定夢魘，不接受變更
     if (cfg.maxPlayers !== undefined) this.config.maxPlayers = clamp(cfg.maxPlayers, Math.max(1, this.players.size), 4)
     this.pushState()
   }

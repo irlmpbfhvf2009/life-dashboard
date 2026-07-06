@@ -15,7 +15,6 @@ import { CHARACTERS, CHARACTER_MAP } from '@game/content/characters'
 import { WEAPON_MAP } from '@game/content/weapons'
 import { UPGRADE_MAP } from '@game/content/upgrades'
 import { ITEM_MAP } from '@game/content/pickups'
-import { ROUTES } from '@game/content/routes'
 import { TEAM_SHOP_ITEMS } from '@game/content/teamShop'
 import { EVENT_MAP } from '@game/content/events'
 import { ZONE_MAP } from '@game/content/zones'
@@ -41,13 +40,13 @@ const playerName = ref(localStorage.getItem('veggie-name') ?? '')
 const joinCode = ref('')
 const busy = ref(false)
 const homeError = ref('')
-const cfg = ref<{ mode: Mode; difficulty: number; maxPlayers: number }>({ mode: 'standard', difficulty: 0, maxPlayers: 4 })
+// 難度固定夢魘（difficulty=2，不再讓玩家選）；人數預設 1
+const cfg = ref<{ mode: Mode; difficulty: number; maxPlayers: number }>({ mode: 'standard', difficulty: 2, maxPlayers: 1 })
 const MODES: { id: Mode; name: string; desc: string }[] = [
   { id: 'quick', name: '快速', desc: '10 波 · 約 10 分鐘' },
   { id: 'standard', name: '標準', desc: '20 波 · 雙 Boss' },
   { id: 'endless', name: '無盡', desc: '20 波後無盡加壓' },
 ]
-const DIFFS = ['普通', '困難', '夢魘']
 
 async function doCreate() {
   if (!playerName.value.trim()) { homeError.value = '先取個名字吧'; return }
@@ -151,6 +150,8 @@ const skillCdPct = computed(() => {
   return Math.min(1, gs.hud.skillCd / max)
 })
 const eventName = computed(() => gs.waveInfo?.event ? EVENT_MAP.get(gs.waveInfo.event)?.name : '')
+// 倒數結束、非 Boss 波、還有怪 → 清怪階段
+const clearing = computed(() => gs.hud.left <= 0 && !gs.hud.boss && gs.hud.enemiesLeft > 0 && !gs.inter && !gs.over)
 const zoneName = computed(() => ZONE_MAP.get(gs.waveInfo?.zone ?? '')?.name ?? '')
 
 // ---------------------------------------------------------------- 中場 helpers
@@ -165,7 +166,6 @@ const RARITY_NAME: Record<string, string> = { common: '普通', rare: '稀有', 
 const upg = (id: string) => UPGRADE_MAP.get(id)
 const wpn = (id: string) => WEAPON_MAP.get(id)
 const itemOf = (id: string) => ITEM_MAP.get(id)
-const routeOf = (id: string) => ROUTES.find(r => r.id === id)
 const teamItemOf = (id: string) => TEAM_SHOP_ITEMS.find(t => t.id === id)
 const playerName2 = (id: string) => gs.begin?.players.find(p => p.id === id)?.name ?? '?'
 
@@ -332,17 +332,9 @@ const fmtTime = (s: number) => {
             </button>
           </div>
           <div class="mb-3 flex items-center justify-between gap-2 text-sm">
+            <span class="rounded-full bg-rose-500/25 px-2.5 py-1 text-xs font-bold text-rose-200">🔥 夢魘難度</span>
             <div class="flex items-center gap-1">
-              <span class="text-xs text-white/50">難度</span>
-              <button
-                v-for="(d, i) in DIFFS" :key="d"
-                class="rounded px-2 py-1 text-xs font-bold"
-                :class="cfg.difficulty === i ? 'bg-rose-500/30 text-rose-200' : 'bg-white/5 text-white/40'"
-                @click="cfg.difficulty = i"
-              >{{ d }}</button>
-            </div>
-            <div class="flex items-center gap-1">
-              <span class="text-xs text-white/50">人數</span>
+              <span class="text-xs text-white/50">人數上限</span>
               <button
                 v-for="n in 4" :key="n"
                 class="h-7 w-7 rounded text-xs font-bold"
@@ -406,19 +398,12 @@ const fmtTime = (s: number) => {
             :class="gs.room!.config.mode === m.id ? 'border-lime-400 bg-lime-400/20 text-lime-200' : 'border-white/10 text-white/40'"
             @click="api.setConfig({ mode: m.id })"
           >{{ m.name }}</button>
-          <span class="text-white/20">|</span>
-          <button
-            v-for="(d, i) in DIFFS" :key="d"
-            class="rounded-full border px-3 py-1 font-bold"
-            :class="gs.room!.config.difficulty === i ? 'border-rose-400 bg-rose-400/20 text-rose-200' : 'border-white/10 text-white/40'"
-            @click="api.setConfig({ difficulty: i })"
-          >{{ d }}</button>
         </template>
         <template v-else>
           <span class="rounded-full bg-lime-400/20 px-3 py-1 font-bold text-lime-200">{{ MODES.find(m => m.id === gs.room!.config.mode)?.name }}模式</span>
-          <span class="rounded-full bg-rose-400/20 px-3 py-1 font-bold text-rose-200">{{ DIFFS[gs.room!.config.difficulty] }}</span>
           <span class="rounded-full bg-sky-400/20 px-3 py-1 font-bold text-sky-200">最多 {{ gs.room!.config.maxPlayers }} 人</span>
         </template>
+        <span class="rounded-full bg-rose-400/20 px-3 py-1 font-bold text-rose-200">🔥 夢魘難度</span>
       </div>
 
       <!-- 玩家列表 -->
@@ -552,25 +537,39 @@ const fmtTime = (s: number) => {
       <!-- 頂部 HUD -->
       <div class="pointer-events-none absolute inset-x-0 top-0 p-2">
         <div class="flex items-start justify-between gap-2">
-          <!-- 退出 + 波數/時間/區域 -->
+          <!-- 退出 + 左上資訊欄（波數 → 清怪/任務 → 升級提示，全部疊在左上） -->
           <div class="flex items-start gap-1.5">
             <button
               class="pointer-events-auto grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-black/45 text-lg text-white/60 backdrop-blur-sm active:scale-90"
               @click="confirmExit"
             >✕</button>
-            <div class="rounded-xl bg-black/45 px-3 py-1.5 backdrop-blur-sm">
-              <p class="text-sm font-black text-amber-300">第 {{ gs.hud.wave }} 波 <span class="ml-1 text-white">{{ fmtTime(gs.hud.left) }}</span></p>
-              <p class="text-[10px] text-white/50">{{ zoneName }}<span v-if="eventName" class="ml-1 text-rose-300">⚡{{ eventName }}</span></p>
+            <div class="flex flex-col items-start gap-1">
+              <div class="rounded-xl bg-black/45 px-3 py-1.5 backdrop-blur-sm">
+                <p class="text-sm font-black text-amber-300">
+                  第 {{ gs.hud.wave }} 波
+                  <span v-if="clearing" class="ml-1 text-rose-300">清光怪物！</span>
+                  <span v-else class="ml-1 text-white">{{ fmtTime(gs.hud.left) }}</span>
+                </p>
+                <p class="text-[10px] text-white/50">{{ zoneName }}<span v-if="eventName" class="ml-1 text-rose-300">⚡{{ eventName }}</span></p>
+              </div>
+              <!-- 清怪提示：還剩幾隻 -->
+              <div v-if="clearing" class="rounded-lg bg-rose-900/60 px-2.5 py-1 backdrop-blur-sm">
+                <p class="text-[11px] font-bold text-rose-200">🐛 剩 {{ gs.hud.enemiesLeft }} 隻，清光才能進下一關</p>
+              </div>
+              <!-- 任務 -->
+              <div v-if="gs.hud.mission" class="rounded-lg bg-black/45 px-2.5 py-1 backdrop-blur-sm">
+                <p class="text-[11px] font-bold" :class="gs.hud.mission.failed ? 'text-rose-400' : gs.hud.mission.done ? 'text-lime-400' : 'text-sky-300'">
+                  🎯 {{ gs.hud.mission.name }} {{ gs.hud.mission.done ? '✓' : gs.hud.mission.failed ? '✗' : '' }}
+                  <span v-if="!gs.hud.mission.done && !gs.hud.mission.failed && gs.hud.mission.target > 1" class="text-white/60">
+                    {{ Math.min(gs.hud.mission.progress, gs.hud.mission.target) }}/{{ gs.hud.mission.target }}
+                  </span>
+                </p>
+              </div>
+              <!-- 升級提示 -->
+              <div v-if="gs.hud.pendingLevelups > 0 && !gs.inter" class="rounded-lg bg-violet-500/70 px-2.5 py-1 backdrop-blur-sm">
+                <p class="text-[11px] font-black text-white">⬆️ 升級 ×{{ gs.hud.pendingLevelups }}（波末選擇）</p>
+              </div>
             </div>
-          </div>
-          <!-- 任務 -->
-          <div v-if="gs.hud.mission" class="rounded-xl bg-black/45 px-3 py-1.5 text-center backdrop-blur-sm">
-            <p class="text-[10px] font-bold" :class="gs.hud.mission.failed ? 'text-rose-400' : gs.hud.mission.done ? 'text-lime-400' : 'text-sky-300'">
-              {{ gs.hud.mission.name }} {{ gs.hud.mission.done ? '✓' : gs.hud.mission.failed ? '✗' : '' }}
-            </p>
-            <p v-if="!gs.hud.mission.done && !gs.hud.mission.failed && gs.hud.mission.target > 1" class="text-[10px] text-white/60">
-              {{ Math.min(gs.hud.mission.progress, gs.hud.mission.target) }} / {{ gs.hud.mission.target }}
-            </p>
           </div>
           <!-- 金幣/等級/復活 -->
           <div class="rounded-xl bg-black/45 px-3 py-1.5 text-right backdrop-blur-sm">
@@ -624,22 +623,24 @@ const fmtTime = (s: number) => {
         </div>
       </div>
 
-      <!-- 升級提示徽章 -->
-      <div v-if="gs.hud.pendingLevelups > 0 && !gs.inter" class="pointer-events-none absolute right-3 top-24 rounded-full bg-violet-500/80 px-3 py-1 text-xs font-black shadow-lg">
-        ⬆️ 升級 ×{{ gs.hud.pendingLevelups }}（波末選擇）
+      <!-- 聊天 / 語音 / 音效 / 音樂 — 放在小地圖下方（右上） -->
+      <div class="absolute right-2 top-[184px] flex flex-col items-end gap-1.5">
+        <button
+          class="grid h-9 w-9 place-items-center rounded-full text-base active:scale-90"
+          :class="chatOpen ? 'bg-sky-500/70' : 'bg-black/45'"
+          @click="chatOpen = !chatOpen"
+        >💬</button>
+        <button
+          class="grid h-9 w-9 place-items-center rounded-full text-base active:scale-90"
+          :class="voice.enabled ? (voice.muted ? 'bg-rose-500/60' : 'bg-emerald-500/60') : 'bg-black/45'"
+          @click="onVoiceBtn"
+        >{{ voice.enabled && voice.muted ? '🙊' : '🎙️' }}</button>
+        <button class="grid h-9 w-9 place-items-center rounded-full bg-black/45 text-base active:scale-90" @click="toggleMusic">{{ musicOn ? '🎵' : '🔇' }}</button>
+        <button class="grid h-9 w-9 place-items-center rounded-full bg-black/45 text-base active:scale-90" @click="toggleMute">{{ muted ? '🔕' : '🔔' }}</button>
       </div>
 
-      <!-- 技能按鈕 + 音效切換 -->
+      <!-- 技能按鈕 -->
       <div class="absolute bottom-5 right-4 flex flex-col items-center gap-3">
-        <div class="flex gap-1.5">
-          <button
-            class="grid h-8 w-8 place-items-center rounded-full text-sm"
-            :class="voice.enabled ? (voice.muted ? 'bg-rose-500/60' : 'bg-emerald-500/60') : 'bg-black/40'"
-            @click="onVoiceBtn"
-          >{{ voice.enabled && voice.muted ? '🙊' : '🎙️' }}</button>
-          <button class="grid h-8 w-8 place-items-center rounded-full bg-black/40 text-sm" @click="toggleMusic">{{ musicOn ? '🎵' : '🔇' }}</button>
-          <button class="grid h-8 w-8 place-items-center rounded-full bg-black/40 text-sm" @click="toggleMute">{{ muted ? '🔕' : '🔔' }}</button>
-        </div>
         <button
           class="relative grid h-20 w-20 place-items-center rounded-full border-4 text-3xl shadow-xl active:scale-90"
           :class="skillCdPct > 0 ? 'border-white/20 bg-black/50 grayscale' : 'border-amber-300 bg-gradient-to-br from-amber-500 to-orange-600'"
@@ -667,8 +668,8 @@ const fmtTime = (s: number) => {
         />
       </div>
 
-      <!-- Toasts -->
-      <div class="pointer-events-none absolute inset-x-0 bottom-28 flex flex-col items-center gap-1 px-4">
+      <!-- Toasts（z 拉到最高，才不會被中場面板蓋住，例如金幣不足警告） -->
+      <div class="pointer-events-none absolute inset-x-0 bottom-28 z-[60] flex flex-col items-center gap-1 px-4">
         <p
           v-for="t in gs.toasts" :key="t.id"
           class="rounded-full px-4 py-1.5 text-xs font-bold backdrop-blur-sm"
@@ -683,12 +684,7 @@ const fmtTime = (s: number) => {
           class="rounded-lg bg-black/55 px-2 py-1 text-[11px] text-white/90 backdrop-blur-sm"
         ><b class="text-amber-300">{{ m.name }}</b>：{{ m.text }}</p>
       </div>
-      <button
-        class="absolute bottom-2 left-2 z-30 grid h-9 w-9 place-items-center rounded-full text-base active:scale-90"
-        :class="chatOpen ? 'bg-sky-500/60' : 'bg-black/40'"
-        @click="chatOpen = !chatOpen"
-      >💬</button>
-      <div v-if="chatOpen" class="absolute inset-x-2 bottom-12 z-30 flex gap-1.5">
+      <div v-if="chatOpen" class="absolute inset-x-2 bottom-12 z-40 flex gap-1.5">
         <input
           v-model="chatInput" maxlength="80" placeholder="跟隊友說…"
           class="min-w-0 flex-1 rounded-xl border border-white/20 bg-black/60 px-3 py-2 text-sm outline-none backdrop-blur placeholder:text-white/30 focus:border-sky-400"
@@ -698,7 +694,7 @@ const fmtTime = (s: number) => {
       </div>
 
       <!-- Debug 面板 -->
-      <button v-if="showDebugBtn" class="absolute left-12 bottom-2 rounded bg-black/40 px-2 py-1 text-[10px] text-white/40" @click="gs.showDebug = !gs.showDebug">DBG</button>
+      <button v-if="showDebugBtn" class="absolute left-2 bottom-2 rounded bg-black/40 px-2 py-1 text-[10px] text-white/40" @click="gs.showDebug = !gs.showDebug">DBG</button>
       <div v-if="gs.showDebug && gs.debug" class="absolute left-2 bottom-8 w-52 rounded-lg bg-black/70 p-2 font-mono text-[10px] leading-relaxed text-lime-300 backdrop-blur">
         <p>wave {{ gs.debug.wave }} | players {{ gs.debug.players }} | hp {{ gs.debug.avgHpPct }}%</p>
         <p>enemies {{ gs.debug.enemies }} (elite {{ gs.debug.elites }}) | drops {{ gs.debug.drops }}</p>
@@ -851,22 +847,13 @@ const fmtTime = (s: number) => {
             </div>
           </div>
 
-          <!-- 路線選擇 -->
-          <div class="mt-3 rounded-2xl border border-white/10 bg-white/5 p-4">
-            <p class="text-sm font-black text-orange-300">🗺️ 下一關路線{{ connectedCount > 1 ? '（投票）' : '' }}<span v-if="gs.inter.bossNext" class="ml-1 text-rose-400">⚠️ 下一波 BOSS</span></p>
-            <div class="mt-2 space-y-2">
-              <button
-                v-for="r in gs.inter.routes" :key="r.routeId"
-                class="w-full rounded-xl border p-3 text-left active:scale-[0.98]"
-                :class="r.votes.includes(gs.playerId) ? 'border-orange-400 bg-orange-400/15' : 'border-white/10 bg-white/5'"
-                @click="api.routeVote(r.routeId); sfx.click()"
-              >
-                <span class="text-sm font-bold">{{ routeOf(r.routeId)?.name }}</span>
-                <span class="mt-0.5 block text-[11px] text-lime-300">🎁 {{ routeOf(r.routeId)?.reward }}</span>
-                <span class="block text-[11px] text-rose-300">⚠️ {{ routeOf(r.routeId)?.risk }}</span>
-                <span v-if="r.votes.length" class="mt-0.5 block text-[10px] text-orange-200">{{ r.votes.map(playerName2).join('、') }}</span>
-              </button>
-            </div>
+          <!-- 下一關（路線隨機） -->
+          <div class="mt-3 rounded-2xl border border-white/10 bg-white/5 p-3 text-center">
+            <p class="text-sm font-black text-orange-300">
+              🗺️ 下一關路線隨機
+              <span v-if="gs.inter.bossNext" class="ml-1 text-rose-400">⚠️ 下一波 BOSS</span>
+            </p>
+            <p class="mt-0.5 text-[11px] text-white/40">進場時揭曉，準備好就出發！</p>
           </div>
 
           <!-- Ready -->

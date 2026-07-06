@@ -47,7 +47,7 @@ export const gs = reactive({
   hud: {
     wave: 0, left: 0, hp: 0, maxHp: 0, shield: 0, gold: 0, lv: 1, xp: 0, nxp: 10,
     skillCd: 0, skillMaxCd: 10, pendingLevelups: 0, teamRevives: 0,
-    status: 'alive' as string, reviveProgress: 0,
+    status: 'alive' as string, reviveProgress: 0, enemiesLeft: 0,
     mission: null as null | { name: string; progress: number; target: number; done: boolean; failed?: boolean },
     boss: null as null | { name: string; hp: number; mhp: number; sh?: number },
     mates: [] as { id: string; name: string; charId: string; hp: number; mhp: number; st: string; rp: number }[],
@@ -194,6 +194,7 @@ function syncHud(s: Snapshot): void {
   h.teamRevives = s.teamRevives
   h.mission = s.mission ?? null
   h.pressureLevel = s.director.level
+  h.enemiesLeft = s.counts.enemies
   if (me) {
     h.hp = me.hp; h.maxHp = me.mhp; h.shield = me.sh; h.gold = me.gold
     h.lv = me.lv; h.xp = me.xp; h.nxp = me.nxp
