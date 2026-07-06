@@ -44,7 +44,7 @@ setInterval(() => {
   }
 }, 30_000)
 
-interface SocketData { roomCode?: string; playerId?: string }
+interface SocketData { roomCode?: string; playerId?: string; lastChatAt?: number }
 
 io.on('connection', (socket: Socket) => {
   const data = socket.data as SocketData
@@ -124,6 +124,27 @@ io.on('connection', (socket: Socket) => {
   socket.on('route:vote', (p: { routeId: string }) => game()?.onRouteVote(pid(), String(p?.routeId ?? '')))
   socket.on('teamreward:vote', (p: { id: string }) => game()?.onTeamRewardVote(pid(), String(p?.id ?? '')))
   socket.on('inter:ready', () => game()?.onInterReady(pid()))
+
+  // ---- 聊天 / 語音
+  socket.on('chat:send', (p: { text: string }) => {
+    const r = room()
+    const player = r?.players.get(pid())
+    if (!r || !player) return
+    const now = Date.now()
+    if (now - (data.lastChatAt ?? 0) < 700) return          // 洗頻保護
+    data.lastChatAt = now
+    const text = String(p?.text ?? '').trim().slice(0, 80)
+    if (!text) return
+    io.to(r.code).emit('chat:msg', { id: player.id, name: player.name, text })
+  })
+  socket.on('voice:join', () => room()?.voiceJoin(pid()))
+  socket.on('voice:leave', () => room()?.voiceLeave(pid()))
+  socket.on('voice:signal', (p: { to: string; data: unknown }) => {
+    const r = room()
+    if (!r || !r.voice.has(pid())) return
+    const target = r.players.get(String(p?.to ?? ''))
+    if (target?.socketId) io.to(target.socketId).emit('voice:signal', { from: pid(), data: p?.data })
+  })
 
   // ---- Debug（僅開發環境）
   socket.on('debug:cmd', (cmd) => {

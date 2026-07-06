@@ -41,6 +41,8 @@ export const gs = reactive({
   debug: null as DebugState | null,
   showDebug: false,
   toasts: [] as { id: number; msg: string; kind: string }[],
+  chat: [] as { seq: number; id: string; name: string; text: string; at: number }[],
+  voiceMembers: [] as string[],
   // HUD 低頻鏡射（由快照更新，10Hz 小物件 OK）
   hud: {
     wave: 0, left: 0, hp: 0, maxHp: 0, shield: 0, gold: 0, lv: 1, xp: 0, nxp: 10,
@@ -66,6 +68,16 @@ export function bindEngine(fns: { snap: SnapFn; evs: EvFn; wave: (w: WaveStartIn
   onSnap = fns.snap; onEvs = fns.evs; onWave = fns.wave
 }
 export function unbindEngine(): void { onSnap = null; onEvs = null; onWave = null }
+
+// 聊天氣泡（戰鬥中畫在角色頭上）與語音 signaling 的掛勾
+let onChatBubble: ((id: string, text: string) => void) | null = null
+export function bindChatBubble(fn: ((id: string, text: string) => void) | null): void { onChatBubble = fn }
+let onVoiceMembers: ((ids: string[]) => void) | null = null
+let onVoiceSignal: ((from: string, data: unknown) => void) | null = null
+export function bindVoice(fns: { members: (ids: string[]) => void; signal: (from: string, data: unknown) => void } | null): void {
+  onVoiceMembers = fns?.members ?? null
+  onVoiceSignal = fns?.signal ?? null
+}
 
 function saveSession(s: Session): void { localStorage.setItem('veggie-session', JSON.stringify(s)) }
 export function loadSession(): Session | null {
@@ -162,6 +174,16 @@ export function ensureSocket(): Socket {
   socket.on('game:over', (s: GameOverSummary) => { gs.over = s })
   socket.on('debug:state', (d: DebugState) => { gs.debug = d })
   socket.on('toast', (t: { msg: string; kind?: string }) => pushToast(t.msg, t.kind ?? 'info'))
+  socket.on('chat:msg', (p: { id: string; name: string; text: string }) => {
+    gs.chat.push({ seq: toastSeq++, id: p.id, name: p.name, text: p.text, at: Date.now() })
+    if (gs.chat.length > 40) gs.chat.shift()
+    onChatBubble?.(p.id, p.text)
+  })
+  socket.on('voice:members', (ids: string[]) => {
+    gs.voiceMembers = ids
+    onVoiceMembers?.(ids)
+  })
+  socket.on('voice:signal', (p: { from: string; data: unknown }) => onVoiceSignal?.(p.from, p.data))
   return socket
 }
 
@@ -261,5 +283,9 @@ export const api = {
   rewardVote: (id: string) => socket?.emit('teamreward:vote', { id }),
   interReady: () => socket?.emit('inter:ready'),
   endless: () => socket?.emit('room:endless'),
+  chatSend: (text: string) => socket?.emit('chat:send', { text }),
+  voiceJoin: () => socket?.emit('voice:join'),
+  voiceLeave: () => socket?.emit('voice:leave'),
+  voiceSignal: (to: string, data: unknown) => socket?.emit('voice:signal', { to, data }),
   debug: (cmd: DebugCmd) => socket?.emit('debug:cmd', cmd),
 }

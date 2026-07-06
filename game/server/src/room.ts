@@ -31,6 +31,8 @@ export class Room {
   hostId = ''
   game: Game | null = null
   emptyAt = 0
+  /** 開著語音的玩家（WebRTC mesh 成員名單，signaling 由 index.ts 轉發） */
+  voice = new Set<string>()
   private cleanupTimer: ReturnType<typeof setInterval>
 
   constructor(io: Server, code: string, config: RoomConfig) {
@@ -92,6 +94,7 @@ export class Room {
     p.connected = false
     p.socketId = null
     p.disconnectAt = Date.now()
+    this.voiceLeave(playerId)
     if (this.phase === 'ingame' && this.game) {
       this.game.onDisconnect(playerId)
     } else if (this.phase === 'select') {
@@ -103,10 +106,22 @@ export class Room {
     if (!this.connectedCount()) this.emptyAt = Date.now()
   }
 
+  voiceJoin(playerId: string): void {
+    if (!this.players.has(playerId)) return
+    this.voice.add(playerId)
+    this.io.to(this.code).emit('voice:members', [...this.voice])
+  }
+
+  voiceLeave(playerId: string): void {
+    if (!this.voice.delete(playerId)) return
+    this.io.to(this.code).emit('voice:members', [...this.voice])
+  }
+
   removePlayer(playerId: string): void {
     const p = this.players.get(playerId)
     if (!p) return
     this.players.delete(playerId)
+    this.voiceLeave(playerId)
     this.transferHostIfNeeded()
     this.pushState()
     if (!this.players.size) this.emptyAt = Date.now()

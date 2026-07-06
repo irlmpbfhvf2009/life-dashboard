@@ -51,6 +51,12 @@ export interface ClientToServer {
   /** 標準/快速模式通關後，房主選擇進入無盡模式續戰 */
   'room:endless': () => void
 
+  // ---- 聊天 / 語音（WebRTC signaling 由 server 轉發）
+  'chat:send': (p: { text: string }) => void
+  'voice:join': () => void
+  'voice:leave': () => void
+  'voice:signal': (p: { to: string; data: unknown }) => void
+
   'debug:cmd': (cmd: DebugCmd) => void
 }
 
@@ -82,4 +88,7 @@ export interface ServerToClient {
   'debug:state': (d: DebugState) => void
   'toast': (p: { msg: string; kind?: 'info' | 'warn' | 'good' }) => void
   'room:closed': (reason: string) => void
+  'chat:msg': (p: { id: string; name: string; text: string }) => void
+  'voice:members': (ids: string[]) => void
+  'voice:signal': (p: { from: string; data: unknown }) => void
 }

@@ -2,6 +2,7 @@
 // 快照插值、自機預測、視覺投射物、粒子/傷害數字（含效能上限）。
 import type { Snapshot, GameEv, EnemySpawnEv, ObjectiveSnap } from '@game/types'
 import { ZONE_MAP } from '@game/content/zones'
+import { mulberry32, hashSeed } from '@game/rng'
 import { CHARACTER_MAP } from '@game/content/characters'
 import { WEAPON_MAP } from '@game/content/weapons'
 import { drawCharacter, drawEnemy, drawBoss, drawDrop, drawObjective, drawProjectile } from './art'
@@ -53,6 +54,8 @@ export class Engine {
   particles: Particle[] = []
   dmgNums: DmgNum[] = []
   aoes: Aoe[] = []
+  bubbles = new Map<string, { text: string; until: number }>()
+  decor: { x: number; y: number; kind: number; r: number; rot: number }[] = []
 
   // 自機預測
   myX = 900; myY = 1100
@@ -73,8 +76,29 @@ export class Engine {
   private fpsN = 0
   killSfxAt = 0
 
+  /** 聊天氣泡（畫在角色頭上 4 秒） */
+  say(playerId: string, text: string): void {
+    this.bubbles.set(playerId, { text: text.slice(0, 24), until: this.time + 4 })
+  }
+
+  /** 依區域+波數種子生成地面裝飾（草叢/土斑/石頭/水漬），全客戶端一致 */
+  private genDecor(zone: string, wave: number): void {
+    const rng = mulberry32(hashSeed(`${zone}-${wave}`))
+    this.decor = []
+    for (let k = 0; k < 90; k++) {
+      this.decor.push({
+        x: 60 + rng() * (this.arena.w - 120),
+        y: 60 + rng() * (this.arena.h - 120),
+        kind: Math.floor(rng() * 4),
+        r: 10 + rng() * 34,
+        rot: rng() * Math.PI * 2,
+      })
+    }
+  }
+
   onWave(w: WaveStartInfo): void {
     this.zoneId = w.zone
+    this.genDecor(w.zone, w.wave)
     this.enemies.clear()
     this.drops.clear()
     this.objectives.clear()
@@ -365,6 +389,46 @@ export class Engine {
     g.strokeRect(4, 4, this.arena.w - 8, this.arena.h - 8)
     g.globalAlpha = 1
 
+    // 地面裝飾（只畫鏡頭範圍內的）
+    const accent = zone?.bg.accent ?? '#7bc043'
+    for (const d of this.decor) {
+      if (d.x < this.camX - 60 || d.x > this.camX + cw + 60 || d.y < this.camY - 60 || d.y > this.camY + ch + 60) continue
+      g.save()
+      g.translate(d.x, d.y)
+      g.rotate(d.rot)
+      switch (d.kind) {
+        case 0: // 土斑
+          g.fillStyle = 'rgba(0,0,0,0.14)'
+          g.beginPath(); g.ellipse(0, 0, d.r, d.r * 0.55, 0, 0, Math.PI * 2); g.fill()
+          break
+        case 1: // 草叢
+          g.strokeStyle = accent
+          g.globalAlpha = 0.28
+          g.lineWidth = 2
+          for (let b = -2; b <= 2; b++) {
+            g.beginPath()
+            g.moveTo(b * 3.5, 4)
+            g.quadraticCurveTo(b * 5, -d.r * 0.25, b * 6, -d.r * 0.45)
+            g.stroke()
+          }
+          g.globalAlpha = 1
+          break
+        case 2: // 石頭
+          g.fillStyle = 'rgba(255,255,255,0.08)'
+          g.strokeStyle = 'rgba(0,0,0,0.25)'
+          g.lineWidth = 1.5
+          g.beginPath(); g.ellipse(0, 0, d.r * 0.3, d.r * 0.22, 0, 0, Math.PI * 2); g.fill(); g.stroke()
+          break
+        case 3: // 亮色苔斑
+          g.fillStyle = accent
+          g.globalAlpha = 0.06
+          g.beginPath(); g.ellipse(0, 0, d.r * 0.9, d.r * 0.6, 0, 0, Math.PI * 2); g.fill()
+          g.globalAlpha = 1
+          break
+      }
+      g.restore()
+    }
+
     // AOE（地面層：毒/火/治療/預警）
     for (const a of this.aoes) {
       const pct = a.life / a.maxLife
@@ -559,6 +623,28 @@ export class Engine {
         g.fillStyle = '#4fc3f7'
         g.fillRect(-22, -28, 44 * Math.min(1, p.sh / p.mhp), 3)
       }
+      // 聊天氣泡
+      const bub = this.bubbles.get(p.id)
+      if (bub && bub.until > this.time) {
+        g.font = '12px sans-serif'
+        const tw = g.measureText(bub.text).width
+        const bw = tw + 16
+        g.globalAlpha = Math.min(1, (bub.until - this.time) * 2)
+        g.fillStyle = 'rgba(255,255,255,0.95)'
+        g.strokeStyle = 'rgba(0,0,0,0.35)'
+        g.lineWidth = 1.5
+        g.beginPath()
+        g.roundRect(-bw / 2, -74, bw, 22, 8)
+        g.fill(); g.stroke()
+        g.beginPath()
+        g.moveTo(-4, -52); g.lineTo(4, -52); g.lineTo(0, -46); g.closePath()
+        g.fillStyle = 'rgba(255,255,255,0.95)'
+        g.fill()
+        g.fillStyle = '#1a1208'
+        g.textAlign = 'center'
+        g.fillText(bub.text, 0, -59)
+        g.globalAlpha = 1
+      }
       // 倒地救援圈
       if (downed) {
         g.strokeStyle = 'rgba(239,83,80,0.8)'
@@ -598,6 +684,45 @@ export class Engine {
     }
     g.globalAlpha = 1
     g.restore()
+
+    // 小地圖（右上；隊友/Boss/任務目標一目了然，方便會合救援）
+    {
+      const ms = 76
+      const mx = cw - ms - 8
+      const my = 92
+      const k = ms / Math.max(this.arena.w, this.arena.h)
+      g.globalAlpha = 0.82
+      g.fillStyle = 'rgba(0,0,0,0.55)'
+      g.strokeStyle = zone?.bg.accent ?? '#7bc043'
+      g.lineWidth = 1.5
+      g.beginPath()
+      g.roundRect(mx - 3, my - 3, ms + 6, ms + 6, 6)
+      g.fill(); g.stroke()
+      // 任務目標
+      for (const o of this.objectives.values()) {
+        if (o.t === 'prop') continue
+        g.fillStyle = o.t === 'rune' || o.t === 'pillar' ? '#e040fb' : '#40c4ff'
+        g.fillRect(mx + o.x * k - 2, my + o.y * k - 2, 4, 4)
+      }
+      // 怪物（菁英才畫，避免整片紅）
+      for (const e of this.enemies.values()) {
+        if (!e.elite) continue
+        g.fillStyle = '#ff7043'
+        g.fillRect(mx + e.x * k - 1.5, my + e.y * k - 1.5, 3, 3)
+      }
+      // Boss
+      if (this.boss) {
+        g.fillStyle = '#ef5350'
+        g.beginPath(); g.arc(mx + this.boss.x * k, my + this.boss.y * k, 3.5, 0, Math.PI * 2); g.fill()
+      }
+      // 玩家
+      for (const p of this.players.values()) {
+        if (p.status === 'dead') continue
+        g.fillStyle = p.id === gs.playerId ? '#ffe66d' : p.status === 'downed' ? '#ef5350' : '#69f0ae'
+        g.beginPath(); g.arc(mx + p.x * k, my + p.y * k, p.id === gs.playerId ? 3 : 2.5, 0, Math.PI * 2); g.fill()
+      }
+      g.globalAlpha = 1
+    }
 
     // 黑暗事件：視野縮小 vignette
     if (this.darkness) {

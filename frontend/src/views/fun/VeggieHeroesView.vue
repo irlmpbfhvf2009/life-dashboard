@@ -3,8 +3,11 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
-  gs, api, ensureSocket, disconnectSocket, createRoom, joinRoom, leaveRoom, bindEngine, unbindEngine, pushToast,
+  gs, api, ensureSocket, disconnectSocket, createRoom, joinRoom, leaveRoom,
+  bindEngine, unbindEngine, bindChatBubble, pushToast,
 } from '@/game/net'
+import { voice, joinVoice, leaveVoice, toggleMute as toggleVoiceMute } from '@/game/voice'
+import { useAuthStore } from '@/stores/auth'
 import { engine } from '@/game/render'
 import { useGameSound, playMusic, stopMusic, sfx } from '@/game/sound'
 import Portrait from '@/game/Portrait.vue'
@@ -20,6 +23,7 @@ import type { Mode } from '@game/types'
 
 const route = useRoute()
 const router = useRouter()
+const auth = useAuthStore()
 const { muted, musicOn, toggleMute, toggleMusic } = useGameSound()
 
 // ---------------------------------------------------------------- 畫面狀態
@@ -195,11 +199,37 @@ onMounted(() => {
   ensureSocket()
   const q = String(route.query.room ?? '')
   if (q) joinCode.value = q.toUpperCase()
+  // 已登入工作台 → 直接用工作台的名字
+  if (auth.isAuthenticated && auth.displayName && auth.displayName !== '使用者') {
+    playerName.value = auth.displayName.slice(0, 12)
+  }
 })
+
+// ---------------------------------------------------------------- 聊天 / 語音
+const chatOpen = ref(false)
+const chatInput = ref('')
+const chatNow = ref(Date.now())
+let chatTicker: ReturnType<typeof setInterval> | null = null
+onMounted(() => { chatTicker = setInterval(() => { chatNow.value = Date.now() }, 3000) })
+onBeforeUnmount(() => { if (chatTicker) clearInterval(chatTicker) })
+// 戰鬥中只顯示 12 秒內的最新 4 則（完整記錄在大廳聊天框）
+const recentChat = computed(() => gs.chat.filter(m => chatNow.value - m.at < 12000).slice(-4))
+function sendChat() {
+  const t = chatInput.value.trim()
+  if (!t) return
+  api.chatSend(t)
+  chatInput.value = ''
+}
+function onVoiceBtn() {
+  if (!voice.enabled) void joinVoice()
+  else toggleVoiceMute()
+}
+watch(() => voice.error, (e) => { if (e) pushToast(e, 'warn') })
 
 watch(screen, async (s) => {
   if (s === 'game') {
     await nextTick()
+    bindChatBubble((id, text) => engine.say(id, text))
     if (gameCanvas.value) {
       bindEngine({
         snap: (snap) => engine.applySnapshot(snap),
@@ -216,6 +246,7 @@ watch(screen, async (s) => {
   } else {
     engine.stop()
     unbindEngine()
+    bindChatBubble(null)
     if (s === 'lobby' || s === 'select') playMusic('lobby')
     if (s === 'home') stopMusic()
   }
@@ -233,14 +264,22 @@ watch(() => gs.over, (o) => {
 onBeforeUnmount(() => {
   engine.stop()
   unbindEngine()
+  bindChatBubble(null)
+  leaveVoice()
   stopMusic()
   // 離開遊戲頁就斷線（session 保留，回來會自動重連進房）— 避免掛著的分頁讓 Cloud Run 一直計費
   disconnectSocket()
 })
 
 function exitGame() {
+  leaveVoice()
   leaveRoom()
   stopMusic()
+}
+
+/** 遊戲進行中退出（需確認，避免誤觸） */
+function confirmExit() {
+  if (window.confirm('確定要退出這場遊戲嗎？（隊友會看到你斷線，房間仍會保留一段時間）')) exitGame()
 }
 function backToStudio() {
   router.push('/fun/games')
@@ -392,6 +431,7 @@ const fmtTime = (s: number) => {
           <div class="flex items-center gap-2">
             <span class="text-lg">{{ p.isHost ? '👑' : '🥬' }}</span>
             <span class="font-bold" :class="p.id === gs.playerId ? 'text-amber-300' : ''">{{ p.name }}</span>
+            <span v-if="gs.voiceMembers.includes(p.id)" class="text-xs">🎙️</span>
             <span v-if="!p.connected" class="text-[10px] text-rose-300">斷線</span>
           </div>
           <span
@@ -400,6 +440,33 @@ const fmtTime = (s: number) => {
           >{{ p.isHost ? '房主' : p.ready ? '已準備' : '未準備' }}</span>
         </div>
         <p class="text-center text-xs text-white/30">{{ gs.room!.players.filter(p => p.connected).length }} / {{ gs.room!.config.maxPlayers }} 人</p>
+      </div>
+
+      <!-- 隊伍聊天 + 語音 -->
+      <div class="mt-3 w-full max-w-sm rounded-xl border border-white/10 bg-white/5 p-3">
+        <div class="flex items-center justify-between">
+          <p class="text-xs font-bold text-white/50">隊伍聊天</p>
+          <div class="flex gap-1.5">
+            <button
+              class="rounded-lg px-2.5 py-1 text-xs font-bold active:scale-95"
+              :class="voice.enabled ? (voice.muted ? 'bg-rose-500/40 text-rose-100' : 'bg-emerald-500/40 text-emerald-100') : 'bg-white/10 text-white/60'"
+              @click="onVoiceBtn"
+            >{{ !voice.enabled ? '🎙️ 開語音' : voice.muted ? '🙊 已靜音' : '🎙️ 語音中' }}</button>
+            <button v-if="voice.enabled" class="rounded-lg bg-white/10 px-2 py-1 text-xs text-white/50" @click="leaveVoice()">關</button>
+          </div>
+        </div>
+        <div class="mt-2 max-h-28 space-y-1 overflow-y-auto">
+          <p v-for="m in gs.chat" :key="m.seq" class="text-xs text-white/80"><b class="text-amber-300">{{ m.name }}</b>：{{ m.text }}</p>
+          <p v-if="!gs.chat.length" class="text-xs text-white/30">跟隊友打個招呼吧</p>
+        </div>
+        <div class="mt-2 flex gap-1.5">
+          <input
+            v-model="chatInput" maxlength="80" placeholder="輸入訊息…"
+            class="min-w-0 flex-1 rounded-lg border border-white/15 bg-white/10 px-2.5 py-1.5 text-sm outline-none placeholder:text-white/25 focus:border-sky-400"
+            @keyup.enter="sendChat"
+          >
+          <button class="rounded-lg bg-sky-500/40 px-3 text-sm font-bold text-sky-100 active:scale-95" @click="sendChat">送出</button>
+        </div>
       </div>
 
       <div class="mt-5 w-full max-w-sm space-y-2 pb-6">
@@ -485,10 +552,16 @@ const fmtTime = (s: number) => {
       <!-- 頂部 HUD -->
       <div class="pointer-events-none absolute inset-x-0 top-0 p-2">
         <div class="flex items-start justify-between gap-2">
-          <!-- 波數/時間/區域 -->
-          <div class="rounded-xl bg-black/45 px-3 py-1.5 backdrop-blur-sm">
-            <p class="text-sm font-black text-amber-300">第 {{ gs.hud.wave }} 波 <span class="ml-1 text-white">{{ fmtTime(gs.hud.left) }}</span></p>
-            <p class="text-[10px] text-white/50">{{ zoneName }}<span v-if="eventName" class="ml-1 text-rose-300">⚡{{ eventName }}</span></p>
+          <!-- 退出 + 波數/時間/區域 -->
+          <div class="flex items-start gap-1.5">
+            <button
+              class="pointer-events-auto grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-black/45 text-lg text-white/60 backdrop-blur-sm active:scale-90"
+              @click="confirmExit"
+            >✕</button>
+            <div class="rounded-xl bg-black/45 px-3 py-1.5 backdrop-blur-sm">
+              <p class="text-sm font-black text-amber-300">第 {{ gs.hud.wave }} 波 <span class="ml-1 text-white">{{ fmtTime(gs.hud.left) }}</span></p>
+              <p class="text-[10px] text-white/50">{{ zoneName }}<span v-if="eventName" class="ml-1 text-rose-300">⚡{{ eventName }}</span></p>
+            </div>
           </div>
           <!-- 任務 -->
           <div v-if="gs.hud.mission" class="rounded-xl bg-black/45 px-3 py-1.5 text-center backdrop-blur-sm">
@@ -559,6 +632,11 @@ const fmtTime = (s: number) => {
       <!-- 技能按鈕 + 音效切換 -->
       <div class="absolute bottom-5 right-4 flex flex-col items-center gap-3">
         <div class="flex gap-1.5">
+          <button
+            class="grid h-8 w-8 place-items-center rounded-full text-sm"
+            :class="voice.enabled ? (voice.muted ? 'bg-rose-500/60' : 'bg-emerald-500/60') : 'bg-black/40'"
+            @click="onVoiceBtn"
+          >{{ voice.enabled && voice.muted ? '🙊' : '🎙️' }}</button>
           <button class="grid h-8 w-8 place-items-center rounded-full bg-black/40 text-sm" @click="toggleMusic">{{ musicOn ? '🎵' : '🔇' }}</button>
           <button class="grid h-8 w-8 place-items-center rounded-full bg-black/40 text-sm" @click="toggleMute">{{ muted ? '🔕' : '🔔' }}</button>
         </div>
@@ -598,8 +676,29 @@ const fmtTime = (s: number) => {
         >{{ t.msg }}</p>
       </div>
 
+      <!-- 遊戲內聊天（戰鬥/中場都可用，蓋在中場面板上層） -->
+      <div class="pointer-events-none absolute bottom-14 left-2 z-30 flex max-w-[72%] flex-col items-start gap-1">
+        <p
+          v-for="m in recentChat" :key="m.seq"
+          class="rounded-lg bg-black/55 px-2 py-1 text-[11px] text-white/90 backdrop-blur-sm"
+        ><b class="text-amber-300">{{ m.name }}</b>：{{ m.text }}</p>
+      </div>
+      <button
+        class="absolute bottom-2 left-2 z-30 grid h-9 w-9 place-items-center rounded-full text-base active:scale-90"
+        :class="chatOpen ? 'bg-sky-500/60' : 'bg-black/40'"
+        @click="chatOpen = !chatOpen"
+      >💬</button>
+      <div v-if="chatOpen" class="absolute inset-x-2 bottom-12 z-30 flex gap-1.5">
+        <input
+          v-model="chatInput" maxlength="80" placeholder="跟隊友說…"
+          class="min-w-0 flex-1 rounded-xl border border-white/20 bg-black/60 px-3 py-2 text-sm outline-none backdrop-blur placeholder:text-white/30 focus:border-sky-400"
+          @keyup.enter="sendChat"
+        >
+        <button class="rounded-xl bg-sky-500/70 px-3 text-sm font-bold active:scale-95" @click="sendChat">送出</button>
+      </div>
+
       <!-- Debug 面板 -->
-      <button v-if="showDebugBtn" class="absolute left-2 bottom-2 rounded bg-black/40 px-2 py-1 text-[10px] text-white/40" @click="gs.showDebug = !gs.showDebug">DBG</button>
+      <button v-if="showDebugBtn" class="absolute left-12 bottom-2 rounded bg-black/40 px-2 py-1 text-[10px] text-white/40" @click="gs.showDebug = !gs.showDebug">DBG</button>
       <div v-if="gs.showDebug && gs.debug" class="absolute left-2 bottom-8 w-52 rounded-lg bg-black/70 p-2 font-mono text-[10px] leading-relaxed text-lime-300 backdrop-blur">
         <p>wave {{ gs.debug.wave }} | players {{ gs.debug.players }} | hp {{ gs.debug.avgHpPct }}%</p>
         <p>enemies {{ gs.debug.enemies }} (elite {{ gs.debug.elites }}) | drops {{ gs.debug.drops }}</p>

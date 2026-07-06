@@ -98,13 +98,24 @@ function nearestEnemy(g: Game, x: number, y: number, range: number): { e: typeof
 
 // -------------------------------------------------------- 各 behavior
 
-/** 最近可攻擊目標座標（怪或 Boss） */
+/** 可被武器打壞的地圖物件（箱子/木桶/巢穴/毒菇柱） */
+function destructibles(g: Game) {
+  return g.objectives.filter(o => (o.t === 'prop' || o.t === 'nest' || o.t === 'pillar') && o.s !== 2 && o.hp > 0)
+}
+
+/** 最近可攻擊目標座標：怪 → Boss → 可破壞物（沒怪的時候順手拆箱） */
 function nearestTargetPos(g: Game, x: number, y: number, range: number): { x: number; y: number } | null {
   const tgt = nearestEnemy(g, x, y, range)
   if (tgt) return { x: tgt.e.x, y: tgt.e.y }
   const b = g.boss
   if (b && dist2(x, y, b.x, b.y) < (range + b.data.radius) ** 2) return { x: b.x, y: b.y }
-  return null
+  let best: { x: number; y: number } | null = null
+  let bd = range * range
+  for (const o of destructibles(g)) {
+    const d2 = dist2(x, y, o.x, o.y)
+    if (d2 < bd) { bd = d2; best = { x: o.x, y: o.y } }
+  }
+  return best
 }
 
 function fireProjectile(g: Game, p: SPlayer, w: OwnedWeapon, st: WeaponStats): void {
@@ -168,6 +179,20 @@ function tickOrbit(g: Game, p: SPlayer, w: OwnedWeapon, st: WeaponStats, dt: num
       damageEnemyImpl(g, e, dmg * meleeMult(p), { ownerId: p.id, crit, knockX: kx * st.knockback, knockY: ky * st.knockback, srcX: p.x, srcY: p.y })
     }
   }
+  // 環繞刀刃拆箱（memo key 用 objective 的全域唯一 id，不會撞怪物 id）
+  for (const o of destructibles(g)) {
+    for (let k = 0; k < blades; k++) {
+      const ang = w.orbitAngle + (k / blades) * Math.PI * 2
+      const bx = p.x + Math.cos(ang) * (st.radius ?? 90)
+      const by = p.y + Math.sin(ang) * (st.radius ?? 90)
+      if (dist2(bx, by, o.x, o.y) > (34 + o.r) ** 2) continue
+      const last = w.hitMemo.get(o.i) ?? -99
+      if (now - last < st.cooldown) break
+      w.hitMemo.set(o.i, now)
+      g.damageObjective(o, st.damage * p.stats.damage)
+      break
+    }
+  }
   // 環繞刀刃打 Boss（memo key -1）
   if (g.boss) {
     for (let k = 0; k < blades; k++) {
@@ -204,6 +229,10 @@ function fireMelee(g: Game, p: SPlayer, w: OwnedWeapon, st: WeaponStats): void {
   if (tryHitBoss(g, p.x, p.y, r)) {
     const { dmg } = rollDamage(g, p, st.damage)
     damageBoss(g, dmg * meleeMult(p), p.id, p.x, p.y)
+  }
+  // 近戰掄擊也拆箱
+  for (const o of destructibles(g)) {
+    if (dist2(p.x, p.y, o.x, o.y) <= (r + o.r) ** 2) g.damageObjective(o, st.damage * p.stats.damage)
   }
 }
 

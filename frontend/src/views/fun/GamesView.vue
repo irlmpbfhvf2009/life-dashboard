@@ -65,7 +65,6 @@ onMounted(async () => {
         </span>
         <div>
           <h2 class="text-lg font-bold text-ink-900">遊戲娛樂城</h2>
-          <p class="text-xs text-ink-400">虛擬遊戲幣 · 伺服器結算 · 純娛樂練習</p>
         </div>
       </div>
       <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-400 px-3 py-1.5 text-sm font-bold text-[#1c0f06] shadow">
@@ -135,7 +134,6 @@ onMounted(async () => {
         </button>
       </div>
 
-      <p class="mt-8 text-center text-2xs text-ink-300">本娛樂城為進修練習用途，使用虛擬遊戲幣，不涉及任何真實金錢交易。</p>
     </template>
   </div>
 </template>
