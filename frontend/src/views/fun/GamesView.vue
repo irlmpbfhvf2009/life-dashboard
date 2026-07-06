@@ -18,6 +18,7 @@ const { coins, refresh } = useWallet()
 const CATEGORIES = [
   { key: 'electronic', label: '電子', emoji: '🎰' },
   { key: 'fishing', label: '捕魚', emoji: '🐟' },
+  { key: 'coop', label: '合作', emoji: '🥬' },
 ]
 const activeCat = ref('electronic')
 const openGame = ref<'horus' | 'fish' | null>(null)
@@ -108,8 +109,21 @@ onMounted(async () => {
         </button>
       </div>
 
+      <!-- 合作 -->
+      <div v-if="activeCat === 'coop'" class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+        <button
+          class="group relative col-span-2 flex aspect-[2/1] flex-col items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-[#1e4a1a] via-[#123510] to-[#061a06] text-center ring-1 ring-lime-400/50 transition hover:ring-lime-300 hover:shadow-[0_0_24px_rgba(163,230,53,0.3)] sm:col-span-1 sm:aspect-[4/3]"
+          @click="$router.push('/veggie')"
+        >
+          <span class="absolute right-1.5 top-1.5 rounded bg-red-500 px-1.5 py-0.5 text-[9px] font-black text-white">NEW</span>
+          <span class="text-4xl">🥬🥔🥕</span>
+          <span class="mt-1 px-2 text-sm font-bold text-lime-200">菜菜勇者團：無盡農場</span>
+          <span class="mt-0.5 text-[10px] text-white/50">1~4 人連線合作 · Roguelike 生存 · 無盡 Boss</span>
+        </button>
+      </div>
+
       <!-- 捕魚 -->
-      <div v-else class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+      <div v-else-if="activeCat === 'fishing'" class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
         <button
           class="group relative col-span-2 flex aspect-[2/1] flex-col items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-[#0a4a6e] via-[#06304a] to-[#031a2c] text-center ring-1 ring-cyan-300/50 transition hover:ring-cyan-200 hover:shadow-[0_0_24px_rgba(60,200,255,0.3)] sm:col-span-1 sm:aspect-[4/3]"
           @click="openGame = 'fish'"

@@ -1,0 +1,618 @@
+// 客戶端世界 + Canvas 渲染引擎（非響應式，60fps）。
+// 快照插值、自機預測、視覺投射物、粒子/傷害數字（含效能上限）。
+import type { Snapshot, GameEv, EnemySpawnEv, ObjectiveSnap } from '@game/types'
+import { ZONE_MAP } from '@game/content/zones'
+import { CHARACTER_MAP } from '@game/content/characters'
+import { WEAPON_MAP } from '@game/content/weapons'
+import { drawCharacter, drawEnemy, drawBoss, drawDrop, drawObjective, drawProjectile } from './art'
+import { sfx, playMusic } from './sound'
+import { gs, api, type WaveStartInfo } from './net'
+
+const SNAP_DT = 0.1
+const MAX_PARTICLES = 220
+const MAX_DMG_NUMS = 30
+const MAX_COSMETIC_PROJ = 90
+
+interface CEnemy {
+  i: number; kind: string
+  x: number; y: number; tx: number; ty: number
+  hpPct: number; elite: boolean; affixes: string[]; size: number; flags: number
+  mhp: number
+}
+interface CPlayer {
+  id: string; name: string; charId: string
+  x: number; y: number; tx: number; ty: number
+  status: string; hp: number; mhp: number; sh: number; rp: number; fx?: string; lv: number
+}
+interface CDrop { i: number; t: string; x: number; y: number; v: number; item?: string }
+interface CProj { x: number; y: number; vx: number; vy: number; left: number; weapon: string; born: number }
+interface Particle { x: number; y: number; vx: number; vy: number; life: number; maxLife: number; color: string; size: number }
+interface DmgNum { x: number; y: number; v: number; crit: boolean; life: number }
+interface Aoe { x: number; y: number; r: number; kind: string; life: number; maxLife: number }
+
+const AOE_LIFE: Record<string, number> = {
+  explosion: 0.45, poison: 4, heal: 5, fire: 3, frost: 0.6, lightning: 0.35,
+  telegraph: 1.4, swing: 0.28, pulse: 0.7, summon: 0.5, mine: 10, deploy: 0.4,
+}
+
+export class Engine {
+  canvas: HTMLCanvasElement | null = null
+  g: CanvasRenderingContext2D | null = null
+  arena = { w: 1800, h: 1800 }
+  zoneId = 'farm'
+
+  enemies = new Map<number, CEnemy>()
+  players = new Map<string, CPlayer>()
+  drops = new Map<number, CDrop>()
+  objectives = new Map<number, ObjectiveSnap>()
+  boss: Snapshot['boss'] | null = null
+  bossKind = ''
+  eProj: { x: number; y: number }[] = []
+
+  projectiles: CProj[] = []
+  particles: Particle[] = []
+  dmgNums: DmgNum[] = []
+  aoes: Aoe[] = []
+
+  // 自機預測
+  myX = 900; myY = 1100
+  moveDir = { x: 0, y: 0, active: false }
+  mySpeed = 170
+  lastMoveSent = 0
+  serverMyX = 900; serverMyY = 900
+
+  camX = 0; camY = 0
+  shake = 0
+  darkness = false
+  time = 0
+  waveFlash = 0
+  raf = 0
+  lastFrame = 0
+  fps = 60
+  private fpsAcc = 0
+  private fpsN = 0
+  killSfxAt = 0
+
+  onWave(w: WaveStartInfo): void {
+    this.zoneId = w.zone
+    this.enemies.clear()
+    this.drops.clear()
+    this.objectives.clear()
+    this.projectiles = []
+    this.aoes = []
+    this.eProj = []
+    this.boss = null
+    this.darkness = w.event === 'darkness'
+    this.waveFlash = 2
+    sfx.waveStart()
+    if (w.boss) { this.bossKind = w.boss.id; sfx.bossHorn(); playMusic('boss') }
+    else playMusic(ZONE_MAP.get(w.zone)?.musicMood ?? 'farm')
+  }
+
+  applySnapshot(s: Snapshot): void {
+    // 玩家
+    for (const ps of s.players) {
+      let p = this.players.get(ps.id)
+      if (!p) {
+        const meta = gs.begin?.players.find(b => b.id === ps.id)
+        p = { id: ps.id, name: meta?.name ?? '', charId: meta?.charId ?? '', x: ps.x, y: ps.y, tx: ps.x, ty: ps.y, status: ps.st, hp: ps.hp, mhp: ps.mhp, sh: ps.sh, rp: ps.rp, lv: ps.lv }
+        this.players.set(ps.id, p)
+      }
+      p.tx = ps.x; p.ty = ps.y
+      p.status = ps.st; p.hp = ps.hp; p.mhp = ps.mhp; p.sh = ps.sh; p.rp = ps.rp; p.fx = ps.fx; p.lv = ps.lv
+      if (ps.id === gs.playerId) {
+        this.serverMyX = ps.x; this.serverMyY = ps.y
+        if (ps.st !== 'alive') { this.myX = ps.x; this.myY = ps.y }
+      }
+    }
+    for (const id of this.players.keys()) {
+      if (!s.players.some(p => p.id === id)) this.players.delete(id)
+    }
+    // 怪
+    const seen = new Set<number>()
+    for (const es of s.enemies) {
+      seen.add(es.i)
+      const e = this.enemies.get(es.i)
+      if (e) { e.tx = es.x; e.ty = es.y; e.hpPct = es.h; e.flags = es.f ?? 0 }
+    }
+    for (const i of [...this.enemies.keys()]) {
+      if (!seen.has(i)) this.enemies.delete(i)   // 保險（正常由 kill/despawn 事件移除）
+    }
+    // 目標物
+    const oSeen = new Set<number>()
+    for (const os of s.objectives) {
+      oSeen.add(os.i)
+      this.objectives.set(os.i, os)
+    }
+    for (const i of this.objectives.keys()) if (!oSeen.has(i)) this.objectives.delete(i)
+    this.boss = s.boss ?? null
+    this.eProj = s.eProj ?? []
+  }
+
+  applyEvents(evs: GameEv[]): void {
+    for (const ev of evs) {
+      switch (ev.t) {
+        case 'spawn': this.addEnemy(ev.e); break
+        case 'despawn': this.enemies.delete(ev.i); break
+        case 'kill': {
+          const e = this.enemies.get(ev.i)
+          this.enemies.delete(ev.i)
+          this.burst(ev.x, ev.y, e?.elite ? 22 : 9, e?.elite ? '#ffd54f' : '#a5c95a', e?.elite ? 4 : 2.6)
+          const now = performance.now()
+          if (now - this.killSfxAt > 70) {
+            this.killSfxAt = now
+            if (e?.elite) sfx.eliteKill(); else sfx.kill()
+          }
+          break
+        }
+        case 'hit':
+          if (this.dmgNums.length < MAX_DMG_NUMS) {
+            this.dmgNums.push({ x: ev.x + (Math.random() - 0.5) * 18, y: ev.y - 14, v: ev.d, crit: !!ev.crit, life: 0.8 })
+          }
+          break
+        case 'phit': {
+          if (ev.id === gs.playerId) { this.shake = Math.min(this.shake + 5, 12); sfx.hit() }
+          break
+        }
+        case 'shoot': {
+          if (this.projectiles.length < MAX_COSMETIC_PROJ) {
+            const dx = ev.tx - ev.x, dy = ev.ty - ev.y
+            const w = WEAPON_MAP.get(ev.w)
+            const spd = w?.base.speed ?? 500
+            const n = Math.min(ev.n, 4)
+            for (let k = 0; k < n; k++) {
+              const ang = Math.atan2(dy, dx) + (k - (n - 1) / 2) * 0.16
+              this.projectiles.push({ x: ev.x, y: ev.y, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd, left: (w?.base.range ?? 350) * 1.2, weapon: ev.w, born: this.time })
+            }
+            if (ev.id === gs.playerId) sfx.shoot(w?.category)
+          }
+          break
+        }
+        case 'drop': this.drops.set(ev.d.i, { i: ev.d.i, t: ev.d.t, x: ev.d.x, y: ev.d.y, v: ev.d.v ?? 0, item: ev.d.it }); break
+        case 'pick': {
+          const d = this.drops.get(ev.i)
+          this.drops.delete(ev.i)
+          if (d && ev.id === gs.playerId) {
+            if (d.t === 'coin') sfx.coin()
+            else if (d.t === 'xp') sfx.xp()
+            else if (d.t === 'heart') sfx.heart()
+            else if (d.t === 'item') sfx.item()
+            else if (d.t === 'chest') sfx.chest()
+          }
+          break
+        }
+        case 'lvup':
+          if (ev.id === gs.playerId) sfx.levelup()
+          {
+            const p = this.players.get(ev.id)
+            if (p) this.burst(p.tx, p.ty, 14, '#ffe66d', 3)
+          }
+          break
+        case 'down': {
+          sfx.down()
+          const p = this.players.get(ev.id)
+          if (p) this.burst(p.tx, p.ty, 12, '#ef5350', 3)
+          break
+        }
+        case 'revive': sfx.revive(); break
+        case 'teamRevive': sfx.teamRevive(); this.shake = 10; break
+        case 'skill': sfx.skill(); break
+        case 'item': break
+        case 'aoe': {
+          const life = AOE_LIFE[ev.kind] ?? 0.5
+          this.aoes.push({ x: ev.x, y: ev.y, r: ev.r, kind: ev.kind, life, maxLife: life })
+          if (ev.kind === 'explosion') { sfx.explosion(); this.shake = Math.min(this.shake + 4, 10); this.burst(ev.x, ev.y, 12, '#ff9f43', 4) }
+          if (ev.kind === 'frost') sfx.frost()
+          if (ev.kind === 'lightning') { sfx.lightning(); this.burst(ev.x, ev.y, 10, '#ffe66d', 4) }
+          break
+        }
+        case 'bossSpawn': this.shake = 8; break
+        case 'bossSkill': if (ev.s === 'shieldBreak') { sfx.explosion(); this.shake = 8 } break
+        case 'bossDead': sfx.bossDead(); this.shake = 14; break
+        case 'objSpawn': this.objectives.set(ev.o.i, ev.o); break
+        case 'objRemove': this.objectives.delete(ev.i); break
+        case 'chestOpen': break
+        case 'dead': break
+        case 'toast': break
+      }
+    }
+  }
+
+  private addEnemy(e: EnemySpawnEv): void {
+    this.enemies.set(e.i, {
+      i: e.i, kind: e.k, x: e.x, y: e.y, tx: e.x, ty: e.y,
+      hpPct: 100, elite: !!e.e, affixes: e.a ?? [], size: e.sz ?? 1, flags: 0, mhp: e.mhp,
+    })
+  }
+
+  burst(x: number, y: number, n: number, color: string, speed: number): void {
+    for (let k = 0; k < n && this.particles.length < MAX_PARTICLES; k++) {
+      const a = Math.random() * Math.PI * 2
+      const v = (0.4 + Math.random()) * speed * 60
+      this.particles.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 0.6, maxLife: 0.6, color, size: 2 + Math.random() * 3 })
+    }
+  }
+
+  // ---------------------------------------------------------------- 主迴圈
+
+  start(canvas: HTMLCanvasElement): void {
+    this.canvas = canvas
+    this.g = canvas.getContext('2d')
+    this.lastFrame = performance.now()
+    const loop = () => {
+      this.raf = requestAnimationFrame(loop)
+      const now = performance.now()
+      const dt = Math.min((now - this.lastFrame) / 1000, 0.05)
+      this.lastFrame = now
+      this.fpsAcc += dt; this.fpsN++
+      if (this.fpsAcc >= 0.5) { this.fps = Math.round(this.fpsN / this.fpsAcc); this.fpsAcc = 0; this.fpsN = 0 }
+      this.update(dt)
+      this.draw()
+    }
+    loop()
+  }
+
+  stop(): void {
+    cancelAnimationFrame(this.raf)
+    this.canvas = null
+    this.g = null
+  }
+
+  private update(dt: number): void {
+    this.time += dt
+    if (this.waveFlash > 0) this.waveFlash -= dt
+
+    // 自機預測移動
+    const me = this.players.get(gs.playerId)
+    const alive = me?.status === 'alive'
+    const char = CHARACTER_MAP.get(me?.charId ?? '')
+    this.mySpeed = (char?.baseStats.moveSpeed ?? 170) * 1.18
+    if (alive && this.moveDir.active) {
+      this.myX += this.moveDir.x * this.mySpeed * dt
+      this.myY += this.moveDir.y * this.mySpeed * dt
+      this.myX = Math.max(26, Math.min(this.arena.w - 26, this.myX))
+      this.myY = Math.max(26, Math.min(this.arena.h - 26, this.myY))
+    }
+    // 與 server 位置融合（大幅偏差時橡皮筋回拉）
+    const drift = Math.hypot(this.myX - this.serverMyX, this.myY - this.serverMyY)
+    if (drift > 120) { this.myX = this.serverMyX; this.myY = this.serverMyY }
+    else if (drift > 40 && !this.moveDir.active) {
+      this.myX += (this.serverMyX - this.myX) * dt * 6
+      this.myY += (this.serverMyY - this.myY) * dt * 6
+    }
+    // 傳送位置（15Hz）
+    if (alive && this.time - this.lastMoveSent > 1 / 15) {
+      this.lastMoveSent = this.time
+      api.move(Math.round(this.myX), Math.round(this.myY))
+    }
+
+    // 插值（10Hz 快照 → 60fps）
+    const k = Math.min(1, dt / SNAP_DT * 1.4)
+    for (const e of this.enemies.values()) {
+      e.x += (e.tx - e.x) * k
+      e.y += (e.ty - e.y) * k
+    }
+    for (const p of this.players.values()) {
+      if (p.id === gs.playerId) { p.x = this.myX; p.y = this.myY; continue }
+      p.x += (p.tx - p.x) * k
+      p.y += (p.ty - p.y) * k
+    }
+    // 視覺投射物
+    for (const pr of this.projectiles) {
+      pr.x += pr.vx * dt; pr.y += pr.vy * dt
+      pr.left -= Math.hypot(pr.vx, pr.vy) * dt
+    }
+    this.projectiles = this.projectiles.filter(p => p.left > 0)
+    // 粒子
+    for (const pa of this.particles) {
+      pa.x += pa.vx * dt; pa.y += pa.vy * dt
+      pa.vx *= 0.92; pa.vy *= 0.92
+      pa.life -= dt
+    }
+    this.particles = this.particles.filter(p => p.life > 0)
+    for (const d of this.dmgNums) { d.y -= 34 * dt; d.life -= dt }
+    this.dmgNums = this.dmgNums.filter(d => d.life > 0)
+    for (const a of this.aoes) a.life -= dt
+    this.aoes = this.aoes.filter(a => a.life > 0)
+    if (this.shake > 0) this.shake = Math.max(0, this.shake - dt * 26)
+
+    // 鏡頭
+    const cw = this.canvas?.clientWidth ?? 400
+    const ch = this.canvas?.clientHeight ?? 700
+    const targX = Math.max(0, Math.min(this.arena.w - cw, this.myX - cw / 2))
+    const targY = Math.max(0, Math.min(this.arena.h - ch, this.myY - ch / 2))
+    this.camX += (targX - this.camX) * Math.min(1, dt * 7)
+    this.camY += (targY - this.camY) * Math.min(1, dt * 7)
+  }
+
+  private draw(): void {
+    const g = this.g
+    const c = this.canvas
+    if (!g || !c) return
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    const cw = c.clientWidth, ch = c.clientHeight
+    if (c.width !== cw * dpr || c.height !== ch * dpr) { c.width = cw * dpr; c.height = ch * dpr }
+    g.setTransform(dpr, 0, 0, dpr, 0, 0)
+
+    const zone = ZONE_MAP.get(this.zoneId)
+    // 背景
+    const grad = g.createLinearGradient(0, 0, 0, ch)
+    grad.addColorStop(0, zone?.bg.top ?? '#1a2f1a')
+    grad.addColorStop(1, zone?.bg.bottom ?? '#0d1a0d')
+    g.fillStyle = grad
+    g.fillRect(0, 0, cw, ch)
+
+    g.save()
+    const shX = this.shake ? (Math.random() - 0.5) * this.shake : 0
+    const shY = this.shake ? (Math.random() - 0.5) * this.shake : 0
+    g.translate(-this.camX + shX, -this.camY + shY)
+
+    // 地面格線 + 場地邊界
+    g.strokeStyle = 'rgba(255,255,255,0.045)'
+    g.lineWidth = 1
+    const gsz = 90
+    const x0 = Math.floor(this.camX / gsz) * gsz
+    const y0 = Math.floor(this.camY / gsz) * gsz
+    for (let x = x0; x < this.camX + cw + gsz; x += gsz) {
+      g.beginPath(); g.moveTo(x, this.camY - 20); g.lineTo(x, this.camY + ch + 20); g.stroke()
+    }
+    for (let y = y0; y < this.camY + ch + gsz; y += gsz) {
+      g.beginPath(); g.moveTo(this.camX - 20, y); g.lineTo(this.camX + cw + 20, y); g.stroke()
+    }
+    g.strokeStyle = zone?.bg.accent ?? '#7bc043'
+    g.lineWidth = 4
+    g.globalAlpha = 0.5
+    g.strokeRect(4, 4, this.arena.w - 8, this.arena.h - 8)
+    g.globalAlpha = 1
+
+    // AOE（地面層：毒/火/治療/預警）
+    for (const a of this.aoes) {
+      const pct = a.life / a.maxLife
+      g.save()
+      g.translate(a.x, a.y)
+      switch (a.kind) {
+        case 'poison':
+          g.fillStyle = `rgba(156,204,101,${0.22 * Math.min(1, pct * 2)})`
+          g.beginPath(); g.arc(0, 0, a.r, 0, Math.PI * 2); g.fill()
+          g.strokeStyle = 'rgba(156,204,101,0.5)'
+          g.setLineDash([6, 5]); g.lineWidth = 2
+          g.beginPath(); g.arc(0, 0, a.r, this.time, this.time + Math.PI * 2); g.stroke()
+          g.setLineDash([])
+          break
+        case 'fire':
+          g.fillStyle = `rgba(255,107,53,${0.25 * Math.min(1, pct * 2)})`
+          g.beginPath(); g.arc(0, 0, a.r, 0, Math.PI * 2); g.fill()
+          for (let k = 0; k < 3; k++) {
+            const fa = this.time * 3 + k * 2.1
+            g.fillStyle = 'rgba(255,200,80,0.5)'
+            g.beginPath(); g.arc(Math.cos(fa) * a.r * 0.4, Math.sin(fa) * a.r * 0.4, 6, 0, Math.PI * 2); g.fill()
+          }
+          break
+        case 'heal':
+          g.fillStyle = `rgba(105,240,174,${0.16 * Math.min(1, pct * 2)})`
+          g.beginPath(); g.arc(0, 0, a.r, 0, Math.PI * 2); g.fill()
+          g.fillStyle = 'rgba(105,240,174,0.8)'
+          g.font = '13px sans-serif'; g.textAlign = 'center'
+          g.fillText('✚', 0, -a.r * 0.3 - ((this.time * 22) % 24))
+          break
+        case 'telegraph': {
+          const warn = 1 - pct
+          g.strokeStyle = `rgba(239,83,80,${0.5 + Math.sin(this.time * 14) * 0.3})`
+          g.lineWidth = 3
+          g.beginPath(); g.arc(0, 0, a.r, 0, Math.PI * 2); g.stroke()
+          g.fillStyle = `rgba(239,83,80,${0.14 + warn * 0.12})`
+          g.beginPath(); g.arc(0, 0, a.r * warn, 0, Math.PI * 2); g.fill()
+          break
+        }
+        case 'explosion': {
+          const rr = a.r * (1 - pct * pct)
+          g.fillStyle = `rgba(255,159,67,${pct * 0.7})`
+          g.beginPath(); g.arc(0, 0, rr, 0, Math.PI * 2); g.fill()
+          g.fillStyle = `rgba(255,230,109,${pct * 0.9})`
+          g.beginPath(); g.arc(0, 0, rr * 0.55, 0, Math.PI * 2); g.fill()
+          break
+        }
+        case 'frost':
+          g.fillStyle = `rgba(168,224,255,${pct * 0.4})`
+          g.beginPath(); g.arc(0, 0, a.r * (1 - pct * 0.3), 0, Math.PI * 2); g.fill()
+          break
+        case 'lightning':
+          g.strokeStyle = `rgba(255,230,109,${pct})`
+          g.lineWidth = 3
+          for (let k = 0; k < 3; k++) {
+            g.beginPath()
+            let yy = -160
+            let xx = (Math.random() - 0.5) * 20
+            g.moveTo(xx, yy)
+            while (yy < 0) { yy += 25 + Math.random() * 20; xx += (Math.random() - 0.5) * 26; g.lineTo(xx, yy) }
+            g.stroke()
+          }
+          g.fillStyle = `rgba(255,255,255,${pct * 0.5})`
+          g.beginPath(); g.arc(0, 0, a.r * 0.5, 0, Math.PI * 2); g.fill()
+          break
+        case 'swing':
+          g.strokeStyle = `rgba(255,255,255,${pct * 0.7})`
+          g.lineWidth = 7 * pct
+          g.beginPath(); g.arc(0, 0, a.r * 0.85, this.time * 2, this.time * 2 + Math.PI * 1.2); g.stroke()
+          break
+        case 'pulse': {
+          const rr = a.r * (1 - pct)
+          g.strokeStyle = `rgba(255,230,109,${pct * 0.8})`
+          g.lineWidth = 5
+          g.beginPath(); g.arc(0, 0, Math.min(rr, 600), 0, Math.PI * 2); g.stroke()
+          break
+        }
+        case 'mine':
+          g.fillStyle = `rgba(255,207,92,${0.6 + Math.sin(this.time * 6) * 0.3})`
+          g.beginPath(); g.arc(0, 0, 7, 0, Math.PI * 2); g.fill()
+          g.strokeStyle = 'rgba(0,0,0,0.6)'; g.lineWidth = 2
+          g.beginPath(); g.arc(0, 0, 7, 0, Math.PI * 2); g.stroke()
+          break
+        case 'summon':
+          g.strokeStyle = `rgba(186,104,200,${pct})`
+          g.lineWidth = 3
+          g.beginPath(); g.arc(0, 0, a.r * (1 - pct * 0.5), 0, Math.PI * 2); g.stroke()
+          break
+      }
+      g.restore()
+    }
+
+    // 目標物 / 地圖物件
+    for (const o of this.objectives.values()) {
+      g.save()
+      g.translate(o.x, o.y)
+      drawObjective(g, o.t, o.r, this.time, {
+        k: o.k,
+        hpPct: o.mhp ? (o.hp ?? 0) / o.mhp : undefined,
+        pg: o.pg, state: o.s,
+      })
+      g.restore()
+    }
+
+    // 掉落物
+    for (const d of this.drops.values()) {
+      g.save(); g.translate(d.x, d.y)
+      drawDrop(g, d.t, d.v, this.time, d.item)
+      g.restore()
+    }
+
+    // 怪物
+    for (const e of this.enemies.values()) {
+      g.save()
+      g.translate(e.x, e.y)
+      const size = 34 * e.size
+      drawEnemy(g, e.kind, size, this.time, {
+        elite: e.elite,
+        affixColors: e.affixes.length ? ['#e040fb'] : undefined,
+        flags: e.flags,
+      })
+      if (e.hpPct < 100) {
+        g.fillStyle = 'rgba(0,0,0,0.5)'
+        g.fillRect(-size * 0.5, -size * 0.72, size, 4)
+        g.fillStyle = e.hpPct > 50 ? '#69f0ae' : e.hpPct > 25 ? '#ffd54f' : '#ef5350'
+        g.fillRect(-size * 0.5, -size * 0.72, size * e.hpPct / 100, 4)
+      }
+      g.restore()
+    }
+
+    // Boss
+    if (this.boss) {
+      g.save()
+      g.translate(this.boss.x, this.boss.y)
+      drawBoss(g, this.bossKind || this.boss.id, 110, this.time, {
+        stunned: !!this.boss.stun,
+        shielded: !!this.boss.sh,
+        phase: this.boss.ph,
+      })
+      // 施法預警線（衝撞）
+      if (this.boss.cast?.s === 'charge' && this.boss.cast.ang !== undefined) {
+        g.rotate(this.boss.cast.ang)
+        g.fillStyle = `rgba(239,83,80,${0.2 + Math.sin(this.time * 12) * 0.1})`
+        g.fillRect(0, -40, 900, 80)
+      }
+      g.restore()
+    }
+
+    // 敵方彈幕
+    g.fillStyle = '#ef5350'
+    for (const pr of this.eProj) {
+      g.beginPath(); g.arc(pr.x, pr.y, 6, 0, Math.PI * 2); g.fill()
+      g.strokeStyle = '#8e1f1f'; g.lineWidth = 2
+      g.beginPath(); g.arc(pr.x, pr.y, 6, 0, Math.PI * 2); g.stroke()
+    }
+
+    // 我方投射物（視覺）
+    for (const pr of this.projectiles) {
+      g.save()
+      g.translate(pr.x, pr.y)
+      g.rotate(Math.atan2(pr.vy, pr.vx) + Math.PI / 2)
+      drawProjectile(g, pr.weapon, this.time)
+      g.restore()
+    }
+
+    // 玩家
+    for (const p of this.players.values()) {
+      g.save()
+      g.translate(p.x, p.y)
+      const downed = p.status === 'downed'
+      const disc = p.status === 'disconnected'
+      if (disc) g.globalAlpha = 0.35
+      drawCharacter(g, p.charId, 46, this.time, {
+        downed,
+        moving: p.id === gs.playerId ? this.moveDir.active : undefined,
+        flash: p.fx === 'dash' || p.fx === 'rage',
+      })
+      // 名牌 + 血條
+      g.globalAlpha = 1
+      g.font = 'bold 11px sans-serif'
+      g.textAlign = 'center'
+      g.fillStyle = p.id === gs.playerId ? '#ffe66d' : '#fff'
+      g.strokeStyle = 'rgba(0,0,0,0.7)'
+      g.lineWidth = 3
+      g.strokeText(p.name, 0, -40)
+      g.fillText(p.name, 0, -40)
+      g.fillStyle = 'rgba(0,0,0,0.5)'
+      g.fillRect(-22, -34, 44, 5)
+      g.fillStyle = downed ? '#ef5350' : p.hp / p.mhp > 0.5 ? '#69f0ae' : p.hp / p.mhp > 0.25 ? '#ffd54f' : '#ef5350'
+      g.fillRect(-22, -34, 44 * Math.max(0, p.hp / p.mhp), 5)
+      if (p.sh > 0) {
+        g.fillStyle = '#4fc3f7'
+        g.fillRect(-22, -28, 44 * Math.min(1, p.sh / p.mhp), 3)
+      }
+      // 倒地救援圈
+      if (downed) {
+        g.strokeStyle = 'rgba(239,83,80,0.8)'
+        g.setLineDash([6, 5])
+        g.lineWidth = 2
+        g.beginPath(); g.arc(0, 0, 90, 0, Math.PI * 2); g.stroke()
+        g.setLineDash([])
+        if (p.rp > 0) {
+          g.strokeStyle = '#69f0ae'
+          g.lineWidth = 5
+          g.beginPath(); g.arc(0, 0, 34, -Math.PI / 2, -Math.PI / 2 + p.rp * Math.PI * 2); g.stroke()
+        }
+        g.font = '16px sans-serif'
+        g.fillText('🆘', 0, -52)
+      }
+      g.restore()
+    }
+
+    // 粒子
+    for (const pa of this.particles) {
+      g.globalAlpha = pa.life / pa.maxLife
+      g.fillStyle = pa.color
+      g.beginPath(); g.arc(pa.x, pa.y, pa.size, 0, Math.PI * 2); g.fill()
+    }
+    g.globalAlpha = 1
+
+    // 傷害數字
+    for (const d of this.dmgNums) {
+      g.globalAlpha = Math.min(1, d.life * 2)
+      g.font = d.crit ? 'bold 17px sans-serif' : 'bold 13px sans-serif'
+      g.textAlign = 'center'
+      g.strokeStyle = 'rgba(0,0,0,0.8)'
+      g.lineWidth = 3
+      g.fillStyle = d.crit ? '#ffe66d' : '#fff'
+      g.strokeText(String(d.v), d.x, d.y)
+      g.fillText(String(d.v), d.x, d.y)
+    }
+    g.globalAlpha = 1
+    g.restore()
+
+    // 黑暗事件：視野縮小 vignette
+    if (this.darkness) {
+      const vg = g.createRadialGradient(cw / 2, ch / 2, Math.min(cw, ch) * 0.22, cw / 2, ch / 2, Math.min(cw, ch) * 0.55)
+      vg.addColorStop(0, 'rgba(0,0,0,0)')
+      vg.addColorStop(1, 'rgba(0,0,0,0.93)')
+      g.fillStyle = vg
+      g.fillRect(0, 0, cw, ch)
+    }
+    // 開波閃字底光
+    if (this.waveFlash > 0) {
+      g.fillStyle = `rgba(255,255,255,${Math.max(0, this.waveFlash - 1.6) * 0.5})`
+      g.fillRect(0, 0, cw, ch)
+    }
+  }
+}
+
+export const engine = new Engine()

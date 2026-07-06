@@ -39,6 +39,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      // 菜菜勇者團 — 與 game/server 共用的內容表/型別（單一事實來源）
+      '@game': fileURLToPath(new URL('../game/shared', import.meta.url)),
     },
   },
   build: {
@@ -54,6 +56,8 @@ export default defineConfig({
           if (id.includes('firebase') || id.includes('@firebase')) return 'firebase'
           if (id.includes('chart.js') || id.includes('vue-chartjs')) return 'charts'
           if (id.includes('leaflet')) return 'leaflet'
+          if (id.includes('socket.io') || id.includes('engine.io')) return 'socketio'
+          if (id.includes('qrcode')) return 'qrcode'
           if (
             id.includes('/vue/') || id.includes('/@vue/') ||
             id.includes('vue-router') || id.includes('pinia') || id.includes('vue-i18n')

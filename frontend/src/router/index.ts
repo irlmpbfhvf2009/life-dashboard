@@ -12,6 +12,9 @@ const router = createRouter({
     // ---- Public read-only shared trip (no login, no app shell) ----
     { path: '/t/:token', name: 'public-trip', component: () => import('@/views/public/PublicTripView.vue'), meta: { open: true } },
 
+    // ---- 菜菜勇者團：無盡農場 (1~4 人合作遊戲, full page, 邀請連結免登入) ----
+    { path: '/veggie', name: 'veggie', component: () => import('@/views/fun/VeggieHeroesView.vue'), meta: { open: true } },
+
     // ---- Protected app shell (個人智慧工作台 — requires the studio role) ----
     {
       path: '/',

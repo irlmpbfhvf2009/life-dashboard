@@ -1,0 +1,67 @@
+// 玩家數值合成：角色基礎 + 等級 + 升級 statMods + 詛咒/被動調整。
+// 唯一的合成入口 — 任何系統都不要自己算數值。
+import type { ComputedStats, StatKey } from '../../../shared/types'
+import { UPGRADE_MAP } from '../../../shared/content/index'
+import type { SPlayer } from './state'
+
+const ADDITIVE: Set<StatKey> = new Set(['maxHp', 'armor', 'regen', 'pickupRange', 'projectiles', 'pierce', 'lifeOnKill'])
+
+export function recomputeStats(p: SPlayer): void {
+  const b = p.char.baseStats
+  const add: Record<string, number> = {}
+  const pct: Record<string, number> = {}
+  const bump = (k: StatKey, v: number) => {
+    if (ADDITIVE.has(k)) add[k] = (add[k] ?? 0) + v
+    else pct[k] = (pct[k] ?? 0) + v
+  }
+
+  for (const [id, stacks] of p.upgrades) {
+    const u = UPGRADE_MAP.get(id)
+    if (!u?.statMods) continue
+    for (const [k, v] of Object.entries(u.statMods)) bump(k as StatKey, (v as number) * stacks)
+  }
+  if (p.char.passive.mods) {
+    for (const [k, v] of Object.entries(p.char.passive.mods)) bump(k as StatKey, v as number)
+  }
+  // 菁英獵人勳章：永久傷害
+  if (p.effects.has('eliteTrophy')) pct.damage = (pct.damage ?? 0) + p.eliteTrophyStacks * 0.03
+
+  const lvl = p.level - 1
+  const s: ComputedStats = {
+    maxHp: Math.round((b.maxHp + lvl * 3 + (add.maxHp ?? 0)) * (p.effects.has('curseGlass') ? 0.75 : 1)),
+    armor: b.armor + (add.armor ?? 0),
+    regen: p.effects.has('curseShell') ? 0 : b.regen + (add.regen ?? 0),
+    pickupRange: b.pickupRange + (add.pickupRange ?? 0),
+    projectiles: add.projectiles ?? 0,
+    pierce: add.pierce ?? 0,
+    lifeOnKill: add.lifeOnKill ?? 0,
+    moveSpeed: b.moveSpeed * (1 + (pct.moveSpeed ?? 0)),
+    damage: b.damage * (1 + (pct.damage ?? 0) + lvl * 0.02),
+    attackSpeed: b.attackSpeed * (1 + (pct.attackSpeed ?? 0)),
+    critChance: Math.min(0.8, b.critChance + (pct.critChance ?? 0)),
+    critDamage: b.critDamage + (pct.critDamage ?? 0),
+    cooldown: Math.min(0.6, pct.cooldown ?? 0),
+    area: 1 + (pct.area ?? 0),
+    goldGain: 1 + (pct.goldGain ?? 0),
+    xpGain: 1 + (pct.xpGain ?? 0),
+    reviveSpeed: 1 + (pct.reviveSpeed ?? 0) + (p.char.passive.effect === 'auraHealFastRescue' ? 0.4 : 0),
+    luck: 1 + (pct.luck ?? 0),
+  }
+  const hpPct = p.stats ? p.hp / Math.max(1, p.stats.maxHp) : 1
+  p.stats = s
+  p.hp = Math.min(Math.round(s.maxHp * hpPct), s.maxHp)
+  p.skillMaxCharges = p.effects.has('skillCharges') ? 2 : 1
+}
+
+/** 重新推導 specialEffect 表（升級變動時呼叫，順便重算數值） */
+export function recomputeEffects(p: SPlayer): void {
+  p.effects = new Map()
+  for (const [id, stacks] of p.upgrades) {
+    const u = UPGRADE_MAP.get(id)
+    if (u?.specialEffect) p.effects.set(u.specialEffect, (p.effects.get(u.specialEffect) ?? 0) + stacks)
+  }
+  recomputeStats(p)
+}
+
+export const eff = (p: SPlayer, id: string) => p.effects.get(id) ?? 0
+export const maxWeapons = (p: SPlayer) => 6 + (p.effects.has('curseBag') ? 1 : 0)

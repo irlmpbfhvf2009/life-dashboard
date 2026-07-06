@@ -1,0 +1,750 @@
+// 程式化美術 — 零素材。厚描邊卡通風（比照深海獵金的做法）。
+// 所有角色/怪物/掉落物/Boss/地圖物件都用 Canvas 2D 現畫。
+import { CHARACTER_MAP } from '@game/content/characters'
+import { ENEMY_MAP } from '@game/content/enemies'
+import { BOSS_MAP } from '@game/content/bosses'
+
+type Ctx = CanvasRenderingContext2D
+
+const OUTLINE = '#1a1208'
+
+function outlined(g: Ctx, fill: string, draw: (g: Ctx) => void, lw = 3): void {
+  g.save()
+  g.lineWidth = lw
+  g.strokeStyle = OUTLINE
+  g.fillStyle = fill
+  g.lineJoin = 'round'
+  draw(g)
+  g.fill()
+  g.stroke()
+  g.restore()
+}
+
+function ellipse(g: Ctx, x: number, y: number, rx: number, ry: number): void {
+  g.beginPath()
+  g.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2)
+}
+
+/** 臉：眼睛 + 腮紅（所有蔬菜勇者共用） */
+function face(g: Ctx, s: number, mood: 'happy' | 'hurt' | 'ko' = 'happy'): void {
+  const e = s * 0.09
+  g.fillStyle = OUTLINE
+  if (mood === 'ko') {
+    g.strokeStyle = OUTLINE
+    g.lineWidth = s * 0.05
+    for (const dx of [-s * 0.18, s * 0.18]) {
+      g.beginPath()
+      g.moveTo(dx - e, -s * 0.08 - e); g.lineTo(dx + e, -s * 0.08 + e)
+      g.moveTo(dx + e, -s * 0.08 - e); g.lineTo(dx - e, -s * 0.08 + e)
+      g.stroke()
+    }
+  } else {
+    ellipse(g, -s * 0.18, -s * 0.08, e, mood === 'hurt' ? e * 0.5 : e * 1.15); g.fill()
+    ellipse(g, s * 0.18, -s * 0.08, e, mood === 'hurt' ? e * 0.5 : e * 1.15); g.fill()
+    // 高光
+    g.fillStyle = '#fff'
+    ellipse(g, -s * 0.15, -s * 0.11, e * 0.35, e * 0.35); g.fill()
+    ellipse(g, s * 0.21, -s * 0.11, e * 0.35, e * 0.35); g.fill()
+  }
+  g.fillStyle = 'rgba(255,120,120,0.5)'
+  ellipse(g, -s * 0.3, s * 0.05, s * 0.08, s * 0.05); g.fill()
+  ellipse(g, s * 0.3, s * 0.05, s * 0.08, s * 0.05); g.fill()
+  // 嘴
+  g.strokeStyle = OUTLINE
+  g.lineWidth = s * 0.04
+  g.beginPath()
+  if (mood === 'hurt') g.arc(0, s * 0.16, s * 0.08, Math.PI * 1.15, Math.PI * 1.85)
+  else g.arc(0, s * 0.08, s * 0.09, Math.PI * 0.15, Math.PI * 0.85)
+  g.stroke()
+}
+
+function leaf(g: Ctx, x: number, y: number, s: number, color: string, ang = -0.4): void {
+  g.save()
+  g.translate(x, y)
+  g.rotate(ang)
+  outlined(g, color, gg => {
+    gg.beginPath()
+    gg.moveTo(0, 0)
+    gg.quadraticCurveTo(s * 0.5, -s * 0.9, 0, -s * 1.3)
+    gg.quadraticCurveTo(-s * 0.5, -s * 0.9, 0, 0)
+  }, 2.5)
+  g.restore()
+}
+
+/** 角色本體（size = 直徑基準；t 用於待機浮動動畫） */
+export function drawCharacter(g: Ctx, charId: string, size: number, t: number, opts: {
+  downed?: boolean; flash?: boolean; moving?: boolean
+} = {}): void {
+  const c = CHARACTER_MAP.get(charId)
+  const [body, accent, leafC] = c?.palette ?? ['#c97b3d', '#a35426', '#7bc043']
+  const s = size
+  const bob = Math.sin(t * (opts.moving ? 11 : 3)) * s * (opts.moving ? 0.05 : 0.03)
+  g.save()
+  g.translate(0, bob)
+  if (opts.downed) g.globalAlpha = 0.75
+  if (opts.flash) { g.globalAlpha = 0.5 + Math.sin(t * 30) * 0.3 }
+
+  // 影子
+  g.fillStyle = 'rgba(0,0,0,0.25)'
+  ellipse(g, 0, s * 0.52 - bob, s * 0.42, s * 0.12); g.fill()
+
+  switch (charId) {
+    case 'warrior_sweetpotato': {
+      outlined(g, body, gg => ellipse(gg, 0, 0, s * 0.46, s * 0.52))
+      // 鐵盔
+      outlined(g, '#8d99a6', gg => { gg.beginPath(); gg.arc(0, -s * 0.22, s * 0.4, Math.PI, 0) }, 2.5)
+      outlined(g, '#8d99a6', gg => { gg.beginPath(); gg.rect(-s * 0.44, -s * 0.26, s * 0.88, s * 0.09) }, 2)
+      leaf(g, s * 0.05, -s * 0.55, s * 0.3, leafC, 0.3)
+      face(g, s, opts.downed ? 'ko' : 'happy')
+      break
+    }
+    case 'gunner_potato': {
+      outlined(g, body, gg => ellipse(gg, 0, 0, s * 0.48, s * 0.44))
+      // 棒球帽
+      outlined(g, accent, gg => { gg.beginPath(); gg.arc(0, -s * 0.24, s * 0.34, Math.PI, 0) }, 2.5)
+      outlined(g, accent, gg => { gg.beginPath(); gg.rect(0, -s * 0.3, s * 0.5, s * 0.08) }, 2)
+      face(g, s, opts.downed ? 'ko' : 'happy')
+      // 斑點
+      g.fillStyle = 'rgba(0,0,0,0.12)'
+      ellipse(g, -s * 0.3, s * 0.22, s * 0.05, s * 0.04); g.fill()
+      ellipse(g, s * 0.26, s * 0.3, s * 0.04, s * 0.03); g.fill()
+      break
+    }
+    case 'medic_radish': {
+      outlined(g, '#fff5f5', gg => {
+        gg.beginPath()
+        gg.moveTo(-s * 0.42, -s * 0.1)
+        gg.quadraticCurveTo(-s * 0.48, s * 0.3, 0, s * 0.52)
+        gg.quadraticCurveTo(s * 0.48, s * 0.3, s * 0.42, -s * 0.1)
+        gg.quadraticCurveTo(s * 0.3, -s * 0.42, 0, -s * 0.44)
+        gg.quadraticCurveTo(-s * 0.3, -s * 0.42, -s * 0.42, -s * 0.1)
+      })
+      // 紅十字頭帶
+      outlined(g, body, gg => { gg.beginPath(); gg.rect(-s * 0.42, -s * 0.36, s * 0.84, s * 0.14) }, 2)
+      g.fillStyle = '#fff'
+      g.fillRect(-s * 0.05, -s * 0.34, s * 0.1, s * 0.1)
+      g.fillRect(-s * 0.09, -s * 0.31, s * 0.18, s * 0.045)
+      leaf(g, 0, -s * 0.4, s * 0.28, leafC, 0)
+      face(g, s, opts.downed ? 'ko' : 'happy')
+      break
+    }
+    case 'engineer_onion': {
+      outlined(g, body, gg => {
+        gg.beginPath()
+        gg.moveTo(0, -s * 0.52)
+        gg.quadraticCurveTo(s * 0.5, -s * 0.2, s * 0.4, s * 0.2)
+        gg.quadraticCurveTo(s * 0.3, s * 0.5, 0, s * 0.52)
+        gg.quadraticCurveTo(-s * 0.3, s * 0.5, -s * 0.4, s * 0.2)
+        gg.quadraticCurveTo(-s * 0.5, -s * 0.2, 0, -s * 0.52)
+      })
+      // 洋蔥層次
+      g.strokeStyle = accent
+      g.lineWidth = s * 0.03
+      g.beginPath(); g.arc(0, s * 0.1, s * 0.3, Math.PI * 1.2, Math.PI * 1.8); g.stroke()
+      // 護目鏡
+      outlined(g, '#ffd54f', gg => ellipse(gg, 0, -s * 0.26, s * 0.3, s * 0.11), 2)
+      g.fillStyle = '#7cc7e8'
+      ellipse(g, -s * 0.14, -s * 0.26, s * 0.1, s * 0.08); g.fill()
+      ellipse(g, s * 0.14, -s * 0.26, s * 0.1, s * 0.08); g.fill()
+      face(g, s, opts.downed ? 'ko' : 'happy')
+      break
+    }
+    case 'mage_yam': {
+      outlined(g, body, gg => ellipse(gg, 0, s * 0.06, s * 0.44, s * 0.46))
+      // 法師帽
+      outlined(g, '#4a3580', gg => {
+        gg.beginPath()
+        gg.moveTo(-s * 0.42, -s * 0.2)
+        gg.lineTo(s * 0.42, -s * 0.2)
+        gg.lineTo(s * 0.12, -s * 0.34)
+        gg.lineTo(s * 0.05, -s * 0.78)
+        gg.lineTo(-s * 0.18, -s * 0.34)
+        gg.closePath()
+      }, 2.5)
+      g.fillStyle = '#a8e0ff'
+      ellipse(g, s * 0.02, -s * 0.56, s * 0.05, s * 0.05); g.fill()
+      face(g, s, opts.downed ? 'ko' : 'happy')
+      break
+    }
+    case 'gambler_taro': {
+      outlined(g, body, gg => ellipse(gg, 0, 0, s * 0.45, s * 0.48))
+      // 紋路
+      g.strokeStyle = 'rgba(255,255,255,0.35)'
+      g.lineWidth = s * 0.03
+      g.beginPath(); g.arc(0, s * 0.05, s * 0.32, Math.PI * 1.15, Math.PI * 1.6); g.stroke()
+      // 禮帽 + 撲克牌
+      outlined(g, '#2b2b3a', gg => { gg.beginPath(); gg.rect(-s * 0.3, -s * 0.62, s * 0.6, s * 0.3) }, 2.5)
+      outlined(g, '#2b2b3a', gg => { gg.beginPath(); gg.rect(-s * 0.42, -s * 0.36, s * 0.84, s * 0.07) }, 2)
+      outlined(g, '#fff', gg => { gg.beginPath(); gg.rect(s * 0.18, -s * 0.58, s * 0.16, s * 0.22) }, 1.5)
+      g.fillStyle = '#e85d6a'
+      g.font = `${s * 0.14}px sans-serif`
+      g.fillText('♦', s * 0.2, -s * 0.42)
+      face(g, s, opts.downed ? 'ko' : 'happy')
+      break
+    }
+    default:
+      outlined(g, body, gg => ellipse(gg, 0, 0, s * 0.46, s * 0.48))
+      face(g, s, opts.downed ? 'ko' : 'happy')
+  }
+  g.restore()
+}
+
+/** 怪物（農場害蟲）；flags: 1=盾 2=凍 4=緩 8=引爆中 */
+export function drawEnemy(g: Ctx, kindId: string, size: number, t: number, opts: {
+  elite?: boolean; affixColors?: string[]; flags?: number; hpPct?: number
+} = {}): void {
+  const d = ENEMY_MAP.get(kindId)
+  const [body, accent] = d?.palette ?? ['#a5c95a', '#6f8f2f']
+  const s = size
+  const flags = opts.flags ?? 0
+  const wob = Math.sin(t * 6 + s) * s * 0.06
+  g.save()
+
+  // 菁英 / 詞綴光環
+  if (opts.elite) {
+    g.shadowColor = '#ffd54f'
+    g.shadowBlur = 14
+  }
+  if (opts.affixColors?.length) {
+    g.strokeStyle = opts.affixColors[0]
+    g.globalAlpha = 0.7
+    g.lineWidth = 2.5
+    g.beginPath(); g.arc(0, 0, s * 0.72, 0, Math.PI * 2); g.stroke()
+    g.globalAlpha = 1
+  }
+
+  g.fillStyle = 'rgba(0,0,0,0.22)'
+  ellipse(g, 0, s * 0.5, s * 0.4, s * 0.1); g.fill()
+  g.translate(0, wob)
+
+  switch (kindId) {
+    case 'slug': {
+      outlined(g, body, gg => {
+        gg.beginPath()
+        gg.moveTo(-s * 0.45, s * 0.3)
+        gg.quadraticCurveTo(-s * 0.5, -s * 0.25, -s * 0.1, -s * 0.3)
+        gg.quadraticCurveTo(s * 0.5, -s * 0.35, s * 0.45, s * 0.3)
+        gg.closePath()
+      })
+      // 觸角
+      g.strokeStyle = OUTLINE; g.lineWidth = 2
+      g.beginPath(); g.moveTo(-s * 0.2, -s * 0.28); g.lineTo(-s * 0.28, -s * 0.5); g.stroke()
+      g.beginPath(); g.moveTo(-s * 0.05, -s * 0.3); g.lineTo(-s * 0.02, -s * 0.52); g.stroke()
+      angryEyes(g, s, -s * 0.15)
+      break
+    }
+    case 'gnat': {
+      // 翅膀
+      g.fillStyle = 'rgba(255,255,255,0.5)'
+      ellipse(g, -s * 0.3, -s * 0.3 + Math.sin(t * 40) * s * 0.08, s * 0.28, s * 0.12); g.fill()
+      ellipse(g, s * 0.3, -s * 0.3 - Math.sin(t * 40) * s * 0.08, s * 0.28, s * 0.12); g.fill()
+      outlined(g, body, gg => ellipse(gg, 0, 0, s * 0.32, s * 0.38))
+      angryEyes(g, s * 0.9, 0)
+      break
+    }
+    case 'grub': {
+      outlined(g, body, gg => ellipse(gg, 0, 0, s * 0.5, s * 0.44))
+      g.strokeStyle = accent; g.lineWidth = s * 0.05
+      for (const dx of [-s * 0.2, 0, s * 0.2]) {
+        g.beginPath(); g.arc(dx, 0, s * 0.38, Math.PI * 0.25, Math.PI * 0.75); g.stroke()
+      }
+      angryEyes(g, s, -s * 0.1)
+      break
+    }
+    case 'spitter': {
+      outlined(g, body, gg => ellipse(gg, 0, 0, s * 0.4, s * 0.42))
+      // 鳥喙
+      outlined(g, '#ffb300', gg => {
+        gg.beginPath(); gg.moveTo(s * 0.2, 0); gg.lineTo(s * 0.62, s * 0.06); gg.lineTo(s * 0.2, s * 0.16); gg.closePath()
+      }, 2)
+      // 頭羽
+      outlined(g, accent, gg => { gg.beginPath(); gg.moveTo(-s * 0.05, -s * 0.4); gg.quadraticCurveTo(-s * 0.2, -s * 0.7, -s * 0.35, -s * 0.5); gg.quadraticCurveTo(-s * 0.15, -s * 0.5, -s * 0.05, -s * 0.4) }, 2)
+      angryEyes(g, s * 0.9, -s * 0.1)
+      break
+    }
+    case 'boomer': {
+      const puls = flags & 8 ? 1 + Math.sin(t * 25) * 0.12 : 1
+      g.scale(puls, puls)
+      outlined(g, flags & 8 ? '#ff8a80' : body, gg => {
+        gg.beginPath(); gg.arc(0, -s * 0.08, s * 0.42, Math.PI, 0)
+        gg.quadraticCurveTo(s * 0.5, s * 0.05, s * 0.3, s * 0.1)
+        gg.lineTo(-s * 0.3, s * 0.1)
+        gg.quadraticCurveTo(-s * 0.5, s * 0.05, -s * 0.42, -s * 0.08)
+      })
+      outlined(g, '#fff3e0', gg => { gg.beginPath(); gg.rect(-s * 0.14, s * 0.08, s * 0.28, s * 0.34) }, 2)
+      g.fillStyle = '#fff'
+      ellipse(g, -s * 0.18, -s * 0.2, s * 0.07, s * 0.07); g.fill()
+      ellipse(g, s * 0.12, -s * 0.28, s * 0.05, s * 0.05); g.fill()
+      angryEyes(g, s * 0.8, s * 0.18)
+      break
+    }
+    case 'shieldbug': {
+      outlined(g, body, gg => ellipse(gg, 0, 0, s * 0.42, s * 0.38))
+      // 正面盾殼
+      outlined(g, accent, gg => {
+        gg.beginPath(); gg.arc(0, 0, s * 0.46, -Math.PI * 0.45, Math.PI * 0.45)
+        gg.quadraticCurveTo(s * 0.2, 0, Math.cos(-Math.PI * 0.45) * s * 0.46, Math.sin(-Math.PI * 0.45) * s * 0.46)
+      }, 2.5)
+      angryEyes(g, s * 0.9, -s * 0.05)
+      break
+    }
+    case 'broodmother': {
+      outlined(g, body, gg => ellipse(gg, 0, 0, s * 0.5, s * 0.46))
+      // 卵囊
+      g.fillStyle = 'rgba(255,255,255,0.4)'
+      for (let k = 0; k < 4; k++) {
+        ellipse(g, Math.cos(k * 1.6 + t) * s * 0.25, Math.sin(k * 1.6 + t) * s * 0.2 + s * 0.1, s * 0.09, s * 0.09)
+        g.fill()
+      }
+      angryEyes(g, s, -s * 0.15)
+      break
+    }
+    case 'toxicap': {
+      outlined(g, body, gg => {
+        gg.beginPath()
+        gg.moveTo(-s * 0.45, s * 0.3)
+        gg.quadraticCurveTo(-s * 0.4, -s * 0.3, 0, -s * 0.32)
+        gg.quadraticCurveTo(s * 0.45, -s * 0.3, s * 0.45, s * 0.3)
+        gg.closePath()
+      })
+      // 滴液
+      g.fillStyle = accent
+      ellipse(g, s * 0.1, s * 0.36 + Math.sin(t * 8) * s * 0.05, s * 0.07, s * 0.1); g.fill()
+      angryEyes(g, s, -s * 0.1)
+      break
+    }
+    case 'hopper': {
+      outlined(g, body, gg => ellipse(gg, 0, 0, s * 0.38, s * 0.3))
+      // 後腿
+      g.strokeStyle = OUTLINE; g.lineWidth = 2.5
+      g.beginPath(); g.moveTo(-s * 0.2, s * 0.1); g.lineTo(-s * 0.45, -s * 0.2); g.lineTo(-s * 0.5, s * 0.3); g.stroke()
+      g.beginPath(); g.moveTo(s * 0.2, s * 0.1); g.lineTo(s * 0.45, -s * 0.2); g.lineTo(s * 0.5, s * 0.3); g.stroke()
+      angryEyes(g, s * 0.9, -s * 0.05)
+      break
+    }
+    case 'pickpocket': {
+      outlined(g, body, gg => ellipse(gg, 0, 0, s * 0.4, s * 0.36))
+      // 耳朵 + 尾巴
+      outlined(g, body, gg => ellipse(gg, -s * 0.25, -s * 0.32, s * 0.13, s * 0.13), 2)
+      outlined(g, body, gg => ellipse(gg, s * 0.25, -s * 0.32, s * 0.13, s * 0.13), 2)
+      g.strokeStyle = accent; g.lineWidth = s * 0.06
+      g.beginPath(); g.moveTo(s * 0.35, s * 0.1); g.quadraticCurveTo(s * 0.7, s * 0.2 + Math.sin(t * 5) * s * 0.1, s * 0.6, -s * 0.15); g.stroke()
+      // 小面罩
+      g.fillStyle = OUTLINE
+      g.fillRect(-s * 0.3, -s * 0.16, s * 0.6, s * 0.12)
+      g.fillStyle = '#fff'
+      ellipse(g, -s * 0.13, -s * 0.1, s * 0.05, s * 0.04); g.fill()
+      ellipse(g, s * 0.13, -s * 0.1, s * 0.05, s * 0.04); g.fill()
+      break
+    }
+    default:
+      outlined(g, body, gg => ellipse(gg, 0, 0, s * 0.4, s * 0.4))
+      angryEyes(g, s, 0)
+  }
+
+  // 狀態表現
+  if (flags & 2) { // 冰凍
+    g.globalAlpha = 0.5
+    outlined(g, '#a8e0ff', gg => ellipse(gg, 0, 0, s * 0.55, s * 0.55), 2)
+    g.globalAlpha = 1
+  }
+  if (flags & 1) { // 護盾
+    g.strokeStyle = '#4fc3f7'
+    g.lineWidth = 2
+    g.setLineDash([5, 4])
+    g.beginPath(); g.arc(0, 0, s * 0.62, t * 2, t * 2 + Math.PI * 2); g.stroke()
+    g.setLineDash([])
+  }
+  g.restore()
+}
+
+function angryEyes(g: Ctx, s: number, dy: number): void {
+  g.fillStyle = '#fff'
+  ellipse(g, -s * 0.15, dy, s * 0.09, s * 0.09); g.fill()
+  ellipse(g, s * 0.15, dy, s * 0.09, s * 0.09); g.fill()
+  g.fillStyle = OUTLINE
+  ellipse(g, -s * 0.13, dy + s * 0.01, s * 0.045, s * 0.045); g.fill()
+  ellipse(g, s * 0.17, dy + s * 0.01, s * 0.045, s * 0.045); g.fill()
+  g.strokeStyle = OUTLINE
+  g.lineWidth = s * 0.035
+  g.beginPath(); g.moveTo(-s * 0.24, dy - s * 0.12); g.lineTo(-s * 0.06, dy - s * 0.06); g.stroke()
+  g.beginPath(); g.moveTo(s * 0.24, dy - s * 0.12); g.lineTo(s * 0.06, dy - s * 0.06); g.stroke()
+}
+
+/** Boss（size = 半徑×2 基準） */
+export function drawBoss(g: Ctx, bossId: string, size: number, t: number, opts: {
+  stunned?: boolean; shielded?: boolean; phase?: number
+} = {}): void {
+  const b = BOSS_MAP.get(bossId)
+  const [body, accent, extra] = b?.palette ?? ['#c9a86a', '#8a6d3b', '#9ccc65']
+  const s = size
+  const breathe = 1 + Math.sin(t * 2.4) * 0.03
+  g.save()
+  g.fillStyle = 'rgba(0,0,0,0.3)'
+  ellipse(g, 0, s * 0.5, s * 0.5, s * 0.14); g.fill()
+  g.scale(breathe, breathe)
+
+  switch (bossId) {
+    case 'onion_king': {
+      outlined(g, body, gg => {
+        gg.beginPath()
+        gg.moveTo(0, -s * 0.55)
+        gg.quadraticCurveTo(s * 0.55, -s * 0.2, s * 0.45, s * 0.25)
+        gg.quadraticCurveTo(s * 0.3, s * 0.52, 0, s * 0.54)
+        gg.quadraticCurveTo(-s * 0.3, s * 0.52, -s * 0.45, s * 0.25)
+        gg.quadraticCurveTo(-s * 0.55, -s * 0.2, 0, -s * 0.55)
+      }, 4)
+      // 腐爛斑
+      g.fillStyle = 'rgba(90,110,40,0.5)'
+      ellipse(g, -s * 0.2, s * 0.15, s * 0.12, s * 0.09); g.fill()
+      ellipse(g, s * 0.25, -s * 0.05, s * 0.09, s * 0.07); g.fill()
+      // 皇冠
+      outlined(g, '#ffd54f', gg => {
+        gg.beginPath()
+        gg.moveTo(-s * 0.28, -s * 0.5)
+        gg.lineTo(-s * 0.28, -s * 0.72); gg.lineTo(-s * 0.14, -s * 0.58)
+        gg.lineTo(0, -s * 0.76); gg.lineTo(s * 0.14, -s * 0.58)
+        gg.lineTo(s * 0.28, -s * 0.72); gg.lineTo(s * 0.28, -s * 0.5)
+        gg.closePath()
+      }, 3)
+      bossFace(g, s, opts.stunned)
+      break
+    }
+    case 'mushroom_mother': {
+      // 菇柄
+      outlined(g, '#e8dcc8', gg => { gg.beginPath(); gg.rect(-s * 0.28, -s * 0.05, s * 0.56, s * 0.55) }, 4)
+      // 菇傘
+      outlined(g, body, gg => {
+        gg.beginPath()
+        gg.moveTo(-s * 0.6, 0)
+        gg.quadraticCurveTo(-s * 0.55, -s * 0.65, 0, -s * 0.68)
+        gg.quadraticCurveTo(s * 0.55, -s * 0.65, s * 0.6, 0)
+        gg.closePath()
+      }, 4)
+      g.fillStyle = extra
+      for (const [dx, dy, r] of [[-0.32, -0.35, 0.1], [0.05, -0.5, 0.12], [0.35, -0.28, 0.08]] as const) {
+        ellipse(g, dx * s, dy * s, r * s, r * s * 0.8); g.fill()
+      }
+      // 孢子飄散
+      g.fillStyle = 'rgba(186,104,200,0.5)'
+      for (let k = 0; k < 5; k++) {
+        const a = t * 1.5 + k * 1.3
+        ellipse(g, Math.cos(a) * s * 0.7, -s * 0.3 + Math.sin(a * 1.3) * s * 0.3, s * 0.04, s * 0.04)
+        g.fill()
+      }
+      bossFace(g, s * 0.9, opts.stunned, s * 0.22)
+      break
+    }
+    case 'pumpkin_tank': {
+      // 履帶
+      outlined(g, '#455a64', gg => { gg.beginPath(); gg.rect(-s * 0.55, s * 0.2, s * 1.1, s * 0.26) }, 3.5)
+      g.fillStyle = '#263238'
+      for (let k = 0; k < 5; k++) {
+        ellipse(g, -s * 0.42 + k * s * 0.21, s * 0.33, s * 0.07, s * 0.07); g.fill()
+      }
+      // 南瓜本體
+      outlined(g, body, gg => ellipse(gg, 0, -s * 0.08, s * 0.5, s * 0.42), 4)
+      g.strokeStyle = accent
+      g.lineWidth = s * 0.04
+      for (const dx of [-s * 0.25, 0, s * 0.25]) {
+        g.beginPath(); g.moveTo(dx, -s * 0.46); g.quadraticCurveTo(dx * 1.3, -s * 0.08, dx, s * 0.3); g.stroke()
+      }
+      // 鐵皮裝甲
+      outlined(g, '#78909c', gg => { gg.beginPath(); gg.rect(-s * 0.56, -s * 0.2, s * 0.2, s * 0.34) }, 3)
+      outlined(g, '#78909c', gg => { gg.beginPath(); gg.rect(s * 0.36, -s * 0.2, s * 0.2, s * 0.34) }, 3)
+      // 蒂頭煙囪
+      outlined(g, '#5d4037', gg => { gg.beginPath(); gg.rect(-s * 0.06, -s * 0.62, s * 0.12, s * 0.18) }, 3)
+      g.fillStyle = 'rgba(120,120,120,0.5)'
+      ellipse(g, s * 0.05, -s * 0.72 - (t % 1) * s * 0.2, s * 0.07 + (t % 1) * s * 0.05, s * 0.06); g.fill()
+      bossFace(g, s, opts.stunned, -s * 0.05)
+      break
+    }
+  }
+  if (opts.shielded) {
+    g.strokeStyle = '#4fc3f7'
+    g.lineWidth = 4
+    g.globalAlpha = 0.7 + Math.sin(t * 6) * 0.2
+    g.beginPath(); g.arc(0, -s * 0.05, s * 0.72, 0, Math.PI * 2); g.stroke()
+    g.globalAlpha = 1
+  }
+  if (opts.stunned) {
+    // 頭上轉圈星星
+    for (let k = 0; k < 3; k++) {
+      const a = t * 4 + k * 2.1
+      g.fillStyle = '#ffe66d'
+      star(g, Math.cos(a) * s * 0.3, -s * 0.72 + Math.sin(a) * s * 0.08, s * 0.07)
+    }
+  }
+  g.restore()
+}
+
+function bossFace(g: Ctx, s: number, stunned = false, dy = 0): void {
+  g.fillStyle = '#fff'
+  ellipse(g, -s * 0.16, -s * 0.1 + dy, s * 0.1, stunned ? s * 0.04 : s * 0.12); g.fill()
+  ellipse(g, s * 0.16, -s * 0.1 + dy, s * 0.1, stunned ? s * 0.04 : s * 0.12); g.fill()
+  if (!stunned) {
+    g.fillStyle = '#d32f2f'
+    ellipse(g, -s * 0.14, -s * 0.08 + dy, s * 0.05, s * 0.06); g.fill()
+    ellipse(g, s * 0.18, -s * 0.08 + dy, s * 0.05, s * 0.06); g.fill()
+  }
+  g.strokeStyle = OUTLINE
+  g.lineWidth = s * 0.045
+  g.beginPath()
+  if (stunned) g.arc(0, s * 0.16 + dy, s * 0.1, Math.PI * 1.1, Math.PI * 1.9)
+  else { g.moveTo(-s * 0.14, s * 0.12 + dy); g.lineTo(s * 0.14, s * 0.16 + dy) }
+  g.stroke()
+}
+
+function star(g: Ctx, x: number, y: number, r: number): void {
+  g.beginPath()
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2 - Math.PI / 2
+    const rr = i % 2 === 0 ? r : r * 0.45
+    g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr)
+  }
+  g.closePath()
+  g.fill()
+}
+
+/** 掉落物 */
+export function drawDrop(g: Ctx, type: string, v: number, t: number, item?: string): void {
+  const bob = Math.sin(t * 4 + v) * 2
+  g.save()
+  g.translate(0, bob)
+  switch (type) {
+    case 'xp': {
+      const r = v >= 20 ? 10 : v >= 8 ? 7.5 : 5.5
+      g.shadowColor = '#69f0ae'; g.shadowBlur = 8
+      outlined(g, v >= 20 ? '#00e676' : '#69f0ae', gg => {
+        gg.beginPath()
+        gg.moveTo(0, -r); gg.lineTo(r * 0.8, 0); gg.lineTo(0, r); gg.lineTo(-r * 0.8, 0); gg.closePath()
+      }, 2)
+      break
+    }
+    case 'coin': {
+      g.shadowColor = '#ffd54f'; g.shadowBlur = 6
+      outlined(g, '#ffd54f', gg => ellipse(gg, 0, 0, 7, 7), 2)
+      g.fillStyle = '#b8860b'
+      g.font = 'bold 9px sans-serif'
+      g.textAlign = 'center'; g.textBaseline = 'middle'
+      g.fillText('$', 0, 0.5)
+      break
+    }
+    case 'heart': {
+      const big = v >= 50
+      const s = big ? 11 : 8
+      g.shadowColor = '#ff8a80'; g.shadowBlur = 8
+      outlined(g, item === 'team' ? '#ffd54f' : '#ef5350', gg => {
+        gg.beginPath()
+        gg.moveTo(0, s * 0.35)
+        gg.bezierCurveTo(-s, -s * 0.4, -s * 0.4, -s, 0, -s * 0.35)
+        gg.bezierCurveTo(s * 0.4, -s, s, -s * 0.4, 0, s * 0.35)
+      }, 2)
+      break
+    }
+    case 'item': {
+      g.font = '16px sans-serif'
+      g.textAlign = 'center'; g.textBaseline = 'middle'
+      g.shadowColor = '#fff'; g.shadowBlur = 6
+      g.fillText(itemEmoji(item), 0, 0)
+      break
+    }
+    case 'chest': {
+      g.shadowColor = '#ffd54f'; g.shadowBlur = 10
+      outlined(g, '#8d6e63', gg => { gg.beginPath(); gg.rect(-11, -8, 22, 15) }, 2.5)
+      outlined(g, '#a1887f', gg => { gg.beginPath(); gg.rect(-11, -8, 22, 6) }, 2)
+      g.fillStyle = '#ffd54f'
+      g.fillRect(-2.5, -6, 5, 8)
+      break
+    }
+    case 'orb': {
+      g.shadowColor = '#40c4ff'; g.shadowBlur = 12
+      outlined(g, '#40c4ff', gg => ellipse(gg, 0, 0, 9, 9), 2)
+      g.fillStyle = '#fff'
+      ellipse(g, -2.5, -2.5, 2.5, 2.5); g.fill()
+      break
+    }
+    case 'shard': {
+      g.shadowColor = '#e040fb'; g.shadowBlur = 10
+      outlined(g, '#e040fb', gg => {
+        gg.beginPath(); gg.moveTo(0, -9); gg.lineTo(6, 0); gg.lineTo(0, 9); gg.lineTo(-6, 0); gg.closePath()
+      }, 2)
+      break
+    }
+  }
+  g.restore()
+}
+
+const ITEM_EMOJI: Record<string, string> = {
+  magnet: '🧲', bomb: '💣', shield: '🛡️', haste: '⚡', rage: '🔥',
+  freeze: '❄️', energy: '🔮', key: '🗝️', coinbag: '💰', medkit: '💊',
+}
+export const itemEmoji = (id?: string) => ITEM_EMOJI[id ?? ''] ?? '✨'
+
+/** 地圖物件 / 任務目標 */
+export function drawObjective(g: Ctx, t: string, r: number, time: number, opts: {
+  k?: string; hpPct?: number; pg?: number; state?: number
+} = {}): void {
+  const s = r
+  switch (t) {
+    case 'prop': drawProp(g, opts.k ?? 'barrel', s); break
+    case 'crystal': {
+      g.shadowColor = '#40c4ff'; g.shadowBlur = 16
+      outlined(g, '#80d8ff', gg => {
+        gg.beginPath(); gg.moveTo(0, -s); gg.lineTo(s * 0.7, 0); gg.lineTo(0, s); gg.lineTo(-s * 0.7, 0); gg.closePath()
+      }, 3)
+      g.fillStyle = 'rgba(255,255,255,0.6)'
+      ellipse(g, -s * 0.2, -s * 0.3, s * 0.12, s * 0.2); g.fill()
+      break
+    }
+    case 'base': {
+      // 糧倉
+      outlined(g, '#bf8f5f', gg => { gg.beginPath(); gg.rect(-s * 0.8, -s * 0.3, s * 1.6, s * 0.9) }, 3.5)
+      outlined(g, '#8d5524', gg => {
+        gg.beginPath(); gg.moveTo(-s * 0.95, -s * 0.3); gg.lineTo(0, -s * 1.05); gg.lineTo(s * 0.95, -s * 0.3); gg.closePath()
+      }, 3.5)
+      outlined(g, '#5d4037', gg => { gg.beginPath(); gg.rect(-s * 0.2, s * 0.1, s * 0.4, s * 0.5) }, 2.5)
+      break
+    }
+    case 'cart': {
+      outlined(g, '#a1887f', gg => { gg.beginPath(); gg.rect(-s * 0.9, -s * 0.5, s * 1.8, s * 0.7) }, 3)
+      g.fillStyle = '#7bc043'
+      for (let k = 0; k < 3; k++) { ellipse(g, -s * 0.5 + k * s * 0.5, -s * 0.55, s * 0.25, s * 0.22); g.fill() }
+      g.strokeStyle = OUTLINE; g.lineWidth = 2.5
+      g.fillStyle = '#5d4037'
+      ellipse(g, -s * 0.45, s * 0.3, s * 0.26, s * 0.26); g.fill(); g.stroke()
+      ellipse(g, s * 0.45, s * 0.3, s * 0.26, s * 0.26); g.fill(); g.stroke()
+      break
+    }
+    case 'point': case 'rune': {
+      const active = opts.state === 1
+      const done = opts.state === 2
+      const col = t === 'rune' ? '#e040fb' : '#40c4ff'
+      g.globalAlpha = done ? 0.9 : active ? 0.8 : 0.45 + Math.sin(time * 3) * 0.15
+      g.strokeStyle = done ? '#69f0ae' : col
+      g.lineWidth = 3.5
+      g.setLineDash([8, 6])
+      g.beginPath(); g.arc(0, 0, s, time * 0.8, time * 0.8 + Math.PI * 2); g.stroke()
+      g.setLineDash([])
+      g.fillStyle = done ? 'rgba(105,240,174,0.2)' : active ? `${col}33` : 'rgba(255,255,255,0.06)'
+      g.beginPath(); g.arc(0, 0, s, 0, Math.PI * 2); g.fill()
+      // 進度環
+      if ((opts.pg ?? 0) > 0 && !done) {
+        g.strokeStyle = '#fff'
+        g.lineWidth = 4
+        g.beginPath(); g.arc(0, 0, s * 0.75, -Math.PI / 2, -Math.PI / 2 + (opts.pg ?? 0) * Math.PI * 2); g.stroke()
+      }
+      g.globalAlpha = 1
+      break
+    }
+    case 'nest': {
+      outlined(g, '#6d4c41', gg => ellipse(gg, 0, 0, s, s * 0.7), 3)
+      g.fillStyle = '#3e2723'
+      ellipse(g, 0, -s * 0.1, s * 0.5, s * 0.32); g.fill()
+      g.fillStyle = '#ba68c8'
+      for (let k = 0; k < 3; k++) {
+        ellipse(g, -s * 0.3 + k * s * 0.3, -s * 0.1 + Math.sin(time * 4 + k) * 2, s * 0.12, s * 0.14); g.fill()
+      }
+      break
+    }
+    case 'pillar': {
+      outlined(g, '#e8dcc8', gg => { gg.beginPath(); gg.rect(-s * 0.35, -s * 0.7, s * 0.7, s * 1.4) }, 3)
+      outlined(g, '#ba68c8', gg => ellipse(gg, 0, -s * 0.75, s * 0.75, s * 0.4), 3)
+      g.fillStyle = '#9ccc65'
+      ellipse(g, -s * 0.3, -s * 0.8, s * 0.14, s * 0.1); g.fill()
+      ellipse(g, s * 0.25, -s * 0.72, s * 0.1, s * 0.08); g.fill()
+      break
+    }
+    case 'guardChest': {
+      g.shadowColor = '#ffd54f'; g.shadowBlur = 14
+      outlined(g, '#8d6e63', gg => { gg.beginPath(); gg.rect(-s * 0.7, -s * 0.45, s * 1.4, s * 0.95) }, 3)
+      outlined(g, '#a1887f', gg => { gg.beginPath(); gg.rect(-s * 0.7, -s * 0.45, s * 1.4, s * 0.4) }, 2.5)
+      g.fillStyle = '#ffd54f'
+      g.fillRect(-s * 0.12, -s * 0.35, s * 0.24, s * 0.5)
+      if (opts.state === 1) {
+        g.strokeStyle = '#ffd54f'
+        g.lineWidth = 3
+        g.beginPath(); g.arc(0, 0, s * 1.3, -Math.PI / 2, -Math.PI / 2 + (opts.pg ?? 0) * Math.PI * 2); g.stroke()
+      }
+      break
+    }
+  }
+  // 血條（可破壞物）
+  if (opts.hpPct !== undefined && opts.hpPct < 1 && opts.hpPct > 0 && t !== 'prop') {
+    g.fillStyle = 'rgba(0,0,0,0.5)'
+    g.fillRect(-s, -s - 12, s * 2, 5)
+    g.fillStyle = opts.hpPct > 0.5 ? '#69f0ae' : opts.hpPct > 0.25 ? '#ffd54f' : '#ef5350'
+    g.fillRect(-s, -s - 12, s * 2 * opts.hpPct, 5)
+  }
+}
+
+function drawProp(g: Ctx, kind: string, s: number): void {
+  switch (kind) {
+    case 'barrel':
+      outlined(g, '#a1783c', gg => { gg.beginPath(); gg.rect(-s * 0.7, -s * 0.8, s * 1.4, s * 1.6) }, 2.5)
+      g.strokeStyle = '#6d4c2f'; g.lineWidth = 3
+      g.beginPath(); g.moveTo(-s * 0.7, -s * 0.3); g.lineTo(s * 0.7, -s * 0.3); g.stroke()
+      g.beginPath(); g.moveTo(-s * 0.7, s * 0.3); g.lineTo(s * 0.7, s * 0.3); g.stroke()
+      break
+    case 'bush':
+      outlined(g, '#4e8a22', gg => {
+        gg.beginPath()
+        gg.arc(-s * 0.4, 0, s * 0.5, 0, Math.PI * 2)
+        gg.arc(s * 0.4, 0, s * 0.5, 0, Math.PI * 2)
+        gg.arc(0, -s * 0.4, s * 0.55, 0, Math.PI * 2)
+      }, 2.5)
+      break
+    case 'healHerb':
+      outlined(g, '#7bc043', gg => {
+        gg.beginPath(); gg.moveTo(0, s * 0.6)
+        gg.quadraticCurveTo(-s * 0.8, 0, 0, -s * 0.7)
+        gg.quadraticCurveTo(s * 0.8, 0, 0, s * 0.6)
+      }, 2)
+      g.fillStyle = '#ef9a9a'
+      g.beginPath(); g.arc(0, -s * 0.2, s * 0.18, 0, Math.PI * 2); g.fill()
+      break
+    case 'coinBox':
+      outlined(g, '#ffd54f', gg => { gg.beginPath(); gg.rect(-s * 0.7, -s * 0.6, s * 1.4, s * 1.2) }, 2.5)
+      g.fillStyle = '#b8860b'
+      g.font = `bold ${s}px sans-serif`
+      g.textAlign = 'center'; g.textBaseline = 'middle'
+      g.fillText('$', 0, s * 0.05)
+      break
+    case 'crate':
+      outlined(g, '#bcaaa4', gg => { gg.beginPath(); gg.rect(-s * 0.7, -s * 0.7, s * 1.4, s * 1.4) }, 2.5)
+      g.strokeStyle = '#8d6e63'; g.lineWidth = 2.5
+      g.beginPath(); g.moveTo(-s * 0.7, -s * 0.7); g.lineTo(s * 0.7, s * 0.7); g.stroke()
+      g.beginPath(); g.moveTo(s * 0.7, -s * 0.7); g.lineTo(-s * 0.7, s * 0.7); g.stroke()
+      break
+    case 'mushroom':
+      outlined(g, '#e8dcc8', gg => { gg.beginPath(); gg.rect(-s * 0.25, -s * 0.1, s * 0.5, s * 0.7) }, 2)
+      outlined(g, '#ba68c8', gg => ellipse(gg, 0, -s * 0.25, s * 0.7, s * 0.42), 2.5)
+      g.fillStyle = '#fff'
+      ellipse(g, -s * 0.25, -s * 0.3, s * 0.12, s * 0.1); g.fill()
+      ellipse(g, s * 0.2, -s * 0.22, s * 0.09, s * 0.08); g.fill()
+      break
+  }
+}
+
+/** 武器投射物（客戶端純視覺） */
+export function drawProjectile(g: Ctx, weaponId: string, t: number): void {
+  switch (weaponId) {
+    case 'pea_gun':
+      outlined(g, '#7bc043', gg => ellipse(gg, 0, 0, 5, 5), 1.5); break
+    case 'knife':
+      g.save(); g.rotate(t * 20)
+      outlined(g, '#cfd8dc', gg => { gg.beginPath(); gg.moveTo(0, -8); gg.lineTo(3, 4); gg.lineTo(-3, 4); gg.closePath() }, 1.5)
+      g.restore(); break
+    case 'fireball':
+      g.shadowColor = '#ff6b35'; g.shadowBlur = 10
+      outlined(g, '#ff6b35', gg => ellipse(gg, 0, 0, 7, 7), 1.5)
+      g.fillStyle = '#ffe66d'
+      ellipse(g, 0, 0, 3.5, 3.5); g.fill(); break
+    case 'ice_shard':
+      outlined(g, '#a8e0ff', gg => { gg.beginPath(); gg.moveTo(0, -8); gg.lineTo(4, 2); gg.lineTo(0, 8); gg.lineTo(-4, 2); gg.closePath() }, 1.5); break
+    case 'turret_gun': case 'drone':
+      outlined(g, '#ffe66d', gg => ellipse(gg, 0, 0, 3.5, 3.5), 1.2); break
+    default:
+      outlined(g, '#fff', gg => ellipse(gg, 0, 0, 4, 4), 1.5)
+  }
+}
