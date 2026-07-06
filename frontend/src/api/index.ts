@@ -155,6 +155,21 @@ export const gameApi = {
     request<FishVolleyResult>(() => http.post('/api/game/fish/volley', { bet, shots, hits })),
 }
 
+// ---- 菜菜勇者團 leaderboard (submit best run + boards; daily challenge) ----
+export interface VeggieEntry {
+  rank: number; name: string; photoUrl: string | null
+  wave: number; kills: number; players: number; durationSec: number; mine: boolean
+}
+export interface VeggieBoard {
+  entries: VeggieEntry[]; me: VeggieEntry | null; myRank: number; daily: boolean; dailyKey: string
+}
+export const veggieApi = {
+  submit: (body: { mode: string; players: number; wave: number; kills: number; durationSec: number; daily: boolean }) =>
+    request<{ best: boolean; rank: number }>(() => http.post('/api/veggie/score', body)),
+  leaderboard: (mode: string, players: number, daily = false) =>
+    request<VeggieBoard>(() => http.get('/api/veggie/leaderboard', { params: { mode, players, daily } })),
+}
+
 // ---- Admin (root-admin only) ----
 export interface AdminUser {
   id: number; email: string; displayName: string | null; photoUrl: string | null

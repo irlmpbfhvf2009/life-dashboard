@@ -8,6 +8,7 @@ import {
 } from '@/game/net'
 import { voice, joinVoice, leaveVoice, toggleMute as toggleVoiceMute } from '@/game/voice'
 import { useAuthStore } from '@/stores/auth'
+import { veggieApi, type VeggieBoard } from '@/api'
 import { engine } from '@/game/render'
 import { useGameSound, playMusic, stopMusic, sfx } from '@/game/sound'
 import Portrait from '@/game/Portrait.vue'
@@ -47,6 +48,7 @@ const MODES: { id: Mode; name: string; desc: string }[] = [
   { id: 'standard', name: '標準', desc: '20 波 · 雙 Boss' },
   { id: 'endless', name: '無盡', desc: '20 波後無盡加壓' },
 ]
+const modeName = (m: string) => m === 'daily' ? '每日挑戰' : (MODES.find(x => x.id === m)?.name ?? '無盡')
 
 async function doCreate() {
   if (!playerName.value.trim()) { homeError.value = '先取個名字吧'; return }
@@ -68,6 +70,39 @@ async function doJoin(code?: string) {
   homeError.value = err ?? ''
   if (!err) { sfx.click(); playMusic('lobby') }
 }
+async function startDaily() {
+  if (!playerName.value.trim()) { homeError.value = '先取個名字吧'; return }
+  localStorage.setItem('veggie-name', playerName.value.trim())
+  busy.value = true
+  // 每日挑戰：全球同種子（server 用 dailySeed），單人快速 10 波，另計排行榜
+  const err = await createRoom(playerName.value.trim(), { mode: 'daily' as Mode, difficulty: 2, maxPlayers: 1 })
+  busy.value = false
+  homeError.value = err ?? ''
+  if (!err) { sfx.click(); playMusic('lobby') }
+}
+
+// ---------------------------------------------------------------- 排行榜
+const showBoard = ref(false)
+const board = ref<VeggieBoard | null>(null)
+const boardLoading = ref(false)
+const boardMode = ref<'quick' | 'standard' | 'endless' | 'daily'>('standard')
+const boardPlayers = ref(1)
+async function loadBoard() {
+  boardLoading.value = true
+  try {
+    board.value = await veggieApi.leaderboard(boardMode.value, boardPlayers.value, boardMode.value === 'daily')
+  } catch { board.value = null }
+  boardLoading.value = false
+}
+function openBoard() {
+  showBoard.value = true
+  sfx.click()
+  loadBoard()
+}
+watch([boardMode, boardPlayers], () => { if (showBoard.value) loadBoard() })
+const BOARD_MODES: { id: 'quick' | 'standard' | 'endless' | 'daily'; name: string }[] = [
+  { id: 'daily', name: '每日' }, { id: 'standard', name: '標準' }, { id: 'quick', name: '快速' }, { id: 'endless', name: '無盡' },
+]
 
 // ---------------------------------------------------------------- 大廳
 const qrUrl = ref('')
@@ -291,13 +326,28 @@ watch(screen, async (s) => {
   }
 }, { immediate: true })
 
-watch(() => gs.over, (o) => {
+const submitResult = ref<{ best: boolean; rank: number } | null>(null)
+watch(() => gs.over, async (o) => {
   if (!o) return
   if (o.victory) sfx.victory(); else sfx.defeat()
-  // 紀錄最高波數
+  // 紀錄最高波數（本機）
   const key = `veggie-best-${o.mode}`
   const prev = Number(localStorage.getItem(key) ?? 0)
   if (o.wave > prev) localStorage.setItem(key, String(o.wave))
+  // 登入者：把成績上傳排行榜
+  submitResult.value = null
+  if (auth.isAuthenticated) {
+    try {
+      submitResult.value = await veggieApi.submit({
+        mode: o.mode,
+        players: gs.begin?.players.length ?? 1,
+        wave: o.wave,
+        kills: o.totalKills,
+        durationSec: o.duration,
+        daily: o.mode === 'daily',
+      })
+    } catch { /* 排行榜提交失敗不影響遊戲 */ }
+  }
 })
 
 onBeforeUnmount(() => {
@@ -402,13 +452,92 @@ const fmtTime = (s: number) => {
             >🚪 加入房間</button>
           </div>
         </div>
+        <!-- 每日挑戰 + 排行榜 -->
+        <div class="grid grid-cols-2 gap-3">
+          <button
+            class="rounded-2xl border border-fuchsia-400/40 bg-gradient-to-br from-fuchsia-600/20 to-transparent p-4 text-center active:scale-95 disabled:opacity-50"
+            :disabled="busy" @click="startDaily"
+          >
+            <span class="block text-2xl">📅</span>
+            <span class="block text-sm font-black text-fuchsia-200">每日挑戰</span>
+            <span class="block text-[10px] text-white/40">全球同種子 · 單人 · 拚排行</span>
+          </button>
+          <button
+            class="rounded-2xl border border-amber-400/40 bg-gradient-to-br from-amber-500/20 to-transparent p-4 text-center active:scale-95"
+            @click="openBoard"
+          >
+            <span class="block text-2xl">🏆</span>
+            <span class="block text-sm font-black text-amber-200">排行榜</span>
+            <span class="block text-[10px] text-white/40">最高波數 · 分模式/人數</span>
+          </button>
+        </div>
         <p v-if="homeError" class="text-center text-sm font-bold text-rose-400">{{ homeError }}</p>
         <p v-if="!gs.connected && gs.connecting" class="text-center text-xs text-white/40">連線中…</p>
         <p v-else-if="gs.error" class="text-center text-xs text-rose-300/70">{{ gs.error }}（伺服器沒開？）</p>
         <div class="rounded-xl bg-white/5 px-4 py-3 text-center text-xs text-white/40">
-          最高紀錄　快速 <b class="text-amber-300">{{ bestWaves.quick }}</b> 波 ·
+          我的最高　快速 <b class="text-amber-300">{{ bestWaves.quick }}</b> 波 ·
           標準 <b class="text-amber-300">{{ bestWaves.standard }}</b> 波 ·
           無盡 <b class="text-amber-300">{{ bestWaves.endless }}</b> 波
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ 排行榜 overlay -->
+    <div v-if="showBoard" class="absolute inset-0 z-[70] flex flex-col overflow-y-auto bg-[#0d1a0d]/95 px-5 py-6 backdrop-blur" style="touch-action: pan-y;">
+      <div class="mx-auto w-full max-w-md">
+        <div class="mb-3 flex items-center justify-between">
+          <h2 class="text-xl font-black text-amber-300">🏆 排行榜</h2>
+          <button class="rounded-lg bg-white/10 px-3 py-1.5 text-sm text-white/70" @click="showBoard = false">關閉 ✕</button>
+        </div>
+        <!-- 模式 tabs -->
+        <div class="mb-2 flex gap-1.5">
+          <button
+            v-for="m in BOARD_MODES" :key="m.id"
+            class="flex-1 rounded-lg px-1 py-1.5 text-xs font-bold transition"
+            :class="boardMode === m.id ? 'bg-amber-500/30 text-amber-200' : 'bg-white/5 text-white/40'"
+            @click="boardMode = m.id"
+          >{{ m.name }}</button>
+        </div>
+        <!-- 人數 tabs（每日固定 1 人不顯示） -->
+        <div v-if="boardMode !== 'daily'" class="mb-3 flex items-center justify-center gap-1.5 text-xs">
+          <span class="text-white/40">人數</span>
+          <button
+            v-for="n in 4" :key="n"
+            class="h-7 w-8 rounded font-bold"
+            :class="boardPlayers === n ? 'bg-sky-500/30 text-sky-200' : 'bg-white/5 text-white/40'"
+            @click="boardPlayers = n"
+          >{{ n }}</button>
+        </div>
+        <p v-if="board?.daily" class="mb-2 text-center text-xs text-fuchsia-300">📅 {{ board.dailyKey }} 每日挑戰</p>
+
+        <div v-if="boardLoading" class="py-10 text-center text-sm text-white/40">載入中…</div>
+        <template v-else-if="board && board.entries.length">
+          <div class="space-y-1">
+            <div
+              v-for="e in board.entries" :key="e.rank"
+              class="flex items-center gap-2 rounded-lg px-3 py-2"
+              :class="e.mine ? 'bg-amber-400/15 ring-1 ring-amber-400/40' : 'bg-white/5'"
+            >
+              <span class="w-7 text-center text-sm font-black" :class="e.rank === 1 ? 'text-amber-300' : e.rank === 2 ? 'text-slate-300' : e.rank === 3 ? 'text-orange-400' : 'text-white/40'">
+                {{ e.rank <= 3 ? ['🥇','🥈','🥉'][e.rank - 1] : e.rank }}
+              </span>
+              <img v-if="e.photoUrl" :src="e.photoUrl" class="h-7 w-7 rounded-full object-cover">
+              <span v-else class="grid h-7 w-7 place-items-center rounded-full bg-white/10 text-xs">🥬</span>
+              <span class="flex-1 truncate text-sm font-bold" :class="e.mine ? 'text-amber-200' : 'text-white/80'">{{ e.name }}</span>
+              <span class="text-sm font-black text-lime-300">{{ e.wave }} 波</span>
+              <span class="w-14 text-right text-[10px] text-white/40">擊殺{{ e.kills }}</span>
+            </div>
+          </div>
+          <!-- 我的名次（不在前 20 時另外顯示） -->
+          <div v-if="board.me && board.myRank > 20" class="mt-2 flex items-center gap-2 rounded-lg bg-amber-400/15 px-3 py-2 ring-1 ring-amber-400/40">
+            <span class="w-7 text-center text-sm font-black text-amber-300">{{ board.myRank }}</span>
+            <span class="grid h-7 w-7 place-items-center rounded-full bg-white/10 text-xs">🥬</span>
+            <span class="flex-1 truncate text-sm font-bold text-amber-200">{{ board.me.name }}（我）</span>
+            <span class="text-sm font-black text-lime-300">{{ board.me.wave }} 波</span>
+          </div>
+        </template>
+        <div v-else class="py-10 text-center text-sm text-white/40">
+          {{ auth.isAuthenticated ? '還沒有人上榜，來當第一名！' : '登入工作台後遊玩即可登上排行榜' }}
         </div>
       </div>
     </div>
@@ -428,9 +557,10 @@ const fmtTime = (s: number) => {
         </div>
       </div>
 
-      <!-- 房間設定 -->
+      <!-- 房間設定（每日挑戰不可改模式） -->
       <div class="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs">
-        <template v-if="isHost">
+        <span v-if="gs.room!.config.mode === 'daily'" class="rounded-full bg-fuchsia-500/25 px-3 py-1 font-bold text-fuchsia-200">📅 每日挑戰</span>
+        <template v-else-if="isHost">
           <button
             v-for="m in MODES" :key="m.id"
             class="rounded-full border px-3 py-1 font-bold"
@@ -439,7 +569,7 @@ const fmtTime = (s: number) => {
           >{{ m.name }}</button>
         </template>
         <template v-else>
-          <span class="rounded-full bg-lime-400/20 px-3 py-1 font-bold text-lime-200">{{ MODES.find(m => m.id === gs.room!.config.mode)?.name }}模式</span>
+          <span class="rounded-full bg-lime-400/20 px-3 py-1 font-bold text-lime-200">{{ modeName(gs.room!.config.mode) }}模式</span>
           <span class="rounded-full bg-sky-400/20 px-3 py-1 font-bold text-sky-200">最多 {{ gs.room!.config.maxPlayers }} 人</span>
         </template>
         <span class="rounded-full bg-rose-400/20 px-3 py-1 font-bold text-rose-200">🔥 夢魘難度</span>
@@ -911,9 +1041,18 @@ const fmtTime = (s: number) => {
             {{ gs.over.victory ? '農場保衛成功！' : '全滅…' }}
           </h2>
           <p class="mt-1 text-sm text-white/60">
-            {{ MODES.find(m => m.id === gs.over!.mode)?.name ?? '無盡' }}模式 · 撐到第 <b class="text-amber-300">{{ gs.over.wave }}</b> 波 ·
+            {{ modeName(gs.over!.mode) }} · 撐到第 <b class="text-amber-300">{{ gs.over.wave }}</b> 波 ·
             擊殺 <b class="text-amber-300">{{ gs.over.totalKills }}</b> · {{ Math.floor(gs.over.duration / 60) }} 分 {{ gs.over.duration % 60 }} 秒
           </p>
+          <!-- 排行榜名次 -->
+          <div v-if="submitResult" class="mt-3 rounded-xl border border-amber-400/40 bg-amber-400/10 px-4 py-2">
+            <p class="text-sm font-black text-amber-300">
+              🏆 排行榜第 {{ submitResult.rank }} 名
+              <span v-if="submitResult.best" class="ml-1 text-lime-300">· 刷新自己紀錄！</span>
+            </p>
+          </div>
+          <p v-else-if="!auth.isAuthenticated" class="mt-3 text-xs text-white/40">登入工作台即可登上排行榜</p>
+
           <div class="mt-4 space-y-1.5 text-left text-xs">
             <div v-for="(st, pid) in gs.over.perPlayer" :key="pid" class="flex justify-between rounded-lg bg-white/5 px-3 py-2">
               <span class="font-bold" :class="pid === gs.playerId ? 'text-amber-300' : 'text-white/80'">{{ playerName2(String(pid)) }}</span>
@@ -921,6 +1060,10 @@ const fmtTime = (s: number) => {
             </div>
           </div>
           <div class="mt-6 space-y-2">
+            <button
+              class="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 py-3 font-black active:scale-95"
+              @click="boardMode = gs.over.mode as any; boardPlayers = gs.begin?.players.length ?? 1; openBoard()"
+            >🏆 查看排行榜</button>
             <button
               v-if="gs.over.victory && isHost && (gs.over.mode === 'standard' || gs.over.mode === 'quick')"
               class="w-full rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-600 py-3 font-black active:scale-95"
