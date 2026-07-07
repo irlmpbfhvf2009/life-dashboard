@@ -1,6 +1,6 @@
 // 商店 + 升級三選一 + 寶箱 + 團隊獎勵（免費多選）。
 import {
-  WEAPONS, WEAPON_MAP, UPGRADES, UPGRADE_MAP, CHEST_REWARDS,
+  CHARACTERS, WEAPONS, WEAPON_MAP, UPGRADES, UPGRADE_MAP, CHEST_REWARDS,
   TEAM_REWARDS, ITEMS,
 } from '../../../shared/content/index'
 import { SHOP } from '../../../shared/balance'
@@ -14,11 +14,22 @@ import { healPlayer, addReviveShard } from './drops'
 let offerSeq = 1
 const oid = () => `o${offerSeq++}`
 
+// 只作用於「射彈」武器的升級（穿透 +1 / 多管 +1）。判準用武器 behavior 而非 category——
+// 近戰類的長槍其實是 projectile、照樣吃穿透，所以只看角色專屬武器池裡有沒有 projectile 行為
+// 的武器。整池皆非射彈（純近戰/環繞/區域限定角色）者，這些升級無用，不進商店/升級/寶箱。
+const PROJECTILE_ONLY_UPGRADES = new Set(
+  UPGRADES.filter(u => u.statMods && ('pierce' in u.statMods || 'projectiles' in u.statMods)).map(u => u.id),
+)
+const CHARS_NO_PROJECTILE = new Set(
+  CHARACTERS.filter(c => !WEAPONS.some(w => w.charId === c.id && w.behavior === 'projectile')).map(c => c.id),
+)
+
 // -------------------------------------------------------- 資格判定
 
 function upgradeEligible(g: Game, p: SPlayer, u: UpgradeData): boolean {
   if ((p.upgrades.get(u.id) ?? 0) >= u.maxStacks) return false
   if (u.conflicts?.some(c => p.upgrades.has(c))) return false
+  if (PROJECTILE_ONLY_UPGRADES.has(u.id) && CHARS_NO_PROJECTILE.has(p.char.id)) return false
   if (u.category === 'coop' && g.playerCount === 1 && ['c_pos1', 'c_pos2', 'c_pos3', 'c_pos4', 'c_res1', 'c_res2', 'c_def3', 'c_def4', 'c_rescue3', 'c_rescue4'].includes(u.id)) return false
   for (const req of u.requirements ?? []) {
     if (req.startsWith('char:') && p.char.id !== req.slice(5)) return false
