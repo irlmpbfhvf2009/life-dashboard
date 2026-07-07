@@ -810,22 +810,22 @@ const fmtTime = (s: number) => {
     <!-- ============================================================ 選角 -->
     <div v-if="screen === 'select'" class="flex flex-1 flex-col overflow-y-auto px-4 py-5" style="touch-action: pan-y;">
       <h2 class="text-center text-xl font-black text-lime-300">選擇你的勇者</h2>
-      <div class="mx-auto mt-3 grid w-full max-w-md grid-cols-2 gap-2.5 sm:grid-cols-3">
+      <div class="mx-auto mt-3 grid w-full max-w-md grid-cols-3 gap-2 sm:grid-cols-4">
         <button
           v-for="c in CHARACTERS" :key="c.id"
-          class="flex flex-col items-center rounded-xl border p-2.5 text-center transition active:scale-95"
+          class="flex flex-col items-center rounded-xl border p-2 text-center transition active:scale-95"
           :class="pickedChar === c.id ? 'border-lime-400 bg-lime-400/15 shadow-[0_0_16px_rgba(163,230,53,0.25)]' : 'border-white/10 bg-white/5'"
           @click="pickChar(c.id)"
         >
-          <Portrait kind="char" :id="c.id" :size="60" />
-          <span class="mt-1 text-sm font-black">{{ c.name }}</span>
-          <span class="rounded bg-white/10 px-1.5 text-[10px] text-white/60">{{ ROLE_NAME[c.role] }}</span>
-          <span class="mt-1 text-[10px] leading-tight text-white/45">{{ c.description }}</span>
+          <Portrait kind="char" :id="c.id" :size="52" />
+          <span class="mt-1 text-xs font-black leading-tight">{{ c.name }}</span>
+          <span class="mt-0.5 rounded bg-white/10 px-1.5 text-[10px] text-white/60">{{ ROLE_NAME[c.role] }}</span>
         </button>
       </div>
 
       <template v-if="pickedChar">
-        <h3 v-if="CHARACTER_MAP.get(pickedChar)?.active.id !== 'none'" class="mt-5 text-center text-sm font-black text-amber-300">
+        <p class="mx-auto mt-4 max-w-md text-center text-xs leading-snug text-white/60">{{ CHARACTER_MAP.get(pickedChar)?.description }}</p>
+        <h3 v-if="CHARACTER_MAP.get(pickedChar)?.active.id !== 'none'" class="mt-3 text-center text-sm font-black text-amber-300">
           技能：{{ CHARACTER_MAP.get(pickedChar)?.active.name }} — {{ CHARACTER_MAP.get(pickedChar)?.active.description }}
         </h3>
         <div class="h-3" />
