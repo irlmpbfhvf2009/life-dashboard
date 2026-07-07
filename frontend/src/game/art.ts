@@ -786,43 +786,51 @@ export function drawDrop(g: Ctx, type: string, v: number, t: number, item?: stri
     }
     case 'heart': {
       const big = v >= 50
-      const s = big ? 11 : 8
-      g.shadowColor = '#ff8a80'; g.shadowBlur = 8
+      const s = big ? 16 : 12
+      const pulse = 1 + Math.sin(t * 5 + v) * 0.08
+      g.scale(pulse, pulse)
+      g.shadowColor = '#ff8a80'; g.shadowBlur = 12
       outlined(g, item === 'team' ? '#ffd54f' : '#ef5350', gg => {
         gg.beginPath()
         gg.moveTo(0, s * 0.35)
         gg.bezierCurveTo(-s, -s * 0.4, -s * 0.4, -s, 0, -s * 0.35)
         gg.bezierCurveTo(s * 0.4, -s, s, -s * 0.4, 0, s * 0.35)
-      }, 2)
+      }, 2.5)
       break
     }
     case 'item': {
-      g.font = '16px sans-serif'
+      const pulse = 1 + Math.sin(t * 4 + v) * 0.06
+      g.scale(pulse, pulse)
+      g.font = '24px sans-serif'
       g.textAlign = 'center'; g.textBaseline = 'middle'
-      g.shadowColor = '#fff'; g.shadowBlur = 6
+      g.shadowColor = '#fff'; g.shadowBlur = 9
       g.fillText(itemEmoji(item), 0, 0)
       break
     }
     case 'chest': {
-      g.shadowColor = '#ffd54f'; g.shadowBlur = 10
-      outlined(g, '#8d6e63', gg => { gg.beginPath(); gg.rect(-11, -8, 22, 15) }, 2.5)
-      outlined(g, '#a1887f', gg => { gg.beginPath(); gg.rect(-11, -8, 22, 6) }, 2)
+      const pulse = 1 + Math.sin(t * 4) * 0.07
+      g.scale(pulse, pulse)
+      g.shadowColor = '#ffd54f'; g.shadowBlur = 15
+      outlined(g, '#8d6e63', gg => { gg.beginPath(); gg.rect(-16, -12, 32, 22) }, 3)
+      outlined(g, '#a1887f', gg => { gg.beginPath(); gg.rect(-16, -12, 32, 9) }, 2.5)
       g.fillStyle = '#ffd54f'
-      g.fillRect(-2.5, -6, 5, 8)
+      g.fillRect(-3.5, -9, 7, 12)
       break
     }
     case 'orb': {
-      g.shadowColor = '#40c4ff'; g.shadowBlur = 12
-      outlined(g, '#40c4ff', gg => ellipse(gg, 0, 0, 9, 9), 2)
+      g.shadowColor = '#40c4ff'; g.shadowBlur = 14
+      outlined(g, '#40c4ff', gg => ellipse(gg, 0, 0, 13, 13), 2.5)
       g.fillStyle = '#fff'
-      ellipse(g, -2.5, -2.5, 2.5, 2.5); g.fill()
+      ellipse(g, -3.5, -3.5, 3.5, 3.5); g.fill()
       break
     }
     case 'shard': {
-      g.shadowColor = '#e040fb'; g.shadowBlur = 10
+      const pulse = 1 + Math.sin(t * 5 + v) * 0.08
+      g.scale(pulse, pulse)
+      g.shadowColor = '#e040fb'; g.shadowBlur = 12
       outlined(g, '#e040fb', gg => {
-        gg.beginPath(); gg.moveTo(0, -9); gg.lineTo(6, 0); gg.lineTo(0, 9); gg.lineTo(-6, 0); gg.closePath()
-      }, 2)
+        gg.beginPath(); gg.moveTo(0, -13); gg.lineTo(9, 0); gg.lineTo(0, 13); gg.lineTo(-9, 0); gg.closePath()
+      }, 2.5)
       break
     }
   }
