@@ -25,13 +25,12 @@ const io = new Server(http, {
 const rooms = new Map<string, Room>()
 
 function genCode(): string {
-  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'  // 去掉易混淆字元
-  for (let tries = 0; tries < 50; tries++) {
-    let code = ''
-    for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)]
+  // 純數字房號（好念好輸入、手機可用數字鍵盤）；4 位數 1000~9999，避開前導 0 的歧義
+  for (let tries = 0; tries < 80; tries++) {
+    const code = String(1000 + Math.floor(Math.random() * 9000))
     if (!rooms.has(code)) return code
   }
-  return `R${Date.now().toString(36).toUpperCase().slice(-4)}`
+  return String(Date.now()).slice(-6)   // 極端 fallback：6 位數字
 }
 
 // 定期清掉沒人的房

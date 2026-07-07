@@ -165,6 +165,16 @@ async function copyLink() {
   } catch { pushToast('複製失敗，請手動複製', 'warn') }
 }
 
+const codeCopied = ref(false)
+async function copyCode() {
+  if (!gs.room) return
+  try {
+    await navigator.clipboard.writeText(gs.room.code)
+    codeCopied.value = true
+    setTimeout(() => { codeCopied.value = false }, 1500)
+  } catch { pushToast('複製失敗，請手動複製', 'warn') }
+}
+
 // ---------------------------------------------------------------- 選角
 const pickedChar = ref('')
 const pickedWeapon = ref('')
@@ -581,8 +591,8 @@ const fmtTime = (s: number) => {
           <p class="mb-2 text-xs font-bold text-white/50">加入朋友的房間</p>
           <div class="flex gap-2">
             <input
-              v-model="joinCode" maxlength="4" placeholder="房號"
-              class="w-28 rounded-xl border border-white/15 bg-white/10 px-3 py-2.5 text-center text-lg font-black uppercase tracking-widest outline-none focus:border-sky-400"
+              v-model="joinCode" maxlength="4" placeholder="房號" inputmode="numeric" pattern="[0-9]*"
+              class="w-28 rounded-xl border border-white/15 bg-white/10 px-3 py-2.5 text-center text-lg font-black tracking-widest outline-none focus:border-sky-400"
               @keyup.enter="doJoin()"
             >
             <button
@@ -711,8 +721,11 @@ const fmtTime = (s: number) => {
     <!-- ============================================================ 大廳 -->
     <div v-if="screen === 'lobby'" class="flex flex-1 flex-col items-center overflow-y-auto px-5 py-6" style="touch-action: pan-y;">
       <button class="absolute left-3 top-3 rounded-lg bg-white/10 px-3 py-1.5 text-xs text-white/70" @click="exitGame">← 離開</button>
-      <p class="text-xs font-bold text-white/40">房號</p>
-      <p class="text-5xl font-black tracking-[0.3em] text-amber-300">{{ gs.room!.code }}</p>
+      <button class="flex flex-col items-center active:scale-95" @click="copyCode">
+        <span class="text-xs font-bold text-white/40">房號</span>
+        <span class="text-5xl font-black tracking-[0.3em] text-amber-300">{{ gs.room!.code }}</span>
+        <span class="mt-0.5 text-[11px] font-bold" :class="codeCopied ? 'text-lime-300' : 'text-sky-300/70'">{{ codeCopied ? '✅ 已複製房號' : '📋 點一下複製房號' }}</span>
+      </button>
       <div class="mt-3 flex items-center gap-3">
         <img v-if="qrUrl" :src="qrUrl" alt="QR" class="h-28 w-28 rounded-xl border-4 border-white/80">
         <div class="max-w-[180px] space-y-2">
@@ -810,16 +823,16 @@ const fmtTime = (s: number) => {
     <!-- ============================================================ 選角 -->
     <div v-if="screen === 'select'" class="flex flex-1 flex-col overflow-y-auto px-4 py-5" style="touch-action: pan-y;">
       <h2 class="text-center text-xl font-black text-lime-300">選擇你的勇者</h2>
-      <div class="mx-auto mt-3 grid w-full max-w-md grid-cols-3 gap-2 sm:grid-cols-4">
+      <div class="mx-auto mt-3 grid w-full max-w-md grid-cols-5 gap-1.5">
         <button
           v-for="c in CHARACTERS" :key="c.id"
-          class="flex flex-col items-center rounded-xl border p-2 text-center transition active:scale-95"
+          class="flex flex-col items-center rounded-lg border p-1 text-center transition active:scale-95"
           :class="pickedChar === c.id ? 'border-lime-400 bg-lime-400/15 shadow-[0_0_16px_rgba(163,230,53,0.25)]' : 'border-white/10 bg-white/5'"
           @click="pickChar(c.id)"
         >
-          <Portrait kind="char" :id="c.id" :size="52" />
-          <span class="mt-1 text-xs font-black leading-tight">{{ c.name }}</span>
-          <span class="mt-0.5 rounded bg-white/10 px-1.5 text-[10px] text-white/60">{{ ROLE_NAME[c.role] }}</span>
+          <Portrait kind="char" :id="c.id" :size="40" />
+          <span class="mt-0.5 text-[10px] font-black leading-tight">{{ c.name }}</span>
+          <span class="rounded bg-white/10 px-1 text-[9px] leading-tight text-white/55">{{ ROLE_NAME[c.role] }}</span>
         </button>
       </div>
 
