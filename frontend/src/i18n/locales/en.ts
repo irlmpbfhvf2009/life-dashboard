@@ -95,7 +95,7 @@ export default {
     projects: {
       studio: { name: 'Personal Intelligence Studio', summary: 'A modular personal OS: life, health, finance, AI stock research and a knowledge base — full-stack, self-built and live.' },
       stockAi: { name: 'AI TW Stock Research', summary: 'A Taiwan-stock research pipeline with daily automated scans and eight-dimension AI analysis, read live by the frontend.' },
-      health: { name: 'Health & Fat-loss', summary: 'A gamified fat-loss system: companion leveling, fasting, food and habit tracking — no wearables needed.' },
+      health: { name: 'Health & Fat-loss', summary: 'A training-plan-driven fitness tracker: template workout/meal check-ins, a fasting timer, weight trends and calendar export.' },
       casino: { name: 'Game Arcade', summary: 'A server-authoritative coin slot machine with anti-tamper backend settlement, built into the studio fun module.' },
     },
   },

@@ -40,7 +40,7 @@ export const projects: PortfolioProject[] = [
     key: 'health',
     i18nKey: 'health',
     year: '2026',
-    tags: ['Vue 3', 'Gamification', 'TypeScript'],
+    tags: ['Vue 3', 'Training Plan', 'TypeScript'],
     gradient: 'from-emerald-500 to-teal-500',
     emoji: '🦦',
     link: 'https://life-dashboard-blue-omega.vercel.app/health',
