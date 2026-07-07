@@ -211,6 +211,114 @@ export function drawCharacter(g: Ctx, charId: string, size: number, t: number, o
       if (opts.downed) { face(g, s, 'ko') }
       break
     }
+    case 'samurai_tomato': {
+      // 番茄圓身
+      outlined(g, body, gg => ellipse(gg, 0, s * 0.04, s * 0.48, s * 0.46))
+      // 蒂頭星葉
+      for (let k = 0; k < 5; k++) leaf(g, 0, -s * 0.4, s * 0.2, leafC, (k - 2) * 0.5)
+      // 頭帶（武士鉢巻）+ 紅日
+      outlined(g, '#f5f0e6', gg => { gg.beginPath(); gg.rect(-s * 0.46, -s * 0.28, s * 0.92, s * 0.12) }, 2)
+      g.fillStyle = '#c0392b'
+      ellipse(g, 0, -s * 0.22, s * 0.055, s * 0.055); g.fill()
+      // 背後katana（刀）
+      g.save(); g.rotate(-0.5)
+      outlined(g, '#d7dde2', gg => { gg.beginPath(); gg.rect(-s * 0.02, -s * 0.62, s * 0.05, s * 0.7) }, 1.5)
+      g.strokeStyle = '#6d4c2b'; g.lineWidth = s * 0.06
+      g.beginPath(); g.moveTo(0, s * 0.04); g.lineTo(0, s * 0.16); g.stroke()
+      g.restore()
+      // 銳利眼
+      g.fillStyle = OUTLINE
+      g.strokeStyle = OUTLINE; g.lineWidth = s * 0.04
+      g.beginPath(); g.moveTo(-s * 0.26, -s * 0.02); g.lineTo(-s * 0.08, s * 0.04); g.stroke()
+      g.beginPath(); g.moveTo(s * 0.26, -s * 0.02); g.lineTo(s * 0.08, s * 0.04); g.stroke()
+      ellipse(g, -s * 0.16, s * 0.02, s * 0.04, s * 0.04); g.fill()
+      ellipse(g, s * 0.16, s * 0.02, s * 0.04, s * 0.04); g.fill()
+      break
+    }
+    case 'cactus_thorns': {
+      // 仙人掌主體（圓柱）
+      outlined(g, body, gg => {
+        gg.beginPath()
+        gg.moveTo(-s * 0.3, s * 0.5)
+        gg.quadraticCurveTo(-s * 0.36, -s * 0.4, 0, -s * 0.46)
+        gg.quadraticCurveTo(s * 0.36, -s * 0.4, s * 0.3, s * 0.5)
+        gg.closePath()
+      })
+      // 兩隻手臂
+      outlined(g, body, gg => { gg.beginPath(); gg.moveTo(-s * 0.28, 0); gg.quadraticCurveTo(-s * 0.52, -s * 0.04, -s * 0.5, -s * 0.28); gg.quadraticCurveTo(-s * 0.34, -s * 0.2, -s * 0.28, -s * 0.1); gg.closePath() }, 2.5)
+      outlined(g, body, gg => { gg.beginPath(); gg.moveTo(s * 0.28, s * 0.06); gg.quadraticCurveTo(s * 0.52, s * 0.02, s * 0.5, -s * 0.22); gg.quadraticCurveTo(s * 0.34, -s * 0.14, s * 0.28, -s * 0.04); gg.closePath() }, 2.5)
+      // 尖刺（外圈）
+      g.strokeStyle = accent; g.lineWidth = s * 0.035
+      for (let k = 0; k < 10; k++) {
+        const a = k / 10 * Math.PI * 2
+        const r1 = s * 0.42, r2 = s * 0.54
+        g.beginPath(); g.moveTo(Math.cos(a) * r1, Math.sin(a) * r1 - s * 0.02); g.lineTo(Math.cos(a) * r2, Math.sin(a) * r2 - s * 0.02); g.stroke()
+      }
+      // 小紅花
+      g.fillStyle = '#ff8ab0'
+      ellipse(g, s * 0.04, -s * 0.42, s * 0.06, s * 0.06); g.fill()
+      face(g, s, opts.downed ? 'ko' : 'happy')
+      break
+    }
+    case 'monk_tofu': {
+      // 豆腐方身（圓角）
+      outlined(g, body, gg => { gg.beginPath(); gg.roundRect(-s * 0.42, -s * 0.4, s * 0.84, s * 0.84, s * 0.16) }, 3)
+      // 橙色頭帶
+      outlined(g, leafC, gg => { gg.beginPath(); gg.rect(-s * 0.42, -s * 0.3, s * 0.84, s * 0.14) }, 2)
+      // 頭帶飄尾
+      g.strokeStyle = leafC; g.lineWidth = s * 0.05
+      g.beginPath(); g.moveTo(-s * 0.4, -s * 0.24); g.quadraticCurveTo(-s * 0.62, -s * 0.16 + Math.sin(t * 5) * s * 0.05, -s * 0.56, -s * 0.02); g.stroke()
+      // 拳頭（抱拳待戰）
+      outlined(g, accent, gg => ellipse(gg, -s * 0.18, s * 0.34, s * 0.12, s * 0.1), 2)
+      outlined(g, accent, gg => ellipse(gg, s * 0.18, s * 0.34, s * 0.12, s * 0.1), 2)
+      face(g, s, opts.downed ? 'ko' : 'happy')
+      break
+    }
+    case 'durian_spike': {
+      // 金鎧鋼刺榴槤：深鋼色尖刺長短交錯、長刺帶緋紅刺尖，金甲圓身 + 銳利眼神
+      for (let k = 0; k < 14; k++) {
+        const a = (k / 14) * Math.PI * 2
+        const long = k % 2 === 0
+        const base = s * (long ? 0.1 : 0.075)
+        const tip = s * (long ? 0.72 : 0.56)
+        g.save(); g.rotate(a)
+        g.fillStyle = leafC
+        g.beginPath(); g.moveTo(-base, -s * 0.38); g.lineTo(base, -s * 0.38); g.lineTo(0, -tip); g.closePath(); g.fill()
+        if (long) {
+          g.fillStyle = accent
+          g.beginPath(); g.moveTo(-base * 0.5, -tip + s * 0.13); g.lineTo(base * 0.5, -tip + s * 0.13); g.lineTo(0, -tip); g.closePath(); g.fill()
+        }
+        g.restore()
+      }
+      // 金甲圓身
+      outlined(g, body, gg => ellipse(gg, 0, 0, s * 0.44, s * 0.46))
+      // 甲片弧紋 + 高光
+      g.strokeStyle = 'rgba(0,0,0,0.15)'; g.lineWidth = s * 0.03
+      g.beginPath(); g.arc(0, s * 0.06, s * 0.34, Math.PI * 0.2, Math.PI * 0.8); g.stroke()
+      g.fillStyle = 'rgba(255,255,255,0.3)'
+      ellipse(g, -s * 0.17, -s * 0.22, s * 0.1, s * 0.06); g.fill()
+      if (opts.downed) { face(g, s, 'ko') } else {
+        // 壓低的眉 + 銳利眼
+        g.strokeStyle = OUTLINE; g.lineWidth = s * 0.05; g.lineCap = 'round'
+        g.beginPath(); g.moveTo(-s * 0.25, -s * 0.12); g.lineTo(-s * 0.07, -s * 0.04); g.stroke()
+        g.beginPath(); g.moveTo(s * 0.25, -s * 0.12); g.lineTo(s * 0.07, -s * 0.04); g.stroke()
+        g.lineCap = 'butt'
+        g.fillStyle = '#fff'
+        ellipse(g, -s * 0.15, s * 0.03, s * 0.08, s * 0.055); g.fill()
+        ellipse(g, s * 0.15, s * 0.03, s * 0.08, s * 0.055); g.fill()
+        g.fillStyle = OUTLINE
+        ellipse(g, -s * 0.13, s * 0.035, s * 0.035, s * 0.035); g.fill()
+        ellipse(g, s * 0.17, s * 0.035, s * 0.035, s * 0.035); g.fill()
+        // 自信嘴角
+        g.strokeStyle = OUTLINE; g.lineWidth = s * 0.035
+        g.beginPath(); g.arc(-s * 0.02, s * 0.15, s * 0.1, Math.PI * 0.15, Math.PI * 0.5); g.stroke()
+        // 眼角疤
+        g.strokeStyle = accent; g.lineWidth = s * 0.028
+        g.beginPath(); g.moveTo(s * 0.25, -s * 0.02); g.lineTo(s * 0.31, s * 0.13); g.stroke()
+        g.beginPath(); g.moveTo(s * 0.23, s * 0.05); g.lineTo(s * 0.32, s * 0.03); g.stroke()
+      }
+      break
+    }
     default:
       outlined(g, body, gg => ellipse(gg, 0, 0, s * 0.46, s * 0.48))
       face(g, s, opts.downed ? 'ko' : 'happy')
@@ -364,6 +472,56 @@ export function drawEnemy(g: Ctx, kindId: string, size: number, t: number, opts:
       g.fillStyle = '#fff'
       ellipse(g, -s * 0.13, -s * 0.1, s * 0.05, s * 0.04); g.fill()
       ellipse(g, s * 0.13, -s * 0.1, s * 0.05, s * 0.04); g.fill()
+      break
+    }
+    case 'sniper': {
+      // 狙擊椿象：菱形硬殼 + 長吻（發射口）
+      outlined(g, body, gg => {
+        gg.beginPath()
+        gg.moveTo(0, -s * 0.42); gg.lineTo(s * 0.42, 0); gg.lineTo(0, s * 0.42); gg.lineTo(-s * 0.42, 0); gg.closePath()
+      })
+      // 背甲接縫
+      g.strokeStyle = accent; g.lineWidth = s * 0.05
+      g.beginPath(); g.moveTo(0, -s * 0.36); g.lineTo(0, s * 0.36); g.stroke()
+      // 長吻（狙擊管，微微上下瞄準）
+      outlined(g, accent, gg => { gg.beginPath(); gg.rect(s * 0.32, -s * 0.05 + Math.sin(t * 3) * s * 0.04, s * 0.38, s * 0.1) }, 2)
+      angryEyes(g, s * 0.8, -s * 0.12)
+      break
+    }
+    case 'rhino': {
+      // 鐵甲犀角蟲：厚圓殼 + 前方大角
+      outlined(g, body, gg => ellipse(gg, -s * 0.05, 0, s * 0.46, s * 0.4))
+      // 甲殼分節
+      g.strokeStyle = accent; g.lineWidth = s * 0.06
+      g.beginPath(); g.arc(-s * 0.05, 0, s * 0.34, -Math.PI * 0.6, Math.PI * 0.6); g.stroke()
+      // 犀角
+      outlined(g, '#efe0c0', gg => {
+        gg.beginPath(); gg.moveTo(s * 0.3, -s * 0.08); gg.quadraticCurveTo(s * 0.72, -s * 0.22, s * 0.66, -s * 0.4)
+        gg.quadraticCurveTo(s * 0.52, -s * 0.2, s * 0.34, s * 0.06); gg.closePath()
+      }, 2)
+      angryEyes(g, s * 0.85, -s * 0.02)
+      break
+    }
+    case 'goldbug': {
+      // 金袋地精：背著鼓鼓的金袋子
+      // 金袋（畫在身體後方）
+      outlined(g, '#b98a2e', gg => ellipse(gg, -s * 0.28, -s * 0.02, s * 0.26, s * 0.3), 2.5)
+      g.fillStyle = '#ffd54f'
+      ellipse(g, -s * 0.28, -s * 0.12, s * 0.1, s * 0.08); g.fill()   // 袋口金光
+      // 綁繩
+      g.strokeStyle = OUTLINE; g.lineWidth = 2
+      g.beginPath(); g.arc(-s * 0.28, -s * 0.16, s * 0.16, Math.PI * 0.1, Math.PI * 0.9); g.stroke()
+      // 身體
+      outlined(g, body, gg => ellipse(gg, s * 0.08, 0, s * 0.36, s * 0.4))
+      // 大耳
+      outlined(g, body, gg => { gg.beginPath(); gg.moveTo(s * 0.34, -s * 0.1); gg.lineTo(s * 0.6, -s * 0.28); gg.lineTo(s * 0.4, s * 0.06); gg.closePath() }, 2)
+      // 貪婪笑眼（金幣瞳）
+      g.fillStyle = '#fff'
+      ellipse(g, -s * 0.02, -s * 0.08, s * 0.08, s * 0.08); g.fill()
+      ellipse(g, s * 0.22, -s * 0.08, s * 0.08, s * 0.08); g.fill()
+      g.fillStyle = '#ffca28'
+      ellipse(g, -s * 0.02, -s * 0.07, s * 0.04, s * 0.04); g.fill()
+      ellipse(g, s * 0.22, -s * 0.07, s * 0.04, s * 0.04); g.fill()
       break
     }
     default:
@@ -807,28 +965,94 @@ export function drawOrbitWeapon(g: Ctx, weaponId: string, radius: number, count:
   const spin = t * 3.2
   for (let k = 0; k < count; k++) {
     const ang = spin + (k / count) * Math.PI * 2
-    const x = Math.cos(ang) * radius
-    const y = Math.sin(ang) * radius
     g.save()
-    g.translate(x, y)
+    g.translate(Math.cos(ang) * radius, Math.sin(ang) * radius)
     g.rotate(ang + Math.PI / 2)
-    // 斧刃
-    outlined(g, body, gg => {
-      gg.beginPath()
-      gg.moveTo(0, -9)
-      gg.quadraticCurveTo(11, -5, 9, 6)
-      gg.quadraticCurveTo(3, 3, 0, 9)
-      gg.quadraticCurveTo(-3, 3, -9, 6)
-      gg.quadraticCurveTo(-11, -5, 0, -9)
-    }, 2)
-    g.fillStyle = accent
-    g.fillRect(-1.5, -3, 3, 12)
+    switch (weaponId) {
+      case 'm_cross':   // 十字回力鏢
+        outlined(g, body, gg => { gg.beginPath(); gg.rect(-2.5, -9, 5, 18); gg.rect(-9, -2.5, 18, 5) }, 2)
+        g.fillStyle = accent; ellipse(g, 0, 0, 2.5, 2.5); g.fill(); break
+      case 'a_shuriken': {   // 手裏劍
+        outlined(g, body, gg => { gg.beginPath(); for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2; gg.lineTo(Math.cos(a) * 9, Math.sin(a) * 9); gg.lineTo(Math.cos(a + 0.4) * 3, Math.sin(a + 0.4) * 3) } gg.closePath() }, 1.5)
+        g.fillStyle = '#fff'; ellipse(g, 0, 0, 1.5, 1.5); g.fill(); break
+      }
+      case 'y_orb':   // 奧術寒球
+        g.shadowColor = body; g.shadowBlur = 8
+        outlined(g, body, gg => ellipse(gg, 0, 0, 7, 7), 1.5)
+        g.fillStyle = accent; ellipse(g, -1.5, -1.5, 2.5, 2.5); g.fill(); break
+      case 't_orbit':   // 幸運四葉草
+        g.fillStyle = body
+        for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2; ellipse(g, Math.cos(a) * 4, Math.sin(a) * 4, 3.5, 3.5); g.fill() }
+        g.strokeStyle = accent; g.lineWidth = 1.2; g.beginPath(); g.arc(0, 0, 4, 0, Math.PI * 2); g.stroke(); break
+      case 's_katana':   // 刀氣（細長刀身）
+        outlined(g, body, gg => { gg.beginPath(); gg.moveTo(0, -13); gg.lineTo(2.5, 8); gg.lineTo(-2.5, 8); gg.closePath() }, 1.5); break
+      case 'c_whip':   // 帶刺鞭節
+        outlined(g, body, gg => ellipse(gg, 0, 0, 5, 9), 2)
+        g.strokeStyle = accent; g.lineWidth = 1.5
+        for (const dy of [-5, 0, 5]) { g.beginPath(); g.moveTo(4, dy); g.lineTo(9, dy - 2); g.stroke() } break
+      case 'k_kick':   // 旋風腿：腿影
+        outlined(g, body, gg => { gg.beginPath(); gg.roundRect(-3, -11, 6, 14, 3) }, 1.5)
+        outlined(g, accent, gg => { gg.beginPath(); gg.roundRect(-4, 3, 9, 5, 2) }, 1.5); break
+      default:   // 斧刃（迴旋斧與其他）
+        outlined(g, body, gg => {
+          gg.beginPath(); gg.moveTo(0, -9)
+          gg.quadraticCurveTo(11, -5, 9, 6); gg.quadraticCurveTo(3, 3, 0, 9)
+          gg.quadraticCurveTo(-3, 3, -9, 6); gg.quadraticCurveTo(-11, -5, 0, -9)
+        }, 2)
+        g.fillStyle = accent; g.fillRect(-1.5, -3, 3, 12)
+    }
     g.restore()
   }
-  // 殘影軌跡
-  g.strokeStyle = 'rgba(255,255,255,0.12)'
-  g.lineWidth = 3
+  g.strokeStyle = 'rgba(255,255,255,0.1)'; g.lineWidth = 3
   g.beginPath(); g.arc(0, 0, radius, 0, Math.PI * 2); g.stroke()
+}
+
+/** 握持的近戰武器（behavior='melee'）：畫在角色身邊，刀尖朝上(-y)，柄在下(+y) */
+export function drawMeleeHeld(g: Ctx, weaponId: string, t: number): void {
+  const [body, accent] = WEAPON_MAP.get(weaponId)?.palette ?? ['#cfd8dc', '#8d99a6']
+  const sway = Math.sin(t * 3) * 0.12
+  g.rotate(sway)
+  switch (weaponId) {
+    case 'w_sword':
+      outlined(g, body, gg => { gg.beginPath(); gg.moveTo(0, -20); gg.lineTo(3, -4); gg.lineTo(-3, -4); gg.closePath() }, 1.5)
+      outlined(g, accent, gg => { gg.beginPath(); gg.rect(-7, -4, 14, 3) }, 1.5)
+      g.fillStyle = '#6d4c2b'; g.fillRect(-1.8, -1, 3.6, 8); break
+    case 'w_greatsword':
+      outlined(g, body, gg => { gg.beginPath(); gg.moveTo(0, -26); gg.lineTo(5, -6); gg.lineTo(-5, -6); gg.closePath() }, 2)
+      outlined(g, accent, gg => { gg.beginPath(); gg.rect(-9, -6, 18, 4) }, 1.5)
+      g.fillStyle = '#5d4037'; g.fillRect(-2.2, -2, 4.4, 11); break
+    case 'hammer':
+      g.fillStyle = '#6d4c2b'; g.fillRect(-2, -6, 4, 22)
+      outlined(g, body, gg => { gg.beginPath(); gg.roundRect(-9, -18, 18, 12, 3) }, 2)
+      g.fillStyle = accent; g.fillRect(-9, -14, 18, 3); break
+    case 's_iai': case 's_odachi': {
+      const len = weaponId === 's_odachi' ? 26 : 20
+      outlined(g, body, gg => { gg.beginPath(); gg.moveTo(-2, -len); gg.quadraticCurveTo(3, -len * 0.5, 2, -3); gg.lineTo(-2, -3); gg.closePath() }, 1.5)
+      outlined(g, '#212121', gg => ellipse(gg, 0, -3, 4, 2), 1.2)
+      g.fillStyle = '#7b1fa2'; g.fillRect(-1.8, -1, 3.6, 9); break
+    }
+    case 'c_gauntlet':
+      outlined(g, body, gg => { gg.beginPath(); gg.roundRect(-7, -8, 14, 13, 4) }, 2)
+      g.strokeStyle = accent; g.lineWidth = 1.5
+      for (const dx of [-4, 0, 4]) { g.beginPath(); g.moveTo(dx, -8); g.lineTo(dx, -14); g.stroke() }
+      break
+    case 'c_shield':
+      outlined(g, body, gg => ellipse(gg, 0, -4, 10, 12), 2.5)
+      g.strokeStyle = accent; g.lineWidth = 1.5
+      for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; g.beginPath(); g.moveTo(Math.cos(a) * 10, Math.sin(a) * 12 - 4); g.lineTo(Math.cos(a) * 14, Math.sin(a) * 16 - 4); g.stroke() }
+      break
+    case 'k_fist':   // 拳套
+      outlined(g, body, gg => { gg.beginPath(); gg.roundRect(-6, -8, 12, 11, 4) }, 2)
+      g.strokeStyle = accent; g.lineWidth = 1.5
+      g.beginPath(); g.moveTo(-5, -3); g.lineTo(5, -3); g.stroke()
+      g.fillStyle = accent; g.fillRect(-6, 2, 12, 3); break
+    case 'k_staff':   // 長棍
+      g.fillStyle = body; g.strokeStyle = OUTLINE; g.lineWidth = 1.5
+      g.beginPath(); g.roundRect(-2, -22, 4, 34, 2); g.fill(); g.stroke()
+      g.fillStyle = accent; g.fillRect(-2.5, -22, 5, 3); g.fillRect(-2.5, 9, 5, 3); break
+    default:
+      outlined(g, body, gg => { gg.beginPath(); gg.moveTo(0, -18); gg.lineTo(3, -3); gg.lineTo(-3, -3); gg.closePath() }, 1.5)
+  }
 }
 
 /** 貼身武器視覺：無人機 — 跟著玩家飛的小飛機 */
@@ -849,32 +1073,125 @@ export function drawDroneCraft(g: Ctx, idx: number, t: number): void {
   g.restore()
 }
 
+/** 臨時砲塔（部署物）。size≈砲身直徑；aimT 用於砲管轉動待機動畫 */
+export function drawTurret(g: Ctx, t: number, guard = false): void {
+  const body = guard ? '#7bc043' : '#e8d5a3'
+  const barrel = guard ? '#4e8a1f' : '#8a6d3b'
+  // 底座陰影
+  g.fillStyle = 'rgba(0,0,0,0.22)'
+  ellipse(g, 0, 8, 18, 7); g.fill()
+  // 三腳底座
+  outlined(g, '#6d5a3b', gg => ellipse(gg, 0, 4, 15, 8), 3)
+  // 砲管（緩慢掃視）
+  g.save()
+  g.rotate(Math.sin(t * 1.6) * 0.5)
+  outlined(g, barrel, gg => { gg.beginPath(); gg.rect(-4, -22, 8, 22) }, 2.5)
+  g.restore()
+  // 砲身球體
+  outlined(g, body, gg => ellipse(gg, 0, -2, 12, 11), 3)
+  // 眼睛（賦予生命感）
+  g.fillStyle = OUTLINE
+  ellipse(g, -4, -3, 2, 2.4); g.fill()
+  ellipse(g, 4, -3, 2, 2.4); g.fill()
+  g.fillStyle = '#fff'
+  ellipse(g, -3.4, -3.6, 0.8, 0.8); g.fill()
+  ellipse(g, 4.6, -3.6, 0.8, 0.8); g.fill()
+}
+
 /** 武器投射物（客戶端純視覺） */
 export function drawProjectile(g: Ctx, weaponId: string, t: number): void {
+  // 投射物已被 render 旋轉成「朝上(-y)＝前進方向」
   switch (weaponId) {
-    case 'pea_gun': case 'pea_minigun':
-      outlined(g, '#7bc043', gg => ellipse(gg, 0, 0, 5, 5), 1.5); break
-    case 'knife': case 'knife_fan':
+    // ---- 槍械子彈 ----
+    case 'pea_gun': case 'g_smg': case 'g_minigun': {
+      // 銅色子彈（膠囊）
+      g.fillStyle = '#ffca28'
+      g.beginPath(); g.roundRect(-2, -6, 4, 9, 2); g.fill()
+      g.fillStyle = '#b8860b'; g.beginPath(); g.roundRect(-2, 0, 4, 3, 1); g.fill()
+      break
+    }
+    case 'g_sniper':
+      g.strokeStyle = 'rgba(255,255,255,0.4)'; g.lineWidth = 2
+      g.beginPath(); g.moveTo(0, 4); g.lineTo(0, 20); g.stroke()
+      g.fillStyle = '#eceff1'; g.beginPath(); g.roundRect(-1.6, -9, 3.2, 12, 1.6); g.fill()
+      g.fillStyle = '#90a4ae'; g.fillRect(-1.6, 0, 3.2, 3); break
+    case 'g_shotgun':
+      outlined(g, '#8d6e63', gg => ellipse(gg, 0, 0, 4, 4), 1.2); break
+
+    // ---- 醫療針 ----
+    case 'm_needle':
+      g.strokeStyle = '#b0bec5'; g.lineWidth = 1.5
+      g.beginPath(); g.moveTo(0, -9); g.lineTo(0, 2); g.stroke()
+      outlined(g, '#ef5350', gg => { gg.beginPath(); gg.roundRect(-2.5, 2, 5, 6, 1.5) }, 1.5); break
+
+    // ---- 刀刃類（飛刀/苦無） ----
+    case 'knife': case 'a_fan': case 'knife_fan':
       g.save(); g.rotate(t * 20)
       outlined(g, '#cfd8dc', gg => { gg.beginPath(); gg.moveTo(0, -8); gg.lineTo(3, 4); gg.lineTo(-3, 4); gg.closePath() }, 1.5)
       g.restore(); break
-    case 'fireball':
+    case 's_kunai':
+      outlined(g, '#455a64', gg => { gg.beginPath(); gg.moveTo(0, -9); gg.lineTo(3, 0); gg.lineTo(0, 4); gg.lineTo(-3, 0); gg.closePath() }, 1.5)
+      g.strokeStyle = '#212121'; g.lineWidth = 2; g.beginPath(); g.moveTo(0, 4); g.lineTo(0, 8); g.stroke(); break
+    case 's_wave': {
+      // 斬擊波：青紅新月
+      g.strokeStyle = '#ff8a80'; g.lineWidth = 4; g.lineCap = 'round'
+      g.beginPath(); g.arc(0, 6, 10, -Math.PI * 0.85, -Math.PI * 0.15); g.stroke()
+      g.lineCap = 'butt'; break
+    }
+    case 'w_spear':
+      outlined(g, '#cfd8dc', gg => { gg.beginPath(); gg.moveTo(0, -10); gg.lineTo(3, -2); gg.lineTo(0, 0); gg.lineTo(-3, -2); gg.closePath() }, 1.5)
+      g.strokeStyle = '#8d6e63'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, 11); g.stroke(); break
+
+    // ---- 魔法 ----
+    case 'fireball': case 'e_flame':
       g.shadowColor = '#ff6b35'; g.shadowBlur = 10
       outlined(g, '#ff6b35', gg => ellipse(gg, 0, 0, 7, 7), 1.5)
-      g.fillStyle = '#ffe66d'
-      ellipse(g, 0, 0, 3.5, 3.5); g.fill(); break
+      g.fillStyle = '#ffe66d'; ellipse(g, 0, 0, 3.5, 3.5); g.fill(); break
     case 'meteor':
       g.shadowColor = '#ff5722'; g.shadowBlur = 16
       outlined(g, '#ff5722', gg => ellipse(gg, 0, 0, 11, 11), 2)
       g.fillStyle = '#ffe66d'; ellipse(g, 0, 0, 6, 6); g.fill()
-      // 尾焰
       g.fillStyle = 'rgba(255,120,40,0.5)'; ellipse(g, 0, 10, 5, 9); g.fill(); break
     case 'ice_shard': case 'blizzard':
       outlined(g, '#a8e0ff', gg => { gg.beginPath(); gg.moveTo(0, -8); gg.lineTo(4, 2); gg.lineTo(0, 8); gg.lineTo(-4, 2); gg.closePath() }, 1.5); break
-    case 'turret_gun': case 'drone': case 'drone_swarm': case 'gatling_turret':
+
+    // ---- 賭徒 ----
+    case 't_dice':
+      g.save(); g.rotate(t * 6)
+      outlined(g, '#f5f5f5', gg => { gg.beginPath(); gg.roundRect(-5, -5, 10, 10, 2) }, 1.5)
+      g.fillStyle = '#c62828'
+      for (const [dx, dy] of [[-2.2, -2.2], [2.2, 2.2], [0, 0], [-2.2, 2.2], [2.2, -2.2]]) { ellipse(g, dx, dy, 1, 1); g.fill() }
+      g.restore(); break
+    case 't_cards':
+      g.save(); g.rotate(t * 10)
+      outlined(g, '#eceff1', gg => { gg.beginPath(); gg.roundRect(-3.5, -5, 7, 10, 1.5) }, 1.2)
+      g.fillStyle = '#c62828'; g.font = '6px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('♦', 0, 0)
+      g.restore(); break
+    case 't_coin':
+      g.shadowColor = '#ffd54f'; g.shadowBlur = 6
+      outlined(g, '#ffd54f', gg => ellipse(gg, 0, 0, 5.5, 5.5), 1.5)
+      g.fillStyle = '#b8860b'; g.font = 'bold 7px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('$', 0, 0.5); break
+
+    // ---- 武僧氣勁 ----
+    case 'k_palm':   // 氣功掌：金色掌勁環
+      g.shadowColor = '#ffd54f'; g.shadowBlur = 8
+      g.strokeStyle = '#ff9800'; g.lineWidth = 2.5
+      g.beginPath(); g.arc(0, 2, 7, Math.PI * 1.15, Math.PI * 1.85); g.stroke()
+      g.fillStyle = 'rgba(255,213,79,0.7)'; ellipse(g, 0, -2, 4, 5); g.fill(); break
+    case 'k_qi':   // 氣功波：青色氣勁月牙
+      g.shadowColor = '#80deea'; g.shadowBlur = 8
+      g.strokeStyle = '#00acc1'; g.lineWidth = 4; g.lineCap = 'round'
+      g.beginPath(); g.arc(0, 5, 9, -Math.PI * 0.8, -Math.PI * 0.2); g.stroke()
+      g.lineCap = 'butt'; break
+
+    // ---- 仙人掌種子 ----
+    case 'c_seed':
+      outlined(g, '#9ccc65', gg => ellipse(gg, 0, 0, 3.5, 5), 1.2)
+      g.strokeStyle = '#33691e'; g.lineWidth = 1; g.beginPath(); g.moveTo(0, -4); g.lineTo(0, -7); g.stroke(); break
+
+    case 'turret_gun': case 'drone': case 'm_drone': case 'a_drone': case 'drone_swarm': case 'gatling_turret':
       outlined(g, '#ffe66d', gg => ellipse(gg, 0, 0, 3.5, 3.5), 1.2); break
     default: {
-      // 進化型/未知武器 → 用武器色盤畫發光彈
       const pal = WEAPON_MAP.get(weaponId)?.palette
       if (pal) { g.shadowColor = pal[0]; g.shadowBlur = 8; outlined(g, pal[0], gg => ellipse(gg, 0, 0, 6, 6), 1.5) }
       else outlined(g, '#fff', gg => ellipse(gg, 0, 0, 4, 4), 1.5)

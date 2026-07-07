@@ -2,10 +2,11 @@
 // 快照插值、自機預測、視覺投射物、粒子/傷害數字（含效能上限）。
 import type { Snapshot, GameEv, EnemySpawnEv, ObjectiveSnap } from '@game/types'
 import { ZONE_MAP } from '@game/content/zones'
+import { DOWNED } from '@game/balance'
 import { mulberry32, hashSeed } from '@game/rng'
 import { CHARACTER_MAP } from '@game/content/characters'
 import { WEAPON_MAP, weaponStatsAt } from '@game/content/weapons'
-import { drawCharacter, drawEnemy, drawBoss, drawDrop, drawObjective, drawProjectile, drawOrbitWeapon, drawDroneCraft } from './art'
+import { drawCharacter, drawEnemy, drawBoss, drawDrop, drawObjective, drawProjectile, drawOrbitWeapon, drawDroneCraft, drawTurret, drawMeleeHeld } from './art'
 import { sfx, playMusic } from './sound'
 import { haptics } from './haptics'
 import { gs, api, type WaveStartInfo } from './net'
@@ -32,11 +33,12 @@ interface CDrop { i: number; t: string; x: number; y: number; v: number; item?: 
 interface CProj { x: number; y: number; vx: number; vy: number; left: number; weapon: string; born: number }
 interface Particle { x: number; y: number; vx: number; vy: number; life: number; maxLife: number; color: string; size: number }
 interface DmgNum { x: number; y: number; v: number; crit: boolean; life: number }
-interface Aoe { x: number; y: number; r: number; kind: string; life: number; maxLife: number }
+interface Aoe { x: number; y: number; r: number; kind: string; life: number; maxLife: number; w?: string }
 
 const AOE_LIFE: Record<string, number> = {
   explosion: 0.45, poison: 4, heal: 5, fire: 3, frost: 0.6, lightning: 0.35,
   telegraph: 1.4, swing: 0.28, pulse: 0.7, summon: 0.5, mine: 10, deploy: 0.4,
+  slash: 0.3, thorns: 0.5, spikes: 0.5,
 }
 
 export class Engine {
@@ -52,12 +54,16 @@ export class Engine {
   boss: Snapshot['boss'] | null = null
   bossKind = ''
   eProj: { x: number; y: number }[] = []
+  turrets: NonNullable<Snapshot['turrets']> = []
+  snapZones: NonNullable<Snapshot['zones']> = []
+  mines: NonNullable<Snapshot['mines']> = []
 
   projectiles: CProj[] = []
   particles: Particle[] = []
   dmgNums: DmgNum[] = []
   aoes: Aoe[] = []
   bubbles = new Map<string, { text: string; until: number }>()
+  meleeSwing = new Map<string, number>()   // `${playerId}:${weaponId}` → 揮砍起始 this.time
   decor: { x: number; y: number; kind: number; r: number; rot: number }[] = []
 
   // 自機預測
@@ -66,6 +72,29 @@ export class Engine {
   mySpeed = 170
   lastMoveSent = 0
   serverMyX = 900; serverMyY = 900
+  myCharge = 0                    // 蓄力型技能（榴槤）本地蓄力進度 0~1，用於畫蓄力環
+  private resyncMe = false        // 換波時要求硬對齊自機到 server 權威位置
+  // 衝刺預測（server 驅動的位移，本地同步演算避免橡皮筋瞬移）
+  dashUntil = 0; dashVx = 0; dashVy = 0
+  // 盾牌衝鋒預測（緩速推進，持續數秒）
+  bulwarkUntil = 0; bulwarkVx = 0; bulwarkVy = 0
+
+  /** 施放衝刺類技能時，本地立即預測位移（方向 + 總距離），與 server 的 0.3 秒衝刺對齊 */
+  predictDash(dx: number, dy: number, dist: number): void {
+    const d = Math.hypot(dx, dy) || 1
+    const dur = 0.3
+    this.dashVx = (dx / d) * dist / dur
+    this.dashVy = (dy / d) * dist / dur
+    this.dashUntil = this.time + dur
+  }
+
+  /** 盾牌衝鋒：朝方向以固定速度緩推進 duration 秒（期間忽略搖桿輸入） */
+  predictBulwark(dx: number, dy: number, speed: number, duration: number): void {
+    const d = Math.hypot(dx, dy) || 1
+    this.bulwarkVx = (dx / d) * speed
+    this.bulwarkVy = (dy / d) * speed
+    this.bulwarkUntil = this.time + duration
+  }
 
   camX = 0; camY = 0
   shake = 0
@@ -110,6 +139,9 @@ export class Engine {
 
   onWave(w: WaveStartInfo): void {
     this.zoneId = w.zone
+    // 新波開場：清掉衝刺/衝鋒預測殘留，並要求下一個快照硬對齊自機位置（消除換波瞬移）
+    this.dashUntil = 0; this.bulwarkUntil = 0; this.myCharge = 0
+    this.resyncMe = true
     this.genDecor(w.zone, w.wave)
     this.enemies.clear()
     this.drops.clear()
@@ -138,7 +170,7 @@ export class Engine {
       p.status = ps.st; p.hp = ps.hp; p.mhp = ps.mhp; p.sh = ps.sh; p.rp = ps.rp; p.fx = ps.fx; p.lv = ps.lv
       if (ps.id === gs.playerId) {
         this.serverMyX = ps.x; this.serverMyY = ps.y
-        if (ps.st !== 'alive') { this.myX = ps.x; this.myY = ps.y }
+        if (ps.st !== 'alive' || this.resyncMe) { this.myX = ps.x; this.myY = ps.y; this.resyncMe = false }
       }
     }
     for (const id of this.players.keys()) {
@@ -163,6 +195,9 @@ export class Engine {
     for (const i of this.objectives.keys()) if (!oSeen.has(i)) this.objectives.delete(i)
     this.boss = s.boss ?? null
     this.eProj = s.eProj ?? []
+    this.turrets = s.turrets ?? []
+    this.snapZones = s.zones ?? []
+    this.mines = s.mines ?? []
   }
 
   applyEvents(evs: GameEv[]): void {
@@ -200,7 +235,7 @@ export class Engine {
               const ang = Math.atan2(dy, dx) + (k - (n - 1) / 2) * 0.16
               this.projectiles.push({ x: ev.x, y: ev.y, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd, left: (w?.base.range ?? 350) * 1.2, weapon: ev.w, born: this.time })
             }
-            if (ev.id === gs.playerId) sfx.shoot(w?.category)
+            if (ev.id === gs.playerId) sfx.shoot(ev.w, w?.category)
           }
           break
         }
@@ -237,7 +272,8 @@ export class Engine {
         case 'item': break
         case 'aoe': {
           const life = AOE_LIFE[ev.kind] ?? 0.5
-          this.aoes.push({ x: ev.x, y: ev.y, r: ev.r, kind: ev.kind, life, maxLife: life })
+          this.aoes.push({ x: ev.x, y: ev.y, r: ev.r, kind: ev.kind, life, maxLife: life, w: ev.w })
+          if (ev.kind === 'swing' && ev.id && ev.w) this.meleeSwing.set(`${ev.id}:${ev.w}`, this.time)   // 觸發握持武器揮動
           if (ev.kind === 'explosion') { sfx.explosion(); this.shake = Math.min(this.shake + 4, 10); this.burst(ev.x, ev.y, 12, '#ff9f43', 4) }
           if (ev.kind === 'frost') sfx.frost()
           if (ev.kind === 'lightning') { sfx.lightning(); this.burst(ev.x, ev.y, 10, '#ffe66d', 4) }
@@ -303,19 +339,32 @@ export class Engine {
     const me = this.players.get(gs.playerId)
     const alive = me?.status === 'alive'
     const char = CHARACTER_MAP.get(me?.charId ?? '')
-    this.mySpeed = (char?.baseStats.moveSpeed ?? 170) * 1.18
-    if (alive && this.moveDir.active) {
+    this.mySpeed = (char?.baseStats.moveSpeed ?? 170) * 1.2
+    const dashing = alive && this.time < this.dashUntil
+    const bulwarking = alive && this.time < this.bulwarkUntil
+    if (alive && this.moveDir.active && !bulwarking) {   // 盾牌衝鋒期間忽略搖桿輸入
       this.myX += this.moveDir.x * this.mySpeed * dt
       this.myY += this.moveDir.y * this.mySpeed * dt
       this.myX = Math.max(26, Math.min(this.arena.w - 26, this.myX))
       this.myY = Math.max(26, Math.min(this.arena.h - 26, this.myY))
     }
-    // 與 server 位置融合（大幅偏差時橡皮筋回拉）
+    // 衝刺/盾牌衝鋒位移（本地預測，與 server 同步演算 → 看得到滑行而非瞬移）
+    if (dashing) {
+      this.myX = Math.max(26, Math.min(this.arena.w - 26, this.myX + this.dashVx * dt))
+      this.myY = Math.max(26, Math.min(this.arena.h - 26, this.myY + this.dashVy * dt))
+    } else if (bulwarking) {
+      this.myX = Math.max(26, Math.min(this.arena.w - 26, this.myX + this.bulwarkVx * dt))
+      this.myY = Math.max(26, Math.min(this.arena.h - 26, this.myY + this.bulwarkVy * dt))
+    }
+    // 與 server 位置融合：**只在嚴重偏差時**才平滑拉回（穿牆/被伺服器擋/大延遲/作弊校正）。
+    // 一般移動完全信任本地預測 —— 因為 server 本來就只是「追著 client 回報的目標」跑，兩者不會拉開。
+    // 若像以前那樣持續小幅追值，追值力道會隨速度變大（延遲×速度＝偏差），把提速吃掉，
+    // 造成「速度怎麼調都一樣慢」。門檻拉高後，mySpeed 才會真實反映移動速度。
     const drift = Math.hypot(this.myX - this.serverMyX, this.myY - this.serverMyY)
-    if (drift > 120) { this.myX = this.serverMyX; this.myY = this.serverMyY }
-    else if (drift > 40 && !this.moveDir.active) {
-      this.myX += (this.serverMyX - this.myX) * dt * 6
-      this.myY += (this.serverMyY - this.myY) * dt * 6
+    if (!dashing && !bulwarking && drift > 220) {
+      const k = Math.min(1, dt * 10)
+      this.myX += (this.serverMyX - this.myX) * k
+      this.myY += (this.serverMyY - this.myY) * k
     }
     // 傳送位置（15Hz）
     if (alive && this.time - this.lastMoveSent > 1 / 15) {
@@ -454,6 +503,40 @@ export class Engine {
       g.restore()
     }
 
+    // 持續性地面圈（治療/毒/火/冰）——由快照送位置，畫出完整存續期間（放置瞬間另有 aoe 閃光疊上）
+    for (const z of this.snapZones) {
+      const col = z.k === 'heal' ? '105,240,174' : z.k === 'poison' ? '156,204,101' : z.k === 'fire' ? '255,107,53' : z.k === 'spike' ? '240,168,62' : '168,224,255'
+      g.save(); g.translate(z.x, z.y)
+      g.fillStyle = `rgba(${col},0.14)`
+      g.beginPath(); g.arc(0, 0, z.r, 0, Math.PI * 2); g.fill()
+      g.strokeStyle = `rgba(${col},0.55)`; g.lineWidth = 2
+      g.setLineDash([7, 6]); g.lineDashOffset = -this.time * 18
+      g.beginPath(); g.arc(0, 0, z.r, 0, Math.PI * 2); g.stroke()
+      g.setLineDash([])
+      if (z.k === 'heal') {
+        g.fillStyle = 'rgba(105,240,174,0.85)'
+        g.font = '14px sans-serif'; g.textAlign = 'center'
+        g.fillText('✚', 0, -z.r * 0.28 - ((this.time * 22) % 26))
+      }
+      g.restore()
+    }
+    // 地雷（已佈署＝亮黃閃爍；佈署中＝暗）
+    for (const m of this.mines) {
+      g.save(); g.translate(m.x, m.y)
+      const armed = m.a === 1
+      const blink = armed ? 0.6 + Math.sin(this.time * 6) * 0.35 : 0.3
+      g.fillStyle = `rgba(255,207,92,${blink})`
+      g.beginPath(); g.arc(0, 0, 8, 0, Math.PI * 2); g.fill()
+      g.strokeStyle = 'rgba(0,0,0,0.6)'; g.lineWidth = 2
+      g.beginPath(); g.arc(0, 0, 8, 0, Math.PI * 2); g.stroke()
+      // 觸發範圍虛線
+      g.strokeStyle = `rgba(255,207,92,${armed ? 0.3 : 0.12})`; g.lineWidth = 1
+      g.setLineDash([4, 5])
+      g.beginPath(); g.arc(0, 0, m.r, 0, Math.PI * 2); g.stroke()
+      g.setLineDash([])
+      g.restore()
+    }
+
     // AOE（地面層：毒/火/治療/預警）
     for (const a of this.aoes) {
       const pct = a.life / a.maxLife
@@ -519,11 +602,20 @@ export class Engine {
           g.fillStyle = `rgba(255,255,255,${pct * 0.5})`
           g.beginPath(); g.arc(0, 0, a.r * 0.5, 0, Math.PI * 2); g.fill()
           break
-        case 'swing':
-          g.strokeStyle = `rgba(255,255,255,${pct * 0.7})`
-          g.lineWidth = 7 * pct
-          g.beginPath(); g.arc(0, 0, a.r * 0.85, this.time * 2, this.time * 2 + Math.PI * 1.2); g.stroke()
+        case 'swing': {
+          // 依武器色盤上色的刀光（近戰武器各自不同顏色）
+          const col = (a.w && WEAPON_MAP.get(a.w)?.palette[0]) || '#ffffff'
+          g.save()
+          g.lineCap = 'round'
+          g.globalAlpha = pct * 0.8
+          g.strokeStyle = col; g.lineWidth = 9 * pct
+          g.beginPath(); g.arc(0, 0, a.r * 0.85, this.time * 2, this.time * 2 + Math.PI * 1.3); g.stroke()
+          g.globalAlpha = pct * 0.9
+          g.strokeStyle = 'rgba(255,255,255,0.95)'; g.lineWidth = 3 * pct
+          g.beginPath(); g.arc(0, 0, a.r * 0.85, this.time * 2, this.time * 2 + Math.PI * 1.0); g.stroke()
+          g.restore()
           break
+        }
         case 'pulse': {
           const rr = a.r * (1 - pct)
           g.strokeStyle = `rgba(255,230,109,${pct * 0.8})`
@@ -542,6 +634,32 @@ export class Engine {
           g.lineWidth = 3
           g.beginPath(); g.arc(0, 0, a.r * (1 - pct * 0.5), 0, Math.PI * 2); g.stroke()
           break
+        case 'slash': {
+          // 居合斬：白色弧形刀光
+          g.strokeStyle = `rgba(255,255,255,${pct * 0.9})`
+          g.lineWidth = 8 * pct
+          g.lineCap = 'round'
+          g.beginPath(); g.arc(0, 0, a.r, -Math.PI * 0.55, Math.PI * 0.15); g.stroke()
+          g.strokeStyle = `rgba(180,230,255,${pct * 0.5})`
+          g.lineWidth = 3 * pct
+          g.beginPath(); g.arc(0, 0, a.r * 1.08, -Math.PI * 0.55, Math.PI * 0.15); g.stroke()
+          g.lineCap = 'butt'
+          break
+        }
+        case 'thorns':
+        case 'spikes': {
+          // 荊棘/蓄刺爆發：向外放射的尖刺（仙人掌=綠、榴槤=琥珀）
+          const col = a.kind === 'spikes' ? '240,168,62' : '120,200,110'
+          g.strokeStyle = `rgba(${col},${pct})`
+          g.lineWidth = 3
+          const rr = a.r * (1 - pct * 0.35)
+          for (let k = 0; k < 14; k++) {
+            const ang = k / 14 * Math.PI * 2
+            g.beginPath(); g.moveTo(Math.cos(ang) * rr * 0.4, Math.sin(ang) * rr * 0.4)
+            g.lineTo(Math.cos(ang) * rr, Math.sin(ang) * rr); g.stroke()
+          }
+          break
+        }
       }
       g.restore()
     }
@@ -555,6 +673,13 @@ export class Engine {
         hpPct: o.mhp ? (o.hp ?? 0) / o.mhp : undefined,
         pg: o.pg, state: o.s,
       })
+      g.restore()
+    }
+
+    // 部署中的砲塔
+    for (const tr of this.turrets) {
+      g.save(); g.translate(tr.x, tr.y)
+      drawTurret(g, this.time, tr.g === 1)
       g.restore()
     }
 
@@ -626,15 +751,65 @@ export class Engine {
       const downed = p.status === 'downed'
       const disc = p.status === 'disconnected'
       if (disc) g.globalAlpha = 0.35
+      // 盾牌衝鋒：前方大盾 + 環形護盾光
+      if (p.fx === 'shield') {
+        g.save()
+        g.strokeStyle = `rgba(120,200,255,${0.55 + Math.sin(this.time * 12) * 0.25})`
+        g.lineWidth = 4
+        g.beginPath(); g.arc(0, 0, 34, 0, Math.PI * 2); g.stroke()
+        g.fillStyle = 'rgba(120,200,255,0.14)'
+        g.beginPath(); g.arc(0, 0, 34, 0, Math.PI * 2); g.fill()
+        g.restore()
+      }
       drawCharacter(g, p.charId, 46, this.time, {
         downed,
         moving: p.id === gs.playerId ? this.moveDir.active : undefined,
         flash: p.fx === 'dash' || p.fx === 'rage',
       })
+      // 榴槤蓄刺：蓄力中在自機外圍畫一圈往外顫動的尖刺，越蓄越大越密
+      if (p.id === gs.playerId && this.myCharge > 0) {
+        const c = this.myCharge
+        const rr = 34 + c * 46
+        const spikes = 10 + Math.floor(c * 14)
+        g.save()
+        g.strokeStyle = `rgba(255,178,64,${0.6 + Math.sin(this.time * 30) * 0.3})`
+        g.lineWidth = 2 + c * 2
+        for (let k = 0; k < spikes; k++) {
+          const a = (k / spikes) * Math.PI * 2 + this.time * 2
+          const j = 1 + Math.sin(this.time * 25 + k) * 0.12
+          g.beginPath()
+          g.moveTo(Math.cos(a) * rr * 0.7, Math.sin(a) * rr * 0.7)
+          g.lineTo(Math.cos(a) * rr * j, Math.sin(a) * rr * j)
+          g.stroke()
+        }
+        if (c >= 1) { g.strokeStyle = 'rgba(255,255,255,0.8)'; g.beginPath(); g.arc(0, 0, rr, 0, Math.PI * 2); g.stroke() }
+        g.restore()
+      }
+      // 倒地救援指示：救援圈 + 進度環 + 圖示（站進圈圈約 5 秒救起）
+      if (downed) {
+        g.save()
+        g.setLineDash([9, 7]); g.lineDashOffset = -this.time * 22
+        g.strokeStyle = `rgba(105,240,174,${0.5 + Math.sin(this.time * 5) * 0.25})`
+        g.lineWidth = 2.5
+        g.beginPath(); g.arc(0, 0, DOWNED.reviveRadius, 0, Math.PI * 2); g.stroke()
+        g.setLineDash([])
+        const prog = Math.min(1, p.rp)
+        g.strokeStyle = 'rgba(0,0,0,0.45)'; g.lineWidth = 6
+        g.beginPath(); g.arc(0, 0, 30, 0, Math.PI * 2); g.stroke()
+        if (prog > 0) {
+          g.strokeStyle = '#69f0ae'; g.lineWidth = 6; g.lineCap = 'round'
+          g.beginPath(); g.arc(0, 0, 30, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * prog); g.stroke()
+          g.lineCap = 'butt'
+        }
+        g.font = '20px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'
+        g.fillText(prog > 0 ? '🚑' : '🆘', 0, -1)
+        g.restore()
+      }
       // 貼身武器視覺（環繞刀刃 / 無人機）— 依伺服器廣播的 loadout 繪製
       if (p.status !== 'dead' && p.status !== 'downed') {
         const weapons = gs.loadouts[p.id] ?? []
-        let droneIdx = 0
+        let droneIdx = 0, meleeIdx = 0
+        const meleeCount = weapons.filter(w => WEAPON_MAP.get(w.id)?.behavior === 'melee').length
         for (const w of weapons) {
           const data = WEAPON_MAP.get(w.id)
           if (!data) continue
@@ -643,6 +818,27 @@ export class Engine {
             drawOrbitWeapon(g, w.id, st.radius ?? 90, Math.max(1, st.projectileCount), this.time)
           } else if (data.behavior === 'drone') {
             drawDroneCraft(g, droneIdx++, this.time)
+          } else if (data.behavior === 'melee') {
+            // 握持在角色身邊，多把時往下側分散、刀尖朝外
+            const spread = meleeCount > 1 ? (meleeIdx / (meleeCount - 1) - 0.5) : 0
+            const ang = Math.PI * 0.32 + spread * 1.3
+            meleeIdx++
+            // 揮砍動畫：收到 swing 事件後 0.22 秒內，武器從後往前掃一圈並前推
+            const sStart = this.meleeSwing.get(`${p.id}:${w.id}`)
+            const sp = sStart !== undefined ? (this.time - sStart) / 0.22 : 2
+            g.save()
+            if (sp >= 0 && sp <= 1) {
+              const arc = Math.sin(sp * Math.PI)          // 0→1→0（前推量）
+              const swAng = ang - 1.15 + sp * 2.3          // 掃過約 130°
+              g.translate(Math.cos(swAng) * (26 + arc * 20), Math.sin(swAng) * (26 + arc * 20))
+              g.rotate(swAng + Math.PI / 2 + arc * 0.5)
+              g.scale(1 + arc * 0.25, 1 + arc * 0.25)
+            } else {
+              g.translate(Math.cos(ang) * 27, Math.sin(ang) * 27)
+              g.rotate(ang + Math.PI / 2)
+            }
+            drawMeleeHeld(g, w.id, this.time)
+            g.restore()
           }
         }
       }

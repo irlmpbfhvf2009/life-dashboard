@@ -47,6 +47,8 @@ export interface CharacterData {
     cooldown: number
     params?: Record<string, number>
   }
+  /** 若指定，此角色只能裝備該類別武器（例：反甲坦克只能拿 melee） */
+  weaponClass?: WeaponCategory
   /** 初始武器三選一 */
   startWeapons: string[]
   unlockCondition?: string
@@ -97,6 +99,8 @@ export interface WeaponData {
   evolution?: { requires: string; into: string }
   /** 進化型武器：不會出現在商店/寶箱池，只能由進化取得 */
   evolvedForm?: boolean
+  /** 專屬角色 id：只有該角色的商店/升級/寶箱會出現此武器（共通道具不設此欄） */
+  charId?: string
   palette: [string, string]
 }
 
@@ -124,6 +128,7 @@ export interface UpgradeData {
 export type EnemyBehavior =
   | 'chase' | 'fast' | 'tank' | 'ranged' | 'exploder'
   | 'shielded' | 'summoner' | 'toxic' | 'lunger' | 'thief'
+  | 'kiter' | 'charger' | 'looter'
 
 export interface EnemyData {
   id: string
@@ -372,6 +377,11 @@ export interface BossSnap {
   stun?: number
 }
 
+// 場上「部署物」——砲塔/地面圈/地雷（持續存在於 server，需每快照送位置才畫得出來）
+export interface TurretSnap { x: number; y: number; g?: 1 }   // g=守護型（優先護隊友）
+export interface ZoneSnap { x: number; y: number; r: number; k: 'poison' | 'heal' | 'fire' | 'frost' | 'spike' }
+export interface MineSnap { x: number; y: number; r: number; a?: 1 }   // a=已佈署完成（可觸發）
+
 export interface Snapshot {
   t: number                      // server 時間（秒，本波起算）
   left: number                   // 波剩餘秒
@@ -380,6 +390,9 @@ export interface Snapshot {
   objectives: ObjectiveSnap[]
   boss?: BossSnap
   eProj?: { x: number; y: number }[]   // 敵方彈幕（視覺 + 客戶端閃避判讀用，命中仍在 server）
+  turrets?: TurretSnap[]               // 部署中的砲塔
+  zones?: ZoneSnap[]                   // 地面圈（治療/毒/火/冰）
+  mines?: MineSnap[]                   // 地雷
   director: { pressure: number; level: number }
   mission?: { name: string; progress: number; target: number; done: boolean; failed?: boolean }
   event?: string                 // 事件 id
@@ -411,7 +424,7 @@ export type GameEv =
   | { t: 'bossSpawn'; id: string; name: string; title: string; mhp: number }
   | { t: 'bossSkill'; s: string; x?: number; y?: number; ang?: number }
   | { t: 'bossDead' }
-  | { t: 'aoe'; x: number; y: number; r: number; kind: string }  // 視覺: explosion/poison/heal/frost/lightning/fire
+  | { t: 'aoe'; x: number; y: number; r: number; kind: string; w?: string; id?: string }  // w=武器 id（揮砍上色）；id=施放玩家 id（揮砍動畫）
   | { t: 'toast'; msg: string; kind?: 'info' | 'warn' | 'good' }
 
 // ---------------------------------------------------------------- 中場（結算/升級/商店/路線）
@@ -435,12 +448,13 @@ export interface UpgradeOffer {
 
 export interface ShopOffer {
   offerId: string
-  kind: 'weapon' | 'upgrade' | 'item'
-  refId: string                 // weapon id / upgrade id / item id
+  kind: 'weapon' | 'upgrade' | 'item' | 'mystery'
+  refId: string                 // weapon id / upgrade id / item id（mystery 為空）
   price: number
   locked: boolean
   sold: boolean
   weaponLevel?: number
+  origPrice?: number            // 特價時的原價（顯示刪除線）
 }
 
 export interface ShopView {
@@ -449,10 +463,11 @@ export interface ShopView {
   discount: number
 }
 
-export interface TeamShopView {
-  items: { id: string; price: number; votes: string[]; bought: boolean }[]
-  reviveCost: number
-  revivesOwned: number
+/** 團隊獎勵（免費多選）：每人可選 picksPerPlayer 個，picks 記錄每人已選的選項 id */
+export interface TeamRewardView {
+  options: { id: string; name: string; description: string }[]
+  picks: Record<string, string[]>
+  picksPerPlayer: number
 }
 
 export interface RouteOffer { routeId: string; votes: string[] }
@@ -469,9 +484,8 @@ export interface IntermissionView {
   levelupChoices: UpgradeOffer[]
   chests: ChestPending[]
   shop: ShopView
-  teamShop: TeamShopView
   routes: RouteOffer[]
-  teamReward?: { options: { id: string; name: string; description: string }[]; votes: Record<string, string> }
+  teamReward?: TeamRewardView
   readySet: string[]
   gold: number
   me: { weapons: { id: string; level: number }[]; upgrades: string[]; stats: ComputedStats }

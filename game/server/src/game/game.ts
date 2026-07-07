@@ -11,7 +11,7 @@ import {
 } from '../../../shared/balance'
 import {
   CHARACTER_MAP, WEAPON_MAP, ZONES, ZONE_MAP, ZONE_ORDER, EVENTS,
-  ROUTES, BOSS_ROTATION, TEAM_SHOP_ITEMS, UPGRADE_MAP,
+  ROUTES, BOSS_ROTATION, UPGRADE_MAP,
 } from '../../../shared/content/index'
 import type { EventData, Rarity } from '../../../shared/types'
 import { mulberry32, hashSeed, dailySeed, weightedR, shuffleR } from '../../../shared/rng'
@@ -33,8 +33,8 @@ import {
 } from './missions'
 import {
   rollLevelupChoices, applyUpgrade, generateShopOffers, buyOffer, refreshShop,
-  sellWeapon, addWeapon, applyChestChoice, teamShopVote, teamReviveVote,
-  rollTeamRewardOptions, applyTeamReward, checkEvolutions,
+  sellWeapon, addWeapon, applyChestChoice,
+  rollTeamRewardOptions, applyTeamReward, teamRewardPicksPerPlayer, checkEvolutions,
 } from './shop'
 
 export interface GameHost {
@@ -87,13 +87,10 @@ export class Game {
   forceEliteSpawns = 0
 
   team: TeamState = {
-    revives: 0, revivesBought: 0, reviveShards: 0, bossDamage: 0, objectiveHp: 0,
-    teamShopBought: new Set(), teamShopVotes: new Map(), reviveVotes: new Set(),
+    revives: 0, revivesBought: 0, reviveShards: 0, bossDamage: 0, objectiveHp: 0, waveShield: 0,
   }
-  nextWaveShield = 0
   nextWaveDropBoost = 1
   nextShopDiscount = 0
-  nextTeamShopDiscount = 0
   nextRareBoost = 0
 
   director: DirectorState = newDirector()
@@ -104,7 +101,7 @@ export class Game {
   interStep: 'settlement' = 'settlement'
   settlement: WaveSettlement | null = null
   routeOffers: { routeId: string; votes: Set<string> }[] = []
-  teamRewardOffer: { options: { id: string; name: string; description: string }[]; votes: Map<string, string> } | null = null
+  teamRewardOffer: { options: { id: string; name: string; description: string }[]; picks: Map<string, string[]> } | null = null
   victoryPending = false
 
   private evQueue: GameEv[] = []
@@ -141,6 +138,7 @@ export class Game {
         skillCdLeft: 0, skillCharges: 1, skillMaxCharges: 1,
         buffs: { hasteUntil: 0, hasteAmt: 0, rageUntil: 0, rageAmt: 0, invulnUntil: 0, shieldNextWave: 0 },
         dashUntil: 0, dashVx: 0, dashVy: 0,
+        bulwarkUntil: 0, bulwarkVx: 0, bulwarkVy: 0,
         downedCount: 0, reviveProgress: 0, bleedOutAt: 0, lastHitAt: -99, fogTick: 0,
         usedPhoenix: false, usedFirstDownRevive: false, eliteTrophyStacks: 0, pulseTimer: 10, regenTick: 0,
         reviveShards: 0, soloRevives: roster.length === 1 ? REVIVES_PER_MODE[this.mode] : 0,
@@ -195,7 +193,7 @@ export class Game {
     damageEnemyImpl(this, e, dmg, opts)
   }
   shopDiscountFor(_p: SPlayer): number {
-    return Math.min(0.6, this.nextShopDiscount + this.nextTeamShopDiscount + (this.eventMods.shopDiscount ?? 0))
+    return Math.min(0.6, this.nextShopDiscount + (this.eventMods.shopDiscount ?? 0))
   }
 
   // ================================================================ 波次流程
@@ -258,9 +256,16 @@ export class Game {
       p.wave = emptyStat()
       p.interReady = false
       p.refreshCount = 0
+      // this.time 每波歸零 → 清掉上一波遺留的絕對時間計時器，否則會被當成「仍在生效」
+      // （例如殘留的盾牌衝鋒/衝刺會讓角色自己往施放方向走，直到重新施放技能才好）
+      p.dashUntil = 0; p.dashVx = 0; p.dashVy = 0
+      p.bulwarkUntil = 0; p.bulwarkVx = 0; p.bulwarkVy = 0
+      p.buffs.hasteUntil = 0; p.buffs.rageUntil = 0; p.buffs.invulnUntil = 0
+      p.fx = ''; p.fxUntil = 0
+      p.lastHitAt = -99
       if (p.status === 'downed') { p.status = 'alive'; p.hp = Math.round(p.stats.maxHp * 0.4) }
       if (p.status === 'alive') {
-        p.shield += this.nextWaveShield
+        p.shield += this.team.waveShield            // 團隊獎勵：每波開場永久護盾
         // 上一波買的道具開場生效
         for (const it of p.pendingItems) applyItem(this, p, it)
         p.pendingItems = []
@@ -269,7 +274,6 @@ export class Game {
       if (wave === 1) { p.x = ARENA.w / 2; p.y = ARENA.h * 0.6 }
       clampArena(p, 30)
     }
-    this.nextWaveShield = 0
     this.routeMods.dropMult = this.nextWaveDropBoost
     this.nextWaveDropBoost = 1
     this.nextShopDiscount = 0
@@ -374,15 +378,9 @@ export class Game {
     }
     // 路線改隨機（不投票）— 先決定好下一關路線，中場只顯示結果
     this.routeOffers = []
-    this.team.teamShopVotes.clear()
-    this.team.reviveVotes.clear()
 
-    // 第一關固定團隊獎勵三選一
-    if (this.wave === 1) {
-      this.teamRewardOffer = { options: rollTeamRewardOptions(this), votes: new Map() }
-    } else {
-      this.teamRewardOffer = null
-    }
+    // 團隊獎勵已移除（改由每角色專屬武器＋商店提供成長）
+    this.teamRewardOffer = null
 
     this.host.emit('wave:end', this.settlement)
     this.pushInterState()
@@ -402,16 +400,8 @@ export class Game {
         this.broadcastToast(`前往：${route.name}（${route.reward}）`, 'info')
       }
     }
-    // 團隊獎勵結算（多數決）
-    if (this.teamRewardOffer) {
-      const tally = new Map<string, number>()
-      for (const id of this.teamRewardOffer.votes.values()) tally.set(id, (tally.get(id) ?? 0) + 1)
-      let bestId = this.teamRewardOffer.options[0].id
-      let bestN = -1
-      for (const [id, n] of tally) if (n > bestN) { bestN = n; bestId = id }
-      applyTeamReward(this, bestId)
-      this.teamRewardOffer = null
-    }
+    // 團隊獎勵已於選取當下即時套用（免費多選），這裡只收掉 offer
+    this.teamRewardOffer = null
     this.startWave(this.wave + 1)
   }
 
@@ -565,10 +555,20 @@ export class Game {
           const [kx, ky] = norm(e.x - p.x, e.y - p.y)
           damageEnemyImpl(this, e, (prm.damage ?? 25) * p.stats.damage, { ownerId: p.id, knockX: kx * (prm.knockback ?? 200), knockY: ky * (prm.knockback ?? 200), srcX: p.x, srcY: p.y })
         }
+      } else if (p.bulwarkUntil > now) {
+        // 盾牌衝鋒：緩速往前推進，撞飛沿路怪物（減傷在 damagePlayer 處理）
+        p.x += p.bulwarkVx * dt
+        p.y += p.bulwarkVy * dt
+        const prm = p.char.active.params ?? {}
+        for (const e of this.enemies) {
+          if (e.hp <= 0 || dist2(e.x, e.y, p.x, p.y) > (e.radius + 42) ** 2) continue
+          const [kx, ky] = norm(e.x - p.x, e.y - p.y)
+          damageEnemyImpl(this, e, (prm.damage ?? 20) * p.stats.damage * dt * 3, { ownerId: p.id, knockX: kx * (prm.knockback ?? 300), knockY: ky * (prm.knockback ?? 300), srcX: p.x, srcY: p.y })
+        }
       } else {
         const dx = p.lastX - p.x, dy = p.lastY - p.y
         const dd = Math.hypot(dx, dy)
-        const step = maxSpd * dt * 1.15
+        const step = maxSpd * dt * 1.2
         if (dd > 0.5) {
           const k = Math.min(1, step / dd)
           p.x += dx * k
@@ -635,18 +635,17 @@ export class Game {
     // 流血倒數
     if (now > p.bleedOutAt) { this.killPlayer(p); return }
 
-    const nearby = [...this.players.values()].filter(q =>
+    // 站進救援圈的存活隊友即施救（不再因受擊中斷 → 踩著約 5 秒就救起）
+    const rescuers = [...this.players.values()].filter(q =>
       q !== p && q.connected && q.status === 'alive'
       && dist2(q.x, q.y, p.x, p.y) < DOWNED.reviveRadius ** 2)
-    // 救援者受擊 1 秒內中斷施救
-    const activeRescuers = nearby.filter(q => now - q.lastHitAt > 1)
-    if (activeRescuers.length) {
+    if (rescuers.length) {
       const baseTime = Math.min(DOWNED.maxReviveTime, DOWNED.baseReviveTime + (p.downedCount - 1) * DOWNED.reviveTimePerDown)
-      const speedMult = activeRescuers.reduce((s, q) => s + q.stats.reviveSpeed, 0)
-        * Math.pow(1 / DOWNED.multiRescuerBonus, activeRescuers.length - 1)
+      const speedMult = rescuers.reduce((s, q) => s + q.stats.reviveSpeed, 0)
+        * Math.pow(1 / DOWNED.multiRescuerBonus, rescuers.length - 1)
       p.reviveProgress += (dt / baseTime) * speedMult
       if (p.reviveProgress >= 1) {
-        this.revivePlayer(p, activeRescuers[0])
+        this.revivePlayer(p, rescuers[0])
       }
     } else {
       p.reviveProgress = Math.max(0, p.reviveProgress - dt * 0.25)
@@ -704,6 +703,7 @@ export class Game {
       }
     }
     let d = dmg * (1 - Math.min(0.6, armor * 0.06))
+    if (p.bulwarkUntil > now) d *= 1 - (p.char.active.params?.dr ?? 0.9)   // 盾牌衝鋒減傷
     d = Math.max(1, Math.round(d))
     if (p.shield > 0) {
       const ab = Math.min(p.shield, d)
@@ -857,11 +857,12 @@ export class Game {
     p.lastY = clamp(y, 26, ARENA.h - 26)
   }
 
-  onSkill(playerId: string, aim?: { x?: number; y?: number }): void {
+  onSkill(playerId: string, aim?: { x?: number; y?: number; charge?: number }): void {
     const p = this.players.get(playerId)
     if (!p || p.status !== 'alive' || this.phase !== 'combat') return
     if (p.skillCharges <= 0) return
     p.skillCharges--
+    const charge = Math.max(0, Math.min(1, aim?.charge ?? 1))
     if (p.skillCdLeft <= 0) {
       let cd = p.char.active.cooldown
       if (eff(p, 'charTank') && p.char.active.id === 'charge') cd *= 1 - 0.25 * eff(p, 'charTank')
@@ -878,6 +879,29 @@ export class Game {
         p.dashVy = ny * (prm.dist ?? 300) / dur
         p.fx = 'dash'; p.fxUntil = this.time + dur
         if (eff(p, 'charTank')) p.shield += 15 * eff(p, 'charTank')
+        // 居合斬揮刀特效（斬向突進終點）
+        this.ev({ t: 'aoe', x: Math.round(p.x + nx * (prm.dist ?? 300) * 0.6), y: Math.round(p.y + ny * (prm.dist ?? 300) * 0.6), r: 90, kind: 'slash' })
+        break
+      }
+      case 'bulwark': {
+        const [nx, ny] = norm((aim?.x ?? p.lastX) - p.x, (aim?.y ?? p.lastY) - p.y)
+        const dur = prm.duration ?? 2
+        p.bulwarkUntil = this.time + dur
+        p.bulwarkVx = nx * (prm.speed ?? 135)
+        p.bulwarkVy = ny * (prm.speed ?? 135)
+        p.shield += prm.shield ?? 40
+        p.fx = 'shield'; p.fxUntil = this.time + dur
+        break
+      }
+      case 'thornsNova': {
+        const radius = (prm.radius ?? 190) * p.stats.area
+        p.shield += prm.shield ?? 55
+        this.ev({ t: 'aoe', x: Math.round(p.x), y: Math.round(p.y), r: Math.round(radius), kind: 'thorns' })
+        for (const e of this.enemies) {
+          if (e.hp <= 0 || dist2(e.x, e.y, p.x, p.y) > radius * radius) continue
+          const [kx, ky] = norm(e.x - p.x, e.y - p.y)
+          damageEnemyImpl(this, e, (prm.damage ?? 34) * p.stats.damage, { ownerId: p.id, knockX: kx * (prm.knockback ?? 260), knockY: ky * (prm.knockback ?? 260), srcX: p.x, srcY: p.y })
+        }
         break
       }
       case 'rapidfire': {
@@ -917,7 +941,8 @@ export class Game {
         this.ev({ t: 'aoe', x: Math.round(p.x), y: Math.round(p.y), r: Math.round(radius), kind: 'frost' })
         for (const e of this.enemies) {
           if (dist2(e.x, e.y, p.x, p.y) > radius * radius) continue
-          e.frozenUntil = this.time + freeze
+          if (e.elite) { e.slowUntil = this.time + freeze; e.slowPct = Math.max(e.slowPct, 0.5) }  // 菁英不被定身
+          else e.frozenUntil = this.time + freeze
           damageEnemyImpl(this, e, (prm.damage ?? 18) * p.stats.damage, { ownerId: p.id, srcX: p.x, srcY: p.y })
         }
         break
@@ -934,6 +959,47 @@ export class Game {
           else if (good === 1) { healPlayer(this, p, p.stats.maxHp * 0.3); this.toastTo(p, '🎲 命運眷顧：回復 30% 生命', 'good') }
           else if (good === 2) { gainGold(this, p, 10, false); this.toastTo(p, '🎲 命運眷顧：金幣 +10', 'good') }
           else { p.shield += 40; this.toastTo(p, '🎲 命運眷顧：護盾 +40', 'good') }
+        }
+        break
+      }
+      case 'whirlslash': {
+        // 武士：旋風斬 — 旋身斬擊四周敵人並擊退（純爆發傷害）
+        const radius = (prm.radius ?? 190) * p.stats.area
+        this.ev({ t: 'aoe', x: Math.round(p.x), y: Math.round(p.y), r: Math.round(radius), kind: 'slash' })
+        for (const e of this.enemies) {
+          if (e.hp <= 0 || dist2(e.x, e.y, p.x, p.y) > radius * radius) continue
+          const [kx, ky] = norm(e.x - p.x, e.y - p.y)
+          damageEnemyImpl(this, e, (prm.damage ?? 45) * p.stats.damage, { ownerId: p.id, crit: this.rng() < p.stats.critChance, knockX: kx * (prm.knockback ?? 200), knockY: ky * (prm.knockback ?? 200), srcX: p.x, srcY: p.y })
+        }
+        break
+      }
+      case 'spikecharge': {
+        // 榴槤：蓄刺爆發 — 蓄力越久（charge 0~1）範圍越大、傷害最高 1.5 倍，往四周噴刺並留尖刺區持續傷害
+        const rMin = prm.radius ?? 300, rMax = prm.maxRadius ?? 1700
+        const radius = (rMin + (rMax - rMin) * charge) * p.stats.area
+        const dmg = (prm.damage ?? 30) * (1 + 0.5 * charge) * p.stats.damage
+        this.ev({ t: 'aoe', x: Math.round(p.x), y: Math.round(p.y), r: Math.round(radius), kind: 'spikes' })
+        for (const e of this.enemies) {
+          if (e.hp <= 0 || dist2(e.x, e.y, p.x, p.y) > radius * radius) continue
+          const [kx, ky] = norm(e.x - p.x, e.y - p.y)
+          damageEnemyImpl(this, e, dmg, { ownerId: p.id, crit: this.rng() < p.stats.critChance, knockX: kx * (prm.knockback ?? 200), knockY: ky * (prm.knockback ?? 200), srcX: p.x, srcY: p.y })
+        }
+        // 尖刺區持續傷害
+        this.zones.push({
+          x: p.x, y: p.y, radius: Math.min(radius, 300) , dps: (prm.zoneDps ?? 8) * p.stats.damage, hps: 0,
+          until: this.time + (prm.zoneDur ?? 1.5), ownerId: p.id, kind: 'spike', hostile: true, tick: 0,
+        })
+        break
+      }
+      case 'palmquake': {
+        // 武僧：震地掌 — 拍地震盪，重擊、擊退並暈眩周圍敵人（菁英不被暈）
+        const radius = (prm.radius ?? 180) * p.stats.area
+        this.ev({ t: 'aoe', x: Math.round(p.x), y: Math.round(p.y), r: Math.round(radius), kind: 'pulse' })
+        for (const e of this.enemies) {
+          if (e.hp <= 0 || dist2(e.x, e.y, p.x, p.y) > radius * radius) continue
+          const [kx, ky] = norm(e.x - p.x, e.y - p.y)
+          damageEnemyImpl(this, e, (prm.damage ?? 26) * p.stats.damage, { ownerId: p.id, knockX: kx * (prm.knockback ?? 240), knockY: ky * (prm.knockback ?? 240), srcX: p.x, srcY: p.y })
+          if (!e.elite) e.stunUntil = this.time + (prm.stun ?? 1.5)
         }
         break
       }
@@ -993,20 +1059,6 @@ export class Game {
     this.pushInterState()
   }
 
-  onTeamShopVote(playerId: string, itemId: string, yes: boolean): void {
-    const p = this.players.get(playerId)
-    if (!p || this.phase !== 'intermission') return
-    teamShopVote(this, p, itemId, yes)
-    this.pushInterState()
-  }
-
-  onTeamReviveVote(playerId: string): void {
-    const p = this.players.get(playerId)
-    if (!p || this.phase !== 'intermission') return
-    teamReviveVote(this, p)
-    this.pushInterState()
-  }
-
   onRouteVote(playerId: string, routeId: string): void {
     if (this.phase !== 'intermission') return
     for (const r of this.routeOffers) r.votes.delete(playerId)
@@ -1014,9 +1066,17 @@ export class Game {
     this.pushInterState()
   }
 
-  onTeamRewardVote(playerId: string, id: string): void {
-    if (!this.teamRewardOffer) return
-    if (this.teamRewardOffer.options.some(o => o.id === id)) this.teamRewardOffer.votes.set(playerId, id)
+  /** 團隊獎勵免費多選：每人有配額（依人數），選一個即時套用，不可重複選同一項 */
+  onTeamRewardPick(playerId: string, id: string): void {
+    const p = this.players.get(playerId)
+    if (!p || this.phase !== 'intermission' || !this.teamRewardOffer) return
+    if (!this.teamRewardOffer.options.some(o => o.id === id)) return
+    const mine = this.teamRewardOffer.picks.get(playerId) ?? []
+    const quota = teamRewardPicksPerPlayer(this.playerCount)
+    if (mine.length >= quota || mine.includes(id)) return
+    mine.push(id)
+    this.teamRewardOffer.picks.set(playerId, mine)
+    applyTeamReward(this, id)
     this.pushInterState()
   }
 
@@ -1150,6 +1210,9 @@ export class Game {
         stun: this.boss.stunUntil > now ? Math.round((this.boss.stunUntil - now) * 10) / 10 : undefined,
       } : undefined,
       eProj: this.enemyProjs.map(pr => ({ x: Math.round(pr.x), y: Math.round(pr.y) })),
+      turrets: this.turrets.length ? this.turrets.map(t => (t.guard ? { x: Math.round(t.x), y: Math.round(t.y), g: 1 as const } : { x: Math.round(t.x), y: Math.round(t.y) })) : undefined,
+      zones: this.zones.length ? this.zones.map(z => ({ x: Math.round(z.x), y: Math.round(z.y), r: Math.round(z.radius), k: z.kind })) : undefined,
+      mines: this.mines.length ? this.mines.map(m => (now >= m.armAt ? { x: Math.round(m.x), y: Math.round(m.y), r: Math.round(m.radius), a: 1 as const } : { x: Math.round(m.x), y: Math.round(m.y), r: Math.round(m.radius) })) : undefined,
       director: { pressure: Math.round(this.director.pressure), level: this.director.level },
       mission: this.mission ? {
         name: this.mission.data.name,
@@ -1185,20 +1248,11 @@ export class Game {
           refreshCost: 4 + p.refreshCount * 2,
           discount: this.shopDiscountFor(p),
         },
-        teamShop: {
-          items: TEAM_SHOP_ITEMS.map(t => ({
-            id: t.id,
-            price: t.price,
-            votes: [...(this.team.teamShopVotes.get(t.id) ?? [])],
-            bought: this.team.teamShopBought.has(t.id),
-          })),
-          reviveCost: 45 + this.team.revivesBought * 25,
-          revivesOwned: this.team.revives,
-        },
         routes: this.routeOffers.map(r => ({ routeId: r.routeId, votes: [...r.votes] })),
         teamReward: this.teamRewardOffer ? {
           options: this.teamRewardOffer.options,
-          votes: Object.fromEntries(this.teamRewardOffer.votes),
+          picks: Object.fromEntries(this.teamRewardOffer.picks),
+          picksPerPlayer: teamRewardPicksPerPlayer(this.playerCount),
         } : undefined,
         readySet: [...this.players.values()].filter(q => q.interReady).map(q => q.id),
         gold: p.gold,

@@ -54,6 +54,7 @@ export interface SPlayer {
   skillMaxCharges: number
   buffs: Buffs
   dashUntil: number; dashVx: number; dashVy: number
+  bulwarkUntil: number; bulwarkVx: number; bulwarkVy: number   // 戰士盾牌衝鋒（減傷+推進）
 
   downedCount: number
   reviveProgress: number                 // 0~1
@@ -108,6 +109,8 @@ export interface SEnemy {
   fleeUntil: number
   stolenGold: number
   lungeVx: number; lungeVy: number; lungeUntil: number
+  windupUntil: number                    // charger 衝刺前蓄力預警
+  lootDropCd: number                     // looter 被打噴金幣節流
   shieldTick: number
   trailTick: number
   targetId: string | null
@@ -136,7 +139,7 @@ export interface SZone {
   dps: number; hps: number
   until: number
   ownerId: string | null
-  kind: 'poison' | 'heal' | 'fire' | 'frost'
+  kind: 'poison' | 'heal' | 'fire' | 'frost' | 'spike'
   hostile: boolean                        // 對玩家有害
   tick: number
 }
@@ -225,7 +228,5 @@ export interface TeamState {
   reviveShards: number
   bossDamage: number                      // 對 Boss 傷害加成
   objectiveHp: number                     // 任務目標生命加成
-  teamShopBought: Set<string>
-  teamShopVotes: Map<string, Set<string>>
-  reviveVotes: Set<string>
+  waveShield: number                      // 每波開場永久護盾（團隊獎勵累積）
 }
