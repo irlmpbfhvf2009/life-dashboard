@@ -843,6 +843,239 @@ const ITEM_EMOJI: Record<string, string> = {
 }
 export const itemEmoji = (id?: string) => ITEM_EMOJI[id ?? ''] ?? '✨'
 
+// ---------------------------------------------------------------- 武器圖示（選單/商店預覽）
+// 每把武器一個程式化 icon（厚描邊卡通風），色彩取武器 palette [body, accent]。
+
+function spike(g: Ctx, col: string, x: number, y: number, w: number, h: number, ang = 0): void {
+  g.save(); g.translate(x, y); g.rotate(ang)
+  outlined(g, col, gg => { gg.beginPath(); gg.moveTo(-w, 0); gg.lineTo(w, 0); gg.lineTo(0, -h); gg.closePath() }, 1.5)
+  g.restore()
+}
+function bladeUp(g: Ctx, s: number, blade: string, hilt: string, len = 0.42, wide = 0.08): void {
+  outlined(g, blade, gg => {
+    gg.beginPath(); gg.moveTo(0, -s * len); gg.lineTo(s * wide, -s * (len - 0.14))
+    gg.lineTo(s * wide, s * 0.12); gg.lineTo(-s * wide, s * 0.12); gg.lineTo(-s * wide, -s * (len - 0.14)); gg.closePath()
+  }, 2.5)
+  outlined(g, hilt, gg => { gg.beginPath(); gg.rect(-s * 0.19, s * 0.1, s * 0.38, s * 0.06) }, 2)
+  outlined(g, hilt, gg => { gg.beginPath(); gg.rect(-s * 0.05, s * 0.16, s * 0.1, s * 0.22) }, 2)
+}
+function gunBody(g: Ctx, s: number, body: string, dark: string, barrel = 0.36, bw = 0.1): void {
+  outlined(g, dark, gg => { gg.beginPath(); gg.rect(-s * 0.42, -s * bw, s * barrel, s * bw * 2) }, 2)   // 槍管
+  outlined(g, body, gg => { gg.beginPath(); gg.roundRect(-s * 0.1, -s * 0.14, s * 0.34, s * 0.24, s * 0.05) }, 2.5)   // 機匣
+  outlined(g, dark, gg => { gg.beginPath(); gg.moveTo(-s * 0.02, s * 0.08); gg.lineTo(s * 0.12, s * 0.08); gg.lineTo(s * 0.06, s * 0.34); gg.lineTo(-s * 0.06, s * 0.34); gg.closePath() }, 2)   // 握把
+}
+function orbGlow(g: Ctx, s: number, col: string, r = 0.3): void {
+  g.shadowColor = col; g.shadowBlur = 10
+  outlined(g, col, gg => ellipse(gg, 0, 0, s * r, s * r), 2.5)
+  g.shadowBlur = 0
+  g.fillStyle = 'rgba(255,255,255,0.55)'
+  ellipse(g, -s * r * 0.35, -s * r * 0.35, s * r * 0.28, s * r * 0.28); g.fill()
+}
+
+/** 武器圖示（size = 直徑基準；t 供旋轉/閃爍動畫）。 */
+export function drawWeaponIcon(g: Ctx, weaponId: string, size: number, t: number): void {
+  const [col, acc] = WEAPON_MAP.get(weaponId)?.palette ?? ['#cfd8dc', '#78909c']
+  const s = size
+  g.save()
+  switch (weaponId) {
+    // ---- 戰士（冷兵器）
+    case 'w_sword':
+      outlined(g, acc, gg => { gg.beginPath(); gg.roundRect(-s * 0.4, -s * 0.24, s * 0.3, s * 0.48, s * 0.06) }, 2.5)  // 盾
+      g.strokeStyle = OUTLINE; g.lineWidth = s * 0.03; g.beginPath(); g.moveTo(-s * 0.25, -s * 0.14); g.lineTo(-s * 0.25, s * 0.14); g.stroke()
+      g.save(); g.translate(s * 0.12, 0); bladeUp(g, s, col, acc); g.restore(); break
+    case 'w_greatsword': bladeUp(g, s, col, acc, 0.44, 0.12); break
+    case 'w_spear':
+      outlined(g, acc, gg => { gg.beginPath(); gg.rect(-s * 0.03, -s * 0.2, s * 0.06, s * 0.62) }, 2)   // 桿
+      outlined(g, col, gg => { gg.beginPath(); gg.moveTo(0, -s * 0.44); gg.lineTo(s * 0.11, -s * 0.18); gg.lineTo(-s * 0.11, -s * 0.18); gg.closePath() }, 2.5); break
+    case 'spin_axe':
+      outlined(g, acc, gg => { gg.beginPath(); gg.rect(-s * 0.035, -s * 0.34, s * 0.07, s * 0.72) }, 2)   // 斧柄
+      // 雙刃斧頭（上段左右各一片彎月刀刃）
+      outlined(g, col, gg => { gg.beginPath(); gg.moveTo(s * 0.02, -s * 0.34); gg.quadraticCurveTo(s * 0.42, -s * 0.34, s * 0.36, -s * 0.02); gg.quadraticCurveTo(s * 0.18, -s * 0.12, s * 0.02, -s * 0.1); gg.closePath() }, 2.5)
+      outlined(g, col, gg => { gg.beginPath(); gg.moveTo(-s * 0.02, -s * 0.34); gg.quadraticCurveTo(-s * 0.42, -s * 0.34, -s * 0.36, -s * 0.02); gg.quadraticCurveTo(-s * 0.18, -s * 0.12, -s * 0.02, -s * 0.1); gg.closePath() }, 2.5); break
+    case 'hammer':
+      outlined(g, acc, gg => { gg.beginPath(); gg.rect(-s * 0.035, -s * 0.05, s * 0.07, s * 0.46) }, 2)
+      outlined(g, col, gg => { gg.beginPath(); gg.roundRect(-s * 0.28, -s * 0.34, s * 0.56, s * 0.26, s * 0.05) }, 3); break
+
+    // ---- 槍手（槍械）
+    case 'pea_gun': gunBody(g, s, col, acc, 0.34, 0.09); break
+    case 'g_sniper':
+      gunBody(g, s, col, acc, 0.5, 0.07)
+      outlined(g, OUTLINE, gg => { gg.beginPath(); gg.roundRect(-s * 0.04, -s * 0.28, s * 0.18, s * 0.12, s * 0.03) }, 2)   // 瞄準鏡
+      break
+    case 'g_shotgun':
+      outlined(g, acc, gg => { gg.beginPath(); gg.rect(-s * 0.42, -s * 0.12, s * 0.4, s * 0.11) }, 2)
+      outlined(g, acc, gg => { gg.beginPath(); gg.rect(-s * 0.42, s * 0.01, s * 0.4, s * 0.11) }, 2)
+      outlined(g, col, gg => { gg.beginPath(); gg.roundRect(-s * 0.08, -s * 0.12, s * 0.3, s * 0.26, s * 0.05) }, 2.5)
+      outlined(g, col, gg => { gg.beginPath(); gg.moveTo(s * 0.04, s * 0.14); gg.lineTo(s * 0.2, s * 0.14); gg.lineTo(s * 0.16, s * 0.36); gg.lineTo(s * 0.06, s * 0.36); gg.closePath() }, 2); break
+    case 'g_smg': gunBody(g, s, col, acc, 0.26, 0.08)
+      outlined(g, acc, gg => { gg.beginPath(); gg.rect(-s * 0.02, s * 0.1, s * 0.08, s * 0.26) }, 2); break   // 彈匣
+    case 'g_minigun': {
+      g.save(); g.rotate(t * 1.5)
+      for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2; g.fillStyle = k % 2 ? acc : col; ellipse(g, Math.cos(a) * s * 0.12, Math.sin(a) * s * 0.12, s * 0.05, s * 0.05); g.fill() }
+      g.restore()
+      outlined(g, acc, gg => { gg.beginPath(); gg.rect(s * 0.16, -s * 0.09, s * 0.28, s * 0.18) }, 2.5)
+      outlined(g, col, gg => ellipse(gg, 0, 0, s * 0.2, s * 0.2), 2.5); break
+    }
+
+    // ---- 醫生
+    case 'heal_orb': orbGlow(g, s, col, 0.32); g.fillStyle = '#fff'; g.fillRect(-s * 0.04, -s * 0.16, s * 0.08, s * 0.32); g.fillRect(-s * 0.16, -s * 0.04, s * 0.32, s * 0.08); break
+    case 'm_needle':
+      outlined(g, col, gg => { gg.beginPath(); gg.roundRect(-s * 0.28, -s * 0.1, s * 0.44, s * 0.2, s * 0.04) }, 2.5)   // 針筒
+      outlined(g, acc, gg => { gg.beginPath(); gg.rect(-s * 0.38, -s * 0.05, s * 0.1, s * 0.1) }, 2)   // 推桿
+      g.strokeStyle = OUTLINE; g.lineWidth = s * 0.03; g.beginPath(); g.moveTo(s * 0.16, 0); g.lineTo(s * 0.42, 0); g.stroke(); break   // 針
+    case 'm_cross':
+      outlined(g, col, gg => { gg.beginPath(); gg.rect(-s * 0.09, -s * 0.36, s * 0.18, s * 0.72) }, 2.5)
+      outlined(g, col, gg => { gg.beginPath(); gg.rect(-s * 0.36, -s * 0.09, s * 0.72, s * 0.18) }, 2.5)
+      g.fillStyle = acc; ellipse(g, 0, 0, s * 0.07, s * 0.07); g.fill(); break
+    case 'm_biozone':
+      outlined(g, col, gg => { gg.beginPath(); gg.moveTo(-s * 0.12, -s * 0.3); gg.lineTo(s * 0.12, -s * 0.3); gg.lineTo(s * 0.12, -s * 0.12); gg.lineTo(s * 0.26, s * 0.3); gg.lineTo(-s * 0.26, s * 0.3); gg.lineTo(-s * 0.12, -s * 0.12); gg.closePath() }, 2.5)   // 燒瓶
+      g.fillStyle = acc; g.globalAlpha = 0.7; for (let k = 0; k < 4; k++) { ellipse(g, (k - 1.5) * s * 0.1, s * 0.12 - (k % 2) * s * 0.08, s * 0.05, s * 0.05); g.fill() } g.globalAlpha = 1; break
+    case 'm_drone': case 'drone':
+      outlined(g, col, gg => ellipse(gg, 0, 0, s * 0.34, s * 0.2), 2.5)   // 機身
+      outlined(g, acc, gg => ellipse(gg, 0, -s * 0.06, s * 0.16, s * 0.1), 2)   // 罩
+      g.fillStyle = OUTLINE; ellipse(g, -s * 0.34, s * 0.04, s * 0.07, s * 0.04); g.fill(); ellipse(g, s * 0.34, s * 0.04, s * 0.07, s * 0.04); g.fill()
+      if (weaponId === 'm_drone') { g.fillStyle = '#fff'; g.fillRect(-s * 0.03, -s * 0.1, s * 0.06, s * 0.14); g.fillRect(-s * 0.07, -s * 0.06, s * 0.14, s * 0.06) } break
+
+    // ---- 工程
+    case 'turret_gun':
+      outlined(g, acc, gg => { gg.beginPath(); gg.roundRect(-s * 0.28, s * 0.06, s * 0.56, s * 0.26, s * 0.05) }, 2.5)   // 底座
+      outlined(g, col, gg => ellipse(gg, 0, -s * 0.02, s * 0.18, s * 0.18), 2.5)   // 砲塔
+      outlined(g, acc, gg => { gg.beginPath(); gg.rect(s * 0.1, -s * 0.07, s * 0.34, s * 0.14) }, 2); break   // 砲管
+    case 'mine':
+      outlined(g, col, gg => ellipse(gg, 0, 0, s * 0.26, s * 0.26), 2.5)
+      for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2; spike(g, acc, Math.cos(a) * s * 0.26, Math.sin(a) * s * 0.26, s * 0.05, s * 0.12, a + Math.PI / 2) }
+      g.fillStyle = '#ff5252'; ellipse(g, 0, 0, s * 0.08, s * 0.08); g.fill(); break
+    case 'e_laser':
+      for (let k = 0; k < 3; k++) { const x = (k - 1) * s * 0.22; g.strokeStyle = col; g.lineWidth = s * 0.06; g.beginPath(); g.moveTo(x, -s * 0.36); g.lineTo(x, s * 0.36); g.stroke(); g.strokeStyle = acc; g.lineWidth = s * 0.02; g.stroke() }
+      g.fillStyle = col; for (const y of [-s * 0.36, s * 0.36]) for (let k = 0; k < 3; k++) { ellipse(g, (k - 1) * s * 0.22, y, s * 0.05, s * 0.05); g.fill() } break
+    case 'e_flame':
+      outlined(g, '#455a64', gg => { gg.beginPath(); gg.rect(-s * 0.4, -s * 0.08, s * 0.26, s * 0.16) }, 2)   // 噴嘴
+      for (const [dx, r, c] of [[0.1, 0.26, col], [0.22, 0.18, acc], [0.3, 0.1, '#ffe066']] as const) { g.fillStyle = c as string; g.beginPath(); g.moveTo(s * (dx as number - 0.08), 0); g.quadraticCurveTo(s * (dx as number + 0.14), -s * (r as number), s * 0.44, 0); g.quadraticCurveTo(s * (dx as number + 0.14), s * (r as number), s * (dx as number - 0.08), 0); g.fill() } break
+
+    // ---- 冰法
+    case 'ice_shard':
+      outlined(g, col, gg => { gg.beginPath(); gg.moveTo(0, -s * 0.42); gg.lineTo(s * 0.16, s * 0.1); gg.lineTo(0, s * 0.36); gg.lineTo(-s * 0.16, s * 0.1); gg.closePath() }, 2.5)
+      g.strokeStyle = '#fff'; g.lineWidth = s * 0.03; g.beginPath(); g.moveTo(0, -s * 0.3); g.lineTo(0, s * 0.24); g.stroke(); break
+    case 'fireball': {
+      orbGlow(g, s, col, 0.28)
+      g.fillStyle = acc; for (let k = 0; k < 5; k++) { const a = k / 5 * Math.PI * 2 - t * 2; g.beginPath(); g.moveTo(Math.cos(a) * s * 0.26, Math.sin(a) * s * 0.26); g.lineTo(Math.cos(a) * s * 0.44, Math.sin(a) * s * 0.44); g.lineTo(Math.cos(a + 0.5) * s * 0.28, Math.sin(a + 0.5) * s * 0.28); g.closePath(); g.fill() } break
+    }
+    case 'lightning':
+      outlined(g, col, gg => { gg.beginPath(); gg.moveTo(s * 0.12, -s * 0.42); gg.lineTo(-s * 0.16, s * 0.04); gg.lineTo(s * 0.02, s * 0.04); gg.lineTo(-s * 0.1, s * 0.42); gg.lineTo(s * 0.22, -s * 0.08); gg.lineTo(s * 0.03, -s * 0.08); gg.closePath() }, 2.5); break
+    case 'y_orb': case 'y_frost': {
+      const c2 = weaponId === 'y_frost' ? col : acc
+      g.strokeStyle = c2; g.lineWidth = s * 0.05; g.lineCap = 'round'
+      for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2; g.beginPath(); g.moveTo(0, 0); g.lineTo(Math.cos(a) * s * 0.4, Math.sin(a) * s * 0.4); g.stroke() }
+      g.lineCap = 'butt'; orbGlow(g, s, col, 0.16); break
+    }
+
+    // ---- 賭徒
+    case 't_dice':
+      outlined(g, col, gg => { gg.beginPath(); gg.roundRect(-s * 0.28, -s * 0.28, s * 0.56, s * 0.56, s * 0.08) }, 2.5)
+      g.fillStyle = acc; for (const [x, y] of [[-0.12, -0.12], [0.12, -0.12], [0, 0], [-0.12, 0.12], [0.12, 0.12]] as const) { ellipse(g, x * s, y * s, s * 0.05, s * 0.05); g.fill() } break
+    case 't_cards':
+      for (let k = 0; k < 3; k++) { g.save(); g.rotate((k - 1) * 0.4); outlined(g, col, gg => { gg.beginPath(); gg.roundRect(-s * 0.14, -s * 0.34, s * 0.28, s * 0.5, s * 0.04) }, 2); g.fillStyle = acc; ellipse(g, 0, -s * 0.1, s * 0.06, s * 0.06); g.fill(); g.restore() } break
+    case 't_coin':
+      outlined(g, col, gg => ellipse(gg, 0, 0, s * 0.32, s * 0.32), 2.5)
+      g.fillStyle = acc; g.font = `bold ${s * 0.4}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('$', 0, s * 0.02); break
+    case 't_orbit':
+      g.fillStyle = col; for (let k = 0; k < 4; k++) { const a = k / 4 * Math.PI * 2 - Math.PI / 2; g.save(); g.translate(Math.cos(a) * s * 0.14, Math.sin(a) * s * 0.14); outlined(g, col, gg => ellipse(gg, 0, 0, s * 0.14, s * 0.18), 2); g.restore() }
+      g.fillStyle = acc; ellipse(g, 0, 0, s * 0.08, s * 0.08); g.fill(); break
+    case 't_roulette':
+      outlined(g, col, gg => ellipse(gg, 0, 0, s * 0.36, s * 0.36), 2.5)
+      g.save(); g.rotate(t)
+      for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2; g.fillStyle = k % 2 ? acc : '#fff'; g.beginPath(); g.moveTo(0, 0); g.arc(0, 0, s * 0.34, a, a + Math.PI / 4); g.closePath(); g.fill() }
+      g.restore(); g.fillStyle = OUTLINE; ellipse(g, 0, 0, s * 0.06, s * 0.06); g.fill(); break
+
+    // ---- 刺客
+    case 'knife':
+      outlined(g, col, gg => { gg.beginPath(); gg.moveTo(0, -s * 0.4); gg.lineTo(s * 0.08, s * 0.06); gg.lineTo(-s * 0.08, s * 0.06); gg.closePath() }, 2.5)
+      outlined(g, acc, gg => { gg.beginPath(); gg.rect(-s * 0.06, s * 0.06, s * 0.12, s * 0.28) }, 2); break
+    case 'a_fan':
+      for (let k = 0; k < 3; k++) { g.save(); g.rotate((k - 1) * 0.45); outlined(g, col, gg => { gg.beginPath(); gg.moveTo(0, -s * 0.4); gg.lineTo(s * 0.06, s * 0.02); gg.lineTo(-s * 0.06, s * 0.02); gg.closePath() }, 1.5); g.restore() } break
+    case 'a_shuriken': case 'd_spikeorbit': case 's_katana': case 'k_kick': case 'c_whip': case 'h_mirage': {
+      // 環繞類：主體 + 旋轉外環
+      g.save(); g.rotate(t * (weaponId === 'a_shuriken' ? 2 : 1))
+      if (weaponId === 'a_shuriken') { g.fillStyle = col; for (let k = 0; k < 4; k++) { const a = k / 4 * Math.PI * 2; g.save(); g.rotate(a); outlined(g, col, gg => { gg.beginPath(); gg.moveTo(0, -s * 0.12); gg.lineTo(s * 0.4, 0); gg.lineTo(0, s * 0.12); gg.closePath() }, 2); g.restore() } g.fillStyle = OUTLINE; ellipse(g, 0, 0, s * 0.08, s * 0.08); g.fill() }
+      else if (weaponId === 'c_whip') { g.strokeStyle = col; g.lineWidth = s * 0.06; g.beginPath(); g.arc(0, 0, s * 0.32, 0, Math.PI * 1.4); g.stroke(); for (let k = 0; k < 5; k++) { const a = k / 5 * Math.PI * 1.4; spike(g, acc, Math.cos(a) * s * 0.32, Math.sin(a) * s * 0.32, s * 0.03, s * 0.1, a + Math.PI / 2) } }
+      else { for (let k = 0; k < 3; k++) { const a = k / 3 * Math.PI * 2; g.fillStyle = col; g.save(); g.translate(Math.cos(a) * s * 0.3, Math.sin(a) * s * 0.3); if (weaponId === 'd_spikeorbit') spike(g, col, 0, s * 0.1, s * 0.06, s * 0.22, a + Math.PI / 2); else if (weaponId === 's_katana') { outlined(g, col, gg => { gg.beginPath(); gg.roundRect(-s * 0.03, -s * 0.12, s * 0.06, s * 0.24, s * 0.02) }, 1.5) } else if (weaponId === 'k_kick') { outlined(g, col, gg => ellipse(gg, 0, 0, s * 0.1, s * 0.13), 2) } else { leaf(g, 0, s * 0.06, s * 0.22, col, a) } g.restore() } }
+      g.restore()
+      g.strokeStyle = acc; g.lineWidth = s * 0.02; g.setLineDash([s * 0.06, s * 0.05]); g.beginPath(); g.arc(0, 0, s * 0.34, 0, Math.PI * 2); g.stroke(); g.setLineDash([]); break
+    }
+    case 'poison_flask':
+      outlined(g, col, gg => { gg.beginPath(); gg.moveTo(-s * 0.1, -s * 0.28); gg.lineTo(s * 0.1, -s * 0.28); gg.lineTo(s * 0.1, -s * 0.14); gg.lineTo(s * 0.24, s * 0.28); gg.lineTo(-s * 0.24, s * 0.28); gg.lineTo(-s * 0.1, -s * 0.14); gg.closePath() }, 2.5)
+      outlined(g, acc, gg => { gg.beginPath(); gg.rect(-s * 0.06, -s * 0.36, s * 0.12, s * 0.1) }, 2)
+      g.fillStyle = '#c5e1a5'; ellipse(g, -s * 0.05, s * 0.12, s * 0.05, s * 0.05); g.fill(); ellipse(g, s * 0.08, s * 0.18, s * 0.04, s * 0.04); g.fill(); break
+    case 'a_drone': // 暗殺蜂
+      outlined(g, col, gg => ellipse(gg, 0, 0, s * 0.24, s * 0.18), 2.5)
+      g.strokeStyle = OUTLINE; g.lineWidth = s * 0.03; for (const x of [-s * 0.06, s * 0.06]) { g.beginPath(); g.moveTo(x, -s * 0.16); g.lineTo(x, s * 0.16); g.stroke() }
+      g.fillStyle = 'rgba(255,255,255,0.7)'; ellipse(g, -s * 0.14, -s * 0.18, s * 0.14, s * 0.1); g.fill(); ellipse(g, s * 0.14, -s * 0.18, s * 0.14, s * 0.1); g.fill(); break
+
+    // ---- 武士
+    case 's_iai': g.save(); g.rotate(-0.5); bladeUp(g, s, col, acc, 0.44, 0.06); g.restore(); break
+    case 's_kunai':
+      outlined(g, col, gg => { gg.beginPath(); gg.moveTo(0, -s * 0.4); gg.lineTo(s * 0.1, -s * 0.05); gg.lineTo(-s * 0.1, -s * 0.05); gg.closePath() }, 2.5)
+      outlined(g, acc, gg => { gg.beginPath(); gg.rect(-s * 0.05, -s * 0.05, s * 0.1, s * 0.3) }, 2)
+      outlined(g, acc, gg => ellipse(gg, 0, s * 0.3, s * 0.08, s * 0.08), 2); break
+    case 's_wave': case 'k_qi': {
+      // 斬擊波 / 氣功波：新月/同心弧
+      g.strokeStyle = col; g.lineWidth = s * 0.08; g.lineCap = 'round'
+      for (let k = 0; k < 3; k++) { g.globalAlpha = 1 - k * 0.25; g.beginPath(); g.arc(-s * 0.2, 0, s * (0.2 + k * 0.12), -Math.PI * 0.45, Math.PI * 0.45); g.stroke() }
+      g.globalAlpha = 1; g.lineCap = 'butt'; break
+    }
+    case 's_odachi': bladeUp(g, s, col, acc, 0.46, 0.07); break
+
+    // ---- 仙人掌
+    case 'c_gauntlet': case 'k_fist':
+      outlined(g, col, gg => { gg.beginPath(); gg.roundRect(-s * 0.24, -s * 0.2, s * 0.48, s * 0.42, s * 0.12) }, 2.5)   // 拳
+      g.strokeStyle = OUTLINE; g.lineWidth = s * 0.025; for (let k = 0; k < 3; k++) { const x = -s * 0.12 + k * s * 0.12; g.beginPath(); g.moveTo(x, -s * 0.2); g.lineTo(x, s * 0.05); g.stroke() }
+      if (weaponId === 'c_gauntlet') for (let k = 0; k < 3; k++) spike(g, acc, -s * 0.12 + k * s * 0.12, -s * 0.2, s * 0.04, s * 0.12); break
+    case 'c_shield':
+      outlined(g, col, gg => { gg.beginPath(); gg.moveTo(0, -s * 0.36); gg.lineTo(s * 0.32, -s * 0.22); gg.lineTo(s * 0.24, s * 0.24); gg.lineTo(0, s * 0.4); gg.lineTo(-s * 0.24, s * 0.24); gg.lineTo(-s * 0.32, -s * 0.22); gg.closePath() }, 3)
+      for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2; spike(g, acc, Math.cos(a) * s * 0.28, Math.sin(a) * s * 0.28 - s * 0.02, s * 0.04, s * 0.1, a + Math.PI / 2) } break
+    case 'c_spikes':
+      for (let k = 0; k < 4; k++) spike(g, col, (k - 1.5) * s * 0.22, s * 0.32, s * 0.08, s * (0.4 + (k % 2) * 0.16)); break
+    case 'c_seed': case 'd_spikefan': case 'h_pollen':
+      for (let k = 0; k < 5; k++) { const a = (k - 2) * 0.32 - Math.PI / 2; g.save(); g.translate(Math.cos(a) * s * 0.28, Math.sin(a) * s * 0.28 + s * 0.28); if (weaponId === 'c_seed') { outlined(g, col, gg => ellipse(gg, 0, 0, s * 0.07, s * 0.1), 1.5) } else if (weaponId === 'd_spikefan') { spike(g, col, 0, s * 0.08, s * 0.05, s * 0.2, a + Math.PI / 2) } else { outlined(g, k % 2 ? acc : col, gg => ellipse(gg, 0, 0, s * 0.1, s * 0.1), 1.5) } g.restore() } break
+
+    // ---- 武僧
+    case 'k_palm':
+      outlined(g, col, gg => { gg.beginPath(); gg.roundRect(-s * 0.2, -s * 0.05, s * 0.4, s * 0.34, s * 0.1) }, 2.5)   // 掌心
+      for (let k = 0; k < 4; k++) { const x = -s * 0.14 + k * s * 0.093; outlined(g, col, gg => { gg.beginPath(); gg.roundRect(x - s * 0.035, -s * 0.32, s * 0.07, s * 0.3, s * 0.03) }, 2) }
+      g.fillStyle = acc; g.globalAlpha = 0.6; ellipse(g, 0, s * 0.1, s * 0.1, s * 0.1); g.fill(); g.globalAlpha = 1; break
+    case 'k_staff':
+      outlined(g, col, gg => { gg.beginPath(); gg.roundRect(-s * 0.04, -s * 0.42, s * 0.08, s * 0.84, s * 0.04) }, 2.5)
+      g.fillStyle = acc; ellipse(g, 0, -s * 0.42, s * 0.07, s * 0.07); g.fill(); ellipse(g, 0, s * 0.42, s * 0.07, s * 0.07); g.fill(); break
+
+    // ---- 榴槤
+    case 'd_thornshot': case 'd_barb':
+      outlined(g, col, gg => { gg.beginPath(); gg.moveTo(0, -s * 0.42); gg.lineTo(s * 0.1, s * 0.1); gg.lineTo(-s * 0.1, s * 0.1); gg.closePath() }, 2.5)
+      if (weaponId === 'd_barb') { g.strokeStyle = acc; g.lineWidth = s * 0.04; g.beginPath(); g.moveTo(0, -s * 0.14); g.lineTo(s * 0.14, -s * 0.02); g.moveTo(0, -s * 0.14); g.lineTo(-s * 0.14, -s * 0.02); g.stroke() }
+      outlined(g, acc, gg => { gg.beginPath(); gg.rect(-s * 0.04, s * 0.1, s * 0.08, s * 0.28) }, 2); break
+    case 'd_caltrop':
+      g.fillStyle = col; for (let k = 0; k < 4; k++) { const a = k / 4 * Math.PI * 2 - Math.PI / 2; spike(g, col, 0, 0, s * 0.08, s * 0.34, a) } outlined(g, acc, gg => ellipse(gg, 0, 0, s * 0.1, s * 0.1), 2); break
+
+    // ---- 迷幻大麻
+    case 'h_spore':
+      orbGlow(g, s, col, 0.26)
+      g.fillStyle = acc; for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2 + t; ellipse(g, Math.cos(a) * s * 0.38, Math.sin(a) * s * 0.38, s * 0.045, s * 0.045); g.fill() } break
+    case 'h_smoke':
+      g.fillStyle = col; g.globalAlpha = 0.7; for (const [x, y, r] of [[-0.14, 0.1, 0.2], [0.12, 0.06, 0.22], [0, -0.14, 0.18], [-0.02, 0.16, 0.16]] as const) { ellipse(g, x * s + Math.sin(t + x) * s * 0.02, y * s, r * s, r * s); g.fill() } g.globalAlpha = 1
+      g.fillStyle = acc; ellipse(g, s * 0.1, -s * 0.05, s * 0.05, s * 0.05); g.fill(); break
+    case 'h_haze':
+      g.save(); g.rotate(-0.5)
+      g.fillStyle = col; g.shadowColor = col; g.shadowBlur = 10
+      g.beginPath(); g.moveTo(-s * 0.4, -s * 0.06); g.lineTo(s * 0.4, -s * 0.02); g.lineTo(s * 0.4, s * 0.02); g.lineTo(-s * 0.4, s * 0.06); g.closePath(); g.fill()
+      g.shadowBlur = 0; g.fillStyle = acc; ellipse(g, s * 0.34, 0, s * 0.1, s * 0.05); g.fill(); g.restore(); break
+
+    default:
+      // 保底：以配色畫個帶刃菱形
+      outlined(g, col, gg => { gg.beginPath(); gg.moveTo(0, -s * 0.4); gg.lineTo(s * 0.28, 0); gg.lineTo(0, s * 0.4); gg.lineTo(-s * 0.28, 0); gg.closePath() }, 2.5)
+      g.fillStyle = acc; ellipse(g, 0, 0, s * 0.1, s * 0.1); g.fill()
+  }
+  g.restore()
+}
+
 /** 地圖物件 / 任務目標 */
 export function drawObjective(g: Ctx, t: string, r: number, time: number, opts: {
   k?: string; hpPct?: number; pg?: number; state?: number

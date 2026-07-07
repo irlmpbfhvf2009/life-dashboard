@@ -212,6 +212,8 @@ const WEAPON_EMOJI: Record<string, string> = {
   k_fist: '👊', k_palm: '✋', k_kick: '🦵', k_staff: '🦯', k_qi: '☯️',
   // 榴槤
   d_thornshot: '📌', d_spikefan: '🎇', d_caltrop: '✳️', d_spikeorbit: '🌟', d_barb: '🔱',
+  // 迷幻大麻
+  h_spore: '🍄', h_pollen: '🌼', h_smoke: '💨', h_mirage: '🍃', h_haze: '🔮',
 }
 const SKILL_EMOJI: Record<string, string> = {
   charge: '💨', bulwark: '🛡️', thornsNova: '🌵', rapidfire: '🔥',
@@ -860,8 +862,8 @@ const fmtTime = (s: number) => {
             :class="pickedWeapon === wid ? 'border-amber-400 bg-amber-400/15' : 'border-white/10 bg-white/5'"
             @click="pickWeapon(wid)"
           >
-            <span class="text-2xl">{{ WEAPON_EMOJI[wid] }}</span>
-            <span class="block text-xs font-bold">{{ wpn(wid)?.name }}</span>
+            <Portrait kind="weapon" :id="wid" :size="40" class="mx-auto" />
+            <span class="mt-0.5 block text-xs font-bold">{{ wpn(wid)?.name }}</span>
             <span class="block text-[10px] leading-tight text-white/40">{{ wpn(wid)?.description }}</span>
           </button>
         </div>

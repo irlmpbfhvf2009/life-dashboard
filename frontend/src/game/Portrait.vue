@@ -1,10 +1,10 @@
 <script setup lang="ts">
 // 角色 / 怪物 / Boss 的動畫頭像（Canvas RAF 小預覽）
 import { onMounted, onBeforeUnmount, ref } from 'vue'
-import { drawCharacter, drawEnemy, drawBoss } from './art'
+import { drawCharacter, drawEnemy, drawBoss, drawWeaponIcon } from './art'
 
 const props = withDefaults(defineProps<{
-  kind: 'char' | 'enemy' | 'boss'
+  kind: 'char' | 'enemy' | 'boss' | 'weapon'
   id: string
   size?: number
 }>(), { size: 56 })
@@ -28,6 +28,7 @@ onMounted(() => {
     const t = performance.now() / 1000
     if (props.kind === 'char') drawCharacter(g, props.id, props.size * 0.82, t)
     else if (props.kind === 'enemy') drawEnemy(g, props.id, props.size * 0.8, t)
+    else if (props.kind === 'weapon') drawWeaponIcon(g, props.id, props.size * 0.92, t)
     else drawBoss(g, props.id, props.size * 0.8, t)
     g.restore()
   }
