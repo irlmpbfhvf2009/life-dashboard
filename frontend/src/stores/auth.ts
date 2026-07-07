@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import {
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
@@ -88,6 +90,12 @@ export const useAuthStore = defineStore('auth', {
       // Idempotent: only ever subscribe once; all callers share one promise.
       if (authReadyPromise) return authReadyPromise
       authReadyPromise = new Promise((resolve) => {
+        // Surface errors from a redirect-based sign-in (the popup-blocked
+        // fallback below). On success onAuthStateChanged fires with the
+        // signed-in user regardless — this only needs to catch failures.
+        getRedirectResult(auth).catch((e) => {
+          this.error = mapAuthError(e)
+        })
         onAuthStateChanged(auth, async (user) => {
           this.firebaseUser = user
           if (user) {
@@ -130,6 +138,14 @@ export const useAuthStore = defineStore('auth', {
       try {
         await signInWithPopup(auth, googleProvider)
       } catch (e) {
+        const code = (e as { code?: string })?.code
+        if (code === 'auth/popup-blocked') {
+          // Browser/extension blocked the popup (common with strict pop-up
+          // blockers or corporate policies) — fall back to a full-page
+          // redirect instead of leaving the user stuck on an error message.
+          await signInWithRedirect(auth, googleProvider)
+          return
+        }
         this.error = mapAuthError(e)
         throw e
       } finally {
