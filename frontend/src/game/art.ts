@@ -1419,10 +1419,15 @@ export function drawProjectile(g: Ctx, weaponId: string, t: number): void {
       break
     }
     case 'g_sniper':
-      g.strokeStyle = 'rgba(255,255,255,0.4)'; g.lineWidth = 2
-      g.beginPath(); g.moveTo(0, 4); g.lineTo(0, 20); g.stroke()
-      g.fillStyle = '#eceff1'; g.beginPath(); g.roundRect(-1.6, -9, 3.2, 12, 1.6); g.fill()
-      g.fillStyle = '#90a4ae'; g.fillRect(-1.6, 0, 3.2, 3); break
+      // 長程曳光彈：雙層亮線（外散內銳）+ 發光彈頭
+      g.strokeStyle = 'rgba(180,220,255,0.35)'; g.lineWidth = 5
+      g.beginPath(); g.moveTo(0, 6); g.lineTo(0, 24); g.stroke()
+      g.strokeStyle = 'rgba(255,255,255,0.55)'; g.lineWidth = 2
+      g.beginPath(); g.moveTo(0, 3); g.lineTo(0, 27); g.stroke()
+      g.shadowColor = '#eaf6ff'; g.shadowBlur = 8
+      g.fillStyle = '#eceff1'; g.beginPath(); g.roundRect(-1.7, -10, 3.4, 13, 1.7); g.fill()
+      g.shadowBlur = 0
+      g.fillStyle = '#90a4ae'; g.fillRect(-1.7, 0, 3.4, 3); break
     case 'g_shotgun':
       outlined(g, '#8d6e63', gg => ellipse(gg, 0, 0, 4, 4), 1.2); break
 
@@ -1451,17 +1456,51 @@ export function drawProjectile(g: Ctx, weaponId: string, t: number): void {
       g.strokeStyle = '#8d6e63'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, 11); g.stroke(); break
 
     // ---- 魔法 ----
-    case 'fireball': case 'e_flame':
-      g.shadowColor = '#ff6b35'; g.shadowBlur = 10
-      outlined(g, '#ff6b35', gg => ellipse(gg, 0, 0, 7, 7), 1.5)
-      g.fillStyle = '#ffe66d'; ellipse(g, 0, 0, 3.5, 3.5); g.fill(); break
+    case 'fireball': {
+      // 翻騰火球彗星：外焰 + 橘核 + 白熱心 + 往後竄動的火尾
+      g.shadowColor = '#ff6b35'; g.shadowBlur = 14
+      const fl = 1 + Math.sin(t * 22) * 0.18
+      outlined(g, '#ff6b35', gg => ellipse(gg, 0, 0, 7.5 * fl, 7.5 * fl), 1.5)
+      g.shadowBlur = 0
+      g.fillStyle = '#ffb03a'; ellipse(g, 0, 0, 5 * fl, 5 * fl); g.fill()
+      g.fillStyle = '#ffe66d'; ellipse(g, 0, -0.5, 2.8, 2.8); g.fill()
+      g.fillStyle = 'rgba(255,120,40,0.5)'
+      for (let k = 0; k < 3; k++) { const w = 3 - k; ellipse(g, Math.sin(t * 20 + k) * 2, 6 + k * 4, w, w + 2); g.fill() }
+      break
+    }
+    case 'e_flame': {
+      // 火焰噴射：閃動的火舌（外紅內黃的水滴，逐幀擺動）
+      g.shadowColor = '#ff7043'; g.shadowBlur = 10
+      const wob = Math.sin(t * 30) * 1.6
+      outlined(g, '#ff5722', gg => { gg.beginPath(); gg.moveTo(wob, -9); gg.quadraticCurveTo(5, 0, 0, 7); gg.quadraticCurveTo(-5, 0, wob, -9) }, 1.2)
+      g.shadowBlur = 0
+      g.fillStyle = '#ff9800'; g.beginPath(); g.moveTo(wob * 0.6, -6); g.quadraticCurveTo(3, 0, 0, 5); g.quadraticCurveTo(-3, 0, wob * 0.6, -6); g.fill()
+      g.fillStyle = '#ffe066'; ellipse(g, 0, 1, 1.8, 2.6); g.fill()
+      break
+    }
     case 'meteor':
       g.shadowColor = '#ff5722'; g.shadowBlur = 16
       outlined(g, '#ff5722', gg => ellipse(gg, 0, 0, 11, 11), 2)
       g.fillStyle = '#ffe66d'; ellipse(g, 0, 0, 6, 6); g.fill()
       g.fillStyle = 'rgba(255,120,40,0.5)'; ellipse(g, 0, 10, 5, 9); g.fill(); break
-    case 'ice_shard': case 'blizzard':
-      outlined(g, '#a8e0ff', gg => { gg.beginPath(); gg.moveTo(0, -8); gg.lineTo(4, 2); gg.lineTo(0, 8); gg.lineTo(-4, 2); gg.closePath() }, 1.5); break
+    case 'ice_shard': case 'blizzard': {
+      // 稜面冰晶：發光晶體 + 反光十字 + 飄散寒霜微粒
+      g.shadowColor = '#a8e0ff'; g.shadowBlur = 8
+      outlined(g, '#cdeeff', gg => { gg.beginPath(); gg.moveTo(0, -9); gg.lineTo(4, -1); gg.lineTo(2, 8); gg.lineTo(-2, 8); gg.lineTo(-4, -1); gg.closePath() }, 1.5)
+      g.shadowBlur = 0
+      g.strokeStyle = 'rgba(255,255,255,0.9)'; g.lineWidth = 1
+      g.beginPath(); g.moveTo(0, -7); g.lineTo(0, 6); g.moveTo(-3, 0); g.lineTo(3, 0); g.stroke()
+      g.fillStyle = 'rgba(255,255,255,0.8)'; ellipse(g, Math.sin(t * 10) * 3, -3, 1, 1); g.fill()
+      break
+    }
+    case 'lightning': {
+      // 鋸齒電光彈（若閃電鏈有發射視覺）
+      g.shadowColor = '#ffe66d'; g.shadowBlur = 10
+      g.strokeStyle = '#fff9c4'; g.lineWidth = 2.5; g.lineJoin = 'round'; g.lineCap = 'round'
+      g.beginPath(); g.moveTo(0, -9); g.lineTo(3, -3); g.lineTo(-2, 1); g.lineTo(3, 4); g.lineTo(0, 9); g.stroke()
+      g.lineCap = 'butt'; g.shadowBlur = 0
+      break
+    }
 
     // ---- 賭徒 ----
     case 't_dice':
@@ -1500,9 +1539,20 @@ export function drawProjectile(g: Ctx, weaponId: string, t: number): void {
     case 'turret_gun': case 'drone': case 'm_drone': case 'a_drone': case 'drone_swarm': case 'gatling_turret':
       outlined(g, '#ffe66d', gg => ellipse(gg, 0, 0, 3.5, 3.5), 1.2); break
     default: {
+      // 誇張化通用彈：脈動發光寶珠 + 白熱核 + 十字星芒（讓所有「吃預設」的武器都華麗）
       const pal = WEAPON_MAP.get(weaponId)?.palette
-      if (pal) { g.shadowColor = pal[0]; g.shadowBlur = 8; outlined(g, pal[0], gg => ellipse(gg, 0, 0, 6, 6), 1.5) }
-      else outlined(g, '#fff', gg => ellipse(gg, 0, 0, 4, 4), 1.5)
+      const c0 = pal?.[0] ?? '#ffffff'
+      const c1 = pal?.[1] ?? c0
+      const pulse = 1 + Math.sin(t * 18) * 0.16
+      g.shadowColor = c0; g.shadowBlur = 12
+      outlined(g, c0, gg => ellipse(gg, 0, 0, 6.5 * pulse, 6.5 * pulse), 1.5)
+      g.shadowBlur = 0
+      g.fillStyle = c1; ellipse(g, 0, 0, 3.4, 3.4); g.fill()
+      g.fillStyle = '#fff'; ellipse(g, -1, -1, 1.6, 1.6); g.fill()
+      // 十字星芒
+      g.strokeStyle = `rgba(255,255,255,${0.5 + Math.sin(t * 18) * 0.3})`; g.lineWidth = 1
+      const gl = 9.5 * pulse
+      g.beginPath(); g.moveTo(0, -gl); g.lineTo(0, gl); g.moveTo(-gl, 0); g.lineTo(gl, 0); g.stroke()
     }
   }
 }

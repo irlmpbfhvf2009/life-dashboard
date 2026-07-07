@@ -18,6 +18,9 @@ const MAX_PARTICLES = 220
 const MAX_DMG_NUMS = 30
 const MAX_COSMETIC_PROJ = 90
 
+// 會拋黃銅彈殼的槍械（射擊時往側後彈殼）
+const GUN_IDS = new Set(['pea_gun', 'g_smg', 'g_minigun', 'g_sniper', 'g_shotgun'])
+
 interface CEnemy {
   i: number; kind: string
   x: number; y: number; tx: number; ty: number
@@ -220,6 +223,9 @@ export class Engine {
           if (this.dmgNums.length < MAX_DMG_NUMS) {
             this.dmgNums.push({ x: ev.x + (Math.random() - 0.5) * 18, y: ev.y - 14, v: ev.d, crit: !!ev.crit, life: 0.8 })
           }
+          // 命中火花（誇張化）：暴擊金色爆散 + 微震，普通命中小火星
+          if (ev.crit) { this.burst(ev.x, ev.y, 12, '#ffe066', 5); this.shake = Math.min(this.shake + 2, 8) }
+          else if (Math.random() < 0.6) this.burst(ev.x, ev.y, 2, '#fff3c4', 3)
           break
         case 'phit': {
           if (ev.id === gs.playerId) { this.shake = Math.min(this.shake + 5, 12); sfx.hit(); haptics.hit() }
@@ -236,6 +242,14 @@ export class Engine {
               this.projectiles.push({ x: ev.x, y: ev.y, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd, left: (w?.base.range ?? 350) * 1.2, weapon: ev.w, born: this.time })
             }
             if (ev.id === gs.playerId) sfx.shoot(ev.w, w?.category)
+            // 槍口火花（誇張化）：射擊瞬間朝目標噴一撮火星 + 亮白閃光
+            const cat = w?.category
+            if (cat === 'ranged' || cat === 'magic' || cat === 'support') {
+              const pal = w?.palette ?? ['#ffe066', '#ff9f43']
+              this.muzzle(ev.x, ev.y, Math.atan2(dy, dx), pal[0])
+            }
+            // 槍械專屬：往側後拋一枚黃銅彈殼
+            if (GUN_IDS.has(ev.w)) this.ejectShell(ev.x, ev.y, Math.atan2(dy, dx))
           }
           break
         }
@@ -274,7 +288,7 @@ export class Engine {
           const life = AOE_LIFE[ev.kind] ?? 0.5
           this.aoes.push({ x: ev.x, y: ev.y, r: ev.r, kind: ev.kind, life, maxLife: life, w: ev.w })
           if (ev.kind === 'swing' && ev.id && ev.w) this.meleeSwing.set(`${ev.id}:${ev.w}`, this.time)   // 觸發握持武器揮動
-          if (ev.kind === 'explosion') { sfx.explosion(); this.shake = Math.min(this.shake + 4, 10); this.burst(ev.x, ev.y, 12, '#ff9f43', 4) }
+          if (ev.kind === 'explosion') { sfx.explosion(); this.shake = Math.min(this.shake + 7, 14); this.burst(ev.x, ev.y, 18, '#ff9f43', 5); this.burst(ev.x, ev.y, 8, '#ffe66d', 3) }
           if (ev.kind === 'frost') sfx.frost()
           if (ev.kind === 'haze') { sfx.haze(); this.burst(ev.x, ev.y, 14, '#e05fd0', 3) }
           if (ev.kind === 'lightning') { sfx.lightning(); this.burst(ev.x, ev.y, 10, '#ffe66d', 4) }
@@ -305,6 +319,24 @@ export class Engine {
       const v = (0.4 + Math.random()) * speed * 60
       this.particles.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 0.6, maxLife: 0.6, color, size: 2 + Math.random() * 3 })
     }
+  }
+
+  /** 槍口火花：朝 ang 方向噴一撮短命火星 + 一個亮白閃光圈（射擊瞬間的爆發感） */
+  muzzle(x: number, y: number, ang: number, color: string): void {
+    for (let k = 0; k < 5 && this.particles.length < MAX_PARTICLES; k++) {
+      const a = ang + (Math.random() - 0.5) * 0.7
+      const v = 200 + Math.random() * 260
+      this.particles.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 0.16, maxLife: 0.16, color, size: 1.5 + Math.random() * 2 })
+    }
+    this.aoes.push({ x: x + Math.cos(ang) * 16, y: y + Math.sin(ang) * 16, r: 13, kind: 'flash', life: 0.1, maxLife: 0.1 })
+  }
+
+  /** 槍械拋殼：往射向的側後方彈出一枚黃銅彈殼並帶點上拋 */
+  ejectShell(x: number, y: number, ang: number): void {
+    if (this.particles.length >= MAX_PARTICLES) return
+    const side = ang + Math.PI / 2 + (Math.random() - 0.5) * 0.5
+    const v = 120 + Math.random() * 120
+    this.particles.push({ x, y, vx: Math.cos(side) * v, vy: Math.sin(side) * v - 40, life: 0.4, maxLife: 0.4, color: '#c9a24b', size: 1.6 + Math.random() * 0.9 })
   }
 
   // ---------------------------------------------------------------- 主迴圈
@@ -592,30 +624,63 @@ export class Engine {
         }
         case 'explosion': {
           const rr = a.r * (1 - pct * pct)
+          // 外層火球
           g.fillStyle = `rgba(255,159,67,${pct * 0.7})`
           g.beginPath(); g.arc(0, 0, rr, 0, Math.PI * 2); g.fill()
-          g.fillStyle = `rgba(255,230,109,${pct * 0.9})`
-          g.beginPath(); g.arc(0, 0, rr * 0.55, 0, Math.PI * 2); g.fill()
+          // 白熱核
+          g.fillStyle = `rgba(255,245,190,${pct * 0.95})`
+          g.beginPath(); g.arc(0, 0, rr * 0.5, 0, Math.PI * 2); g.fill()
+          // 外擴衝擊波環
+          const sw = a.r * (1 - pct) * 1.15
+          g.strokeStyle = `rgba(255,255,255,${pct * 0.8})`
+          g.lineWidth = 3 * pct + 1
+          g.beginPath(); g.arc(0, 0, sw, 0, Math.PI * 2); g.stroke()
+          break
+        }
+        case 'flash': {
+          // 槍口/爆發亮白閃光（極短命）
+          g.fillStyle = `rgba(255,250,220,${pct * 0.85})`
+          g.beginPath(); g.arc(0, 0, a.r * (0.6 + (1 - pct) * 0.9), 0, Math.PI * 2); g.fill()
           break
         }
         case 'frost':
           g.fillStyle = `rgba(168,224,255,${pct * 0.4})`
           g.beginPath(); g.arc(0, 0, a.r * (1 - pct * 0.3), 0, Math.PI * 2); g.fill()
           break
-        case 'lightning':
-          g.strokeStyle = `rgba(255,230,109,${pct})`
-          g.lineWidth = 3
-          for (let k = 0; k < 3; k++) {
-            g.beginPath()
-            let yy = -160
-            let xx = (Math.random() - 0.5) * 20
-            g.moveTo(xx, yy)
-            while (yy < 0) { yy += 25 + Math.random() * 20; xx += (Math.random() - 0.5) * 26; g.lineTo(xx, yy) }
+        case 'lightning': {
+          // 分叉電弧爆點：由中心往四周甩出多條鋸齒電光 + 白熱核
+          g.shadowColor = '#fff59d'; g.shadowBlur = 12
+          g.strokeStyle = `rgba(255,245,140,${pct})`
+          g.lineWidth = 3; g.lineJoin = 'round'; g.lineCap = 'round'
+          const bolts = 5
+          const reach = a.r * 0.9
+          for (let b = 0; b < bolts; b++) {
+            const base = (b / bolts) * Math.PI * 2 + this.time * 3
+            g.beginPath(); g.moveTo(0, 0)
+            const seg = 4
+            for (let s = 1; s <= seg; s++) {
+              const rr = (s / seg) * reach
+              const jit = (Math.random() - 0.5) * 24
+              g.lineTo(Math.cos(base) * rr + Math.cos(base + Math.PI / 2) * jit,
+                       Math.sin(base) * rr + Math.sin(base + Math.PI / 2) * jit)
+            }
             g.stroke()
+            // 半途岔出的小分支
+            if (Math.random() < 0.6) {
+              const fr = reach * 0.55
+              g.beginPath()
+              g.moveTo(Math.cos(base) * fr, Math.sin(base) * fr)
+              const ba = base + (Math.random() - 0.5) * 1.4
+              g.lineTo(Math.cos(ba) * reach * 0.85, Math.sin(ba) * reach * 0.85)
+              g.stroke()
+            }
           }
-          g.fillStyle = `rgba(255,255,255,${pct * 0.5})`
-          g.beginPath(); g.arc(0, 0, a.r * 0.5, 0, Math.PI * 2); g.fill()
+          g.shadowBlur = 0
+          g.fillStyle = `rgba(255,255,255,${pct * 0.85})`
+          g.beginPath(); g.arc(0, 0, 6 + (1 - pct) * 12, 0, Math.PI * 2); g.fill()
+          g.lineCap = 'butt'
           break
+        }
         case 'swing': {
           // 依武器色盤上色的刀光（近戰武器各自不同顏色）
           const col = (a.w && WEAPON_MAP.get(a.w)?.palette[0]) || '#ffffff'
@@ -761,8 +826,27 @@ export class Engine {
       g.beginPath(); g.arc(pr.x, pr.y, 6, 0, Math.PI * 2); g.stroke()
     }
 
-    // 我方投射物（視覺）
+    // 我方投射物（視覺）—— 先畫拖尾光暈，再畫本體（誇張化：每發都拖一道會發光的軌跡）
     for (const pr of this.projectiles) {
+      const w = WEAPON_MAP.get(pr.weapon)
+      const pal = w?.palette ?? ['#ffffff', '#ffffff']
+      const cat = w?.category
+      const spd = Math.hypot(pr.vx, pr.vy) || 1
+      const ux = pr.vx / spd, uy = pr.vy / spd
+      // 拖尾長度/發光：魔法最長最亮、槍彈短促銳利、其餘中等
+      const len = cat === 'magic' ? 42 : cat === 'ranged' ? 24 : 30
+      const glow = cat === 'magic' || !!w?.tags?.includes('fire') || !!w?.tags?.includes('lightning') || !!w?.tags?.includes('frost')
+      const headR = cat === 'ranged' ? 5 : 7
+      g.save()
+      if (glow) { g.shadowColor = pal[0]; g.shadowBlur = 12 }
+      for (let i = 1; i <= 6; i++) {
+        const f = i / 6
+        g.globalAlpha = (1 - f) * 0.5
+        g.fillStyle = i % 2 ? pal[0] : pal[1]
+        const r = headR * (1 - f * 0.72)
+        g.beginPath(); g.arc(pr.x - ux * len * f, pr.y - uy * len * f, r, 0, Math.PI * 2); g.fill()
+      }
+      g.restore()
       g.save()
       g.translate(pr.x, pr.y)
       g.rotate(Math.atan2(pr.vy, pr.vx) + Math.PI / 2)
@@ -944,16 +1028,26 @@ export class Engine {
     }
     g.globalAlpha = 1
 
-    // 傷害數字
+    // 傷害數字（暴擊誇張化：放大彈跳 + 金色發光）
     for (const d of this.dmgNums) {
       g.globalAlpha = Math.min(1, d.life * 2)
-      g.font = d.crit ? 'bold 17px sans-serif' : 'bold 13px sans-serif'
       g.textAlign = 'center'
+      if (d.crit) {
+        const age = 0.8 - d.life
+        const pop = age < 0.16 ? 0.6 + (age / 0.16) * 0.6 : 1.2 - Math.max(0, (age - 0.16)) * 0.25
+        const fs = Math.round(20 * Math.max(0.6, pop))
+        g.font = `900 ${fs}px sans-serif`
+        g.shadowColor = 'rgba(255,190,0,0.95)'; g.shadowBlur = 12
+        g.fillStyle = '#ffe066'
+      } else {
+        g.font = 'bold 13px sans-serif'
+        g.fillStyle = '#fff'
+      }
       g.strokeStyle = 'rgba(0,0,0,0.8)'
       g.lineWidth = 3
-      g.fillStyle = d.crit ? '#ffe66d' : '#fff'
       g.strokeText(String(d.v), d.x, d.y)
       g.fillText(String(d.v), d.x, d.y)
+      g.shadowBlur = 0
     }
     g.globalAlpha = 1
     g.restore()
