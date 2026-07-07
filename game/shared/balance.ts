@@ -7,6 +7,8 @@ export const ARENA = { w: 1800, h: 1800 }
 export const TICK_HZ = 20
 export const SNAP_HZ = 10
 export const MOVE_INPUT_HZ = 15
+/** 全域怪物移動速度倍率（配合玩家提速，讓整體節奏更快） */
+export const ENEMY_SPEED_MULT = 1.2
 
 // ------------------------------------------------- 人數縮放
 
@@ -91,12 +93,12 @@ export const REVIVES_PER_MODE: Record<Mode, number> = { quick: 1, standard: 2, e
 export const TEAM_REVIVE = { healPct: 0.4, clearRadius: 320 }
 
 export const DOWNED = {
-  baseReviveTime: 3.0,          // 秒（單人救）
-  reviveTimePerDown: 1.0,       // 每次倒地 +1s
+  baseReviveTime: 5.0,          // 秒（單人救，站著約 5 秒救起）
+  reviveTimePerDown: 0.5,       // 每次倒地 +0.5s
   maxReviveTime: 7.0,
   crawlSpeed: 40,
-  reviveRadius: 90,
-  revivedHpPct: 0.35,
+  reviveRadius: 105,            // 站進圈圈即施救
+  revivedHpPct: 0.4,
   bleedOutTime: 45,             // 無人救援自動死亡
   multiRescuerBonus: 0.7,       // 每多 1 人救援 → 時間 ×0.7
 }
@@ -182,10 +184,11 @@ export const EVENT_RULES = {
 export const TRAPS = {
   /** 每波陷阱數：base + wave 成長，封頂 */
   count: (wave: number) => Math.min(2 + Math.floor(wave / 3), 7),
-  radius: 42,
+  radiusMin: 42,
+  radiusMax: 360,               // 最大巨型陷阱 ~1/5 場地寬（1800）；偏態分佈，巨型稀有
   damage: 7,
   tickInterval: 0.8,            // 站在上面每 0.8 秒扣一次
-  minDistFromCenter: 260,       // 避開出生點
+  minDistFromCenter: 260,       // 避開出生點（巨型陷阱再依半徑外推）
   fromWave: 2,
 }
 

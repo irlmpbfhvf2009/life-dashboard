@@ -44,16 +44,24 @@ export function spawnTraps(g: Game): void {
   if (g.wave < TRAPS.fromWave) return
   const n = TRAPS.count(g.wave)
   const cx = ARENA.w / 2, cy = ARENA.h / 2
+  // 玩家目前位置＝本波起始點，陷阱不能生在上面（含安全緩衝）
+  const spawns = [...g.players.values()].filter(p => p.status !== 'dead').map(p => ({ x: p.x, y: p.y }))
   for (let k = 0; k < n; k++) {
+    // 隨機大小：偏態分佈（多數偏小、偶爾巨型），巨型可佔據大片區域
+    const r = Math.round(TRAPS.radiusMin + Math.pow(g.rng(), 2.4) * (TRAPS.radiusMax - TRAPS.radiusMin))
     let x = 0, y = 0
-    for (let tries = 0; tries < 6; tries++) {
+    for (let tries = 0; tries < 12; tries++) {
       x = 120 + g.rng() * (ARENA.w - 240)
       y = 120 + g.rng() * (ARENA.h - 240)
-      if (dist2(x, y, cx, cy) > TRAPS.minDistFromCenter ** 2) break
+      // 陷阱邊緣不得吃到中心出生區（半徑越大、離中心越遠）
+      if (dist2(x, y, cx, cy) <= (TRAPS.minDistFromCenter + r * 0.6) ** 2) continue
+      // 也不能生在任何玩家（起始點）身上：陷阱邊緣需離玩家 ≥140
+      if (spawns.some(s => dist2(x, y, s.x, s.y) < (r + 140) ** 2)) continue
+      break
     }
     spawnObjective(g, {
       t: 'trap', k: TRAP_KINDS[Math.floor(g.rng() * TRAP_KINDS.length)],
-      x, y, hp: 1, maxHp: 1, pg: 0, r: TRAPS.radius, s: 0,
+      x, y, hp: 1, maxHp: 1, pg: 0, r, s: 0,
     })
   }
 }

@@ -197,12 +197,32 @@ export function stopMusic(): void {
 function now(): number { return ctx?.currentTime ?? 0 }
 
 export const sfx = {
-  shoot(category = 'ranged'): void {
+  // 依武器 id / 類別給不同開火音
+  shoot(weaponId = '', category = 'ranged'): void {
     if (!ensure()) return
     const t = now()
+    switch (weaponId) {
+      case 'g_sniper': noise(t, 0.03, 0.2, 2600, 0.5); tone(240, t, 0.14, { type: 'sawtooth', gain: 0.18, sweepTo: 70 }); return
+      case 'g_shotgun': noise(t, 0.14, 0.22, 700, 0.5); tone(110, t, 0.14, { type: 'square', gain: 0.16, sweepTo: 50 }); return
+      case 'g_smg': case 'g_minigun': tone(760, t, 0.03, { type: 'square', gain: 0.06, sweepTo: 420 }); return
+      case 'e_flame': noise(t, 0.1, 0.08, 1400, 1.6); return
+      case 'k_qi': case 'k_palm': tone(300, t, 0.16, { type: 'sine', gain: 0.11, sweepTo: 520 }); tone(450, t, 0.16, { type: 'sine', gain: 0.06 }); return
+      case 'k_fist': noise(t, 0.05, 0.1, 700, 1.2); return
+      case 'm_needle': tone(1200, t, 0.05, { type: 'sine', gain: 0.07, sweepTo: 700 }); return
+      case 't_coin': case 't_dice': case 't_cards': tone(1046, t, 0.05, { type: 'square', gain: 0.08 }); tone(1568, t + 0.04, 0.06, { type: 'square', gain: 0.06 }); return
+    }
     if (category === 'magic') tone(680, t, 0.1, { type: 'sine', gain: 0.1, sweepTo: 990 })
     else if (category === 'melee') noise(t, 0.08, 0.12, 500, 0.8)
     else tone(520, t, 0.06, { type: 'square', gain: 0.07, sweepTo: 260 })
+  },
+  // 🎁 開福袋：閃亮上升琶音 + 沙沙
+  mystery(rare = false): void {
+    if (!ensure()) return
+    const t = now()
+    const notes = rare ? [523, 659, 784, 1046, 1318, 1568] : [659, 784, 1046, 1318]
+    for (const [i, f] of notes.entries()) tone(f, t + i * 0.06, 0.16, { type: 'triangle', gain: 0.16 })
+    noise(t, 0.4, 0.06, 7000, 3)
+    if (rare) tone(1046, t + 0.4, 0.3, { type: 'sine', gain: 0.14 })
   },
   hit(): void { if (ensure()) noise(now(), 0.04, 0.1, 1800, 1) },
   kill(): void {

@@ -1,7 +1,7 @@
 // Boss 階段機：3 隻 Boss 的技能 handler + 依人數縮放的合作機制。
 // 加 Boss = bosses.ts 加資料 + 這裡加技能 handler（多數技能可重用）。
 import { BOSS_MAP, ENEMY_MAP } from '../../../shared/content/index'
-import { PLAYER_SCALING, OBJECT_COUNT, DIFFICULTIES, ARENA } from '../../../shared/balance'
+import { PLAYER_SCALING, OBJECT_COUNT, DIFFICULTIES, ARENA, ENEMY_SPEED_MULT } from '../../../shared/balance'
 import { weightedR } from '../../../shared/rng'
 import type { SBoss, SPlayer } from './state'
 import type { Game } from './game'
@@ -92,8 +92,8 @@ export function bossTick(g: Game, dt: number): void {
     b.frontAng = Math.atan2(ny, nx)
     const dd = Math.sqrt(dist2(b.x, b.y, tgt.x, tgt.y))
     if (dd > b.data.radius + 20) {
-      b.x += nx * b.data.speed * dt
-      b.y += ny * b.data.speed * dt
+      b.x += nx * b.data.speed * ENEMY_SPEED_MULT * dt
+      b.y += ny * b.data.speed * ENEMY_SPEED_MULT * dt
     }
     b.touchCd -= dt
     if (dd < b.data.radius + 30 && b.touchCd <= 0) {

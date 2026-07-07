@@ -34,7 +34,7 @@ export interface ClientToServer {
 
   /** 自機位置（client 預測，server 限速 + 廣播）約 15Hz */
   'game:move': (p: { x: number; y: number }) => void
-  'game:skill': (p: { x?: number; y?: number }) => void
+  'game:skill': (p: { x?: number; y?: number; charge?: number }) => void   // charge=蓄力值 0~1（榴槤蓄刺）
   'game:emote': (n: number) => void
 
   'inter:levelup': (p: { offerId: string }) => void
@@ -43,10 +43,8 @@ export interface ClientToServer {
   'shop:refresh': () => void
   'shop:lock': (p: { offerId: string; locked: boolean }) => void
   'shop:sell': (p: { weaponIndex: number }) => void
-  'teamshop:vote': (p: { itemId: string; yes: boolean }) => void
-  'teamshop:revive': () => void                               // 投票買復活（單人直接買）
   'route:vote': (p: { routeId: string }) => void
-  'teamreward:vote': (p: { id: string }) => void
+  'teamreward:pick': (p: { id: string }) => void              // 團隊獎勵免費多選（每人依人數有配額）
   'inter:ready': () => void
   /** 標準/快速模式通關後，房主選擇進入無盡模式續戰 */
   'room:endless': () => void

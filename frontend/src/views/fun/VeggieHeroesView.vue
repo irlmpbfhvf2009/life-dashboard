@@ -18,7 +18,6 @@ import { CHARACTERS, CHARACTER_MAP } from '@game/content/characters'
 import { WEAPON_MAP } from '@game/content/weapons'
 import { UPGRADE_MAP } from '@game/content/upgrades'
 import { ITEM_MAP } from '@game/content/pickups'
-import { TEAM_SHOP_ITEMS } from '@game/content/teamShop'
 import { EVENT_MAP } from '@game/content/events'
 import { ZONE_MAP } from '@game/content/zones'
 import type { Mode } from '@game/types'
@@ -181,11 +180,33 @@ function pickWeapon(id: string) {
   api.pick({ weaponId: id })
 }
 const WEAPON_EMOJI: Record<string, string> = {
-  pea_gun: '🌱', knife: '🔪', spin_axe: '🪓', hammer: '🔨', fireball: '🔥', ice_shard: '❄️',
-  lightning: '⚡', mine: '💣', turret_gun: '🗼', heal_orb: '💚', poison_flask: '🧪', drone: '🛸',
-  // 進化型
-  pea_minigun: '🌿', knife_fan: '🌀', axe_cyclone: '🌪️', meteor: '☄️', blizzard: '🌨️',
-  tesla_storm: '🌩️', gatling_turret: '🏯', plague_cloud: '☠️', drone_swarm: '🛸',
+  // 戰士（冷兵器）
+  w_sword: '⚔️', w_greatsword: '🗡️', w_spear: '🔱', spin_axe: '🪓', hammer: '🔨',
+  // 槍手（槍械）
+  pea_gun: '🔫', g_sniper: '🎯', g_shotgun: '💥', g_smg: '🔫', g_minigun: '🌀',
+  // 醫生
+  heal_orb: '💚', m_needle: '💉', m_cross: '➕', m_biozone: '🧫', m_drone: '🛸',
+  // 工程
+  turret_gun: '🗼', mine: '💣', drone: '🛸', e_laser: '🔴', e_flame: '🔥',
+  // 冰法
+  ice_shard: '❄️', fireball: '🔥', lightning: '⚡', y_orb: '🔮', y_frost: '🌨️',
+  // 賭徒
+  t_dice: '🎲', t_cards: '🃏', t_coin: '🪙', t_orbit: '🍀', t_roulette: '🎰',
+  // 刺客
+  knife: '🔪', a_fan: '🌀', a_shuriken: '⭐', poison_flask: '🧪', a_drone: '🐝',
+  // 武士
+  s_iai: '🗡️', s_katana: '⚔️', s_kunai: '🔩', s_wave: '🌊', s_odachi: '🗡️',
+  // 仙人掌
+  c_gauntlet: '🌵', c_whip: '🌿', c_shield: '🛡️', c_spikes: '📍', c_seed: '🌰',
+  // 武僧
+  k_fist: '👊', k_palm: '✋', k_kick: '🦵', k_staff: '🦯', k_qi: '☯️',
+  // 榴槤
+  d_thornshot: '📌', d_spikefan: '🎇', d_caltrop: '✳️', d_spikeorbit: '🌟', d_barb: '🔱',
+}
+const SKILL_EMOJI: Record<string, string> = {
+  charge: '💨', bulwark: '🛡️', thornsNova: '🌵', rapidfire: '🔥',
+  healzone: '💚', turret: '🗼', frostnova: '❄️', fateflip: '🎲',
+  whirlslash: '🌀', palmquake: '💥', spikecharge: '🦔',
 }
 const ROLE_NAME: Record<string, string> = { tank: '坦克', dps: '輸出', support: '輔助', engineer: '工程', control: '控場', gambler: '賭運' }
 
@@ -218,10 +239,39 @@ function onPointerUp() {
   joy.value.active = false
   engine.moveDir.active = false
 }
-function useSkill() {
+function useSkill(charge?: number) {
   if (gs.hud.skillCd > 0) return
   const dir = engine.moveDir.active ? engine.moveDir : { x: 0, y: -1 }
-  api.skill(engine.myX + dir.x * 300, engine.myY + dir.y * 300)
+  api.skill(engine.myX + dir.x * 300, engine.myY + dir.y * 300, charge)
+  // 位移類技能：本地立即預測，避免橡皮筋瞬移/延遲
+  const active = myChar.value?.active
+  if (active?.id === 'charge') engine.predictDash(dir.x, dir.y, active.params?.dist ?? 300)
+  else if (active?.id === 'bulwark') engine.predictBulwark(dir.x, dir.y, active.params?.speed ?? 135, active.params?.duration ?? 2)
+}
+// 蓄力型技能（榴槤）：按住蓄力、放開釋放
+const isChargeSkill = computed(() => myChar.value?.active.id === 'spikecharge')
+const charging = ref(false)
+let chargeStart = 0
+function tickCharge() {
+  if (!charging.value) return
+  const maxHold = (myChar.value?.active.params?.maxHold ?? 2) * 1000
+  engine.myCharge = Math.min(1, (performance.now() - chargeStart) / maxHold)
+  requestAnimationFrame(tickCharge)
+}
+function startSkill() {
+  if (!isChargeSkill.value) { useSkill(); return }
+  if (gs.hud.skillCd > 0 || charging.value) return
+  charging.value = true
+  chargeStart = performance.now()
+  engine.myCharge = 0
+  requestAnimationFrame(tickCharge)
+}
+function releaseSkill() {
+  if (!charging.value) return
+  charging.value = false
+  const c = engine.myCharge
+  engine.myCharge = 0
+  useSkill(c)
 }
 
 // ---------------------------------------------------------------- 鍵盤操作（電腦瀏覽器）
@@ -245,11 +295,12 @@ function typingInField() {
 function onKeyDown(e: KeyboardEvent) {
   if (screen.value !== 'game' || gs.inter || gs.over) return
   const k = e.key.toLowerCase()
-  if ((k === ' ' || k === 'spacebar') && !typingInField()) { e.preventDefault(); useSkill(); return }
+  if ((k === ' ' || k === 'spacebar') && !typingInField()) { e.preventDefault(); if (!e.repeat) startSkill(); return }
   if (MOVE_KEYS[k] && !typingInField()) { e.preventDefault(); keys.add(k); applyKeyMove() }
 }
 function onKeyUp(e: KeyboardEvent) {
   const k = e.key.toLowerCase()
+  if (k === ' ' || k === 'spacebar') { releaseSkill(); return }
   if (MOVE_KEYS[k]) { keys.delete(k); applyKeyMove() }
 }
 onMounted(() => {
@@ -263,10 +314,7 @@ onBeforeUnmount(() => {
 // 離開戰鬥畫面時清掉按鍵狀態，避免卡住移動
 watch(screen, (s) => { if (s !== 'game') { keys.clear(); engine.moveDir.active = false } })
 const myChar = computed(() => CHARACTER_MAP.get(gs.begin?.players.find(p => p.id === gs.playerId)?.charId ?? ''))
-const skillCdPct = computed(() => {
-  const max = myChar.value?.active.cooldown ?? 10
-  return Math.min(1, gs.hud.skillCd / max)
-})
+const skillCdPct = computed(() => Math.min(1, gs.hud.skillCd / (myChar.value?.active.cooldown ?? 10)))
 const eventName = computed(() => gs.waveInfo?.event ? EVENT_MAP.get(gs.waveInfo.event)?.name : '')
 // 倒數結束、非 Boss 波、還有怪 → 清怪階段
 const clearing = computed(() => gs.hud.left <= 0 && !gs.hud.boss && gs.hud.enemiesLeft > 0 && !gs.inter && !gs.over)
@@ -284,22 +332,39 @@ const RARITY_NAME: Record<string, string> = { common: '普通', rare: '稀有', 
 const upg = (id: string) => UPGRADE_MAP.get(id)
 const wpn = (id: string) => WEAPON_MAP.get(id)
 const itemOf = (id: string) => ITEM_MAP.get(id)
-const teamItemOf = (id: string) => TEAM_SHOP_ITEMS.find(t => t.id === id)
 const playerName2 = (id: string) => gs.begin?.players.find(p => p.id === id)?.name ?? '?'
 
+// 角色數值長條（跨全角色正規化，讓特性一目了然）
+function charStatRows(charId: string) {
+  const b = CHARACTER_MAP.get(charId)?.baseStats
+  if (!b) return []
+  const norm = (v: number, lo: number, hi: number) => Math.round(Math.max(6, Math.min(100, (v - lo) / (hi - lo) * 100)))
+  return [
+    { label: '血', pct: norm(b.maxHp, 70, 180), color: 'bg-rose-400' },
+    { label: '攻', pct: norm(b.damage, 0.75, 1.4), color: 'bg-orange-400' },
+    { label: '攻速', pct: norm(b.attackSpeed, 0.85, 1.3), color: 'bg-amber-400' },
+    { label: '速', pct: norm(b.moveSpeed, 145, 198), color: 'bg-sky-400' },
+    { label: '甲', pct: norm(b.armor, 0, 7), color: 'bg-slate-300' },
+    { label: '暴', pct: norm(b.critChance, 0.03, 0.24), color: 'bg-violet-400' },
+  ]
+}
+
 function offerName(o: { kind: string; refId: string; weaponLevel?: number }): string {
+  if (o.kind === 'mystery') return o.refId === 'rare' ? '✨ 稀有福袋' : '🎁 神秘福袋'
   if (o.kind === 'weapon') return `${WEAPON_EMOJI[o.refId] ?? '⚔️'} ${wpn(o.refId)?.name}${(o.weaponLevel ?? 1) > 1 ? ` Lv.${o.weaponLevel}` : ''}`
   if (o.kind === 'item') return `${itemOf(o.refId)?.emoji ?? '✨'} ${itemOf(o.refId)?.name}`
   return upg(o.refId)?.name ?? o.refId
 }
 function offerDesc(o: { kind: string; refId: string }): string {
+  if (o.kind === 'mystery') return o.refId === 'rare' ? '必開武器／稀有升級／大筆金幣' : '開出隨機武器／道具／金幣'
   if (o.kind === 'weapon') return wpn(o.refId)?.description ?? ''
   if (o.kind === 'item') return itemOf(o.refId)?.description ?? ''
   return upg(o.refId)?.description ?? ''
 }
 function offerRarity(o: { kind: string; refId: string }): string {
+  if (o.kind === 'mystery') return o.refId === 'rare' ? 'legendary' : 'epic'
   if (o.kind === 'upgrade') return upg(o.refId)?.rarity ?? 'common'
-  if (o.kind === 'weapon') return (wpn(o.refId)?.tier ?? 1) >= 2 ? 'rare' : 'common'
+  if (o.kind === 'weapon') return (wpn(o.refId)?.tier ?? 1) >= 3 ? 'epic' : (wpn(o.refId)?.tier ?? 1) >= 2 ? 'rare' : 'common'
   return 'common'
 }
 const interReady = computed(() => !!gs.inter?.readySet.includes(gs.playerId))
@@ -432,15 +497,18 @@ onBeforeUnmount(() => {
 })
 
 function exitGame() {
-  leaveVoice()
-  leaveRoom()
-  stopMusic()
+  showExitConfirm.value = false
+  try { leaveRoom() } catch { /* ignore */ }
+  try { leaveVoice() } catch { /* ignore */ }
+  try { stopMusic() } catch { /* ignore */ }
+  // 直接離開 /veggie 路由 → 整個遊戲元件卸載（onBeforeUnmount 會 engine.stop + 斷線），
+  // 保證退出，不再依賴反應式 gs.room 清空（修「要按兩次才真的退出」）
+  router.push('/fun/games')
 }
 
-/** 遊戲進行中退出（需確認，避免誤觸） */
-function confirmExit() {
-  if (window.confirm('確定要退出這場遊戲嗎？（隊友會看到你斷線，房間仍會保留一段時間）')) exitGame()
-}
+/** 遊戲進行中退出：改用自製確認覆蓋層（window.confirm 在遊戲的 pointer-capture 下常要按兩次） */
+const showExitConfirm = ref(false)
+function confirmExit() { showExitConfirm.value = true }
 function backToStudio() {
   router.push('/fun/games')
 }
@@ -641,7 +709,7 @@ const fmtTime = (s: number) => {
     </div>
 
     <!-- ============================================================ 大廳 -->
-    <div v-else-if="screen === 'lobby'" class="flex flex-1 flex-col items-center overflow-y-auto px-5 py-6" style="touch-action: pan-y;">
+    <div v-if="screen === 'lobby'" class="flex flex-1 flex-col items-center overflow-y-auto px-5 py-6" style="touch-action: pan-y;">
       <button class="absolute left-3 top-3 rounded-lg bg-white/10 px-3 py-1.5 text-xs text-white/70" @click="exitGame">← 離開</button>
       <p class="text-xs font-bold text-white/40">房號</p>
       <p class="text-5xl font-black tracking-[0.3em] text-amber-300">{{ gs.room!.code }}</p>
@@ -740,7 +808,7 @@ const fmtTime = (s: number) => {
     </div>
 
     <!-- ============================================================ 選角 -->
-    <div v-else-if="screen === 'select'" class="flex flex-1 flex-col overflow-y-auto px-4 py-5" style="touch-action: pan-y;">
+    <div v-if="screen === 'select'" class="flex flex-1 flex-col overflow-y-auto px-4 py-5" style="touch-action: pan-y;">
       <h2 class="text-center text-xl font-black text-lime-300">選擇你的勇者</h2>
       <div class="mx-auto mt-3 grid w-full max-w-md grid-cols-2 gap-2.5 sm:grid-cols-3">
         <button
@@ -757,9 +825,20 @@ const fmtTime = (s: number) => {
       </div>
 
       <template v-if="pickedChar">
-        <h3 class="mt-5 text-center text-sm font-black text-amber-300">
+        <h3 v-if="CHARACTER_MAP.get(pickedChar)?.active.id !== 'none'" class="mt-5 text-center text-sm font-black text-amber-300">
           技能：{{ CHARACTER_MAP.get(pickedChar)?.active.name }} — {{ CHARACTER_MAP.get(pickedChar)?.active.description }}
         </h3>
+        <div class="h-3" />
+        <!-- 角色數值 -->
+        <div class="mx-auto mt-2 grid w-full max-w-md grid-cols-3 gap-1.5">
+          <div v-for="st in charStatRows(pickedChar)" :key="st.label" class="flex items-center gap-1.5 rounded-lg bg-white/5 px-2 py-1">
+            <span class="w-6 shrink-0 text-[10px] text-white/50">{{ st.label }}</span>
+            <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
+              <div class="h-full rounded-full" :class="st.color" :style="{ width: st.pct + '%' }" />
+            </div>
+          </div>
+        </div>
+        <p v-if="CHARACTER_MAP.get(pickedChar)?.weaponClass === 'melee'" class="mt-1.5 text-center text-[11px] font-bold text-emerald-300">🗡️ 只能裝備近戰武器</p>
         <p class="mt-3 text-center text-xs font-bold text-white/50">選擇初始武器</p>
         <div class="mx-auto mt-2 grid w-full max-w-md grid-cols-3 gap-2">
           <button
@@ -796,7 +875,7 @@ const fmtTime = (s: number) => {
     </div>
 
     <!-- ============================================================ 戰鬥 -->
-    <div v-else class="relative flex-1">
+    <div v-if="screen === 'game'" class="relative flex-1">
       <div
         class="absolute inset-0"
         @pointerdown="onPointerDown" @pointermove="onPointerMove" @pointerup="onPointerUp" @pointercancel="onPointerUp"
@@ -810,8 +889,8 @@ const fmtTime = (s: number) => {
           <!-- 退出 + 左上資訊欄（波數 → 清怪/任務 → 升級提示，全部疊在左上） -->
           <div class="flex items-start gap-1.5">
             <button
-              class="pointer-events-auto grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-black/45 text-lg text-white/60 backdrop-blur-sm active:scale-90"
-              @click="confirmExit"
+              class="pointer-events-auto grid h-10 w-10 shrink-0 touch-none place-items-center rounded-xl bg-black/45 text-lg text-white/60 backdrop-blur-sm active:scale-90"
+              @pointerdown.stop.prevent="confirmExit"
             >✕</button>
             <div class="flex flex-col items-start gap-1">
               <div class="rounded-xl bg-black/45 px-3 py-1.5 backdrop-blur-sm">
@@ -894,35 +973,35 @@ const fmtTime = (s: number) => {
         </div>
       </div>
 
-      <!-- 聊天 / 表情 / 語音 / 音效 / 音樂 / 暫停 — 放在小地圖下方（右上） -->
-      <div class="absolute right-2 top-[184px] flex flex-col items-end gap-1.5">
+      <!-- 聊天 / 表情 / 語音 / 音效 / 音樂 / 暫停 — 放在小地圖下方（右上）；吃 pointerdown → 移動時也能按 -->
+      <div class="absolute right-2 top-[184px] z-30 flex flex-col items-end gap-1.5">
         <button
-          class="grid h-9 w-9 place-items-center rounded-full text-base active:scale-90"
+          class="grid h-9 w-9 touch-none place-items-center rounded-full text-base active:scale-90"
           :class="chatOpen ? 'bg-sky-500/70' : 'bg-black/45'"
-          @click="chatOpen = !chatOpen"
+          @pointerdown.stop.prevent="chatOpen = !chatOpen"
         >💬</button>
         <button
-          class="grid h-9 w-9 place-items-center rounded-full text-base active:scale-90"
+          class="grid h-9 w-9 touch-none place-items-center rounded-full text-base active:scale-90"
           :class="emotePalette ? 'bg-amber-500/70' : 'bg-black/45'"
-          @click="emotePalette = !emotePalette"
+          @pointerdown.stop.prevent="emotePalette = !emotePalette"
         >😀</button>
         <button
-          class="grid h-9 w-9 place-items-center rounded-full text-base active:scale-90"
+          class="grid h-9 w-9 touch-none place-items-center rounded-full text-base active:scale-90"
           :class="voice.enabled ? (voice.muted ? 'bg-rose-500/60' : 'bg-emerald-500/60') : 'bg-black/45'"
-          @click="onVoiceBtn"
+          @pointerdown.stop.prevent="onVoiceBtn"
         >{{ voice.enabled && voice.muted ? '🙊' : '🎙️' }}</button>
-        <button class="grid h-9 w-9 place-items-center rounded-full bg-black/45 text-base active:scale-90" @click="toggleMusic">{{ musicOn ? '🎵' : '🔇' }}</button>
-        <button class="grid h-9 w-9 place-items-center rounded-full bg-black/45 text-base active:scale-90" @click="toggleMute">{{ muted ? '🔕' : '🔔' }}</button>
-        <button v-if="hapticsSupported" class="grid h-9 w-9 place-items-center rounded-full bg-black/45 text-base active:scale-90" @click="toggleHaptics">{{ hapticsOn ? '📳' : '📴' }}</button>
-        <button v-if="isSolo" class="grid h-9 w-9 place-items-center rounded-full bg-black/45 text-base active:scale-90" @click="togglePause">⏸️</button>
+        <button class="grid h-9 w-9 touch-none place-items-center rounded-full bg-black/45 text-base active:scale-90" @pointerdown.stop.prevent="toggleMusic">{{ musicOn ? '🎵' : '🔇' }}</button>
+        <button class="grid h-9 w-9 touch-none place-items-center rounded-full bg-black/45 text-base active:scale-90" @pointerdown.stop.prevent="toggleMute">{{ muted ? '🔕' : '🔔' }}</button>
+        <button v-if="hapticsSupported" class="grid h-9 w-9 touch-none place-items-center rounded-full bg-black/45 text-base active:scale-90" @pointerdown.stop.prevent="toggleHaptics">{{ hapticsOn ? '📳' : '📴' }}</button>
+        <button v-if="isSolo" class="grid h-9 w-9 touch-none place-items-center rounded-full bg-black/45 text-base active:scale-90" @pointerdown.stop.prevent="togglePause">⏸️</button>
       </div>
 
       <!-- 表情選盤 -->
-      <div v-if="emotePalette" class="absolute right-12 top-[184px] z-20 grid grid-cols-4 gap-1.5 rounded-2xl bg-black/70 p-2 backdrop-blur">
+      <div v-if="emotePalette" class="absolute right-12 top-[184px] z-30 grid grid-cols-4 gap-1.5 rounded-2xl bg-black/70 p-2 backdrop-blur">
         <button
           v-for="(e, i) in emotes" :key="i"
-          class="grid h-10 w-10 place-items-center rounded-xl bg-white/10 text-xl active:scale-90"
-          @click="sendEmote(i)"
+          class="grid h-10 w-10 touch-none place-items-center rounded-xl bg-white/10 text-xl active:scale-90"
+          @pointerdown.stop.prevent="sendEmote(i)"
         >{{ e }}</button>
       </div>
 
@@ -932,6 +1011,18 @@ const fmtTime = (s: number) => {
         <p class="text-sm text-white/50">正在觀看 {{ spectateName }}｜等待團隊復活或本波結束</p>
       </div>
 
+      <!-- 離開確認（自製，避免 window.confirm 要按兩次） -->
+      <div v-if="showExitConfirm" class="absolute inset-0 z-[85] flex items-center justify-center bg-black/80 backdrop-blur" @pointerdown.self="showExitConfirm = false">
+        <div class="mx-6 w-full max-w-xs rounded-2xl border border-white/15 bg-[#141c14] p-5 text-center">
+          <p class="text-lg font-black text-white">確定要離開這場遊戲？</p>
+          <p class="mt-1 text-xs text-white/50">房間會保留一段時間，可用邀請連結重新加入。</p>
+          <div class="mt-4 flex gap-2">
+            <button class="flex-1 rounded-xl bg-white/10 py-3 font-bold text-white/70 active:scale-95" @pointerdown.stop.prevent="showExitConfirm = false">取消</button>
+            <button class="flex-1 rounded-xl bg-gradient-to-r from-rose-500 to-red-600 py-3 font-black text-white active:scale-95" @pointerdown.stop.prevent="exitGame">離開</button>
+          </div>
+        </div>
+      </div>
+
       <!-- 暫停覆蓋（單人） -->
       <div v-if="gs.paused" class="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/80 backdrop-blur">
         <p class="text-3xl font-black text-white">⏸️ 已暫停</p>
@@ -939,17 +1030,19 @@ const fmtTime = (s: number) => {
         <button class="mt-2 rounded-xl bg-white/10 px-8 py-2.5 font-bold text-white/70 active:scale-95" @click="confirmExit">🚪 離開</button>
       </div>
 
-      <!-- 技能按鈕 -->
-      <div class="absolute bottom-5 right-4 flex flex-col items-center gap-3">
+      <!-- 技能按鈕（吃 pointerdown → 移動時也能按） -->
+      <div v-if="myChar && myChar.active.id !== 'none'" class="absolute bottom-5 right-4 z-20 flex flex-col items-center gap-3">
         <button
-          class="relative grid h-20 w-20 place-items-center rounded-full border-4 text-3xl shadow-xl active:scale-90"
-          :class="skillCdPct > 0 ? 'border-white/20 bg-black/50 grayscale' : 'border-amber-300 bg-gradient-to-br from-amber-500 to-orange-600'"
-          @click="useSkill"
+          class="relative grid h-20 w-20 touch-none place-items-center rounded-full border-4 text-3xl shadow-xl active:scale-90"
+          :class="skillCdPct > 0 ? 'border-white/20 bg-black/50 grayscale' : (isChargeSkill && charging ? 'border-lime-300 bg-gradient-to-br from-lime-500 to-emerald-600' : 'border-amber-300 bg-gradient-to-br from-amber-500 to-orange-600')"
+          @pointerdown.stop.prevent="startSkill"
+          @pointerup.stop.prevent="releaseSkill"
+          @pointercancel="releaseSkill"
+          @pointerleave="releaseSkill"
         >
-          <span>{{ myChar?.active.id === 'charge' ? '💨' : myChar?.active.id === 'rapidfire' ? '🔥' : myChar?.active.id === 'healzone' ? '💚' : myChar?.active.id === 'turret' ? '🗼' : myChar?.active.id === 'frostnova' ? '❄️' : '🎲' }}</span>
+          <span>{{ SKILL_EMOJI[myChar.active.id] ?? '✨' }}</span>
           <svg v-if="skillCdPct > 0" class="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 40 40">
-            <circle cx="20" cy="20" r="17" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="4"
-              :stroke-dasharray="`${(1 - skillCdPct) * 107} 107`" />
+            <circle cx="20" cy="20" r="17" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="4" :stroke-dasharray="`${(1 - skillCdPct) * 107} 107`" />
           </svg>
           <span v-if="skillCdPct > 0" class="absolute text-sm font-black text-white">{{ Math.ceil(gs.hud.skillCd) }}</span>
         </button>
@@ -984,13 +1077,13 @@ const fmtTime = (s: number) => {
           class="rounded-lg bg-black/55 px-2 py-1 text-[11px] text-white/90 backdrop-blur-sm"
         ><b class="text-amber-300">{{ m.name }}</b>：{{ m.text }}</p>
       </div>
-      <div v-if="chatOpen" class="absolute inset-x-2 bottom-12 z-40 flex gap-1.5">
+      <div v-if="chatOpen" class="absolute inset-x-2 bottom-28 z-[60] flex gap-1.5">
         <input
           v-model="chatInput" maxlength="80" placeholder="跟隊友說…"
-          class="min-w-0 flex-1 rounded-xl border border-white/20 bg-black/60 px-3 py-2 text-sm outline-none backdrop-blur placeholder:text-white/30 focus:border-sky-400"
+          class="min-w-0 flex-1 rounded-xl border border-white/20 bg-black/70 px-3 py-2 text-sm outline-none backdrop-blur placeholder:text-white/30 focus:border-sky-400"
           @keyup.enter="sendChat"
         >
-        <button class="rounded-xl bg-sky-500/70 px-3 text-sm font-bold active:scale-95" @click="sendChat">送出</button>
+        <button class="shrink-0 whitespace-nowrap rounded-xl bg-sky-500/80 px-4 py-2 text-sm font-bold active:scale-95" @click="sendChat">送出</button>
       </div>
 
       <!-- Debug 面板 -->
@@ -1013,7 +1106,7 @@ const fmtTime = (s: number) => {
       </div>
 
       <!-- ============================ 中場（結算/升級/寶箱/商店/路線） -->
-      <div v-if="gs.inter" class="absolute inset-0 overflow-y-auto bg-black/80 backdrop-blur-sm" style="touch-action: pan-y;">
+      <div v-if="gs.inter" class="absolute inset-0 z-[75] overflow-y-auto bg-black/80 backdrop-blur-sm" style="touch-action: pan-y;">
         <div class="mx-auto max-w-md px-4 py-5 pb-24">
           <!-- 結算 -->
           <div class="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
@@ -1030,25 +1123,6 @@ const fmtTime = (s: number) => {
                 <span class="font-bold" :class="pid === gs.playerId ? 'text-amber-300' : 'text-white/70'">{{ playerName2(String(pid)) }}</span>
                 <span class="text-white/50">擊殺{{ st.kills }} · 傷害{{ st.dmg.toLocaleString() }} · 受傷{{ st.dmgTaken }} · 救{{ st.rescues }}</span>
               </div>
-            </div>
-          </div>
-
-          <!-- 團隊獎勵三選一（第一關） -->
-          <div v-if="gs.inter.teamReward" class="mt-3 rounded-2xl border border-amber-400/40 bg-amber-400/10 p-4">
-            <p class="text-center text-sm font-black text-amber-300">🎁 團隊獎勵 — 全隊投票選一個</p>
-            <div class="mt-2 space-y-2">
-              <button
-                v-for="o in gs.inter.teamReward.options" :key="o.id"
-                class="w-full rounded-xl border p-3 text-left active:scale-[0.98]"
-                :class="gs.inter.teamReward.votes[gs.playerId] === o.id ? 'border-amber-400 bg-amber-400/20' : 'border-white/10 bg-white/5'"
-                @click="api.rewardVote(o.id); sfx.click()"
-              >
-                <span class="text-sm font-bold">{{ o.name }}</span>
-                <span class="block text-xs text-white/50">{{ o.description }}</span>
-                <span class="mt-1 block text-[10px] text-amber-200">
-                  {{ Object.entries(gs.inter.teamReward.votes).filter(([, v]) => v === o.id).map(([k]) => playerName2(k)).join('、') || '—' }}
-                </span>
-              </button>
             </div>
           </div>
 
@@ -1090,21 +1164,28 @@ const fmtTime = (s: number) => {
               <p class="text-sm font-black text-amber-300">💰{{ gs.inter.gold }}</p>
             </div>
             <p v-if="gs.inter.shop.discount > 0" class="text-[10px] text-lime-300">本輪折扣 -{{ Math.round(gs.inter.shop.discount * 100) }}%</p>
+            <p v-if="gs.inter.shop.offers.filter(o => o.origPrice).length >= 2" class="text-[11px] font-black text-rose-300">🎉 特價日！全店下殺</p>
             <div class="mt-2 grid grid-cols-2 gap-2">
               <div
                 v-for="o in gs.inter.shop.offers" :key="o.offerId"
                 class="relative rounded-xl border-2 p-2.5"
                 :class="o.sold ? 'opacity-30 border-white/10' : RARITY_STYLE[offerRarity(o)]"
               >
-                <button class="absolute right-1.5 top-1.5 text-xs" @click="api.lock(o.offerId, !o.locked)">{{ o.locked ? '🔒' : '🔓' }}</button>
-                <p class="pr-5 text-xs font-black leading-tight">{{ offerName(o) }}</p>
+                <button v-if="o.kind !== 'mystery'" class="absolute right-1.5 top-1.5 text-xs" @click="api.lock(o.offerId, !o.locked)">{{ o.locked ? '🔒' : '🔓' }}</button>
+                <span v-if="o.origPrice" class="absolute right-1.5 top-1.5 rounded bg-rose-500 px-1 text-[9px] font-black text-white">特價</span>
+                <p class="pr-8 text-xs font-black leading-tight">{{ offerName(o) }}</p>
                 <p class="mt-0.5 text-[10px] leading-tight opacity-70">{{ offerDesc(o) }}</p>
                 <button
                   class="mt-1.5 w-full rounded-lg py-1 text-xs font-black active:scale-95"
                   :class="o.sold ? 'bg-white/10 text-white/30' : gs.inter.gold >= o.price ? 'bg-amber-500 text-black' : 'bg-white/10 text-white/30'"
                   :disabled="o.sold"
-                  @click="api.buy(o.offerId); sfx.buy()"
-                >{{ o.sold ? '已售出' : `💰${o.price}` }}</button>
+                  @click="api.buy(o.offerId); o.kind === 'mystery' ? sfx.mystery(o.refId === 'rare') : sfx.buy()"
+                >
+                  <template v-if="o.sold">已售出</template>
+                  <template v-else>
+                    <span v-if="o.origPrice" class="mr-1 text-[10px] line-through opacity-60">💰{{ o.origPrice }}</span>💰{{ o.price }}
+                  </template>
+                </button>
               </div>
             </div>
             <button
@@ -1122,30 +1203,6 @@ const fmtTime = (s: number) => {
             </div>
           </div>
 
-          <!-- 團隊商店 -->
-          <div v-if="connectedCount >= 1" class="mt-3 rounded-2xl border border-emerald-400/30 bg-emerald-500/5 p-4">
-            <p class="text-sm font-black text-emerald-300">🤝 團隊商店 <span class="text-[10px] font-normal text-white/40">{{ connectedCount > 1 ? '過半數投票即購買（全隊分攤）' : '單人直接購買' }}</span></p>
-            <div class="mt-2 space-y-1.5">
-              <div v-for="t in gs.inter.teamShop.items" :key="t.id" class="flex items-center justify-between gap-2 rounded-lg bg-white/5 px-2.5 py-1.5">
-                <div class="min-w-0">
-                  <p class="truncate text-xs font-bold" :class="t.bought ? 'text-white/30 line-through' : ''">{{ teamItemOf(t.id)?.name }} <span class="text-amber-300">💰{{ t.price }}</span></p>
-                  <p class="truncate text-[10px] text-white/40">{{ teamItemOf(t.id)?.description }}</p>
-                  <p v-if="t.votes.length" class="text-[10px] text-emerald-300">{{ t.votes.map(playerName2).join('、') }} 想買</p>
-                </div>
-                <button
-                  v-if="!t.bought"
-                  class="shrink-0 rounded-lg px-2.5 py-1 text-xs font-black active:scale-95"
-                  :class="t.votes.includes(gs.playerId) ? 'bg-emerald-500/40 text-emerald-100' : 'bg-white/10 text-white/60'"
-                  @click="api.teamVote(t.id, !t.votes.includes(gs.playerId)); sfx.click()"
-                >{{ t.votes.includes(gs.playerId) ? '✓ 想買' : '投票' }}</button>
-                <span v-else class="text-xs text-emerald-300">✓</span>
-              </div>
-              <div class="flex items-center justify-between rounded-lg bg-white/5 px-2.5 py-1.5">
-                <p class="text-xs font-bold">⛑️ 團隊復活 +1 <span class="text-amber-300">💰{{ gs.inter.teamShop.reviveCost }}</span><span class="ml-1 text-[10px] text-white/40">現有 {{ gs.inter.teamShop.revivesOwned }}</span></p>
-                <button class="shrink-0 rounded-lg bg-white/10 px-2.5 py-1 text-xs font-black text-white/60 active:scale-95" @click="api.teamRevive(); sfx.click()">投票買</button>
-              </div>
-            </div>
-          </div>
 
           <!-- Boss 預警（下一波是 Boss 時才顯示） -->
           <div v-if="gs.inter.bossNext" class="mt-3 rounded-2xl border border-rose-500/40 bg-rose-600/10 p-3 text-center">
@@ -1165,7 +1222,7 @@ const fmtTime = (s: number) => {
       </div>
 
       <!-- ============================ 結算（遊戲結束） -->
-      <div v-if="gs.over" class="absolute inset-0 flex items-center justify-center overflow-y-auto bg-black/85 backdrop-blur" style="touch-action: pan-y;">
+      <div v-if="gs.over" class="absolute inset-0 z-[80] flex items-center justify-center overflow-y-auto bg-black/85 backdrop-blur" style="touch-action: pan-y;">
         <div class="w-full max-w-sm px-5 py-8 text-center">
           <p class="text-5xl">{{ gs.over.victory ? '🏆' : '💀' }}</p>
           <h2 class="mt-2 text-3xl font-black" :class="gs.over.victory ? 'text-amber-300' : 'text-rose-400'">

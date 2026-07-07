@@ -2,7 +2,7 @@
 import { ENEMY_MAP, TIER_COST, AFFIXES, AFFIX_MAP } from '../../../shared/content/index'
 import {
   PLAYER_SCALING, DIFFICULTIES, enemyHpScale, enemyDmgScale,
-  eliteChance, endlessAffixCount, ARENA, caps,
+  eliteChance, endlessAffixCount, ARENA, caps, ENEMY_SPEED_MULT,
 } from '../../../shared/balance'
 import { weightedR } from '../../../shared/rng'
 import type { EnemyData } from '../../../shared/types'
@@ -27,7 +27,7 @@ export function spawnEnemy(g: Game, id: string, x: number, y: number, opts: {
   const diff = DIFFICULTIES[g.difficulty] ?? DIFFICULTIES[0]
   const globalAffix = endlessAffixCount(g.wave)
   let hp = data.baseHp * enemyHpScale(g.wave) * PLAYER_SCALING[g.playerCount].hp * diff.enemyHp * (1 + globalAffix * 0.1)
-  let speed = data.speed * (g.eventMods.enemySpeedMult ?? 1) * (1 + globalAffix * 0.04)
+  let speed = data.speed * ENEMY_SPEED_MULT * (g.eventMods.enemySpeedMult ?? 1) * (1 + globalAffix * 0.04)
   let damage = data.damage * enemyDmgScale(g.wave) * diff.enemyDmg
   let size = 1
   let dr = 0
@@ -64,9 +64,9 @@ export function spawnEnemy(g: Game, id: string, x: number, y: number, opts: {
     affixes, elite: !!opts.elite, sizeMult: size,
     shield: 0, frozenUntil: 0, slowUntil: 0, slowPct: 0, stunUntil: 0,
     kbVx: 0, kbVy: 0, touchCd: 0,
-    actCd: (data.params?.shootCd ?? data.params?.lungeCd ?? data.params?.summonCd ?? 2) * (0.5 + g.rng()),
+    actCd: (data.params?.shootCd ?? data.params?.lungeCd ?? data.params?.chargeCd ?? data.params?.summonCd ?? 2) * (0.5 + g.rng()),
     fuse: -1, fleeUntil: 0, stolenGold: 0,
-    lungeVx: 0, lungeVy: 0, lungeUntil: 0,
+    lungeVx: 0, lungeVy: 0, lungeUntil: 0, windupUntil: 0, lootDropCd: 0,
     shieldTick: 0, trailTick: 0, targetId: null, splitChild: !!opts.child,
     burnDps: 0, burnUntil: 0,
   }
@@ -203,6 +203,16 @@ export function enemiesTick(g: Game, dt: number): void {
     e.touchCd -= dt
     e.actCd -= dt
 
+    // 波次時間到、進入「清光怪物」階段：會拉開距離/逃跑的怪（風箏/金袋/召喚/扒手）改為
+    // 直接衝向玩家，避免牠們躲在場邊角落害整波清不掉、卡關。
+    const forceChase = g.time >= g.duration
+    if (forceChase && (e.data.behavior === 'kiter' || e.data.behavior === 'looter'
+      || e.data.behavior === 'summoner' || e.data.behavior === 'thief')) {
+      moveAndTouch(g, e, nx, ny, spd * 1.15, dd, tgt, dt)
+      clampArena(e, 10)
+      continue
+    }
+
     switch (e.data.behavior) {
       case 'chase': case 'fast': case 'tank':
         moveAndTouch(g, e, nx, ny, spd, dd, tgt, dt)
@@ -275,6 +285,47 @@ export function enemiesTick(g: Game, dt: number): void {
         }
         break
       }
+      case 'kiter': {
+        // 風箏流：太近就後退、太遠就靠近一點，保持在射程內狂丟彈幕
+        const prm = e.data.params!
+        if (dd < prm.fleeRange) { e.x -= nx * spd * dt; e.y -= ny * spd * dt }
+        else if (dd > prm.shootRange) { e.x += nx * spd * 0.6 * dt; e.y += ny * spd * 0.6 * dt }
+        if (dd <= prm.shootRange && e.actCd <= 0 && tgt.player) {
+          e.actCd = prm.shootCd
+          if (g.enemyProjs.length < caps(g.playerCount).enemyProjectiles) {
+            g.enemyProjs.push({ x: e.x, y: e.y, vx: nx * prm.projSpeed, vy: ny * prm.projSpeed, damage: e.damage, left: 700 })
+          }
+        }
+        break
+      }
+      case 'charger': {
+        // 龜速逼近 → 蓄力預警 → 鎖定方向高速衝刺
+        const prm = e.data.params!
+        if (e.lungeUntil > now) {
+          e.x += e.lungeVx * dt; e.y += e.lungeVy * dt
+          touchAttack(g, e, tgt, dd, dt)
+        } else if (e.windupUntil > now) {
+          // 蓄力中：原地不動（方向已鎖定，玩家可躲）
+        } else if (e.windupUntil > 0) {
+          // 蓄力結束 → 起衝
+          e.windupUntil = 0
+          e.lungeUntil = now + prm.chargeDist / prm.chargeSpeed
+          e.x += e.lungeVx * dt; e.y += e.lungeVy * dt
+        } else if (e.actCd <= 0 && dd < prm.chargeRange && dd > 50) {
+          e.windupUntil = now + prm.windup
+          e.actCd = prm.chargeCd
+          e.lungeVx = nx * prm.chargeSpeed; e.lungeVy = ny * prm.chargeSpeed
+          g.ev({ t: 'aoe', x: Math.round(e.x), y: Math.round(e.y), r: 70, kind: 'telegraph' })
+        } else {
+          moveAndTouch(g, e, nx, ny, spd, dd, tgt, dt)
+        }
+        break
+      }
+      case 'looter': {
+        // 金袋地精：永遠逃離最近玩家，不攻擊（掉金幣在受擊/擊殺處理）
+        e.x -= nx * spd * dt; e.y -= ny * spd * dt
+        break
+      }
       case 'thief': {
         const prm = e.data.params!
         if (e.fleeUntil > 0) {
@@ -323,6 +374,10 @@ function touchAttack(g: Game, e: SEnemy, tgt: ReturnType<typeof pickTarget>, dd:
   if (tgt.player && tgt.player.status === 'alive' && dd < e.radius + 24) {
     e.touchCd = 0.9
     g.damagePlayer(tgt.player, e.damage)
+    // 尖刺反甲：近戰攻擊反甲坦克的怪物受到反傷（隨玩家傷害成長）
+    if (tgt.player.char.passive.effect === 'thornsReflect' && e.hp > 0) {
+      damageEnemyImpl(g, e, 10 + 14 * tgt.player.stats.damage, { ownerId: tgt.player.id, srcX: tgt.player.x, srcY: tgt.player.y })
+    }
   }
 }
 
@@ -356,7 +411,7 @@ export function damageEnemyImpl(g: Game, e: SEnemy, dmg: number, opts: DamageOpt
     d -= absorbed
   }
   e.hp -= d
-  if (opts.knockX || opts.knockY) {
+  if ((opts.knockX || opts.knockY) && !e.elite) {   // 菁英被打不會被擊退/停頓
     const resist = e.data.tier === 3 ? 0.3 : e.data.tier === 2 ? 0.6 : 1
     e.kbVx += (opts.knockX ?? 0) * resist
     e.kbVy += (opts.knockY ?? 0) * resist
@@ -364,6 +419,11 @@ export function damageEnemyImpl(g: Game, e: SEnemy, dmg: number, opts: DamageOpt
   if (d > 0) {
     g.ev({ t: 'hit', i: e.i, d, crit: opts.crit ? 1 : undefined, x: Math.round(e.x), y: Math.round(e.y) })
     if (opts.ownerId) { const o = g.players.get(opts.ownerId); if (o) { o.wave.dmgDealt += d; o.total.dmgDealt += d } }
+    // 金袋地精：被打就噴金幣（節流避免刷屏）
+    if (e.data.behavior === 'looter' && e.hp > 0 && g.time >= e.lootDropCd) {
+      e.lootDropCd = g.time + 0.22
+      g.dropGold(e.x, e.y, e.data.params?.hitGold ?? 2)
+    }
   }
   if (e.hp <= 0) {
     killEnemy(g, e, opts.ownerId ?? null)
@@ -428,6 +488,8 @@ export function killEnemy(g: Game, e: SEnemy, byPlayerId: string | null): void {
   }
   // 扒手鼠掉回贓款
   if (e.stolenGold > 0) g.dropGold(e.x, e.y, e.stolenGold)
+  // 金袋地精：擊殺噴大量金幣
+  if (e.data.behavior === 'looter') g.dropGold(e.x, e.y, e.data.params?.deathGold ?? 40)
 
   dropsFromKill(g, e.x, e.y, { xpSize: e.data.xpSize, coinChance: e.data.coinChance, elite: e.elite })
 }

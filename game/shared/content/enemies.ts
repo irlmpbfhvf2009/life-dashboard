@@ -8,7 +8,7 @@ export const ENEMIES: EnemyData[] = [
     tags: ['basic'], tier: 1, minWave: 1, palette: ['#a5c95a', '#6f8f2f'],
   },
   {
-    id: 'gnat', name: '疾風蚊', baseHp: 7, speed: 168, damage: 4, radius: 12,
+    id: 'gnat', name: '疾風蚊', baseHp: 7, speed: 150, damage: 4, radius: 12,
     scoreValue: 12, coinChance: 0.12, xpSize: 1, behavior: 'fast',
     tags: ['basic', 'fast'], tier: 1, minWave: 2, palette: ['#c9b8ff', '#8a6fd1'],
   },
@@ -58,6 +58,27 @@ export const ENEMIES: EnemyData[] = [
     scoreValue: 30, coinChance: 1.0, xpSize: 1, behavior: 'thief',
     params: { stealAmount: 6, fleeTime: 4 },
     tags: ['thief'], tier: 2, minWave: 5, palette: ['#a1887f', '#4e342e'],
+  },
+  {
+    // 狙擊椿象：主動與玩家保持距離、只丟彈幕，被貼近會後退
+    id: 'sniper', name: '狙擊椿象', baseHp: 16, speed: 116, damage: 8, radius: 16,
+    scoreValue: 26, coinChance: 0.22, xpSize: 2, behavior: 'kiter',
+    params: { shootCd: 1.9, shootRange: 400, projSpeed: 260, fleeRange: 240 },
+    tags: ['ranged'], tier: 2, minWave: 4, palette: ['#4db6ac', '#00695c'],
+  },
+  {
+    // 鐵甲犀角蟲：平常龜速，蓄力預警後高速直線衝刺
+    id: 'rhino', name: '鐵甲犀角蟲', baseHp: 60, speed: 34, damage: 18, radius: 24,
+    scoreValue: 34, coinChance: 0.32, xpSize: 3, behavior: 'charger',
+    params: { chargeCd: 3.4, chargeRange: 460, chargeSpeed: 620, chargeDist: 420, windup: 0.7 },
+    tags: ['tanky', 'charger'], tier: 3, minWave: 5, palette: ['#8d6e63', '#3e2723'],
+  },
+  {
+    // 金袋地精：不攻擊人、背著金袋，被打噴金幣、擊殺噴大量金幣
+    id: 'goldbug', name: '金袋地精', baseHp: 70, speed: 158, damage: 0, radius: 18,
+    scoreValue: 60, coinChance: 1.0, xpSize: 2, behavior: 'looter',
+    params: { fleeRange: 520, hitGold: 2, deathGold: 40 },
+    tags: ['loot'], tier: 2, minWave: 3, palette: ['#7e57c2', '#4527a0'],
   },
 ]
 

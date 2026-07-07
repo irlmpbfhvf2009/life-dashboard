@@ -208,7 +208,9 @@ export function applyItem(g: Game, p: SPlayer, itemId: string): void {
     case 'freezeNearby': {
       g.ev({ t: 'aoe', x: p.x, y: p.y, r: prm.radius, kind: 'frost' })
       for (const e of g.enemies) {
-        if (dist2(e.x, e.y, p.x, p.y) < prm.radius * prm.radius) e.frozenUntil = g.time + prm.duration
+        if (dist2(e.x, e.y, p.x, p.y) >= prm.radius * prm.radius) continue
+        if (e.elite) { e.slowUntil = g.time + prm.duration; e.slowPct = Math.max(e.slowPct, 0.5) }  // 菁英不被定身
+        else e.frozenUntil = g.time + prm.duration
       }
       break
     }

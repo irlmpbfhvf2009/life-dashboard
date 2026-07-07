@@ -110,7 +110,7 @@ io.on('connection', (socket: Socket) => {
   socket.on('game:move', (p: { x: number; y: number }) => {
     if (typeof p?.x === 'number' && typeof p?.y === 'number') game()?.onMove(pid(), p.x, p.y)
   })
-  socket.on('game:skill', (p: { x?: number; y?: number }) => game()?.onSkill(pid(), p))
+  socket.on('game:skill', (p: { x?: number; y?: number; charge?: number }) => game()?.onSkill(pid(), p))
 
   // ---- 中場
   socket.on('inter:levelup', (p: { offerId: string }) => game()?.onLevelupPick(pid(), String(p?.offerId ?? '')))
@@ -119,10 +119,8 @@ io.on('connection', (socket: Socket) => {
   socket.on('shop:refresh', () => game()?.onShopRefresh(pid()))
   socket.on('shop:lock', (p: { offerId: string; locked: boolean }) => game()?.onShopLock(pid(), String(p?.offerId ?? ''), !!p?.locked))
   socket.on('shop:sell', (p: { weaponIndex: number }) => game()?.onShopSell(pid(), Number(p?.weaponIndex ?? -1)))
-  socket.on('teamshop:vote', (p: { itemId: string; yes: boolean }) => game()?.onTeamShopVote(pid(), String(p?.itemId ?? ''), !!p?.yes))
-  socket.on('teamshop:revive', () => game()?.onTeamReviveVote(pid()))
   socket.on('route:vote', (p: { routeId: string }) => game()?.onRouteVote(pid(), String(p?.routeId ?? '')))
-  socket.on('teamreward:vote', (p: { id: string }) => game()?.onTeamRewardVote(pid(), String(p?.id ?? '')))
+  socket.on('teamreward:pick', (p: { id: string }) => game()?.onTeamRewardPick(pid(), String(p?.id ?? '')))
   socket.on('inter:ready', () => game()?.onInterReady(pid()))
 
   // ---- 聊天 / 語音

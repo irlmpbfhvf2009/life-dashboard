@@ -77,23 +77,26 @@ export const UPGRADES: UpgradeData[] = [
   // ============================== 合作 — 資源
   U('c_res1', '有福同享', '你撿的金幣，附近隊友也獲得 30%', 'rare', 'coop', { specialEffect: 'coinShare', maxStacks: 1 }),
   U('c_res2', '共學小組', '經驗共享範圍 +50%', 'common', 'coop', { specialEffect: 'xpShareRange', maxStacks: 2 }),
-  U('c_res3', '團購達人', '團隊商店價格 -15%', 'rare', 'coop', { specialEffect: 'teamShopDiscount', maxStacks: 2 }),
-  U('c_res4', '生命契約', '團隊復活價格 -25%', 'rare', 'coop', { specialEffect: 'reviveCostDown', maxStacks: 2 }),
+  U('c_res3', '尋寶老手', '金幣獲得 +20%', 'rare', 'coop', { statMods: { goldGain: 0.2 }, maxStacks: 2 }),
+  U('c_res4', '同仇敵愾', '暴擊率 +5%', 'rare', 'coop', { statMods: { critChance: 0.05 }, maxStacks: 2 }),
   U('c_res5', '開箱達人', '寶箱獎勵 +1 選項', 'epic', 'coop', { specialEffect: 'chestBonus', maxStacks: 1 }),
 
   // ============================== 合作 — 防守
-  U('c_def1', '守護本能', '保護目標（水晶/推車/基地）生命 +20%', 'common', 'coop', { specialEffect: 'objectiveHp', maxStacks: 2 }),
   U('c_def2', '哨戒協議', '你的砲塔優先攻擊靠近隊友的怪物', 'common', 'coop', { specialEffect: 'turretGuard', maxStacks: 1, requirements: ['weaponTag:engineer'] }),
   U('c_def3', '群體醫療', '治療效果可再多影響 1 名隊友', 'rare', 'coop', { specialEffect: 'healSpread', maxStacks: 2, tags: ['heal'] }),
   U('c_def4', '護盾網路', '獲得護盾時，分享 30% 給附近隊友', 'epic', 'coop', { specialEffect: 'shieldShare', maxStacks: 1 }),
 
-  // ============================== 角色專屬
-  U('ch_tank', '地瓜鐵皮', '【戰士地瓜】衝撞冷卻 -25%，衝撞附帶護盾 15', 'rare', 'character', { specialEffect: 'charTank', maxStacks: 2, requirements: ['char:warrior_sweetpotato'] }),
-  U('ch_gun', '加長槍管', '【槍手馬鈴薯】火力全開持續 +2 秒', 'rare', 'character', { specialEffect: 'charGun', maxStacks: 2, requirements: ['char:gunner_potato'] }),
-  U('ch_med', '加護病房', '【醫生蘿蔔】治療圈半徑 +40%', 'rare', 'character', { specialEffect: 'charMed', maxStacks: 2, requirements: ['char:medic_radish'] }),
-  U('ch_eng', '雙倍出貨', '【工程洋蔥】臨時砲塔一次放 2 座', 'rare', 'character', { specialEffect: 'charEng', maxStacks: 1, requirements: ['char:engineer_onion'] }),
-  U('ch_mage', '永凍領域', '【冰法番薯】冰霜爆發半徑 +30%、凍結 +1 秒', 'rare', 'character', { specialEffect: 'charMage', maxStacks: 2, requirements: ['char:mage_yam'] }),
-  U('ch_gam', '灌鉛骰子', '【賭徒芋頭】命運翻牌負面效果機率減半', 'rare', 'character', { specialEffect: 'charGam', maxStacks: 1, requirements: ['char:gambler_taro'] }),
+  // ============================== 角色專屬（純被動加成，只在該角色的商店/升級出現）
+  U('ch_tank', '劍盾精通', '【戰士地瓜】傷害 +15%、攻速 +8%', 'rare', 'character', { statMods: { damage: 0.15, attackSpeed: 0.08 }, maxStacks: 3, requirements: ['char:warrior_sweetpotato'] }),
+  U('ch_gun', '槍械精通', '【槍手馬鈴薯】攻速 +18%', 'rare', 'character', { statMods: { attackSpeed: 0.18 }, maxStacks: 3, requirements: ['char:gunner_potato'] }),
+  U('ch_med', '醫術精進', '【醫生蘿蔔】攻速 +12%、傷害 +8%', 'rare', 'character', { statMods: { attackSpeed: 0.12, damage: 0.08 }, maxStacks: 3, requirements: ['char:medic_radish'] }),
+  U('ch_eng', '工程強化', '【工程洋蔥】傷害 +15%', 'rare', 'character', { statMods: { damage: 0.15 }, maxStacks: 3, requirements: ['char:engineer_onion'] }),
+  U('ch_mage', '法力灌注', '【冰法番薯】傷害 +18%', 'rare', 'character', { statMods: { damage: 0.18 }, maxStacks: 3, requirements: ['char:mage_yam'] }),
+  U('ch_gam', '賭運高漲', '【賭徒芋頭】暴擊率 +10%、暴傷 +25%', 'rare', 'character', { statMods: { critChance: 0.1, critDamage: 0.25 }, maxStacks: 3, requirements: ['char:gambler_taro'] }),
+  U('ch_sam', '拔刀精髓', '【武士番茄】暴傷 +30%、傷害 +10%', 'rare', 'character', { statMods: { critDamage: 0.3, damage: 0.1 }, maxStacks: 3, requirements: ['char:samurai_tomato'] }),
+  U('ch_asn', '暗殺技巧', '【刺客豆芽】暴擊率 +12%、攻速 +10%', 'rare', 'character', { statMods: { critChance: 0.12, attackSpeed: 0.1 }, maxStacks: 3, requirements: ['char:assassin_sprout'] }),
+  U('ch_cac', '尖刺強化', '【反甲仙人掌】傷害 +15%、移速 +5%', 'rare', 'character', { statMods: { damage: 0.15, moveSpeed: 0.05 }, maxStacks: 3, requirements: ['char:cactus_thorns'] }),
+  U('ch_monk', '拳意通神', '【武僧豆腐】攻速 +12%、傷害 +10%', 'rare', 'character', { statMods: { attackSpeed: 0.12, damage: 0.1 }, maxStacks: 3, requirements: ['char:monk_tofu'] }),
 
   // ============================== 詛咒（強力但有代價）
   U('x_glass', '玻璃大砲', '傷害 +40%，但最大生命 -25%', 'cursed', 'curse', { specialEffect: 'curseGlass', statMods: { damage: 0.4 }, maxStacks: 1 }),

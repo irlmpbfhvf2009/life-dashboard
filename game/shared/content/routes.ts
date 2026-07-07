@@ -9,11 +9,14 @@ export const ROUTES: RouteData[] = [
   { id: 'r_merchant', name: '商人營地', reward: '特殊商店（貨更好、有折扣）', risk: '戰鬥獎勵 -30%', mods: { specialShop: true, rewardMult: 0.7 }, weight: 7 },
 ]
 
-// 第一關固定的小型團隊獎勵（3 選 1，全隊投票）。
+// 團隊獎勵：每波中場的免費多選池（原團隊商店道具已整併進來）。
+// 每人可選數量依人數縮放（1 人選 4、2 人各選 2、3~4 人各選 1）。
 export const TEAM_REWARDS: TeamRewardData[] = [
-  { id: 'tr_supply', name: '農場補給', description: '全隊回復 30% 生命', effect: 'teamHealPct', params: { pct: 0.3 } },
-  { id: 'tr_goldbag', name: '豐收金袋', description: '全隊各獲得 15 金幣', effect: 'teamGold', params: { amount: 15 } },
-  { id: 'tr_blessing', name: '老農祝福', description: '下一關掉落率 +50%', effect: 'nextWaveDropBoost', params: { mult: 1.5 } },
+  { id: 'tr_heal', name: '全隊回滿血', description: '立即全隊回復至滿血（並救起倒地隊友）', effect: 'teamHealFull' },
+  { id: 'tr_shield', name: '每波永久護盾', description: '從此每波開場全隊 +30 護盾（可疊加）', effect: 'waveShield', params: { amount: 30 } },
+  { id: 'tr_goldbag', name: '豐收金袋', description: '全隊各獲得 20 金幣', effect: 'teamGold', params: { amount: 20 } },
+  { id: 'tr_blessing', name: '老農祝福', description: '下一波掉落率 +50%', effect: 'nextWaveDropBoost', params: { mult: 1.5 } },
   { id: 'tr_parts', name: '武器零件', description: '隨機一名玩家的隨機武器 +1 級', effect: 'randomWeaponUp' },
   { id: 'tr_firstaid', name: '急救包', description: '獲得 1 個復活碎片（集 3 個 = 團隊復活 +1）', effect: 'reviveShard' },
+  { id: 'tr_bossdmg', name: '屠龍磨刀石', description: '對 Boss 傷害 +10%（永久）', effect: 'bossDamage', params: { amount: 0.1 } },
 ]

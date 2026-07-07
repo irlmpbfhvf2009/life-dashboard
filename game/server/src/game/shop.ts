@@ -1,7 +1,7 @@
-// 商店 + 升級三選一 + 寶箱 + 團隊商店（投票）+ 團隊獎勵。
+// 商店 + 升級三選一 + 寶箱 + 團隊獎勵（免費多選）。
 import {
   WEAPONS, WEAPON_MAP, UPGRADES, UPGRADE_MAP, CHEST_REWARDS,
-  TEAM_SHOP_MAP, TEAM_REWARDS, ITEMS,
+  TEAM_REWARDS, ITEMS,
 } from '../../../shared/content/index'
 import { SHOP } from '../../../shared/balance'
 import { weightedR, intR, shuffleR } from '../../../shared/rng'
@@ -85,9 +85,9 @@ export function generateShopOffers(g: Game, p: SPlayer): void {
 
   while (p.shopOffers.length < SHOP.offers) {
     const roll = g.rng()
-    if (roll < 0.38) {
+    if (roll < 0.45) {   // 武器是角色核心，提高出現率讓玩家湊齊武器組
       // 武器（進化型不進商店；已滿級的不再出現）
-      const pool = WEAPONS.filter(w => !w.evolvedForm).filter(w => {
+      const pool = WEAPONS.filter(w => w.charId === p.char.id).filter(w => {
         const owned = p.weapons.find(x => x.data.id === w.id)
         return !owned || owned.level < w.maxLevel
       }).filter(w => special || w.tier <= (g.wave < 5 ? 2 : 3))
@@ -114,6 +114,28 @@ export function generateShopOffers(g: Game, p: SPlayer): void {
     if (p.shopOffers.some(o => o.kind === 'upgrade' && o.refId === u.id)) continue
     p.shopOffers.push({ offerId: oid(), kind: 'upgrade', refId: u.id, price: Math.max(1, Math.round(u.price * priceMult)), locked: false, sold: false })
   }
+
+  // 🎁 福袋：35% 機率把一個非鎖定格換成福袋；其中 30% 是「稀有福袋」（金色、貴一倍、必開好料）
+  if (g.rng() < 0.35) {
+    const idx = p.shopOffers.findIndex(o => !o.locked && !o.sold && o.kind !== 'mystery')
+    if (idx >= 0) {
+      const rareBox = g.rng() < 0.3
+      p.shopOffers[idx] = {
+        offerId: oid(), kind: 'mystery', refId: rareBox ? 'rare' : '',
+        price: Math.max(5, Math.round((rareBox ? 20 : 8) + g.wave * (rareBox ? 3 : 1.5))), locked: false, sold: false,
+      }
+    }
+  }
+  // 🏷️ 特價：一般 = 隨機一格打 4~5 折；12% 機率是「特價日」= 全店都打折
+  const bargainDay = g.rng() < 0.12
+  const saleable = p.shopOffers.filter(o => !o.sold && !o.origPrice && o.kind !== 'mystery')
+  if (saleable.length) {
+    const targets = bargainDay ? saleable : [saleable[Math.floor(g.rng() * saleable.length)]]
+    for (const o of targets) {
+      o.origPrice = o.price
+      o.price = Math.max(1, Math.round(o.price * (bargainDay ? 0.6 : 0.5 + g.rng() * 0.1)))
+    }
+  }
 }
 
 export function buyOffer(g: Game, p: SPlayer, offerId: string): string | null {
@@ -125,6 +147,38 @@ export function buyOffer(g: Game, p: SPlayer, offerId: string): string | null {
     if (err) return err
   } else if (o.kind === 'upgrade') {
     applyUpgrade(g, p, o.refId)
+  } else if (o.kind === 'mystery') {
+    const rareBox = o.refId === 'rare'
+    const pool = WEAPONS.filter(w => w.charId === p.char.id)
+      .filter(w => { const owned = p.weapons.find(x => x.data.id === w.id); return !owned || owned.level < w.maxLevel })
+    if (rareBox) {
+      // ✨ 稀有福袋：必開好料 — 優先武器，否則稀有升級，否則大筆金幣
+      if (pool.length) {
+        const w = pool[Math.floor(g.rng() * pool.length)]
+        addWeapon(g, p, w.id)
+        g.toastTo(p, `✨ 稀有福袋開出：${w.name}！`, 'good')
+      } else {
+        const u = pickUpgradeByRarity(g, p, g.rng() < 0.4 ? 'epic' : 'rare')
+        if (u) { applyUpgrade(g, p, u.id); g.toastTo(p, `✨ 稀有福袋開出：${u.name}！`, 'good') }
+        else { const gold = 40 + g.wave * 4; p.gold += gold; g.toastTo(p, `✨ 稀有福袋開出：金幣 +${gold}！`, 'good') }
+      }
+    } else {
+      // 🎁 一般福袋：50% 隨機專屬武器、30% 隨機道具、20% 一筆金幣
+      const r = g.rng()
+      if (r < 0.5 && pool.length) {
+        const w = pool[Math.floor(g.rng() * pool.length)]
+        addWeapon(g, p, w.id)
+        g.toastTo(p, `🎁 福袋開出：${w.name}！`, 'good')
+      } else if (r < 0.8) {
+        const it = weightedR(g.rng, ITEMS)
+        p.pendingItems.push(it.id)
+        g.toastTo(p, `🎁 福袋開出：${it.name}！`, 'good')
+      } else {
+        const gold = 12 + g.wave * 2
+        p.gold += gold
+        g.toastTo(p, `🎁 福袋開出：金幣 +${gold}！`, 'good')
+      }
+    }
   } else {
     // 道具存到下一波開場直接生效 → 直接套用簡化為立即生效於下波（先立即入袋）
     p.pendingItems.push(o.refId)
@@ -157,6 +211,7 @@ export function sellWeapon(g: Game, p: SPlayer, index: number): string | null {
 export function addWeapon(g: Game, p: SPlayer, weaponId: string): string | null {
   const data = WEAPON_MAP.get(weaponId)
   if (!data) return '未知武器'
+  if (data.charId && data.charId !== p.char.id) return '這不是你的專屬武器'
   const owned = p.weapons.find(w => w.data.id === weaponId)
   if (owned) {
     if (owned.level >= data.maxLevel) return '已達最高等級'
@@ -208,7 +263,8 @@ export function rollChestOptions(g: Game, p: SPlayer): ChestPending['options'] {
           break
         }
         case 'weapon': {
-          const pool = WEAPONS.filter(x => !x.evolvedForm)
+          const pool = WEAPONS.filter(x => x.charId === p.char.id)
+          if (!pool.length) continue
           const w = pool[Math.floor(g.rng() * pool.length)]
           opts.push({ rewardId: cr.id, detail: `武器：${w.name}`, refId: w.id })
           break
@@ -255,83 +311,16 @@ export function applyChestChoice(g: Game, p: SPlayer, chestId: string, rewardId:
   return null
 }
 
-// -------------------------------------------------------- 團隊商店
+// -------------------------------------------------------- 團隊獎勵（每波免費多選）
 
-export function teamShopVote(g: Game, p: SPlayer, itemId: string, yes: boolean): void {
-  if (!TEAM_SHOP_MAP.has(itemId)) return
-  let votes = g.team.teamShopVotes.get(itemId)
-  if (!votes) { votes = new Set(); g.team.teamShopVotes.set(itemId, votes) }
-  if (yes) votes.add(p.id)
-  else votes.delete(p.id)
-  tryBuyTeamItem(g, itemId)
+/** 每人可選數量：1 人選 4、2 人各選 2、3~4 人各選 1（總量約 3~4） */
+export function teamRewardPicksPerPlayer(playerCount: number): number {
+  return playerCount <= 1 ? 4 : playerCount === 2 ? 2 : 1
 }
-
-function connectedCount(g: Game): number {
-  return [...g.players.values()].filter(p => p.connected).length
-}
-
-function tryBuyTeamItem(g: Game, itemId: string): void {
-  const item = TEAM_SHOP_MAP.get(itemId)!
-  if (g.team.teamShopBought.has(itemId)) return
-  const votes = g.team.teamShopVotes.get(itemId)
-  const need = Math.max(1, Math.ceil(connectedCount(g) / 2))
-  if (!votes || votes.size < need) return
-  // 分攤價格（含團購折扣升級）
-  const discount = Math.max(0, ...[...g.players.values()].map(p => eff(p, 'teamShopDiscount') * 0.15), g.nextTeamShopDiscount)
-  const each = Math.ceil(item.price * (1 - discount) / Math.max(1, connectedCount(g)))
-  const payers = [...g.players.values()].filter(p => p.connected)
-  if (payers.some(p => p.gold < each)) {
-    g.broadcastToast(`團隊道具「${item.name}」有人金幣不足（每人需 ${each}）`, 'warn')
-    g.team.teamShopVotes.delete(itemId)
-    return
-  }
-  for (const p of payers) p.gold -= each
-  g.team.teamShopBought.add(itemId)
-  g.team.teamShopVotes.delete(itemId)
-  applyTeamItem(g, itemId)
-  g.broadcastToast(`✅ 團隊購買「${item.name}」（每人 ${each} 金幣）`, 'good')
-}
-
-function applyTeamItem(g: Game, itemId: string): void {
-  const item = TEAM_SHOP_MAP.get(itemId)!
-  const prm = item.params ?? {}
-  switch (item.effect) {
-    case 'teamHealPct':
-      for (const p of g.players.values()) if (p.status === 'alive') healPlayer(g, p, p.stats.maxHp * prm.pct)
-      break
-    case 'nextWaveShield': g.nextWaveShield += prm.amount; break
-    case 'buyRevive': g.team.revives++; break
-    case 'bossDamage': g.team.bossDamage += prm.amount; break
-    case 'objectiveHp': g.team.objectiveHp += prm.amount; break
-    case 'nextShopDiscount': g.nextTeamShopDiscount = Math.max(g.nextTeamShopDiscount, prm.amount); break
-    case 'nextWaveDropBoost': g.nextWaveDropBoost = Math.max(g.nextWaveDropBoost, prm.mult); break
-  }
-}
-
-export function teamReviveVote(g: Game, p: SPlayer): void {
-  g.team.reviveVotes.add(p.id)
-  const need = Math.max(1, Math.ceil(connectedCount(g) / 2))
-  if (g.team.reviveVotes.size < need) return
-  const price = SHOP.teamReviveBasePrice + g.team.revivesBought * SHOP.teamRevivePriceGrowth
-  const discount = Math.max(0, ...[...g.players.values()].map(q => eff(q, 'reviveCostDown') * 0.25))
-  const each = Math.ceil(price * (1 - discount) / Math.max(1, connectedCount(g)))
-  const payers = [...g.players.values()].filter(q => q.connected)
-  if (payers.some(q => q.gold < each)) {
-    g.broadcastToast(`購買團隊復活失敗：有人金幣不足（每人需 ${each}）`, 'warn')
-    g.team.reviveVotes.clear()
-    return
-  }
-  for (const q of payers) q.gold -= each
-  g.team.revives++
-  g.team.revivesBought++
-  g.team.reviveVotes.clear()
-  g.broadcastToast(`✅ 團隊復活 +1（每人 ${each} 金幣）`, 'good')
-}
-
-// -------------------------------------------------------- 團隊獎勵（第一關固定三選一）
 
 export function rollTeamRewardOptions(g: Game) {
-  return shuffleR(g.rng, TEAM_REWARDS.slice()).slice(0, 3).map(t => ({ id: t.id, name: t.name, description: t.description }))
+  // 提供整個池洗牌（讓單人一次可挑 4 個仍有足夠變化）
+  return shuffleR(g.rng, TEAM_REWARDS.slice()).map(t => ({ id: t.id, name: t.name, description: t.description }))
 }
 
 export function applyTeamReward(g: Game, id: string): void {
@@ -339,12 +328,18 @@ export function applyTeamReward(g: Game, id: string): void {
   if (!t) return
   const prm = t.params ?? {}
   switch (t.effect) {
-    case 'teamHealPct':
-      for (const p of g.players.values()) if (p.status !== 'dead') { p.status = 'alive'; healPlayer(g, p, p.stats.maxHp * prm.pct) }
+    case 'teamHealFull':
+      // 回滿血並救起倒地隊友（死亡者仍需團隊復活）
+      for (const p of g.players.values()) if (p.status !== 'dead') { p.status = 'alive'; healPlayer(g, p, p.stats.maxHp) }
+      break
+    case 'waveShield':
+      g.team.waveShield += prm.amount                           // 永久：每波開場生效
+      for (const p of g.players.values()) if (p.status === 'alive') p.shield += prm.amount   // 本波也立即補一次
       break
     case 'teamGold':
       for (const p of g.players.values()) p.gold += prm.amount
       break
+    case 'bossDamage': g.team.bossDamage += prm.amount; break
     case 'nextWaveDropBoost': g.nextWaveDropBoost = Math.max(g.nextWaveDropBoost, prm.mult); break
     case 'randomWeaponUp': {
       const ps = [...g.players.values()].filter(p => p.weapons.some(w => w.level < w.data.maxLevel))

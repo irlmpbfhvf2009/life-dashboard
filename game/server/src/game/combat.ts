@@ -219,7 +219,7 @@ function fireMelee(g: Game, p: SPlayer, w: OwnedWeapon, st: WeaponStats): void {
   const tgt = nearestTargetPos(g, p.x, p.y, r)
   if (!tgt) { w.cdLeft = 0.08; return }
   w.cdLeft = st.cooldown
-  g.ev({ t: 'aoe', x: Math.round(p.x), y: Math.round(p.y), r, kind: 'swing' })
+  g.ev({ t: 'aoe', x: Math.round(p.x), y: Math.round(p.y), r, kind: 'swing', w: w.data.id, id: p.id })
   for (const e of g.enemies) {
     if (e.hp <= 0 || dist2(p.x, p.y, e.x, e.y) > (r + e.radius) ** 2) continue
     const { dmg, crit } = rollDamage(g, p, st.damage)
@@ -306,17 +306,30 @@ function fireTurret(g: Game, p: SPlayer, w: OwnedWeapon, st: WeaponStats): void 
 
 function fireHeal(g: Game, p: SPlayer, w: OwnedWeapon, st: WeaponStats): void {
   if (w.cdLeft > 0) return
-  // 有人受傷才施放
+  w.cdLeft = st.cooldown
+  const heal = st.heal ?? 8
+  // 治療：自己 + 範圍內最傷的隊友
   const hurt = [...g.players.values()]
     .filter(q => q.status === 'alive' && q.hp < q.stats.maxHp && (q === p || dist2(p.x, p.y, q.x, q.y) < st.range ** 2))
     .sort((a, b) => a.hp / a.stats.maxHp - b.hp / b.stats.maxHp)
-  if (!hurt.length) { w.cdLeft = 0.2; return }
-  w.cdLeft = st.cooldown
   const targets = hurt.slice(0, 2 + eff(p, 'healSpread'))
   for (const q of targets) {
-    healPlayer(g, q, st.heal ?? 8)
+    healPlayer(g, q, heal)
     g.ev({ t: 'aoe', x: Math.round(q.x), y: Math.round(q.y), r: 40, kind: 'heal' })
   }
+  // 光療波：治療脈衝同時灼傷醫生周圍的敵人（讓純補師單人也有輸出、不破壞群體定位）
+  const novaR = 150
+  let hitAny = false
+  for (const e of g.enemies) {
+    if (e.hp <= 0) continue
+    if (dist2(e.x, e.y, p.x, p.y) > novaR * novaR) continue
+    const { dmg, crit } = rollDamage(g, p, heal * 0.6)
+    damageEnemyImpl(g, e, dmg, { ownerId: p.id, crit, srcX: p.x, srcY: p.y })
+    hitAny = true
+  }
+  // 沒人受傷也沒打到怪 → 縮短冷卻，讓下一次脈衝更快
+  if (!targets.length && !hitAny) w.cdLeft = Math.min(w.cdLeft, 0.6)
+  else g.ev({ t: 'aoe', x: Math.round(p.x), y: Math.round(p.y), r: novaR, kind: 'heal' })
 }
 
 function fireZone(g: Game, p: SPlayer, w: OwnedWeapon, st: WeaponStats): void {
@@ -357,7 +370,11 @@ function projectilesTick(g: Game, dt: number): void {
       }
       damageEnemyImpl(g, e, pr.damage, { ownerId: pr.ownerId, crit: pr.crit, knockX: kx * pr.knockback, knockY: ky * pr.knockback, srcX: pr.x, srcY: pr.y })
       if (pr.slow > 0) { e.slowUntil = g.time + pr.slowDur; e.slowPct = Math.max(e.slowPct, pr.slow) }
-      if (pr.freezeChance > 0 && g.rng() < pr.freezeChance) e.frozenUntil = g.time + 1.2
+      // 菁英不被冰凍定身（改為重度緩速），才「被打不會停止」
+      if (pr.freezeChance > 0 && g.rng() < pr.freezeChance) {
+        if (e.elite) { e.slowUntil = g.time + 1.2; e.slowPct = Math.max(e.slowPct, 0.5) }
+        else e.frozenUntil = g.time + 1.2
+      }
       // 冰法被動：所有攻擊 12% 機率減速
       const owner = g.players.get(pr.ownerId)
       if (owner?.char.passive.effect === 'chillTouch' && g.rng() < 0.12) {
