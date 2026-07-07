@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-07-06 19:49",
+  "updated_at": "2026-07-07 18:39",
   "picks": [
     {
       "date": "2026-06-16",
@@ -8063,6 +8063,68 @@
         },
         "rsi": 58.3,
         "change_pct": 1.13,
+        "foreign_lots": 0,
+        "trust_lots": 0,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": null,
+        "margin_chg": null,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-07-07",
+      "code": "2891",
+      "name": "中信金",
+      "entry_price": 70.2,
+      "score": 60.7,
+      "signals": {
+        "composite": 60.7,
+        "breakdown": {
+          "chips": 50.0,
+          "tech": 92.7,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 58.3,
+        "change_pct": -1.68,
+        "foreign_lots": 0,
+        "trust_lots": 0,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": null,
+        "margin_chg": null,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-07-07",
+      "code": "1513",
+      "name": "中興電",
+      "entry_price": 175.0,
+      "score": 47.3,
+      "signals": {
+        "composite": 47.3,
+        "breakdown": {
+          "chips": 50.0,
+          "tech": 39.2,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 52.7,
+        "change_pct": -1.96,
         "foreign_lots": 0,
         "trust_lots": 0,
         "pe": null,
