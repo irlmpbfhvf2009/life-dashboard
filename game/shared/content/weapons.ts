@@ -410,6 +410,43 @@ export const WEAPONS: WeaponData[] = [
     perLevel: { damage: 6, pierce: 1 },
     maxLevel: 5, critModifier: 1.5, tags: ['thorn', 'pierce', 'crit'], price: 22, tier: 3, palette: ['#e0512f', '#795548'],
   },
+
+  // ============================================================ 迷幻大麻（孢子幻術控場）
+  {
+    id: 'h_spore', name: '孢子彈', category: 'magic', behavior: 'projectile', charId: 'hemp_mystic',
+    description: '射出一枚迷幻孢子，穩定的中距離輸出。',
+    base: { damage: 10, cooldown: 0.75, range: 340, projectileCount: 1, pierce: 2, knockback: 20, speed: 500 },
+    perLevel: { damage: 4, pierce: 0.5 },
+    maxLevel: 5, tags: ['spore', 'pierce'], price: 12, tier: 1, palette: ['#9b7fd4', '#5a3f8f'],
+  },
+  {
+    id: 'h_pollen', name: '花粉扇', category: 'magic', behavior: 'projectile', charId: 'hemp_mystic',
+    description: '一次噴出一扇迷幻花粉，掃射前方。',
+    base: { damage: 6, cooldown: 0.9, range: 300, projectileCount: 4, pierce: 1, knockback: 15, speed: 460 },
+    perLevel: { damage: 2, projectileCount: 1 },
+    maxLevel: 5, tags: ['spore', 'spread'], price: 18, tier: 2, palette: ['#e05fd0', '#a03a8f'],
+  },
+  {
+    id: 'h_smoke', name: '迷煙彈', category: 'engineer', behavior: 'zone', charId: 'hemp_mystic',
+    description: '拋出一團迷幻煙霧，持續嗆傷並纏住其中的敵人。',
+    base: { damage: 5, cooldown: 2.4, range: 300, projectileCount: 1, pierce: 0, knockback: 0, radius: 130, duration: 4, burn: 7 },
+    perLevel: { burn: 3, radius: 12 },
+    maxLevel: 5, tags: ['spore', 'zone'], price: 20, tier: 2, palette: ['#8a7fa0', '#4a4258'],
+  },
+  {
+    id: 'h_mirage', name: '幻葉環', category: 'magic', behavior: 'orbit', charId: 'hemp_mystic',
+    description: '召喚繞身旋轉的幻影麻葉護體。',
+    base: { damage: 10, cooldown: 1.0, range: 0, projectileCount: 3, pierce: 99, knockback: 40, radius: 102, speed: 3.2 },
+    perLevel: { damage: 4, projectileCount: 0.5, radius: 8 },
+    maxLevel: 5, tags: ['spore', 'orbit'], price: 20, tier: 2, palette: ['#7cc36a', '#3f7a34'],
+  },
+  {
+    id: 'h_haze', name: '致幻光束', category: 'magic', behavior: 'projectile', charId: 'hemp_mystic',
+    description: '射出濃縮的迷幻光束，貫穿並使命中的敵人昏沉減速。',
+    base: { damage: 14, cooldown: 1.1, range: 360, projectileCount: 1, pierce: 3, knockback: 30, speed: 480, slow: 0.3 },
+    perLevel: { damage: 5, pierce: 1, slow: 0.05 },
+    maxLevel: 5, tags: ['spore', 'pierce', 'slow'], price: 22, tier: 3, palette: ['#b06fe0', '#6a2f9f'],
+  },
 ]
 
 export const WEAPON_MAP = new Map(WEAPONS.map(w => [w.id, w]))

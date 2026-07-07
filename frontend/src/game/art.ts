@@ -319,6 +319,64 @@ export function drawCharacter(g: Ctx, charId: string, size: number, t: number, o
       }
       break
     }
+    case 'hemp_mystic': {
+      // 迷幻大麻：紫色神秘圓身 + 頭頂大麻葉 + 迷濛半瞇眼 + 迷幻孢子繞身
+      // 繞身漂浮的孢子光點
+      for (let k = 0; k < 5; k++) {
+        const a = (k / 5) * Math.PI * 2 + t * 0.8
+        const rr = s * (0.56 + Math.sin(t * 2 + k) * 0.05)
+        g.fillStyle = k % 2 ? accent : leafC
+        g.globalAlpha = 0.5 + Math.sin(t * 3 + k) * 0.3
+        ellipse(g, Math.cos(a) * rr, Math.sin(a) * rr * 0.9, s * 0.045, s * 0.045); g.fill()
+      }
+      g.globalAlpha = 1
+      // 圓身
+      outlined(g, body, gg => ellipse(gg, 0, s * 0.04, s * 0.45, s * 0.47))
+      // 迷幻漩渦紋（身上）
+      g.strokeStyle = accent; g.lineWidth = s * 0.035; g.globalAlpha = 0.6
+      g.beginPath()
+      for (let i = 0; i <= 28; i++) { const th = i / 28 * Math.PI * 3.2; const rr = s * 0.05 + th * s * 0.05; const px = Math.cos(th + t * 0.5) * rr; const py = s * 0.18 + Math.sin(th + t * 0.5) * rr * 0.8; i ? g.lineTo(px, py) : g.moveTo(px, py) }
+      g.stroke(); g.globalAlpha = 1
+      // 頭頂大麻葉（7 片鋸齒葉，中間最長）
+      const leaflets = [-0.9, -0.58, -0.28, 0, 0.28, 0.58, 0.9]
+      const lens = [0.42, 0.56, 0.7, 0.82, 0.7, 0.56, 0.42]
+      for (let k = 0; k < leaflets.length; k++) {
+        g.save(); g.translate(0, -s * 0.4); g.rotate(leaflets[k])
+        const L = s * lens[k]
+        outlined(g, leafC, gg => {
+          gg.beginPath(); gg.moveTo(0, 0)
+          gg.quadraticCurveTo(-s * 0.07, -L * 0.55, 0, -L)
+          gg.quadraticCurveTo(s * 0.07, -L * 0.55, 0, 0)
+        }, 2)
+        // 葉脈
+        g.strokeStyle = '#3f7a34'; g.lineWidth = s * 0.02
+        g.beginPath(); g.moveTo(0, 0); g.lineTo(0, -L * 0.9); g.stroke()
+        g.restore()
+      }
+      if (opts.downed) { face(g, s, 'ko') } else {
+        // 迷濛半瞇眼（上眼瞼壓低）+ 紅眼
+        g.fillStyle = '#fff'
+        ellipse(g, -s * 0.17, s * 0.02, s * 0.09, s * 0.07); g.fill()
+        ellipse(g, s * 0.17, s * 0.02, s * 0.09, s * 0.07); g.fill()
+        g.fillStyle = '#e05fd0'
+        ellipse(g, -s * 0.17, s * 0.04, s * 0.045, s * 0.045); g.fill()
+        ellipse(g, s * 0.17, s * 0.04, s * 0.045, s * 0.045); g.fill()
+        // 壓低的上眼瞼（半瞇）
+        outlined(g, body, gg => { gg.beginPath(); gg.rect(-s * 0.28, -s * 0.06, s * 0.22, s * 0.08) }, 0)
+        outlined(g, body, gg => { gg.beginPath(); gg.rect(s * 0.06, -s * 0.06, s * 0.22, s * 0.08) }, 0)
+        g.strokeStyle = OUTLINE; g.lineWidth = s * 0.03
+        g.beginPath(); g.moveTo(-s * 0.27, s * 0.01); g.lineTo(-s * 0.07, s * 0.01); g.stroke()
+        g.beginPath(); g.moveTo(s * 0.07, s * 0.01); g.lineTo(s * 0.27, s * 0.01); g.stroke()
+        // 腮紅
+        g.fillStyle = 'rgba(224,95,208,0.4)'
+        ellipse(g, -s * 0.3, s * 0.14, s * 0.08, s * 0.05); g.fill()
+        ellipse(g, s * 0.3, s * 0.14, s * 0.08, s * 0.05); g.fill()
+        // 慵懶微笑
+        g.strokeStyle = OUTLINE; g.lineWidth = s * 0.035
+        g.beginPath(); g.arc(0, s * 0.16, s * 0.11, Math.PI * 0.1, Math.PI * 0.9); g.stroke()
+      }
+      break
+    }
     default:
       outlined(g, body, gg => ellipse(gg, 0, 0, s * 0.46, s * 0.48))
       face(g, s, opts.downed ? 'ko' : 'happy')
@@ -541,6 +599,15 @@ export function drawEnemy(g: Ctx, kindId: string, size: number, t: number, opts:
     g.setLineDash([5, 4])
     g.beginPath(); g.arc(0, 0, s * 0.62, t * 2, t * 2 + Math.PI * 2); g.stroke()
     g.setLineDash([])
+  }
+  if (flags & 16) { // 迷幻（混亂）：頭上三顆繞圈的紫紅色迷幻星
+    for (let k = 0; k < 3; k++) {
+      const a = t * 4 + (k / 3) * Math.PI * 2
+      g.fillStyle = k === 1 ? '#e05fd0' : '#b06fe0'
+      g.font = `${s * 0.4}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'
+      g.fillText('✦', Math.cos(a) * s * 0.34, -s * 0.62 + Math.sin(a) * s * 0.12)
+    }
+    g.textBaseline = 'alphabetic'
   }
   g.restore()
 }

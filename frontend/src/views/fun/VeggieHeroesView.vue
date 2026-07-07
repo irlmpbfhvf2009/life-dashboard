@@ -206,7 +206,7 @@ const WEAPON_EMOJI: Record<string, string> = {
 const SKILL_EMOJI: Record<string, string> = {
   charge: '💨', bulwark: '🛡️', thornsNova: '🌵', rapidfire: '🔥',
   healzone: '💚', turret: '🗼', frostnova: '❄️', fateflip: '🎲',
-  whirlslash: '🌀', palmquake: '💥', spikecharge: '🦔',
+  whirlslash: '🌀', palmquake: '💥', spikecharge: '🦔', hallucinate: '🍃',
 }
 const ROLE_NAME: Record<string, string> = { tank: '坦克', dps: '輸出', support: '輔助', engineer: '工程', control: '控場', gambler: '賭運' }
 

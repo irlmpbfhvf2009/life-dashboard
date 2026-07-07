@@ -62,7 +62,7 @@ export function spawnEnemy(g: Game, id: string, x: number, y: number, opts: {
     hp: Math.round(hp), maxHp: Math.round(hp),
     speed, damage, radius: data.radius * size, dr,
     affixes, elite: !!opts.elite, sizeMult: size,
-    shield: 0, frozenUntil: 0, slowUntil: 0, slowPct: 0, stunUntil: 0,
+    shield: 0, frozenUntil: 0, slowUntil: 0, slowPct: 0, stunUntil: 0, confusedUntil: 0,
     kbVx: 0, kbVy: 0, touchCd: 0,
     actCd: (data.params?.shootCd ?? data.params?.lungeCd ?? data.params?.chargeCd ?? data.params?.summonCd ?? 2) * (0.5 + g.rng()),
     fuse: -1, fleeUntil: 0, stolenGold: 0,
@@ -183,6 +183,15 @@ export function enemiesTick(g: Game, dt: number): void {
       e.kbVx *= 0.85; e.kbVy *= 0.85
     }
     if (e.frozenUntil > now || e.stunUntil > now) { clampArena(e, 10); continue }
+
+    // 迷幻（大麻）：神智不清 — 慢慢亂晃、不追人也不攻擊
+    if (e.confusedUntil > now) {
+      const wa = Math.sin(now * 1.3 + e.i * 2.7) * Math.PI * 2 + Math.cos(now * 0.7 + e.i) * 2
+      const wspd = e.speed * (e.slowUntil > now ? 1 - e.slowPct : 1) * 0.4
+      e.x += Math.cos(wa) * wspd * dt; e.y += Math.sin(wa) * wspd * dt
+      clampArena(e, 10)
+      continue
+    }
 
     const slowMult = e.slowUntil > now ? 1 - e.slowPct : 1
     const spd = e.speed * slowMult

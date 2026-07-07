@@ -1003,6 +1003,24 @@ export class Game {
         }
         break
       }
+      case 'hallucinate': {
+        // 迷幻大麻：迷幻孢子 — 灑出幻覺雲，範圍內敵人陷入混亂（亂走、不攻擊）並受傷，
+        // 並留下持續數秒的孢子雲，讓踏入的怪物持續混亂。菁英混亂時間減半。
+        const radius = (prm.radius ?? 240) * p.stats.area
+        const confuse = prm.confuse ?? 4
+        this.ev({ t: 'aoe', x: Math.round(p.x), y: Math.round(p.y), r: Math.round(radius), kind: 'haze' })
+        for (const e of this.enemies) {
+          if (e.hp <= 0 || dist2(e.x, e.y, p.x, p.y) > radius * radius) continue
+          e.confusedUntil = Math.max(e.confusedUntil, this.time + confuse * (e.elite ? 0.5 : 1))
+          damageEnemyImpl(this, e, (prm.damage ?? 14) * p.stats.damage, { ownerId: p.id, srcX: p.x, srcY: p.y })
+        }
+        // 留存的孢子雲（非傷害，持續施加混亂；見 combat.zonesTick 的 haze 分支）
+        this.zones.push({
+          x: p.x, y: p.y, radius: (prm.cloudRadius ?? 190) * p.stats.area, dps: 0, hps: 0,
+          until: this.time + (prm.cloudDur ?? 5), ownerId: p.id, kind: 'haze', hostile: false, tick: 0,
+        })
+        break
+      }
     }
   }
 
@@ -1196,7 +1214,7 @@ export class Game {
       enemies: this.enemies.map(e => ({
         i: e.i, x: Math.round(e.x), y: Math.round(e.y),
         h: Math.max(0, Math.round((e.hp / e.maxHp) * 100)),
-        f: (e.shield > 0 ? 1 : 0) | (e.frozenUntil > now ? 2 : 0) | (e.slowUntil > now ? 4 : 0) | (e.fuse >= 0 ? 8 : 0),
+        f: (e.shield > 0 ? 1 : 0) | (e.frozenUntil > now ? 2 : 0) | (e.slowUntil > now ? 4 : 0) | (e.fuse >= 0 ? 8 : 0) | (e.confusedUntil > now ? 16 : 0),
       })),
       objectives: this.objectives.map(o => ({
         i: o.i, t: o.t, x: Math.round(o.x), y: Math.round(o.y),

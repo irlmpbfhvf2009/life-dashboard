@@ -304,6 +304,14 @@ export const sfx = {
     for (const [i, f] of [523, 659, 784, 1046, 1318].entries()) tone(f, t + 0.5 + i * 0.08, 0.2, { type: 'triangle', gain: 0.16 })
   },
   skill(): void { if (ensure()) tone(330, now(), 0.18, { type: 'square', gain: 0.14, sweepTo: 660 }) },
+  haze(): void {
+    if (!ensure()) return
+    const t = now()
+    // 迷幻孢子：兩顆微失諧、緩慢下滑的正弦，帶出「暈眩迷幻」感
+    tone(520, t, 0.6, { type: 'sine', gain: 0.12, sweepTo: 360 })
+    tone(527, t, 0.6, { type: 'sine', gain: 0.1, sweepTo: 352 })
+    noise(t, 0.5, 0.08, 900, 0.3)
+  },
   buy(): void { if (ensure()) { const t = now(); tone(880, t, 0.06, { type: 'square', gain: 0.1 }); tone(1174, t + 0.06, 0.1, { type: 'square', gain: 0.1 }) } },
   error(): void { if (ensure()) tone(180, now(), 0.15, { type: 'square', gain: 0.12 }) },
   click(): void { if (ensure()) tone(600, now(), 0.04, { type: 'sine', gain: 0.08 }) },

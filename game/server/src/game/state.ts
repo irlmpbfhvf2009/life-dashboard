@@ -101,6 +101,7 @@ export interface SEnemy {
   frozenUntil: number
   slowUntil: number; slowPct: number
   stunUntil: number
+  confusedUntil: number                  // 迷幻（大麻）：亂走、不攻擊
   kbVx: number; kbVy: number
   touchCd: number
   // 行為狀態
@@ -139,7 +140,7 @@ export interface SZone {
   dps: number; hps: number
   until: number
   ownerId: string | null
-  kind: 'poison' | 'heal' | 'fire' | 'frost' | 'spike'
+  kind: 'poison' | 'heal' | 'fire' | 'frost' | 'spike' | 'haze'
   hostile: boolean                        // 對玩家有害
   tick: number
 }

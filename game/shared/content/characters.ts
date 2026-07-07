@@ -138,6 +138,19 @@ export const CHARACTERS: CharacterData[] = [
     rarity: 'epic',
     palette: ['#f0a83e', '#e0512f', '#4a4258'],
   },
+  {
+    id: 'hemp_mystic',
+    name: '迷幻大麻',
+    description: '玩弄心智的孢子幻術師。攻擊會噴出迷幻孢子，讓害蟲「嗑到」而神智不清；主動技「迷幻孢子」灑出一片幻覺雲，範圍內的怪物陷入混亂、亂晃且不再攻擊。血薄，靠控場活命。',
+    role: 'control',
+    baseStats: { maxHp: 88, armor: 0, moveSpeed: 168, damage: 1.12, attackSpeed: 1.0, critChance: 0.05, critDamage: 1.55, pickupRange: 82, regen: 0.3 },
+    passive: { description: '孢子沾染：攻擊 15% 機率使敵人陷入迷幻（混亂 2 秒）；範圍效果 +20%', mods: { area: 0.2 }, effect: 'hazeTouch' },
+    active: { id: 'hallucinate', name: '迷幻孢子', description: '噴出一片迷幻孢子雲——範圍內敵人立即陷入混亂（亂走、不攻擊）並受傷；孢子雲留存數秒，持續讓踏入的怪物混亂', cooldown: 16, params: { radius: 240, damage: 14, confuse: 4, cloudDur: 5, cloudRadius: 190 } },
+    startWeapons: ['h_spore', 'h_pollen', 'h_smoke', 'h_mirage', 'h_haze'],
+    unlockCondition: '通關無盡模式',
+    rarity: 'epic',
+    palette: ['#6d5aa8', '#e05fd0', '#7cc36a'],
+  },
 ]
 
 export const CHARACTER_MAP = new Map(CHARACTERS.map(c => [c.id, c]))

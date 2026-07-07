@@ -38,7 +38,7 @@ interface Aoe { x: number; y: number; r: number; kind: string; life: number; max
 const AOE_LIFE: Record<string, number> = {
   explosion: 0.45, poison: 4, heal: 5, fire: 3, frost: 0.6, lightning: 0.35,
   telegraph: 1.4, swing: 0.28, pulse: 0.7, summon: 0.5, mine: 10, deploy: 0.4,
-  slash: 0.3, thorns: 0.5, spikes: 0.5,
+  slash: 0.3, thorns: 0.5, spikes: 0.5, haze: 0.7,
 }
 
 export class Engine {
@@ -276,6 +276,7 @@ export class Engine {
           if (ev.kind === 'swing' && ev.id && ev.w) this.meleeSwing.set(`${ev.id}:${ev.w}`, this.time)   // 觸發握持武器揮動
           if (ev.kind === 'explosion') { sfx.explosion(); this.shake = Math.min(this.shake + 4, 10); this.burst(ev.x, ev.y, 12, '#ff9f43', 4) }
           if (ev.kind === 'frost') sfx.frost()
+          if (ev.kind === 'haze') { sfx.haze(); this.burst(ev.x, ev.y, 14, '#e05fd0', 3) }
           if (ev.kind === 'lightning') { sfx.lightning(); this.burst(ev.x, ev.y, 10, '#ffe66d', 4) }
           break
         }
@@ -505,8 +506,21 @@ export class Engine {
 
     // 持續性地面圈（治療/毒/火/冰）——由快照送位置，畫出完整存續期間（放置瞬間另有 aoe 閃光疊上）
     for (const z of this.snapZones) {
-      const col = z.k === 'heal' ? '105,240,174' : z.k === 'poison' ? '156,204,101' : z.k === 'fire' ? '255,107,53' : z.k === 'spike' ? '240,168,62' : '168,224,255'
+      const col = z.k === 'heal' ? '105,240,174' : z.k === 'poison' ? '156,204,101' : z.k === 'fire' ? '255,107,53' : z.k === 'spike' ? '240,168,62' : z.k === 'haze' ? '176,111,224' : '168,224,255'
       g.save(); g.translate(z.x, z.y)
+      if (z.k === 'haze') {
+        // 迷幻孢子雲：翻騰的紫紅色霧氣（三層漩渦）
+        for (let ring = 0; ring < 3; ring++) {
+          g.fillStyle = `rgba(${col},${0.08 + ring * 0.03})`
+          const rr = z.r * (0.6 + ring * 0.2) + Math.sin(this.time * 1.5 + ring) * z.r * 0.05
+          g.beginPath(); g.arc(Math.cos(this.time + ring * 2) * z.r * 0.1, Math.sin(this.time * 1.2 + ring) * z.r * 0.1, rr, 0, Math.PI * 2); g.fill()
+        }
+        g.fillStyle = 'rgba(224,95,208,0.7)'
+        g.font = '13px sans-serif'; g.textAlign = 'center'
+        g.fillText('✦', Math.sin(this.time * 2) * z.r * 0.3, -z.r * 0.2 - ((this.time * 16) % 22))
+        g.restore()
+        continue
+      }
       g.fillStyle = `rgba(${col},0.14)`
       g.beginPath(); g.arc(0, 0, z.r, 0, Math.PI * 2); g.fill()
       g.strokeStyle = `rgba(${col},0.55)`; g.lineWidth = 2
@@ -658,6 +672,18 @@ export class Engine {
             g.beginPath(); g.moveTo(Math.cos(ang) * rr * 0.4, Math.sin(ang) * rr * 0.4)
             g.lineTo(Math.cos(ang) * rr, Math.sin(ang) * rr); g.stroke()
           }
+          break
+        }
+        case 'haze': {
+          // 迷幻孢子爆發：擴散的紫紅色霧圈 + 漩渦
+          const rr = a.r * (1 - pct * 0.15)
+          g.fillStyle = `rgba(176,111,224,${pct * 0.3})`
+          g.beginPath(); g.arc(0, 0, rr, 0, Math.PI * 2); g.fill()
+          g.strokeStyle = `rgba(224,95,208,${pct * 0.7})`
+          g.lineWidth = 3
+          g.beginPath()
+          for (let i = 0; i <= 40; i++) { const th = i / 40 * Math.PI * 5; const r2 = rr * (i / 40); const px = Math.cos(th - this.time * 2) * r2; const py = Math.sin(th - this.time * 2) * r2; i ? g.lineTo(px, py) : g.moveTo(px, py) }
+          g.stroke()
           break
         }
       }

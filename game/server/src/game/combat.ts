@@ -380,6 +380,10 @@ function projectilesTick(g: Game, dt: number): void {
       if (owner?.char.passive.effect === 'chillTouch' && g.rng() < 0.12) {
         e.slowUntil = g.time + 1.5; e.slowPct = Math.max(e.slowPct, 0.3)
       }
+      // 迷幻大麻被動：孢子沾染 — 攻擊 15% 機率使敵人短暫混亂（菁英減半）
+      if (owner?.char.passive.effect === 'hazeTouch' && g.rng() < 0.15) {
+        e.confusedUntil = Math.max(e.confusedUntil, g.time + (e.elite ? 1 : 2))
+      }
       pr.pierce--
       if (pr.pierce < 0) { pr.left = 0; break }
     }
@@ -484,6 +488,12 @@ function zonesTick(g: Game, dt: number): void {
           if (z.dps > 0) g.damagePlayer(p, z.dps * 0.5, { noKnockdownBelow: 1 })
           if (z.hps > 0) healPlayer(g, p, z.hps * 0.5)
         }
+      }
+    } else if (z.kind === 'haze') {
+      // 迷幻孢子雲：不傷害，持續讓踏入的怪物混亂
+      for (const e of g.enemies) {
+        if (e.hp <= 0 || dist2(e.x, e.y, z.x, z.y) > (z.radius + e.radius) ** 2) continue
+        e.confusedUntil = Math.max(e.confusedUntil, g.time + (e.elite ? 0.5 : 1))
       }
     } else {
       if (z.hps > 0) {
