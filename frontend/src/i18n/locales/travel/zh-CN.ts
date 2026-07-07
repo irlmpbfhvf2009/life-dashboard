@@ -12,6 +12,7 @@ export default {
       emergency: '紧急卡',
       journal: '旅游日记',
       share: '行程分享',
+      more: '更多',
     },
     common: { current: '当前', enter: '进入', loading: '加载中…', destination: '目的地' },
     home: {

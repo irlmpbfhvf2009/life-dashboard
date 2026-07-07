@@ -12,6 +12,7 @@ export default {
       emergency: 'Emergency',
       journal: 'Journal',
       share: 'Share',
+      more: 'More',
     },
     common: { current: 'Current', enter: 'Open', loading: 'Loading…', destination: 'Destination' },
     home: {

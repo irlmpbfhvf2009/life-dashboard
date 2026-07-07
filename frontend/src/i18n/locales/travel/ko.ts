@@ -12,6 +12,7 @@ export default {
       emergency: '긴급카드',
       journal: '여행 일기',
       share: '일정 공유',
+      more: '더보기',
     },
     common: { current: '현재', enter: '열기', loading: '불러오는 중…', destination: '목적지' },
     home: {

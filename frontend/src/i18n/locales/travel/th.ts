@@ -12,6 +12,7 @@ export default {
       emergency: 'บัตรฉุกเฉิน',
       journal: 'ไดอารีทริป',
       share: 'แชร์ทริป',
+      more: 'เพิ่มเติม',
     },
     common: { current: 'ปัจจุบัน', enter: 'เปิด', loading: 'กำลังโหลด…', destination: 'จุดหมาย' },
     home: {

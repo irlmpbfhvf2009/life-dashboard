@@ -12,6 +12,7 @@ export default {
       emergency: '緊急カード',
       journal: '旅日記',
       share: '行程シェア',
+      more: 'その他',
     },
     common: { current: '現在', enter: '開く', loading: '読み込み中…', destination: '目的地' },
     home: {
