@@ -1,15 +1,15 @@
-// Per-user, multi-country trip wallet. localStorage is the immediate cache
-// (synchronous, offline-safe); the backend (/api/travel/state) is a background
-// sync layer so the trip budget + selected destination follow the user across
-// devices. Backend failures degrade silently. Mirrors the English-Coach store.
+// Per-user, multi-country trip wallet. Cloud sync plumbing lives in
+// useCloudSyncStore; this file owns the shared travel document shape/migration
+// and five domain composables (wallet / packing / itinerary / trip info /
+// journal) that all read and write the same synced document.
 //
 // Each expense is recorded in the active destination's currency; switching
 // destination shows that currency's expenses, with a per-currency editable rate.
 
-import { computed, reactive, ref, watch } from 'vue'
-import { useAuthStore } from '@/stores/auth'
+import { computed, reactive, ref } from 'vue'
 import { travelStateApi, fxApi } from '@/api'
 import { destinations, destinationById, type Destination } from '@/data/destinations'
+import { useCloudSyncStore } from './useCloudSyncStore'
 
 // Session-only "rate last updated" by currency code (display hint, not persisted).
 const rateAsOf = reactive<Record<string, string>>({})
@@ -88,8 +88,6 @@ interface Persisted {
   journal: Record<string, JournalEntry[]>
 }
 
-const storageKey = (uid: string) => `travel:${uid}`
-
 function freshState(): Persisted {
   return {
     items: [], rates: {}, departDate: '', destinationId: destinations[0].id,
@@ -98,13 +96,10 @@ function freshState(): Persisted {
 }
 
 /** Upgrade any previously-stored shape (incl. the THB-only version) to Persisted. */
-function normalize(raw: unknown): Persisted {
+function normalizeShape(raw: Record<string, unknown>): Persisted {
   const base = freshState()
-  if (!raw || typeof raw !== 'object') return base
-  const r = raw as Record<string, unknown>
-
-  const items: TripExpense[] = Array.isArray(r.items)
-    ? (r.items as Record<string, unknown>[]).map((e) => ({
+  const items: TripExpense[] = Array.isArray(raw.items)
+    ? (raw.items as Record<string, unknown>[]).map((e) => ({
         id: String(e.id ?? `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`),
         date: typeof e.date === 'string' ? e.date : '',
         category: typeof e.category === 'string' ? e.category : '其他',
@@ -120,21 +115,21 @@ function normalize(raw: unknown): Persisted {
     : []
 
   const rates: Record<string, number> =
-    r.rates && typeof r.rates === 'object' ? { ...(r.rates as Record<string, number>) } : {}
+    raw.rates && typeof raw.rates === 'object' ? { ...(raw.rates as Record<string, number>) } : {}
   // Legacy single-rate field.
-  if (typeof r.thbToTwd === 'number' && rates.THB == null) rates.THB = r.thbToTwd as number
+  if (typeof raw.thbToTwd === 'number' && rates.THB == null) rates.THB = raw.thbToTwd as number
 
-  const packing = (r.packing && typeof r.packing === 'object' ? r.packing : {}) as Record<string, PackingItem[]>
-  const itinerary = (r.itinerary && typeof r.itinerary === 'object' ? r.itinerary : {}) as Record<string, ItineraryItem[]>
-  const budgets = (r.budgets && typeof r.budgets === 'object' ? r.budgets : {}) as Record<string, number>
-  const trip = (r.trip && typeof r.trip === 'object' ? r.trip : {}) as Record<string, TripInfo>
-  const journal = (r.journal && typeof r.journal === 'object' ? r.journal : {}) as Record<string, JournalEntry[]>
+  const packing = (raw.packing && typeof raw.packing === 'object' ? raw.packing : {}) as Record<string, PackingItem[]>
+  const itinerary = (raw.itinerary && typeof raw.itinerary === 'object' ? raw.itinerary : {}) as Record<string, ItineraryItem[]>
+  const budgets = (raw.budgets && typeof raw.budgets === 'object' ? raw.budgets : {}) as Record<string, number>
+  const trip = (raw.trip && typeof raw.trip === 'object' ? raw.trip : {}) as Record<string, TripInfo>
+  const journal = (raw.journal && typeof raw.journal === 'object' ? raw.journal : {}) as Record<string, JournalEntry[]>
 
   return {
     items,
     rates,
-    departDate: typeof r.departDate === 'string' ? r.departDate : '',
-    destinationId: typeof r.destinationId === 'string' ? r.destinationId : base.destinationId,
+    departDate: typeof raw.departDate === 'string' ? raw.departDate : '',
+    destinationId: typeof raw.destinationId === 'string' ? raw.destinationId : base.destinationId,
     packing,
     itinerary,
     budgets,
@@ -143,12 +138,10 @@ function normalize(raw: unknown): Persisted {
   }
 }
 
-const uid4 = () => `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
-
-const state = reactive<{ uid: string | null; data: Persisted | null }>({ uid: null, data: null })
-
-let pulledForUid: string | null = null
-let pushTimer: ReturnType<typeof setTimeout> | undefined
+function normalize(raw: Persisted | null | undefined): Persisted | null {
+  if (!raw || typeof raw !== 'object') return null
+  return normalizeShape(raw as unknown as Record<string, unknown>)
+}
 
 /** Import data saved under the original device-local keys (pre per-user sync). */
 function migrateLegacy(): Persisted | null {
@@ -157,7 +150,7 @@ function migrateLegacy(): Persisted | null {
     const rate = localStorage.getItem('travel.thbToTwd')
     const depart = localStorage.getItem('travel.departDate')
     if (!items && !rate && !depart) return null
-    return normalize({
+    return normalizeShape({
       items: items ? JSON.parse(items) : [],
       thbToTwd: rate ? JSON.parse(rate) : undefined,
       departDate: depart ?? '',
@@ -167,102 +160,62 @@ function migrateLegacy(): Persisted | null {
   }
 }
 
-function load(uid: string) {
-  state.uid = uid
-  try {
-    const raw = localStorage.getItem(storageKey(uid))
-    state.data = raw ? normalize(JSON.parse(raw)) : (migrateLegacy() ?? freshState())
-  } catch {
-    state.data = freshState()
-  }
-}
+const uid4 = () => `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 
-function persist() {
-  if (!state.uid || !state.data) return
-  localStorage.setItem(storageKey(state.uid), JSON.stringify(state.data))
-  schedulePush()
-}
+const cloud = useCloudSyncStoreSingleton()
 
-function schedulePush() {
-  if (!state.uid) return
-  clearTimeout(pushTimer)
-  pushTimer = setTimeout(() => {
-    if (state.uid && state.data) travelStateApi.put(state.data).catch(() => undefined)
-  }, 1200)
-}
-
-async function pullOnce(targetUid: string) {
-  if (pulledForUid === targetUid) return
-  pulledForUid = targetUid
-  try {
-    const remote = await travelStateApi.get<Persisted>()
-    if (state.uid !== targetUid) return
-    if (remote && typeof remote === 'object') {
-      state.data = normalize(remote)
-      localStorage.setItem(storageKey(targetUid), JSON.stringify(state.data))
-    } else if (state.data) {
-      travelStateApi.put(state.data).catch(() => undefined)
+// `useCloudSyncStore` calls `useAuthStore()`, which needs Pinia already
+// installed — wrap it so it's only constructed lazily, the first time any
+// travel composable is actually used (mirrors the other stores' timing).
+function useCloudSyncStoreSingleton() {
+  let instance: ReturnType<typeof useCloudSyncStore<Persisted>> | null = null
+  return () => {
+    if (!instance) {
+      instance = useCloudSyncStore<Persisted>({
+        namespace: 'travel',
+        api: travelStateApi,
+        createDefault: () => migrateLegacy() ?? freshState(),
+        normalize,
+        pushDebounceMs: 1200,
+      })
     }
-  } catch {
-    pulledForUid = null
+    return instance
   }
 }
 
 /**
  * Shared plumbing: load the per-user state and keep it in sync. Every travel
- * composable (wallet / packing / itinerary) calls this so they all operate on
- * the same synced document. Idempotent across multiple callers.
+ * composable (wallet / packing / itinerary / ...) calls this so they all
+ * operate on the same synced document.
  */
 function useTravelState() {
-  const auth = useAuthStore()
-  const uid = computed(() => auth.firebaseUser?.uid ?? null)
-  function ensureLoaded() {
-    if (uid.value && state.uid !== uid.value) load(uid.value)
-    if (uid.value) void pullOnce(uid.value)
-  }
-  ensureLoaded()
-  watch(uid, ensureLoaded)
+  const cs = cloud()
   const destinationId = computed<string>({
-    get: () => state.data?.destinationId ?? destinations[0].id,
-    set: (v: string) => {
-      if (state.data) {
-        state.data.destinationId = v
-        persist()
-      }
-    },
+    get: () => cs.data.value?.destinationId ?? destinations[0].id,
+    set: (v: string) => cs.update((d) => { d.destinationId = v }),
   })
   const destination = computed<Destination>(() => destinationById(destinationId.value))
-  return { destinationId, destination }
+  return { cs, destinationId, destination }
 }
 
 export function useTravelWallet() {
-  const { destinationId, destination } = useTravelState()
+  const { cs, destinationId, destination } = useTravelState()
   const currency = computed(() => destination.value.currency)
 
   // ---- Rate (per active currency) ----
   const rate = computed<number>({
-    get: () => state.data?.rates[currency.value.code] ?? currency.value.defaultRate,
-    set: (v: number) => {
-      if (state.data) {
-        state.data.rates[currency.value.code] = v
-        persist()
-      }
-    },
+    get: () => cs.data.value?.rates[currency.value.code] ?? currency.value.defaultRate,
+    set: (v: number) => cs.update((d) => { d.rates[currency.value.code] = v }),
   })
 
   // ---- Departure date ----
   const departDate = computed<string>({
-    get: () => state.data?.departDate ?? '',
-    set: (v: string) => {
-      if (state.data) {
-        state.data.departDate = v
-        persist()
-      }
-    },
+    get: () => cs.data.value?.departDate ?? '',
+    set: (v: string) => cs.update((d) => { d.departDate = v }),
   })
 
   // ---- Expenses (scoped to the active currency) ----
-  const items = computed(() => (state.data?.items ?? []).filter((e) => e.currency === currency.value.code))
+  const items = computed(() => (cs.data.value?.items ?? []).filter((e) => e.currency === currency.value.code))
 
   const totalForeign = computed(() => items.value.reduce((s, e) => s + e.amount, 0))
   const totalTwd = computed(() => Math.round(totalForeign.value * rate.value))
@@ -285,29 +238,25 @@ export function useTravelWallet() {
   )
 
   function add(entry: { date: string; category: string; amount: number; note?: string }) {
-    if (!state.data) return
-    state.data.items.push({
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      date: entry.date,
-      category: entry.category,
-      amount: entry.amount,
-      currency: currency.value.code,
-      note: entry.note?.trim() ?? '',
+    cs.update((d) => {
+      d.items.push({
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        date: entry.date,
+        category: entry.category,
+        amount: entry.amount,
+        currency: currency.value.code,
+        note: entry.note?.trim() ?? '',
+      })
     })
-    persist()
   }
 
   function remove(id: string) {
-    if (!state.data) return
-    state.data.items = state.data.items.filter((e) => e.id !== id)
-    persist()
+    cs.update((d) => { d.items = d.items.filter((e) => e.id !== id) })
   }
 
   /** Clears only the active destination's expenses. */
   function clearAll() {
-    if (!state.data) return
-    state.data.items = state.data.items.filter((e) => e.currency !== currency.value.code)
-    persist()
+    cs.update((d) => { d.items = d.items.filter((e) => e.currency !== currency.value.code) })
   }
 
   function toTwd(amount: number) {
@@ -316,13 +265,8 @@ export function useTravelWallet() {
 
   // ---- Budget (per destination, in TWD) ----
   const budget = computed<number>({
-    get: () => state.data?.budgets[destinationId.value] ?? 0,
-    set: (v: number) => {
-      if (state.data) {
-        state.data.budgets[destinationId.value] = v > 0 ? v : 0
-        persist()
-      }
-    },
+    get: () => cs.data.value?.budgets[destinationId.value] ?? 0,
+    set: (v: number) => cs.update((d) => { d.budgets[destinationId.value] = v > 0 ? v : 0 }),
   })
   const remainingTwd = computed(() => budget.value - totalTwd.value)
   const budgetPct = computed(() =>
@@ -382,44 +326,39 @@ const DEFAULT_PACKING = [
 ]
 
 export function useTravelPacking() {
-  const { destination, destinationId } = useTravelState()
+  const { cs, destination, destinationId } = useTravelState()
 
-  function listFor(): PackingItem[] {
-    if (!state.data) return []
-    if (!state.data.packing[destinationId.value]) state.data.packing[destinationId.value] = []
-    return state.data.packing[destinationId.value]
+  function ensureList(d: Persisted): PackingItem[] {
+    if (!d.packing[destinationId.value]) d.packing[destinationId.value] = []
+    return d.packing[destinationId.value]
   }
 
-  const items = computed<PackingItem[]>(() => state.data?.packing[destinationId.value] ?? [])
+  const items = computed<PackingItem[]>(() => cs.data.value?.packing[destinationId.value] ?? [])
   const doneCount = computed(() => items.value.filter((x) => x.done).length)
 
   function add(label: string) {
     const t = label.trim()
-    if (!t || !state.data) return
-    listFor().push({ id: uid4(), label: t, done: false })
-    persist()
+    if (!t) return
+    cs.update((d) => { ensureList(d).push({ id: uid4(), label: t, done: false }) })
   }
   function toggle(id: string) {
-    const it = items.value.find((x) => x.id === id)
-    if (it) {
-      it.done = !it.done
-      persist()
-    }
+    cs.update((d) => {
+      const it = ensureList(d).find((x) => x.id === id)
+      if (it) it.done = !it.done
+    })
   }
   function remove(id: string) {
-    if (!state.data) return
-    state.data.packing[destinationId.value] = listFor().filter((x) => x.id !== id)
-    persist()
+    cs.update((d) => { d.packing[destinationId.value] = ensureList(d).filter((x) => x.id !== id) })
   }
   function clearDone() {
-    if (!state.data) return
-    state.data.packing[destinationId.value] = listFor().filter((x) => !x.done)
-    persist()
+    cs.update((d) => { d.packing[destinationId.value] = ensureList(d).filter((x) => !x.done) })
   }
   function seedDefaults() {
-    if (!state.data || listFor().length) return
-    for (const label of DEFAULT_PACKING) listFor().push({ id: uid4(), label, done: false })
-    persist()
+    cs.update((d) => {
+      const list = ensureList(d)
+      if (list.length) return
+      for (const label of DEFAULT_PACKING) list.push({ id: uid4(), label, done: false })
+    })
   }
 
   return { destination, items, doneCount, add, toggle, remove, clearDone, seedDefaults }
@@ -429,16 +368,15 @@ export function useTravelPacking() {
 // Itinerary (per destination, synced)
 // ---------------------------------------------------------------------------
 export function useItinerary() {
-  const { destination, destinationId } = useTravelState()
+  const { cs, destination, destinationId } = useTravelState()
 
-  function listFor(): ItineraryItem[] {
-    if (!state.data) return []
-    if (!state.data.itinerary[destinationId.value]) state.data.itinerary[destinationId.value] = []
-    return state.data.itinerary[destinationId.value]
+  function ensureList(d: Persisted): ItineraryItem[] {
+    if (!d.itinerary[destinationId.value]) d.itinerary[destinationId.value] = []
+    return d.itinerary[destinationId.value]
   }
 
   const items = computed<ItineraryItem[]>(() =>
-    (state.data?.itinerary[destinationId.value] ?? [])
+    (cs.data.value?.itinerary[destinationId.value] ?? [])
       .slice()
       .sort((a, b) => a.day - b.day || a.time.localeCompare(b.time)),
   )
@@ -454,30 +392,27 @@ export function useItinerary() {
   })
 
   function add(entry: { day: number; time: string; place: string; note?: string }) {
-    if (!state.data || !entry.place.trim()) return
-    listFor().push({
-      id: uid4(),
-      day: entry.day,
-      time: entry.time.trim(),
-      place: entry.place.trim(),
-      note: entry.note?.trim() ?? '',
+    if (!entry.place.trim()) return
+    cs.update((d) => {
+      ensureList(d).push({
+        id: uid4(),
+        day: entry.day,
+        time: entry.time.trim(),
+        place: entry.place.trim(),
+        note: entry.note?.trim() ?? '',
+      })
     })
-    persist()
   }
   function remove(id: string) {
-    if (!state.data) return
-    state.data.itinerary[destinationId.value] = listFor().filter((x) => x.id !== id)
-    persist()
+    cs.update((d) => { d.itinerary[destinationId.value] = ensureList(d).filter((x) => x.id !== id) })
   }
 
   /** Cache geocoded coordinates onto an item (called by the map). */
   function setCoords(id: string, lat: number, lon: number) {
-    const it = listFor().find((x) => x.id === id)
-    if (it) {
-      it.lat = lat
-      it.lon = lon
-      persist()
-    }
+    cs.update((d) => {
+      const it = ensureList(d).find((x) => x.id === id)
+      if (it) { it.lat = lat; it.lon = lon }
+    })
   }
 
   return { destination, destinationId, items, byDay, add, remove, setCoords }
@@ -487,20 +422,17 @@ export function useItinerary() {
 // Emergency-card trip info (per destination, synced)
 // ---------------------------------------------------------------------------
 export function useTripInfo() {
-  const { destination, destinationId } = useTravelState()
+  const { cs, destination, destinationId } = useTravelState()
 
-  function current(): TripInfo {
-    if (!state.data) return emptyTripInfo()
-    if (!state.data.trip[destinationId.value]) state.data.trip[destinationId.value] = emptyTripInfo()
-    return state.data.trip[destinationId.value]
+  function ensureInfo(d: Persisted): TripInfo {
+    if (!d.trip[destinationId.value]) d.trip[destinationId.value] = emptyTripInfo()
+    return d.trip[destinationId.value]
   }
 
-  const info = computed<TripInfo>(() => state.data?.trip[destinationId.value] ?? emptyTripInfo())
+  const info = computed<TripInfo>(() => cs.data.value?.trip[destinationId.value] ?? emptyTripInfo())
 
   function update(patch: Partial<TripInfo>) {
-    if (!state.data) return
-    Object.assign(current(), patch)
-    persist()
+    cs.update((d) => { Object.assign(ensureInfo(d), patch) })
   }
 
   /** Whether the user has filled in anything yet (drives the empty hint). */
@@ -513,17 +445,16 @@ export function useTripInfo() {
 // Travel journal (per destination, synced; photos in Firebase Storage)
 // ---------------------------------------------------------------------------
 export function useTravelJournal() {
-  const { destination, destinationId } = useTravelState()
+  const { cs, destination, destinationId } = useTravelState()
 
-  function listFor(): JournalEntry[] {
-    if (!state.data) return []
-    if (!state.data.journal[destinationId.value]) state.data.journal[destinationId.value] = []
-    return state.data.journal[destinationId.value]
+  function ensureList(d: Persisted): JournalEntry[] {
+    if (!d.journal[destinationId.value]) d.journal[destinationId.value] = []
+    return d.journal[destinationId.value]
   }
 
   // Newest first.
   const entries = computed<JournalEntry[]>(() =>
-    (state.data?.journal[destinationId.value] ?? [])
+    (cs.data.value?.journal[destinationId.value] ?? [])
       .slice()
       .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.id.localeCompare(a.id))),
   )
@@ -532,46 +463,43 @@ export function useTravelJournal() {
 
   function add(entry: { date: string; text: string; photoUrls?: string[] }): string {
     const id = uid4()
-    if (!state.data) return id
-    listFor().push({
-      id,
-      date: entry.date || new Date().toISOString().slice(0, 10),
-      text: entry.text.trim(),
-      photoUrls: entry.photoUrls ?? [],
+    cs.update((d) => {
+      ensureList(d).push({
+        id,
+        date: entry.date || new Date().toISOString().slice(0, 10),
+        text: entry.text.trim(),
+        photoUrls: entry.photoUrls ?? [],
+      })
     })
-    persist()
     return id
   }
 
   function update(id: string, patch: Partial<Pick<JournalEntry, 'date' | 'text' | 'photoUrls'>>) {
-    const e = listFor().find((x) => x.id === id)
-    if (!e) return
-    if (patch.date !== undefined) e.date = patch.date
-    if (patch.text !== undefined) e.text = patch.text
-    if (patch.photoUrls !== undefined) e.photoUrls = patch.photoUrls
-    persist()
+    cs.update((d) => {
+      const e = ensureList(d).find((x) => x.id === id)
+      if (!e) return
+      if (patch.date !== undefined) e.date = patch.date
+      if (patch.text !== undefined) e.text = patch.text
+      if (patch.photoUrls !== undefined) e.photoUrls = patch.photoUrls
+    })
   }
 
   function addPhoto(id: string, url: string) {
-    const e = listFor().find((x) => x.id === id)
-    if (e && !e.photoUrls.includes(url)) {
-      e.photoUrls.push(url)
-      persist()
-    }
+    cs.update((d) => {
+      const e = ensureList(d).find((x) => x.id === id)
+      if (e && !e.photoUrls.includes(url)) e.photoUrls.push(url)
+    })
   }
 
   function removePhoto(id: string, url: string) {
-    const e = listFor().find((x) => x.id === id)
-    if (e) {
-      e.photoUrls = e.photoUrls.filter((u) => u !== url)
-      persist()
-    }
+    cs.update((d) => {
+      const e = ensureList(d).find((x) => x.id === id)
+      if (e) e.photoUrls = e.photoUrls.filter((u) => u !== url)
+    })
   }
 
   function remove(id: string) {
-    if (!state.data) return
-    state.data.journal[destinationId.value] = listFor().filter((x) => x.id !== id)
-    persist()
+    cs.update((d) => { d.journal[destinationId.value] = ensureList(d).filter((x) => x.id !== id) })
   }
 
   return { destination, destinationId, entries, photoCount, add, update, addPhoto, removePhoto, remove }

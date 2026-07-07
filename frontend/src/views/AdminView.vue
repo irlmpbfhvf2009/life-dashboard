@@ -3,6 +3,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { Coins, Scale, Minus, Plus, RefreshCw } from 'lucide-vue-next'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import { adminApi, type AdminUser, type AdminWeight } from '@/api'
+import { friendlyError } from '@/utils/errors'
 
 const ROOT_EMAIL = 'ws794613@gmail.com'
 
@@ -21,7 +22,7 @@ async function load() {
     users.value = await adminApi.users()
     for (const u of users.value) if (!(u.id in amounts)) amounts[u.id] = 100
   } catch (e) {
-    error.value = (e as Error).message || '載入失敗'
+    error.value = friendlyError(e, '載入失敗')
   } finally {
     loading.value = false
   }
@@ -34,7 +35,7 @@ async function adjust(u: AdminUser, sign: 1 | -1) {
   try {
     Object.assign(u, await adminApi.adjustCoins(u.id, amt))
   } catch (e) {
-    error.value = (e as Error).message
+    error.value = friendlyError(e)
   }
 }
 
@@ -46,7 +47,7 @@ async function toggleRole(u: AdminUser, role: 'studio' | 'player' | 'admin', che
   try {
     Object.assign(u, await adminApi.setRoles(u.id, body))
   } catch (e) {
-    error.value = (e as Error).message
+    error.value = friendlyError(e)
   }
 }
 
@@ -58,7 +59,7 @@ async function viewWeights(u: AdminUser) {
   try {
     weights.value = await adminApi.weights(u.id)
   } catch (e) {
-    error.value = (e as Error).message
+    error.value = friendlyError(e)
   } finally {
     weightsLoading.value = false
   }

@@ -3,6 +3,7 @@ import { chatApi } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import { useNotify } from '@/composables/useNotify'
 import type { ChatMessage, Conversation, MessageKind } from '@/types'
+import { friendlyError } from '@/utils/errors'
 
 /**
  * Single shared chat store for the floating widget. Real-time-ish via adaptive
@@ -56,7 +57,7 @@ async function refreshConversations() {
     conversations.value = await chatApi.conversations()
     unreadTotal.value = conversations.value.reduce((sum, c) => sum + c.unreadCount, 0)
   } catch (e) {
-    error.value = (e as Error).message
+    error.value = friendlyError(e)
   }
 }
 
@@ -160,7 +161,7 @@ export function useChat() {
       unreadTotal.value = conversations.value.reduce((sum, x) => sum + x.unreadCount, 0)
       await refreshReadState()
     } catch (e) {
-      error.value = (e as Error).message
+      error.value = friendlyError(e)
     } finally {
       loadingMessages.value = false
     }
@@ -198,7 +199,7 @@ export function useChat() {
         c.lastMessageAt = msg.createdAt
       }
     } catch (e) {
-      error.value = (e as Error).message
+      error.value = friendlyError(e)
     } finally {
       sending.value = false
     }
@@ -223,7 +224,7 @@ export function useChat() {
       const updated = await chatApi.edit(activeId.value, messageId, text)
       messages.value = messages.value.map((m) => (m.id === messageId ? updated : m))
     } catch (e) {
-      error.value = (e as Error).message
+      error.value = friendlyError(e)
     }
   }
 
@@ -234,7 +235,7 @@ export function useChat() {
       await chatApi.pin(activeId.value, messageId)
       await refreshConversations()
     } catch (e) {
-      error.value = (e as Error).message
+      error.value = friendlyError(e)
     }
   }
 
@@ -249,7 +250,7 @@ export function useChat() {
       })
       await refreshConversations()
     } catch (e) {
-      error.value = (e as Error).message
+      error.value = friendlyError(e)
     }
   }
 
@@ -260,7 +261,7 @@ export function useChat() {
       await openPanel()
       await openConversation(conv.id)
     } catch (e) {
-      error.value = (e as Error).message
+      error.value = friendlyError(e)
     }
   }
 
@@ -297,7 +298,7 @@ export function useChat() {
         ? { content: previewOf(last), senderName: last.senderName, createdAt: last.createdAt }
         : null
     } catch (e) {
-      error.value = (e as Error).message
+      error.value = friendlyError(e)
     }
   }
 
@@ -309,7 +310,7 @@ export function useChat() {
       peerReadAt.value = null
       await refreshConversations()
     } catch (e) {
-      error.value = (e as Error).message
+      error.value = friendlyError(e)
     }
   }
 
@@ -320,7 +321,7 @@ export function useChat() {
       if (activeId.value === id) backToList()
       else await refreshConversations()
     } catch (e) {
-      error.value = (e as Error).message
+      error.value = friendlyError(e)
     }
   }
 

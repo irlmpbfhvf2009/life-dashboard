@@ -11,6 +11,7 @@ import PageHeader from '@/components/ui/PageHeader.vue'
 import SectionCard from '@/components/ui/SectionCard.vue'
 import { aiApi, type DataInsight } from '@/api'
 import { parseCsv, profileColumns, buildProfile, type ColumnStat } from '@/utils/csv'
+import { friendlyError } from '@/utils/errors'
 
 const enabled = ref<boolean | null>(null)
 const fileName = ref('')
@@ -85,7 +86,7 @@ async function analyze() {
     const profile = buildProfile(headers.value, rows.value, stats.value)
     insight.value = await aiApi.dataLabAnalyze({ profile })
   } catch (e) {
-    aiError.value = e instanceof Error ? e.message : String(e)
+    aiError.value = friendlyError(e)
   } finally {
     analyzing.value = false
   }

@@ -17,6 +17,7 @@ import AiPickCard from '@/components/stock/AiPickCard.vue'
 import { stockResearchApi } from '@/api/stockResearch'
 import { twPriceClass, highlightTerms } from '@/utils/format'
 import type { AnalysisData, PerformanceData, ArchiveData, ResultData, RadarStock } from '@/types/stock'
+import { friendlyError } from '@/utils/errors'
 
 const analysis = ref<AnalysisData | null>(null)
 const performance = ref<PerformanceData | null>(null)
@@ -41,7 +42,7 @@ async function load() {
     performance.value = p
     radar.value = r
   } catch (e) {
-    error.value = (e as Error).message
+    error.value = friendlyError(e)
   } finally {
     loading.value = false
   }
@@ -76,7 +77,7 @@ async function openArchive() {
   try {
     archive.value = await stockResearchApi.archive()
   } catch (e) {
-    error.value = (e as Error).message
+    error.value = friendlyError(e)
   } finally {
     archiveLoading.value = false
   }

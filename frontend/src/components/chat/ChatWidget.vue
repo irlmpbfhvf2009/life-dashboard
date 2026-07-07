@@ -16,6 +16,7 @@ import { chatApi, socialApi } from '@/api'
 import EmojiPicker from './EmojiPicker.vue'
 import GifPicker from './GifPicker.vue'
 import type { ChatMessage, ChatReader, Conversation, Gif, SocialUser } from '@/types'
+import { friendlyError } from '@/utils/errors'
 
 const { t, locale } = useI18n()
 const chat = useChat()
@@ -170,7 +171,7 @@ async function onPhotoChosen(ev: Event) {
       await chat.sendAttachment('IMAGE', url, { replyToId: replyId })
     }
   } catch (e) {
-    chat.error.value = (e as Error).message || t('chat.errPhoto')
+    chat.error.value = friendlyError(e, t('chat.errPhoto'))
   } finally {
     uploading.value = false
   }
@@ -187,7 +188,7 @@ async function toggleRecord() {
       replyTo.value = null
       await chat.sendAttachment('AUDIO', url, { replyToId: replyId })
     } catch (e) {
-      chat.error.value = (e as Error).message || t('chat.errAudio')
+      chat.error.value = friendlyError(e, t('chat.errAudio'))
     } finally {
       uploading.value = false
     }
@@ -206,7 +207,7 @@ async function toggleNotify() {
     const ok = await push.enable()
     if (!ok) chat.error.value = t('chat.errPushPerm')
   } catch (e) {
-    chat.error.value = (e as Error).message || t('chat.errPush')
+    chat.error.value = friendlyError(e, t('chat.errPush'))
   }
 }
 

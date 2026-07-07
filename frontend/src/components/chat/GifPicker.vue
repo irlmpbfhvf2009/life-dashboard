@@ -5,6 +5,7 @@ import { onMounted, ref, watch } from 'vue'
 import { Search, X } from 'lucide-vue-next'
 import { gifApi } from '@/api'
 import type { Gif } from '@/types'
+import { friendlyError } from '@/utils/errors'
 
 const emit = defineEmits<{ pick: [gif: Gif] }>()
 
@@ -22,7 +23,7 @@ async function load() {
     const page = q ? await gifApi.search(q) : await gifApi.featured()
     gifs.value = page.results
   } catch (e) {
-    error.value = (e as Error).message || 'GIF 服務暫時無法使用'
+    error.value = friendlyError(e, 'GIF 服務暫時無法使用')
     gifs.value = []
   } finally {
     loading.value = false

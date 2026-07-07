@@ -10,6 +10,7 @@ import TrendChartCard from '@/components/ui/TrendChartCard.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import { socialApi } from '@/api'
 import type { FriendProfile } from '@/types'
+import { friendlyError } from '@/utils/errors'
 
 const route = useRoute()
 const router = useRouter()
@@ -33,7 +34,7 @@ async function load() {
   try {
     profile.value = await socialApi.profile(Number(route.params.userId))
   } catch (e) {
-    error.value = (e as Error).message || '載入失敗'
+    error.value = friendlyError(e, '載入失敗')
   } finally {
     loading.value = false
   }

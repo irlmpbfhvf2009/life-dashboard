@@ -17,6 +17,7 @@ import AddExpenseForm from '@/components/finance/AddExpenseForm.vue'
 import { expenseApi } from '@/api'
 import { formatMoney, formatDate } from '@/utils/format'
 import type { Expense, ExpenseType } from '@/types'
+import { friendlyError } from '@/utils/errors'
 
 const { t, locale } = useI18n()
 
@@ -30,7 +31,7 @@ async function load() {
   try {
     expenses.value = await expenseApi.list()
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = friendlyError(e)
   } finally {
     loading.value = false
   }
@@ -89,7 +90,7 @@ async function onSubmit(payload: { date: string; amount: number; category: strin
     expenses.value.sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id)
     showAdd.value = false
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = friendlyError(e)
   } finally {
     if (addForm.value) addForm.value.saving = false
   }

@@ -9,6 +9,7 @@ import type { UsageData } from '@/types'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import SectionCard from '@/components/ui/SectionCard.vue'
 import { formatDateTime } from '@/utils/format'
+import { friendlyError } from '@/utils/errors'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -49,7 +50,7 @@ async function save() {
     await auth.updateProfile({ displayName: form.displayName.trim(), photoUrl: form.photoUrl.trim() })
     message.value = '個人資料已更新'
   } catch (e) {
-    errorMsg.value = (e as Error).message
+    errorMsg.value = friendlyError(e)
   } finally {
     saving.value = false
   }
@@ -74,7 +75,7 @@ async function onAvatarChosen(ev: Event) {
     await auth.updateProfile({ displayName: form.displayName.trim() || auth.displayName, photoUrl: url })
     message.value = '頭像已更新'
   } catch (e) {
-    errorMsg.value = (e as Error).message || '上傳失敗，請稍後再試'
+    errorMsg.value = friendlyError(e, '上傳失敗，請稍後再試')
   } finally {
     uploading.value = false
   }

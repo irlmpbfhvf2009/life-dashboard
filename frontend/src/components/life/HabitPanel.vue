@@ -9,6 +9,7 @@ import ErrorState from '@/components/ui/ErrorState.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import { habitApi } from '@/api'
 import type { Habit } from '@/types'
+import { friendlyError } from '@/utils/errors'
 
 const { t } = useI18n()
 
@@ -22,7 +23,7 @@ async function load() {
   try {
     habits.value = await habitApi.list()
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = friendlyError(e)
   } finally {
     loading.value = false
   }
@@ -62,7 +63,7 @@ async function toggle(h: Habit) {
     const updated = h.doneToday ? await habitApi.uncheck(h.id) : await habitApi.check(h.id)
     replaceHabit(updated)
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = friendlyError(e)
   }
 }
 
@@ -72,7 +73,7 @@ async function remove(h: Habit) {
     await habitApi.remove(h.id)
     habits.value = habits.value.filter((x) => x.id !== h.id)
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = friendlyError(e)
   }
 }
 
@@ -111,7 +112,7 @@ async function submit() {
     habits.value.push(created)
     showAdd.value = false
   } catch (e) {
-    formError.value = e instanceof Error ? e.message : String(e)
+    formError.value = friendlyError(e)
   } finally {
     saving.value = false
   }

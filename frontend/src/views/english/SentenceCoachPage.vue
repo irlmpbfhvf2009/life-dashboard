@@ -9,6 +9,7 @@ import CorrectionCard from '@/components/english/CorrectionCard.vue'
 import { englishApi } from '@/api/english'
 import { useEnglishStore } from '@/composables/useEnglishStore'
 import type { EnglishCorrection } from '@/types/english'
+import { friendlyError } from '@/utils/errors'
 
 const store = useEnglishStore()
 const { t } = useI18n()
@@ -35,7 +36,7 @@ async function correct(text?: string) {
     result.value = await englishApi.correctSentence(sentence)
     store.bumpMission('m-correct', 1)
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = friendlyError(e)
   } finally {
     loading.value = false
   }

@@ -10,6 +10,7 @@ import ErrorState from '@/components/ui/ErrorState.vue'
 import { moodApi } from '@/api'
 import { formatDate, todayISO, MOOD_EMOJI } from '@/utils/format'
 import type { MoodRecord } from '@/types'
+import { friendlyError } from '@/utils/errors'
 
 const { t } = useI18n()
 
@@ -23,7 +24,7 @@ async function load() {
   try {
     moods.value = await moodApi.list()
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = friendlyError(e)
   } finally {
     loading.value = false
   }
@@ -58,7 +59,7 @@ async function submit() {
     moods.value = [created, ...moods.value.filter((m) => m.id !== created.id)]
     noteText.value = ''
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = friendlyError(e)
   } finally {
     saving.value = false
   }
@@ -70,7 +71,7 @@ async function remove(m: MoodRecord) {
     await moodApi.remove(m.id)
     moods.value = moods.value.filter((x) => x.id !== m.id)
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = friendlyError(e)
   }
 }
 </script>

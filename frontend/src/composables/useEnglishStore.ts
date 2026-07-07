@@ -1,10 +1,8 @@
-// Per-user English-Coach state. localStorage is the immediate cache (synchronous,
-// offline-safe); the backend (/api/english/state) is a background sync layer so
-// the state follows the user across devices. Backend failures degrade silently —
-// the app keeps working on localStorage alone.
+// Per-user English-Coach state. Cloud sync plumbing lives in useCloudSyncStore;
+// this file only owns the state shape, defaults and the coach's domain actions
+// (streak, missions, mistakes, spaced-repetition review).
 
-import { computed, reactive, watch } from 'vue'
-import { useAuthStore } from '@/stores/auth'
+import { computed } from 'vue'
 import { englishStateApi } from '@/api'
 import { todayISO } from '@/utils/format'
 import type {
@@ -14,6 +12,7 @@ import type {
   ReviewItem,
   UserEnglishLevel,
 } from '@/types/english'
+import { useCloudSyncStore } from './useCloudSyncStore'
 
 interface Persisted {
   level: UserEnglishLevel
@@ -53,6 +52,12 @@ function freshState(): Persisted {
   }
 }
 
+/** Merge a raw (possibly partial/legacy) doc over the current defaults. */
+function normalize(raw: Persisted | null | undefined): Persisted | null {
+  if (!raw || typeof raw !== 'object') return null
+  return { ...freshState(), ...raw }
+}
+
 const REVIEW_STEPS: ReviewItem['status'][] = ['NEW', 'LEARNING', 'REVIEWING', 'MASTERED']
 const REVIEW_INTERVALS = [1, 3, 7, 21] // days per step
 
@@ -60,39 +65,6 @@ function addDays(iso: string, days: number): string {
   const d = new Date(`${iso}T00:00:00`)
   d.setDate(d.getDate() + days)
   return d.toISOString().slice(0, 10)
-}
-
-const storageKey = (uid: string) => `english:${uid}`
-
-const state = reactive<{ uid: string | null; data: Persisted | null }>({ uid: null, data: null })
-
-// Background-sync bookkeeping.
-let pulledForUid: string | null = null
-let pushTimer: ReturnType<typeof setTimeout> | undefined
-
-function load(uid: string) {
-  state.uid = uid
-  try {
-    const raw = localStorage.getItem(storageKey(uid))
-    state.data = raw ? { ...freshState(), ...(JSON.parse(raw) as Persisted) } : freshState()
-  } catch {
-    state.data = freshState()
-  }
-}
-
-function persist() {
-  if (!state.uid || !state.data) return
-  localStorage.setItem(storageKey(state.uid), JSON.stringify(state.data))
-  schedulePush()
-}
-
-/** Debounced push of the full state document to the backend. */
-function schedulePush() {
-  if (!state.uid) return
-  clearTimeout(pushTimer)
-  pushTimer = setTimeout(() => {
-    if (state.uid && state.data) englishStateApi.put(state.data).catch(() => undefined)
-  }, 1500)
 }
 
 function buildDailyMission(date: string): DailyMission {
@@ -106,64 +78,35 @@ function buildDailyMission(date: string): DailyMission {
   return { date, tasks, completedCount: 0, totalCount: tasks.length }
 }
 
+/** Refresh the daily mission when the date changes. */
+function rollDailyMission(d: Persisted): boolean {
+  const today = todayISO()
+  if (!d.mission || d.mission.date !== today) {
+    d.mission = buildDailyMission(today)
+    return true
+  }
+  return false
+}
+
 export function useEnglishStore() {
-  const auth = useAuthStore()
-  const uid = computed(() => auth.firebaseUser?.uid ?? null)
+  const cloud = useCloudSyncStore<Persisted>({
+    namespace: 'english',
+    api: englishStateApi,
+    createDefault: freshState,
+    normalize,
+    onLoad: rollDailyMission,
+  })
 
-  function ensureLoaded() {
-    if (uid.value && state.uid !== uid.value) load(uid.value)
-    if (state.data) rollDailyAndStreak()
-    if (uid.value) void pullOnce(uid.value)
-  }
-
-  /**
-   * Pull the cloud state once per uid. If the cloud has state, it wins (replaces
-   * the local cache); if not, push the current local state up. Failures are
-   * swallowed so the app keeps running on localStorage.
-   */
-  async function pullOnce(targetUid: string) {
-    if (pulledForUid === targetUid) return
-    pulledForUid = targetUid
-    try {
-      const remote = await englishStateApi.get<Persisted>()
-      if (state.uid !== targetUid) return
-      if (remote && typeof remote === 'object') {
-        state.data = { ...freshState(), ...remote }
-        localStorage.setItem(storageKey(targetUid), JSON.stringify(state.data))
-        rollDailyAndStreak()
-      } else if (state.data) {
-        englishStateApi.put(state.data).catch(() => undefined)
-      }
-    } catch {
-      pulledForUid = null // allow a retry on the next interaction
-    }
-  }
-
-  /** Refresh the daily mission and streak when the date changes. */
-  function rollDailyAndStreak() {
-    const d = state.data!
-    const today = todayISO()
-    if (!d.mission || d.mission.date !== today) {
-      d.mission = buildDailyMission(today)
-      persist()
-    }
-  }
-
-  ensureLoaded()
-  watch(uid, ensureLoaded)
-
-  const data = computed<Persisted | null>(() => state.data)
-  const isOnboarded = computed(() => !!state.data?.level.assessedAt)
-  const level = computed(() => state.data?.level ?? freshState().level)
-  const mission = computed(() => state.data?.mission ?? null)
-  const mistakes = computed(() => state.data?.mistakes ?? [])
-  const reviews = computed(() => state.data?.reviews ?? [])
+  const data = computed<Persisted | null>(() => cloud.data.value)
+  const isOnboarded = computed(() => !!cloud.data.value?.level.assessedAt)
+  const level = computed(() => cloud.data.value?.level ?? freshState().level)
+  const mission = computed(() => cloud.data.value?.mission ?? null)
+  const mistakes = computed(() => cloud.data.value?.mistakes ?? [])
+  const reviews = computed(() => cloud.data.value?.reviews ?? [])
   const dueReviews = computed(() => reviews.value.filter((r) => r.dueDate <= todayISO() && r.status !== 'MASTERED'))
 
   function update(mutator: (d: Persisted) => void) {
-    if (!state.data) return
-    mutator(state.data)
-    persist()
+    cloud.update(mutator)
   }
 
   /** Mark today active and advance the streak (idempotent per day). */
@@ -284,13 +227,11 @@ export function useEnglishStore() {
   }
 
   const reviewedToday = computed(() =>
-    state.data?.reviewedTodayDate === todayISO() ? state.data.reviewedTodayCount : 0,
+    cloud.data.value?.reviewedTodayDate === todayISO() ? cloud.data.value.reviewedTodayCount : 0,
   )
 
   function reset() {
-    if (state.uid) localStorage.removeItem(storageKey(state.uid))
-    state.data = freshState()
-    persist()
+    cloud.replace(freshState())
   }
 
   return {

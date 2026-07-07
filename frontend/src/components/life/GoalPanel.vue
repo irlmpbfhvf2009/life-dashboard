@@ -10,6 +10,7 @@ import BaseModal from '@/components/ui/BaseModal.vue'
 import { goalApi } from '@/api'
 import { formatDate } from '@/utils/format'
 import type { Goal } from '@/types'
+import { friendlyError } from '@/utils/errors'
 
 const { t } = useI18n()
 
@@ -23,7 +24,7 @@ async function load() {
   try {
     goals.value = await goalApi.list()
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = friendlyError(e)
   } finally {
     loading.value = false
   }
@@ -64,7 +65,7 @@ async function step(g: Goal, delta: number) {
   try {
     replaceGoal(await goalApi.addProgress(g.id, delta))
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = friendlyError(e)
   }
 }
 
@@ -74,7 +75,7 @@ async function remove(g: Goal) {
     await goalApi.remove(g.id)
     goals.value = goals.value.filter((x) => x.id !== g.id)
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = friendlyError(e)
   }
 }
 
@@ -120,7 +121,7 @@ async function submit() {
     goals.value.push(created)
     showAdd.value = false
   } catch (e) {
-    formError.value = e instanceof Error ? e.message : String(e)
+    formError.value = friendlyError(e)
   } finally {
     saving.value = false
   }

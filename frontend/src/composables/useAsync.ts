@@ -1,4 +1,5 @@
 import { ref, type Ref } from 'vue'
+import { friendlyError } from '@/utils/errors'
 
 /**
  * Tiny async wrapper that standardizes loading / error / data handling across
@@ -15,7 +16,7 @@ export function useAsync<T>(loader: () => Promise<T>, initial: T) {
     try {
       data.value = await loader()
     } catch (e) {
-      error.value = (e as Error).message
+      error.value = friendlyError(e)
     } finally {
       loading.value = false
     }

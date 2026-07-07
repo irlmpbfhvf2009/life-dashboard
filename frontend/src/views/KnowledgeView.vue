@@ -9,6 +9,7 @@ import ErrorState from '@/components/ui/ErrorState.vue'
 import { noteApi } from '@/api'
 import { formatDateTime } from '@/utils/format'
 import type { Note } from '@/types'
+import { friendlyError } from '@/utils/errors'
 
 const { t } = useI18n()
 
@@ -43,7 +44,7 @@ async function load() {
     notes.value = await noteApi.list()
     if (!selectedId.value && notes.value.length) select(filtered.value[0])
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = friendlyError(e)
   } finally {
     loading.value = false
   }
@@ -66,7 +67,7 @@ async function createNote() {
     titleInput.value?.focus()
     titleInput.value?.select()
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = friendlyError(e)
   }
 }
 
@@ -82,7 +83,7 @@ async function save() {
     if (idx >= 0) notes.value[idx] = updated
     draftTitle.value = updated.title
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = friendlyError(e)
   } finally {
     saving.value = false
   }
@@ -99,7 +100,7 @@ async function remove(n: Note) {
       if (next) select(next)
     }
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = friendlyError(e)
   }
 }
 

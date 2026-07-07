@@ -9,6 +9,7 @@ import ErrorState from '@/components/ui/ErrorState.vue'
 import { fastingApi } from '@/api'
 import { formatDate } from '@/utils/format'
 import type { FastingSession, FastingStats } from '@/types'
+import { friendlyError } from '@/utils/errors'
 
 const { t } = useI18n()
 
@@ -45,7 +46,7 @@ async function load() {
     stats.value = st
     if (cur) selectedHours.value = cur.targetHours
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = friendlyError(e)
   } finally {
     loading.value = false
   }
@@ -95,7 +96,7 @@ async function startFast() {
   try {
     current.value = await fastingApi.start(selectedHours.value)
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = friendlyError(e)
   } finally {
     busy.value = false
   }
@@ -112,7 +113,7 @@ async function stopFast() {
     sessions.value = recent
     stats.value = st
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = friendlyError(e)
   } finally {
     busy.value = false
   }
@@ -125,7 +126,7 @@ async function removeSession(s: FastingSession) {
     sessions.value = sessions.value.filter((x) => x.id !== s.id)
     stats.value = await fastingApi.stats()
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = friendlyError(e)
   }
 }
 </script>

@@ -10,6 +10,7 @@ import BaseModal from '@/components/ui/BaseModal.vue'
 import { todoApi } from '@/api'
 import { formatDate } from '@/utils/format'
 import type { Todo, TodoPriority, TodoStatus } from '@/types'
+import { friendlyError } from '@/utils/errors'
 
 const { t } = useI18n()
 
@@ -24,7 +25,7 @@ async function load() {
   try {
     todos.value = await todoApi.list()
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = friendlyError(e)
   } finally {
     loading.value = false
   }
@@ -52,7 +53,7 @@ async function toggle(todo: Todo) {
     const idx = todos.value.findIndex((x) => x.id === updated.id)
     if (idx >= 0) todos.value[idx] = updated
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = friendlyError(e)
   }
 }
 
@@ -62,7 +63,7 @@ async function remove(todo: Todo) {
     await todoApi.remove(todo.id)
     todos.value = todos.value.filter((x) => x.id !== todo.id)
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = friendlyError(e)
   }
 }
 
@@ -101,7 +102,7 @@ async function submit() {
     todos.value.unshift(created)
     showAdd.value = false
   } catch (e) {
-    formError.value = e instanceof Error ? e.message : String(e)
+    formError.value = friendlyError(e)
   } finally {
     saving.value = false
   }

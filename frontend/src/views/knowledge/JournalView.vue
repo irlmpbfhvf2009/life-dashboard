@@ -9,6 +9,7 @@ import ErrorState from '@/components/ui/ErrorState.vue'
 import { journalApi } from '@/api'
 import { formatDate, formatDateTime, todayISO } from '@/utils/format'
 import type { Journal } from '@/types'
+import { friendlyError } from '@/utils/errors'
 
 const { t } = useI18n()
 
@@ -52,7 +53,7 @@ async function load() {
     entries.value = await journalApi.list()
     if (!selectedId.value && entries.value.length) select(filtered.value[0])
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = friendlyError(e)
   } finally {
     loading.value = false
   }
@@ -77,7 +78,7 @@ async function createEntry() {
     titleInput.value?.focus()
     titleInput.value?.select()
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = friendlyError(e)
   }
 }
 
@@ -95,7 +96,7 @@ async function save() {
     if (idx >= 0) entries.value[idx] = updated
     draftTitle.value = updated.title
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = friendlyError(e)
   } finally {
     saving.value = false
   }
@@ -112,7 +113,7 @@ async function remove(n: Journal) {
       if (next) select(next)
     }
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = friendlyError(e)
   }
 }
 

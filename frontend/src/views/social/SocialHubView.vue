@@ -9,6 +9,7 @@ import PageHeader from '@/components/ui/PageHeader.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import { socialApi } from '@/api'
 import type { FriendRequest, SocialPrivacy, SocialUser } from '@/types'
+import { friendlyError } from '@/utils/errors'
 
 const router = useRouter()
 
@@ -45,7 +46,7 @@ async function loadAll() {
     outgoing.value = out
     privacy.value = priv
   } catch (e) {
-    error.value = (e as Error).message || '載入失敗'
+    error.value = friendlyError(e, '載入失敗')
   } finally {
     loading.value = false
   }
@@ -70,7 +71,7 @@ async function runSearch() {
   try {
     searchResults.value = await socialApi.search(q)
   } catch (e) {
-    error.value = (e as Error).message
+    error.value = friendlyError(e)
   } finally {
     searching.value = false
   }
@@ -88,7 +89,7 @@ async function withBusy(id: number, fn: () => Promise<void>) {
     await loadAll()
     if (tab.value === 'discover') await runSearch()
   } catch (e) {
-    error.value = (e as Error).message
+    error.value = friendlyError(e)
   } finally {
     busy.value = null
   }
@@ -112,7 +113,7 @@ async function savePrivacy() {
   try {
     privacy.value = await socialApi.updatePrivacy(privacy.value)
   } catch (e) {
-    error.value = (e as Error).message
+    error.value = friendlyError(e)
   } finally {
     savingPrivacy.value = false
   }
