@@ -257,7 +257,7 @@ export interface ItemData {
 export interface ChestRewardData {
   id: string
   name: string
-  type: 'gold' | 'weapon' | 'upgrade' | 'teamItem' | 'reviveShard' | 'curse'
+  type: 'gold' | 'weapon' | 'weaponUp' | 'upgrade' | 'teamItem' | 'reviveShard' | 'curse'
   weight: number
 }
 
@@ -384,12 +384,13 @@ export interface BossSnap {
 
 // 場上「部署物」——砲塔/地面圈/地雷（持續存在於 server，需每快照送位置才畫得出來）
 export interface TurretSnap { x: number; y: number; g?: 1 }   // g=守護型（優先護隊友）
-export interface ZoneSnap { x: number; y: number; r: number; k: 'poison' | 'heal' | 'fire' | 'frost' | 'spike' | 'haze' }
+export interface ZoneSnap { x: number; y: number; r: number; k: 'poison' | 'heal' | 'fire' | 'frost' | 'spike' | 'haze'; h?: 1 }   // h=1 對玩家有害（危險，畫紅）
 export interface MineSnap { x: number; y: number; r: number; a?: 1 }   // a=已佈署完成（可觸發）
 
 export interface Snapshot {
   t: number                      // server 時間（秒，本波起算）
-  left: number                   // 波剩餘秒
+  left: number                   // 波剩餘秒（殺光制下＝0，改用 spawning + counts.enemies）
+  spawning?: 1                   // 本波仍在放怪（budget 未耗盡）
   players: PlayerSnap[]
   enemies: EnemySnap[]
   objectives: ObjectiveSnap[]
@@ -459,6 +460,7 @@ export interface ShopOffer {
   locked: boolean
   sold: boolean
   weaponLevel?: number
+  startLevel?: number           // 後期波數：新武器直接以較高等級入手（未持有時的起始等級）
   origPrice?: number            // 特價時的原價（顯示刪除線）
 }
 

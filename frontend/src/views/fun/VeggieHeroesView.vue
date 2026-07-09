@@ -335,8 +335,8 @@ watch(screen, (s) => { if (s !== 'game') { keys.clear(); engine.moveDir.active =
 const myChar = computed(() => CHARACTER_MAP.get(gs.begin?.players.find(p => p.id === gs.playerId)?.charId ?? ''))
 const skillCdPct = computed(() => Math.min(1, gs.hud.skillCd / (myChar.value?.active.cooldown ?? 10)))
 const eventName = computed(() => gs.waveInfo?.event ? EVENT_MAP.get(gs.waveInfo.event)?.name : '')
-// 倒數結束、非 Boss 波、還有怪 → 清怪階段
-const clearing = computed(() => gs.hud.left <= 0 && !gs.hud.boss && gs.hud.enemiesLeft > 0 && !gs.inter && !gs.over)
+// 殺光制：非 Boss 波、戰鬥中 → 顯示剩餘怪物數（放怪完＝清光才進下一波）
+const clearing = computed(() => !gs.hud.boss && gs.hud.enemiesLeft > 0 && !gs.inter && !gs.over)
 const zoneName = computed(() => ZONE_MAP.get(gs.waveInfo?.zone ?? '')?.name ?? '')
 
 // ---------------------------------------------------------------- 中場 helpers
@@ -393,7 +393,10 @@ function offerRarity(o: { kind: string; refId: string }): string {
   return 'common'
 }
 const interReady = computed(() => !!gs.inter?.readySet.includes(gs.playerId))
+// 職業專屬（簽名）武器：帶 charId ＝ 只有本角色拿得到 → 不可出售
+const isSigWeapon = (id: string) => !!wpn(id)?.charId
 function sellWeapon(i: number, id: string, level: number) {
+  if (isSigWeapon(id)) { pushToast('職業專屬武器無法出售', 'warn'); return }
   if ((gs.inter?.me.weapons.length ?? 0) <= 1) { pushToast('至少要保留一把武器', 'warn'); return }
   if (window.confirm(`賣出 ${wpn(id)?.name} Lv.${level}？（拿回 ${SELL_PCT_LABEL}% 金幣）`)) api.sell(i)
 }
@@ -543,12 +546,6 @@ const bestWaves = computed(() => ({
   standard: localStorage.getItem('veggie-best-standard') ?? '—',
   endless: localStorage.getItem('veggie-best-endless') ?? '—',
 }))
-
-const fmtTime = (s: number) => {
-  if (s > 900) return 'BOSS'
-  const m = Math.floor(s / 60)
-  return `${m}:${String(Math.floor(s % 60)).padStart(2, '0')}`
-}
 </script>
 
 <template>
@@ -924,14 +921,17 @@ const fmtTime = (s: number) => {
               <div class="rounded-xl bg-black/45 px-3 py-1.5 backdrop-blur-sm">
                 <p class="text-sm font-black text-amber-300">
                   第 {{ gs.hud.wave }} 波
-                  <span v-if="clearing" class="ml-1 text-rose-300">清光怪物！</span>
-                  <span v-else class="ml-1 text-white">{{ fmtTime(gs.hud.left) }}</span>
+                  <span v-if="gs.hud.boss" class="ml-1 text-rose-300">BOSS</span>
+                  <span v-else-if="clearing" class="ml-1 text-white">🐛 剩 {{ gs.hud.enemiesLeft }}</span>
+                  <span v-else class="ml-1 text-lime-300">清光通關 ✓</span>
                 </p>
                 <p class="text-[10px] text-white/50">{{ zoneName }}<span v-if="eventName" class="ml-1 text-rose-300">⚡{{ eventName }}</span></p>
               </div>
-              <!-- 清怪提示：還剩幾隻 -->
+              <!-- 殺光制提示 -->
               <div v-if="clearing" class="rounded-lg bg-rose-900/60 px-2.5 py-1 backdrop-blur-sm">
-                <p class="text-[11px] font-bold text-rose-200">🐛 剩 {{ gs.hud.enemiesLeft }} 隻，清光才能進下一關</p>
+                <p class="text-[11px] font-bold text-rose-200">
+                  {{ gs.hud.spawning ? '怪物來襲…殲滅全部進下一波' : '殲滅剩餘怪物即可進下一波！' }}
+                </p>
               </div>
               <!-- 任務 -->
               <div v-if="gs.hud.mission" class="rounded-lg bg-black/45 px-2.5 py-1 backdrop-blur-sm">
@@ -1221,14 +1221,16 @@ const fmtTime = (s: number) => {
               @click="api.refresh(); sfx.click()"
             >🔄 刷新商店（💰{{ gs.inter.shop.refreshCost }}）</button>
             <!-- 我的武器 -->
-            <p class="mt-3 text-xs font-bold text-white/40">我的武器（{{ gs.inter.me.weapons.length }}/6，點擊賣出 {{ SELL_PCT_LABEL }}%）</p>
+            <p class="mt-3 text-xs font-bold text-white/40">我的武器（{{ gs.inter.me.weapons.length }}/6，點擊賣出 {{ SELL_PCT_LABEL }}%；🔒＝專屬不可賣）</p>
             <div class="mt-1 flex flex-wrap gap-1.5">
               <button
                 v-for="(w, i) in gs.inter.me.weapons" :key="i"
-                class="veg-wslot flex flex-col items-center gap-0.5 rounded-lg px-1.5 pb-1 pt-1.5 leading-none active:scale-95"
-                :title="wpn(w.id)?.name"
+                class="veg-wslot relative flex flex-col items-center gap-0.5 rounded-lg px-1.5 pb-1 pt-1.5 leading-none active:scale-95"
+                :class="isSigWeapon(w.id) ? 'opacity-90 ring-1 ring-amber-400/50' : ''"
+                :title="isSigWeapon(w.id) ? `${wpn(w.id)?.name}（職業專屬，不可賣）` : wpn(w.id)?.name"
                 @click="sellWeapon(i, w.id, w.level)"
               >
+                <span v-if="isSigWeapon(w.id)" class="absolute -right-0.5 -top-0.5 text-[10px]">🔒</span>
                 <Portrait kind="weapon" :id="w.id" :size="36" />
                 <span class="mt-0.5 rounded bg-black/40 px-1 text-[10px] font-black text-amber-300">Lv.{{ w.level }}</span>
               </button>

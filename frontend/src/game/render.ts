@@ -536,8 +536,24 @@ export class Engine {
       g.restore()
     }
 
-    // 持續性地面圈（治療/毒/火/冰）——由快照送位置，畫出完整存續期間（放置瞬間另有 aoe 閃光疊上）
+    // 持續性地面圈——由快照送位置，畫出完整存續期間（放置瞬間另有 aoe 閃光疊上）。
+    // ⚠ 對玩家有害（z.h）一律畫「危險紅」＝別踩；友方（打怪的毒/火/冰/治療圈）維持元素色＝可站。
     for (const z of this.snapZones) {
+      if (z.h) {
+        g.save(); g.translate(z.x, z.y)
+        const dcol = '239,83,80'
+        g.fillStyle = `rgba(${dcol},0.15)`
+        g.beginPath(); g.arc(0, 0, z.r, 0, Math.PI * 2); g.fill()
+        g.strokeStyle = `rgba(${dcol},${0.55 + Math.sin(this.time * 8) * 0.25})`; g.lineWidth = 2.5
+        g.setLineDash([5, 6]); g.lineDashOffset = -this.time * 22
+        g.beginPath(); g.arc(0, 0, z.r, 0, Math.PI * 2); g.stroke()
+        g.setLineDash([])
+        g.fillStyle = `rgba(${dcol},0.8)`; g.font = `${Math.min(20, z.r * 0.4)}px sans-serif`
+        g.textAlign = 'center'; g.textBaseline = 'middle'
+        g.fillText('⚠', 0, 0)
+        g.restore()
+        continue
+      }
       const col = z.k === 'heal' ? '105,240,174' : z.k === 'poison' ? '156,204,101' : z.k === 'fire' ? '255,107,53' : z.k === 'spike' ? '240,168,62' : z.k === 'haze' ? '176,111,224' : '168,224,255'
       g.save(); g.translate(z.x, z.y)
       if (z.k === 'haze') {

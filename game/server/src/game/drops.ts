@@ -107,8 +107,8 @@ function collect(g: Game, p: SPlayer, d: SDrop): void {
     case 'coin': gainGold(g, p, d.v, true); break
     case 'heart': {
       if (d.item === 'team') {
-        for (const q of g.players.values()) if (q.status === 'alive') healPlayer(g, q, DROPS.teamHeartHeal)
-      } else healPlayer(g, p, d.v)
+        for (const q of g.players.values()) if (q.status === 'alive') { healPlayer(g, q, DROPS.teamHeartHeal); g.toastTo(q, `💗 團隊愛心：生命 +${DROPS.teamHeartHeal}`, 'good') }
+      } else { healPlayer(g, p, d.v); g.toastTo(p, `💚 生命 +${Math.round(d.v)}`, 'good') }
       break
     }
     case 'item': if (d.item) applyItem(g, p, d.item); break
@@ -186,11 +186,31 @@ export function healPlayer(g: Game, p: SPlayer, amount: number): void {
 
 // -------------------------------------------------------- 臨時道具
 
+/** 道具拾取的效果說明（顯示給玩家看，讓「膠囊」不再看不懂變化了什麼） */
+function itemEffectText(g: Game, p: SPlayer, itemId: string): string {
+  const it = ITEM_MAP.get(itemId)!
+  const prm = it.params ?? {}
+  switch (it.effect) {
+    case 'magnetAll': return '🧲 吸取全場掉落物'
+    case 'clearBomb': return `💣 清場：對周圍敵人造成 ${prm.damage} 傷害`
+    case 'invuln': return `🛡️ 無敵 ${prm.duration} 秒`
+    case 'hasteBuff': return `⚡ 移速 +${Math.round(prm.amount * 100)}%（${prm.duration} 秒）`
+    case 'rageBuff': return `🔥 攻速 +${Math.round(prm.amount * 100)}%（${prm.duration} 秒）`
+    case 'freezeNearby': return `❄️ 凍結周圍敵人 ${prm.duration} 秒`
+    case 'skillCd': return `🔮 技能冷卻 -${Math.round(prm.amount * 100)}%`
+    case 'chestKey': return '🗝️ 本波寶箱獎勵 +1 選項'
+    case 'instantHeal': return `💊 生命 +${Math.round(p.stats.maxHp * prm.pct)}（${Math.round(prm.pct * 100)}%）`
+    default: return `${it.emoji} ${it.name}`
+  }
+}
+
 export function applyItem(g: Game, p: SPlayer, itemId: string): void {
   const it = ITEM_MAP.get(itemId)
   if (!it) return
   const prm = it.params ?? {}
   g.ev({ t: 'item', id: p.id, it: itemId })
+  // instantGold 走金幣、不特別提示（使用者說金幣不用顯示）
+  if (it.effect !== 'instantGold') g.toastTo(p, itemEffectText(g, p, itemId), 'good')
   switch (it.effect) {
     case 'magnetAll':
       for (const d of g.drops) if (d.t !== 'chest') d.magnetTargetId = p.id

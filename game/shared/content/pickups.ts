@@ -18,9 +18,10 @@ export const ITEM_MAP = new Map(ITEMS.map(i => [i.id, i]))
 
 // 5 種寶箱獎勵類型（開箱時擲出其中一種，玩家從選項中挑）。
 export const CHEST_REWARDS: ChestRewardData[] = [
-  { id: 'cr_gold', name: '高額金幣', type: 'gold', weight: 25 },
-  { id: 'cr_weapon', name: '隨機武器', type: 'weapon', weight: 22 },
-  { id: 'cr_upgrade', name: '稀有升級', type: 'upgrade', weight: 28 },
+  { id: 'cr_gold', name: '高額金幣', type: 'gold', weight: 22 },
+  { id: 'cr_weapon', name: '隨機武器', type: 'weapon', weight: 20 },
+  { id: 'cr_weaponup', name: '隨機武器升級', type: 'weaponUp', weight: 20 },
+  { id: 'cr_upgrade', name: '稀有升級', type: 'upgrade', weight: 26 },
   { id: 'cr_shard', name: '復活碎片', type: 'reviveShard', weight: 10 },
-  { id: 'cr_curse', name: '詛咒升級（高風險高報酬）', type: 'curse', weight: 15 },
+  { id: 'cr_curse', name: '詛咒升級（高風險高報酬）', type: 'curse', weight: 14 },
 ]

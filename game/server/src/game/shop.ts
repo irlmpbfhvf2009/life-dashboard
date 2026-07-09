@@ -112,8 +112,22 @@ function priceMultOf(g: Game, p: SPlayer): number {
     * (eff(p, 'curseBag') ? 1.25 : 1)
 }
 
-const weaponOfferPrice = (g: Game, p: SPlayer, w: WeaponData, ownedLevel: number, special: boolean) =>
-  Math.max(1, Math.round(w.price * priceMultOf(g, p) * (special ? 0.85 : 1) * (ownedLevel ? 1 + ownedLevel * 0.5 : 1)))
+const weaponOfferPrice = (g: Game, p: SPlayer, w: WeaponData, level: number, special: boolean) =>
+  Math.max(1, Math.round(w.price * priceMultOf(g, p) * (special ? 0.85 : 1) * (1 + (level - 1) * 0.5)))
+
+/** 後期波數：新武器的起始等級（省得從 Lv1 慢慢養） */
+function weaponStartLevel(wave: number): number {
+  if (wave >= 16) return 3
+  if (wave >= 9) return 2
+  return 1
+}
+
+/** 玩家角色的進化武器（後期商店偶爾直接販售；charId 綁該角色、evolvedForm） */
+function evolvedForChar(p: SPlayer): WeaponData | null {
+  const owned = new Set(p.weapons.map(w => w.data.id))
+  const evo = WEAPONS.find(w => w.evolvedForm && w.charId === p.char.id && !owned.has(w.id))
+  return evo ?? null
+}
 
 /** 任何管道取得/升級武器後，同步未售出的同武器上架格（等級標示+價格；滿級直接下架）。
  *  修掉「兩格同武器 Lv2/Lv2，買一格另一格不會變 Lv3」的舊 bug。 */
@@ -124,10 +138,10 @@ export function syncWeaponOffers(g: Game, p: SPlayer): void {
     if (!data) continue
     const owned = p.weapons.find(x => x.data.id === o.refId)
     if (owned && owned.level >= data.maxLevel) { o.sold = true; continue }   // 滿級 → 這格作廢
-    const nextLevel = owned ? owned.level + 1 : 1   // 賣掉後也會回到 Lv1
+    const nextLevel = owned ? owned.level + 1 : (o.startLevel ?? 1)   // 未持有＝維持起始等級（後期可能 >1）
     if (o.weaponLevel !== nextLevel) {
       o.weaponLevel = nextLevel
-      o.price = weaponOfferPrice(g, p, data, owned?.level ?? 0, g.routeMods.specialShop)
+      o.price = weaponOfferPrice(g, p, data, nextLevel, g.routeMods.specialShop)
       o.origPrice = undefined
     }
   }
@@ -141,7 +155,17 @@ export function generateShopOffers(g: Game, p: SPlayer): void {
 
   while (p.shopOffers.length < SHOP.offers) {
     const roll = g.rng()
-    if (roll < 0.45) {   // 武器是 build 核心，出現率高
+    if (roll < 0.5) {   // 武器是 build 核心，出現率高（道具類已不上架）
+      // 後期偶爾直接販售本角色的進化武器（wave≥12，非特價店 12% 機率）
+      const evo = g.wave >= 12 && !special && g.rng() < 0.12 ? evolvedForChar(p) : null
+      if (evo && !p.shopOffers.some(o => o.kind === 'weapon' && o.refId === evo.id && !o.sold)) {
+        p.shopOffers.push({
+          offerId: oid(), kind: 'weapon', refId: evo.id,
+          price: weaponOfferPrice(g, p, evo, 1, special),
+          locked: false, sold: false, weaponLevel: 1, startLevel: 1,
+        })
+        continue
+      }
       // 共用池 + 簽名武器（親和 tag 加權）；同一把武器不重複上架
       const pool = weaponPool(p)
         .filter(w => special || w.tier <= (g.wave < 5 ? 2 : 3))
@@ -149,20 +173,17 @@ export function generateShopOffers(g: Game, p: SPlayer): void {
       const w = pickWeaponWeighted(g, p, pool)
       if (w) {
         const owned = p.weapons.find(x => x.data.id === w.id)
+        // 後期新武器直接以較高等級入手（已持有則照升級路徑）
+        const startLv = owned ? 1 : Math.min(weaponStartLevel(g.wave), w.maxLevel)
+        const level = owned ? owned.level + 1 : startLv
         p.shopOffers.push({
           offerId: oid(), kind: 'weapon', refId: w.id,
-          price: weaponOfferPrice(g, p, w, owned?.level ?? 0, special),
+          price: weaponOfferPrice(g, p, w, level, special),
           locked: false, sold: false,
-          weaponLevel: owned ? owned.level + 1 : 1,
+          weaponLevel: level, startLevel: startLv,
         })
         continue
       }
-    }
-    if (roll < 0.5 && g.rng() < 0.3) {
-      // 臨時道具直購
-      const it = weightedR(g.rng, ITEMS)
-      p.shopOffers.push({ offerId: oid(), kind: 'item', refId: it.id, price: Math.max(1, Math.round(6 * priceMult)), locked: false, sold: false })
-      continue
     }
     const u = pickUpgradeByRarity(g, p, rollRarity(g, p, true))
     if (!u) break
@@ -198,7 +219,7 @@ export function buyOffer(g: Game, p: SPlayer, offerId: string): string | null {
   if (!o || o.sold) return '找不到商品'
   if (p.gold < o.price) return '金幣不足'
   if (o.kind === 'weapon') {
-    const err = addWeapon(g, p, o.refId)
+    const err = addWeapon(g, p, o.refId, o.startLevel ?? 1)
     if (err) return err
     syncWeaponOffers(g, p)
   } else if (o.kind === 'upgrade') {
@@ -255,10 +276,16 @@ export function refreshShop(g: Game, p: SPlayer): string | null {
   return null
 }
 
+/** 簽名（職業專屬）武器：charId 綁本角色 → 不可出售 */
+export function isSignatureWeapon(p: SPlayer, w: { data: WeaponData }): boolean {
+  return !!w.data.charId && w.data.charId === p.char.id
+}
+
 export function sellWeapon(g: Game, p: SPlayer, index: number): string | null {
   if (p.weapons.length <= 1) return '至少要保留一把武器'
   const w = p.weapons[index]
   if (!w) return '找不到武器'
+  if (isSignatureWeapon(p, w)) return '職業專屬武器無法出售'
   p.weapons.splice(index, 1)
   const refund = Math.round(w.data.price * (1 + (w.level - 1) * 0.5) * SHOP.sellPct)
   p.gold += refund
@@ -266,7 +293,7 @@ export function sellWeapon(g: Game, p: SPlayer, index: number): string | null {
   return null
 }
 
-export function addWeapon(g: Game, p: SPlayer, weaponId: string): string | null {
+export function addWeapon(g: Game, p: SPlayer, weaponId: string, startLevel = 1): string | null {
   const data = WEAPON_MAP.get(weaponId)
   if (!data) return '未知武器'
   if (data.charId && data.charId !== p.char.id) return '這不是你的專屬武器'
@@ -277,7 +304,9 @@ export function addWeapon(g: Game, p: SPlayer, weaponId: string): string | null 
     return null
   }
   if (p.weapons.length >= maxWeapons(p)) return '武器欄已滿（可先賣掉一把）'
-  p.weapons.push(newOwnedWeapon(data, g.rng() * Math.PI * 2))
+  const w = newOwnedWeapon(data, g.rng() * Math.PI * 2)
+  w.level = Math.min(Math.max(1, startLevel), data.maxLevel)
+  p.weapons.push(w)
   return null
 }
 
@@ -328,6 +357,14 @@ export function rollChestOptions(g: Game, p: SPlayer): ChestPending['options'] {
           opts.push({ rewardId: cr.id, detail: `武器：${w.name}`, refId: w.id })
           break
         }
+        case 'weaponUp': {
+          // 隨機升級一把「還沒滿級」的武器（含簽名武器）
+          const upgradable = p.weapons.filter(w => w.level < w.data.maxLevel)
+          if (!upgradable.length) continue
+          const w = upgradable[Math.floor(g.rng() * upgradable.length)]
+          opts.push({ rewardId: cr.id, detail: `升級武器：${w.data.name} → Lv.${w.level + 1}`, refId: w.data.id })
+          break
+        }
         case 'upgrade': {
           const u = pickUpgradeByRarity(g, p, g.rng() < 0.5 ? 'rare' : 'epic')
           if (!u) continue
@@ -363,6 +400,14 @@ export function applyChestChoice(g: Game, p: SPlayer, chestId: string, rewardId:
       const err = addWeapon(g, p, opt.refId!)
       if (err) { p.gold += 15; g.toastTo(p, `武器欄已滿，折抵 15 金幣`) }
       else syncWeaponOffers(g, p)
+      break
+    }
+    case 'cr_weaponup': {
+      // 指定武器 +1 級（若該武器已被賣掉/滿級則挑另一把可升的）
+      let w = p.weapons.find(w => w.data.id === opt.refId && w.level < w.data.maxLevel)
+      if (!w) w = p.weapons.find(w => w.level < w.data.maxLevel)
+      if (w) { w.level++; syncWeaponOffers(g, p); g.toastTo(p, `⬆️ ${w.data.name} → Lv.${w.level}`, 'good') }
+      else { p.gold += 15; g.toastTo(p, '武器都滿級了，折抵 15 金幣') }
       break
     }
     case 'cr_upgrade': case 'cr_curse': applyUpgrade(g, p, opt.refId!); break

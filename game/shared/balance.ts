@@ -35,9 +35,13 @@ export const DIFFICULTIES: DifficultyMod[] = [
 
 export const MODE_WAVES: Record<Mode, number> = { quick: 10, standard: 20, endless: 20, daily: 10 }
 
-/** 每波 30 秒倒數；倒數結束後要把場上怪清光才進下一關（Boss 波不限時） */
-export function waveDuration(_wave: number): number {
-  return 30
+/** 怪物密度倍率（殺光制：每波固定生出這麼多怪，全數殲滅才進下一波）。 */
+export const DENSITY_MULT = 2.0
+
+/** 放怪窗口（秒）：本波預算在這段時間內釋放完（純節奏用，不再是波次倒數）。
+ *  波次何時結束＝budget 放完 + 場上清空（見 game.ts checkWaveEnd）。 */
+export function spawnWindow(wave: number): number {
+  return Math.min(16 + wave * 0.6, 26)
 }
 
 export function isBossWave(mode: Mode, wave: number): 'mini' | 'big' | null {
@@ -53,12 +57,12 @@ export function isBossWave(mode: Mode, wave: number): 'mini' | 'big' | null {
   return null
 }
 
-/** 生成預算：整波要生出的「怪物點數」總量（怪物 tier 消耗 1/2/4 點）
- *  30 秒短波 = 同樣預算擠進更短時間 → 密度自然更高 */
+/** 生成預算：整波要生出的「怪物點數」總量（怪物 tier 消耗 1/2/4 點）。
+ *  殺光制：這就是本波的「怪物總量」，全數清光才進下一波 → ×DENSITY_MULT 加倍密度。 */
 export function spawnBudget(wave: number, players: number): number {
   // 前期溫和、中後段陡升（避免第 1~2 波就被淹死，但 5 波後很硬）
   const base = 14 + wave * 8 + Math.max(0, wave - 5) * 6
-  return Math.round(base * PLAYER_SCALING[players].count)
+  return Math.round(base * PLAYER_SCALING[players].count * DENSITY_MULT)
 }
 
 /** 怪物血量隨波數成長（另乘人數 hp、難度 enemyHp、無盡加成） */
@@ -85,8 +89,10 @@ export function endlessAffixCount(wave: number): number {
 
 // ------------------------------------------------- 玩家 / 經驗 / 復活
 
+// 怪物密度 ×2 → 每波擊殺數約 ×2。升級曲線同步上調（約 ×1.5），讓每波升的等級數
+// 與加倍前相近、避免經驗暴走；金幣則靠 coinValue 下修（見 DROPS）平衡。
 export function xpForLevel(level: number): number {
-  return Math.round(10 + level * 8 + level * level * 0.9)
+  return Math.round(15 + level * 12 + level * level * 1.35)
 }
 
 export const REVIVES_PER_MODE: Record<Mode, number> = { quick: 1, standard: 2, endless: 2, daily: 1 }
@@ -107,8 +113,8 @@ export const DOWNED = {
 
 export function caps(players: number) {
   return {
-    enemies: [0, 60, 72, 82, 92][players] ?? 92,
-    elites: [0, 5, 6, 7, 8][players] ?? 8,
+    enemies: [0, 95, 115, 130, 145][players] ?? 145,   // 密度 ×2、殺光制 → 提高場上上限
+    elites: [0, 6, 7, 8, 9][players] ?? 9,
     drops: 90,
     enemyProjectiles: 36,
     // 客戶端視覺（render.ts 遵守）
@@ -123,7 +129,7 @@ export const DROP_MERGE = { xpMergeRadius: 60, checkAt: 70 }
 // ------------------------------------------------- 掉落率
 
 export const DROPS = {
-  coinValue: { min: 1, max: 3 },
+  coinValue: { min: 1, max: 2 },        // 密度 ×2 → 單枚金幣下修，整體經濟約 ×1.3（見 xpForLevel 註）
   eliteCoinBonus: 8,
   bossCoin: 60,
   heartChance: 0.018,           // 基準；乘導演 healDropMult

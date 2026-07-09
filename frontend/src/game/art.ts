@@ -1182,9 +1182,10 @@ export function drawObjective(g: Ctx, t: string, r: number, time: number, opts: 
     case 'trap': {
       const active = opts.state === 1
       const pulse = active ? 0.5 + Math.sin(time * 14) * 0.3 : 0.28 + Math.sin(time * 3) * 0.08
-      const col = opts.k === 'fire' ? '255,110,60' : opts.k === 'poison' ? '156,204,101' : '176,190,200'
+      // 陷阱一律會傷害玩家 → 範圍提示統一用「危險紅」（別踩），內部再保留各自的火/毒/刺花樣
+      const col = '239,83,80'
       // 危險區底
-      g.fillStyle = `rgba(${col},${active ? 0.3 : 0.14})`
+      g.fillStyle = `rgba(${col},${active ? 0.28 : 0.13})`
       g.beginPath(); g.arc(0, 0, s, 0, Math.PI * 2); g.fill()
       g.strokeStyle = `rgba(${col},${pulse})`
       g.lineWidth = 2.5
@@ -1192,10 +1193,10 @@ export function drawObjective(g: Ctx, t: string, r: number, time: number, opts: 
       g.beginPath(); g.arc(0, 0, s, time * 0.5, time * 0.5 + Math.PI * 2); g.stroke()
       g.setLineDash([])
       if (opts.k === 'poison') {
-        // 毒泡
+        // 毒泡（保留綠色花樣，讓玩家看得出是毒陷阱，但外圈仍是危險紅）
         for (let i = 0; i < 4; i++) {
           const a = time * 1.5 + i * 1.6
-          g.fillStyle = `rgba(${col},0.5)`
+          g.fillStyle = 'rgba(156,204,101,0.55)'
           g.beginPath(); g.arc(Math.cos(a) * s * 0.4, Math.sin(a) * s * 0.35, 3, 0, Math.PI * 2); g.fill()
         }
       } else if (opts.k === 'fire') {

@@ -101,16 +101,19 @@ export function edgeSpawnPos(g: Game): { x: number; y: number } {
   return { x: g.rng() * ARENA.w, y: 30 }
 }
 
-/** 生成器 tick：把整波預算平均撒在波次時間內，受導演倍率調節 */
+/** 生成器 tick：殺光制——把整波預算在「放怪窗口」內釋放完（不設波次倒數，放完就等清場）。
+ *  場上達上限時暫停放怪（自然節流），玩家清掉一批就再補，直到 budget 見底。 */
 export function spawnerTick(g: Game, dt: number): void {
   if (g.time < 0.5) return
-  if (g.time >= g.duration && !g.boss) return             // 倒數結束後不再生，剩下的怪要清光
   if (g.director.spawnPauseUntil > g.time) return
+  if (g.spawner.budgetLeft <= 0) return
+  // 場上接近上限就先別放（避免瞬間爆量＋等玩家清），留一點餘裕給菁英
+  if (g.enemies.length >= caps(g.playerCount).enemies - 4) return
   g.spawner.timer -= dt * spawnMult(g)
-  if (g.spawner.timer > 0 || g.spawner.budgetLeft <= 0) return
+  if (g.spawner.timer > 0) return
 
-  // 每次生成一小群（30 秒短波 → 群體更大、鋪得更快）
-  const groupSize = Math.min(4 + Math.floor(g.wave / 3), 10)
+  // 每次生成一小群（密度 ×2 → 群體更大、鋪得更快）
+  const groupSize = Math.min(6 + Math.floor(g.wave / 2), 14)
   const pos = edgeSpawnPos(g)
   for (let k = 0; k < groupSize && g.spawner.budgetLeft > 0; k++) {
     const pick = pickFromPool(g)
@@ -120,8 +123,8 @@ export function spawnerTick(g: Game, dt: number): void {
     if (!e) break
     g.spawner.budgetLeft -= TIER_COST[pick.tier] * (isElite ? 4 : 1)
   }
-  // 生成節奏：預算越多剩越密集
-  const pace = g.duration / Math.max(6, g.spawner.budgetTotal / 2.4)
+  // 生成節奏：整份 budget 在放怪窗口內釋放完
+  const pace = g.duration / Math.max(6, g.spawner.budgetTotal / 3.2)
   g.spawner.timer = pace * (0.7 + g.rng() * 0.6)
 }
 

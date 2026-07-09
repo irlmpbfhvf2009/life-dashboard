@@ -5,7 +5,7 @@ import type {
   GameOverSummary, DebugCmd, DebugState, RoomConfig,
 } from '../../../shared/types'
 import {
-  ARENA, TICK_HZ, SNAP_HZ, PLAYER_SCALING, MODE_WAVES, waveDuration,
+  ARENA, TICK_HZ, SNAP_HZ, PLAYER_SCALING, MODE_WAVES, spawnWindow,
   isBossWave, spawnBudget, REVIVES_PER_MODE, TEAM_REVIVE, DOWNED,
   caps as capsOf, EVENT_RULES, xpForLevel,
 } from '../../../shared/balance'
@@ -202,7 +202,7 @@ export class Game {
     this.wave = wave
     this.phase = 'combat'
     this.time = 0
-    this.duration = waveDuration(wave)
+    this.duration = spawnWindow(wave)   // 放怪窗口（節奏用）；波次結束改看「怪清光」不看時間
     this.bossDefeated = false
     this.enemies = []
     this.projectiles = []
@@ -301,7 +301,7 @@ export class Game {
         const b = this.boss as SBoss
         bossInfo = { id: b.data.id, name: b.data.name, title: b.data.title }
       }
-      this.duration = 999   // Boss 波不限時，打死為止
+      // Boss 波打死為止（checkWaveEnd 看 bossDefeated）；duration 僅供小怪放怪節奏用
     }
 
     // 菁英巢穴路線：本關必出菁英
@@ -498,7 +498,8 @@ export class Game {
 
   /** 第一波劇本：最後 10 秒出小菁英；elite 任務保底 */
   private scriptedSpawns(): void {
-    if (this.wave === 1 && this.time > this.duration - 10 && !this.wave1EliteSpawned) {
+    // 第一波：放完約六成怪後補一隻小菁英當教學
+    if (this.wave === 1 && this.spawner.budgetLeft <= this.spawner.budgetTotal * 0.4 && !this.wave1EliteSpawned) {
       this.wave1EliteSpawned = true
       const pos = edgeSpawnPos(this)
       spawnEnemy(this, 'slug', pos.x, pos.y, { elite: true })
@@ -808,13 +809,13 @@ export class Game {
       if (this.bossDefeated) this.endWave()
       return
     }
-    // 30 秒倒數結束後，還要把場上怪物清光才進下一關
-    if (this.time >= this.duration && this.enemies.length === 0) this.endWave()
+    // 殺光制：本波怪物全數生成（budget 耗盡）且場上清空 → 進下一波
+    if (this.spawner.budgetLeft <= 0 && this.enemies.length === 0) this.endWave()
   }
 
-  /** 給 HUD：倒數已結束、正在清尾怪 */
-  get clearingPhase(): boolean {
-    return this.phase === 'combat' && this.time >= this.duration && !isBossWave(this.mode, this.wave)
+  /** 給 HUD：本波仍在放怪（budget 未耗盡） */
+  get spawningPhase(): boolean {
+    return this.phase === 'combat' && this.spawner.budgetLeft > 0 && !isBossWave(this.mode, this.wave)
   }
 
   private checkWipe(): void {
@@ -1174,7 +1175,7 @@ export class Game {
     const p = this.players.get(playerId)
     if (!p) return
     switch (cmd.c) {
-      case 'skipWave': if (this.phase === 'combat') { this.bossDefeated = true; this.time = this.duration; this.enemies = []; if (this.boss) this.boss.hp = 0 } break
+      case 'skipWave': if (this.phase === 'combat') { this.bossDefeated = true; this.spawner.budgetLeft = 0; this.enemies = []; if (this.boss) this.boss.hp = 0 } break
       case 'gold': p.gold += cmd.n; break
       case 'xp': gainXp(this, p, cmd.n); break
       case 'spawn': {
@@ -1197,7 +1198,8 @@ export class Game {
     const now = this.time
     return {
       t: Math.round(now * 10) / 10,
-      left: Math.max(0, Math.round((this.duration - now) * 10) / 10),
+      left: 0,                                    // 殺光制：不再有波次倒數
+      spawning: this.spawningPhase ? 1 : undefined,
       players: [...this.players.values()].map(p => ({
         id: p.id, x: Math.round(p.x), y: Math.round(p.y),
         hp: Math.round(p.hp), mhp: p.stats.maxHp,
@@ -1229,7 +1231,7 @@ export class Game {
       } : undefined,
       eProj: this.enemyProjs.map(pr => ({ x: Math.round(pr.x), y: Math.round(pr.y) })),
       turrets: this.turrets.length ? this.turrets.map(t => (t.guard ? { x: Math.round(t.x), y: Math.round(t.y), g: 1 as const } : { x: Math.round(t.x), y: Math.round(t.y) })) : undefined,
-      zones: this.zones.length ? this.zones.map(z => ({ x: Math.round(z.x), y: Math.round(z.y), r: Math.round(z.radius), k: z.kind })) : undefined,
+      zones: this.zones.length ? this.zones.map(z => ({ x: Math.round(z.x), y: Math.round(z.y), r: Math.round(z.radius), k: z.kind, h: z.hostile ? 1 as const : undefined })) : undefined,
       mines: this.mines.length ? this.mines.map(m => (now >= m.armAt ? { x: Math.round(m.x), y: Math.round(m.y), r: Math.round(m.radius), a: 1 as const } : { x: Math.round(m.x), y: Math.round(m.y), r: Math.round(m.radius) })) : undefined,
       director: { pressure: Math.round(this.director.pressure), level: this.director.level },
       mission: this.mission ? {
