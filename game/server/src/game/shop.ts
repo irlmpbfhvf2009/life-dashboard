@@ -283,7 +283,7 @@ export function rollChestOptions(g: Game, p: SPlayer): ChestPending['options'] {
         case 'upgrade': {
           const u = pickUpgradeByRarity(g, p, g.rng() < 0.5 ? 'rare' : 'epic')
           if (!u) continue
-          opts.push({ rewardId: cr.id, detail: `升級：${u.name}`, refId: u.id })
+          opts.push({ rewardId: cr.id, detail: `升級：${u.name}（${u.description}）`, refId: u.id })
           break
         }
         case 'reviveShard':
