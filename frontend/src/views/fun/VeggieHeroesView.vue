@@ -956,21 +956,6 @@ const bestWaves = computed(() => ({
                 </p>
                 <p class="text-[10px] text-white/50">{{ zoneName }}<span v-if="eventName" class="ml-1 text-rose-300">⚡{{ eventName }}</span></p>
               </div>
-              <!-- 殺光制提示 -->
-              <div v-if="clearing" class="rounded-lg bg-rose-900/60 px-2.5 py-1 backdrop-blur-sm">
-                <p class="text-[11px] font-bold text-rose-200">
-                  {{ gs.hud.spawning ? '怪物來襲…殲滅全部進下一波' : '殲滅剩餘怪物即可進下一波！' }}
-                </p>
-              </div>
-              <!-- 任務 -->
-              <div v-if="gs.hud.mission" class="rounded-lg bg-black/45 px-2.5 py-1 backdrop-blur-sm">
-                <p class="text-[11px] font-bold" :class="gs.hud.mission.failed ? 'text-rose-400' : gs.hud.mission.done ? 'text-lime-400' : 'text-sky-300'">
-                  🎯 {{ gs.hud.mission.name }} {{ gs.hud.mission.done ? '✓' : gs.hud.mission.failed ? '✗' : '' }}
-                  <span v-if="!gs.hud.mission.done && !gs.hud.mission.failed && gs.hud.mission.target > 1" class="text-white/60">
-                    {{ Math.min(gs.hud.mission.progress, gs.hud.mission.target) }}/{{ gs.hud.mission.target }}
-                  </span>
-                </p>
-              </div>
               <!-- 升級提示 -->
               <div v-if="gs.hud.pendingLevelups > 0 && !gs.inter" class="rounded-lg bg-violet-500/70 px-2.5 py-1 backdrop-blur-sm">
                 <p class="text-[11px] font-black text-white">⬆️ 升級 ×{{ gs.hud.pendingLevelups }}（波末選擇）</p>
