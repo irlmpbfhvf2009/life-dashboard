@@ -24,13 +24,18 @@ functions.cloudEvent('stopBilling', async (cloudEvent) => {
   const payload = JSON.parse(Buffer.from(message.data, 'base64').toString());
   const cost = Number(payload.costAmount);
   const budget = Number(payload.budgetAmount);
+  // 絕對下限：花費低於此金額一律不關。GCP 的預算「通知」可能延遲數小時，仍送出過時的
+  // 低 budget 值（實測遇過 budget=1 而實際預算已改成 30），舊版盲信通知的 budget 會被零頭誤殺整個專案。
+  // 有了 floor，只有花費真的超過 max(budget, floor) 才動作，天生免疫這個延遲 bug。
+  const floor = Number(process.env.GUARD_MIN_COST || 50);
+  const threshold = Math.max(budget, floor);
   console.log(
-    `Budget notification: cost=${cost} budget=${budget} ${payload.currencyCode || ''}`,
+    `Budget notification: cost=${cost} budget=${budget} floor=${floor} threshold=${threshold} ${payload.currencyCode || ''}`,
   );
 
-  // Only act on real spend over budget (ignore forecasted-only notifications).
-  if (!(cost > budget)) {
-    console.log('Cost within budget — no action.');
+  // Only act on real spend over the effective threshold (max of budget and floor).
+  if (!(cost > threshold)) {
+    console.log(`Cost ${cost} within threshold ${threshold} — no action.`);
     return;
   }
 

@@ -41,5 +41,30 @@ $gc = "C:\Users\ws794\AppData\Local\Google\Cloud SDK\google-cloud-sdk\bin\gcloud
 - billing-guard **機制不變**（`index.js` 照舊），只是門檻 NT$1 → NT$30 當安全網，正常情況永遠不會觸發。
 
 ## billing-guard 運作備忘
-`infra/billing-guard/index.js` 是 Cloud Function，吃 Cloud Billing 預算的 Pub/Sub 通知；當
-`實際花費 > 預算金額` 就把專案 `billingAccountName` 設空字串＝停用計費。**門檻＝GCP 預算金額**（不在程式碼裡），所以調門檻改預算即可、不用重新部署函式。
+`infra/billing-guard/index.js` 是 Cloud Function（gen2，entry `stopBilling`，region asia-southeast1，
+吃 Pub/Sub topic `billing-alerts`）；收到 Cloud Billing 預算通知後，若 `花費 > max(通知的budget, GUARD_MIN_COST)`
+就把專案 `billingAccountName` 設空字串＝停用計費。
+
+**2026-07 改良（重要）**：舊版盲信「通知裡的 budgetAmount」，但 GCP 預算通知會延遲數小時、送出**過時的低 budget 值**
+（實測改成 NT$30 後、通知仍送 `budget=1`），導致花費才 NT$1.27 也被當成「超支」把整個專案關掉。改良版加了
+**絕對下限 `GUARD_MIN_COST`（env，預設 50）**：花費低於此金額一律不關，天生免疫這個延遲 bug。
+
+重新部署 guard：
+```powershell
+$gc = "C:\Users\ws794\AppData\Local\Google\Cloud SDK\google-cloud-sdk\bin\gcloud.cmd"
+& $gc functions deploy billing-guard --gen2 --region=asia-southeast1 --runtime=nodejs20 `
+  --entry-point=stopBilling --trigger-topic=billing-alerts --source=infra/billing-guard `
+  --update-env-vars=GUARD_MIN_COST=50 --project=life-dashboard-17faa
+```
+
+重新建立預算（接回 `billing-alerts` topic，餵通知給 guard）：
+```powershell
+& $gc billing budgets create --billing-account=01A177-7C2783-5741D6 --display-name=life-dashboard-guard `
+  --budget-amount=100TWD --filter-projects=projects/463356502015 --calendar-period=month `
+  --threshold-rule=percent=0.9 --threshold-rule=percent=1.0 `
+  --all-updates-rule-pubsub-topic=projects/life-dashboard-17faa/topics/billing-alerts
+```
+
+**緊急止血（guard 誤殺整站時）**：billing 被關又一直被 guard 立刻關回去，是因為 Pub/Sub 有排隊的舊通知。
+解法＝刪掉 guard 的訂閱丟掉排隊訊息，再重開計費：
+`gcloud pubsub subscriptions delete <eventarc-...-billing-guard-...-sub-...>` → `gcloud billing projects link ...`。
