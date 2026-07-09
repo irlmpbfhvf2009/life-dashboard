@@ -1,7 +1,7 @@
 // Boss 階段機：3 隻 Boss 的技能 handler + 依人數縮放的合作機制。
 // 加 Boss = bosses.ts 加資料 + 這裡加技能 handler（多數技能可重用）。
 import { BOSS_MAP, ENEMY_MAP } from '../../../shared/content/index'
-import { PLAYER_SCALING, OBJECT_COUNT, DIFFICULTIES, ARENA, ENEMY_SPEED_MULT } from '../../../shared/balance'
+import { PLAYER_SCALING, OBJECT_COUNT, DIFFICULTIES, ARENA, ENEMY_SPEED_MULT, bossHpScale } from '../../../shared/balance'
 import { weightedR } from '../../../shared/rng'
 import type { SBoss, SPlayer } from './state'
 import type { Game } from './game'
@@ -15,8 +15,7 @@ export function spawnBoss(g: Game, bossId: string): void {
   const data = BOSS_MAP.get(bossId)
   if (!data) return
   const diff = DIFFICULTIES[g.difficulty] ?? DIFFICULTIES[0]
-  const waveScale = 1 + Math.max(0, g.wave - 10) * 0.06
-  const hp = Math.round(data.baseHp * PLAYER_SCALING[g.playerCount].boss * diff.enemyHp * waveScale)
+  const hp = Math.round(data.baseHp * PLAYER_SCALING[g.playerCount].boss * diff.enemyHp * bossHpScale(g.wave))
   g.boss = {
     data, x: ARENA.w / 2, y: ARENA.h * 0.28,
     hp, maxHp: hp, phaseIdx: 0, skillTimer: 3, skillQueue: [],

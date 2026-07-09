@@ -89,6 +89,14 @@ export function enemyDmgScale(wave: number): number {
 export function enemySpeedScale(wave: number): number {
   return Math.min(1 + wave * 0.012, 1.45)
 }
+
+/** Boss 血量隨波成長（獨立於雜魚曲線）。
+ *  Boss 是單體、有機制/閃避,不該套雜魚那條「中期×10」蟲海 ramp（會變成純血牛海綿）。
+ *  用平滑指數,調到:強 build 打 Boss 約 6~15 秒(有壓力但可解)、中庸 build 更吃力。
+ *  取代舊的 `1 + max(0,波-10)×0.06`（幾乎不長 → Boss 一秒被秒）。 */
+export function bossHpScale(wave: number): number {
+  return (1 + wave * 0.6) * Math.pow(1.145, wave)
+}
 /** 金幣價值隨波數成長（後期商店價格上漲，收入也要跟上，否則乘算升級買不起） */
 export function coinWaveMult(wave: number): number {
   return 1 + wave * 0.05
