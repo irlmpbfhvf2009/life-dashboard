@@ -29,6 +29,9 @@ export function recomputeStats(p: SPlayer): void {
   if (p.effects.has('eliteTrophy')) pct.damage = (pct.damage ?? 0) + p.eliteTrophyStacks * 0.03
 
   const lvl = p.level - 1
+  // 暴擊率溢出：超過 100% 的部分 1:1 轉成暴擊傷害（賭徒等暴擊 build 才不會滿爆就浪費）
+  const rawCrit = b.critChance + (pct.critChance ?? 0)
+  const critOverflow = Math.max(0, rawCrit - 1)
   const s: ComputedStats = {
     maxHp: Math.round((b.maxHp + lvl * 3 + (add.maxHp ?? 0)) * (p.effects.has('curseGlass') ? 0.75 : 1)),
     armor: b.armor + (add.armor ?? 0),
@@ -43,8 +46,8 @@ export function recomputeStats(p: SPlayer): void {
       * (p.boonDmgMult ?? 1)
       * Math.pow(1.4, p.effects.get('dmgX') ?? 0),
     attackSpeed: b.attackSpeed * (1 + (pct.attackSpeed ?? 0)),
-    critChance: Math.min(0.8, b.critChance + (pct.critChance ?? 0)),
-    critDamage: b.critDamage + (pct.critDamage ?? 0),
+    critChance: Math.min(1, rawCrit),
+    critDamage: b.critDamage + (pct.critDamage ?? 0) + critOverflow,
     cooldown: Math.min(0.6, pct.cooldown ?? 0),
     area: 1 + (pct.area ?? 0),
     goldGain: 1 + (pct.goldGain ?? 0),
