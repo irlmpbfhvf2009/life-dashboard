@@ -1222,12 +1222,12 @@ const fmtTime = (s: number) => {
             <div class="mt-1 flex flex-wrap gap-1.5">
               <button
                 v-for="(w, i) in gs.inter.me.weapons" :key="i"
-                class="flex flex-col items-center gap-0.5 rounded-lg bg-white/10 px-2 py-1.5 leading-none active:bg-rose-500/30"
+                class="veg-wslot flex flex-col items-center gap-0.5 rounded-lg px-1.5 pb-1 pt-1.5 leading-none active:scale-95"
                 :title="wpn(w.id)?.name"
                 @click="sellWeapon(i, w.id, w.level)"
               >
-                <Portrait kind="weapon" :id="w.id" :size="30" />
-                <span class="text-[10px] font-black text-amber-300">Lv.{{ w.level }}</span>
+                <Portrait kind="weapon" :id="w.id" :size="36" />
+                <span class="mt-0.5 rounded bg-black/40 px-1 text-[10px] font-black text-amber-300">Lv.{{ w.level }}</span>
               </button>
             </div>
           </div>
@@ -1337,6 +1337,14 @@ const fmtTime = (s: number) => {
   100% { transform: scale(1); opacity: 1; }
 }
 .grade-s { text-shadow: 0 0 14px rgba(251, 191, 36, 0.85), 0 0 4px rgba(251, 191, 36, 0.9); }
+
+/* 武器裝備格：漸層槽 + 內陰影，讓縮圖像「收集到的裝備」 */
+.veg-wslot {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -7px 12px -7px rgba(0, 0, 0, 0.7);
+}
+.veg-wslot:active { background: rgba(244, 63, 94, 0.28); border-color: rgba(251, 113, 133, 0.6); }
 
 @media (prefers-reduced-motion: reduce) {
   .rar-shine::before { display: none; }

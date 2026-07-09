@@ -1073,6 +1073,14 @@ export function drawWeaponIcon(g: Ctx, weaponId: string, size: number, t: number
       outlined(g, col, gg => { gg.beginPath(); gg.moveTo(0, -s * 0.4); gg.lineTo(s * 0.28, 0); gg.lineTo(0, s * 0.4); gg.lineTo(-s * 0.28, 0); gg.closePath() }, 2.5)
       g.fillStyle = acc; ellipse(g, 0, 0, s * 0.1, s * 0.1); g.fill()
   }
+  // 統一打光：source-atop 只作用在已畫出的武器像素上，一次替所有圖示加「上亮下暗」的立體感
+  const lg = g.createLinearGradient(0, -s * 0.55, 0, s * 0.55)
+  lg.addColorStop(0, 'rgba(255,255,255,0.26)')
+  lg.addColorStop(0.5, 'rgba(255,255,255,0)')
+  lg.addColorStop(1, 'rgba(0,0,0,0.32)')
+  g.globalCompositeOperation = 'source-atop'
+  g.fillStyle = lg
+  g.fillRect(-s * 0.7, -s * 0.7, s * 1.4, s * 1.4)
   g.restore()
 }
 
