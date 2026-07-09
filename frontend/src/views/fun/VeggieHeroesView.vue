@@ -1206,36 +1206,36 @@ const bestWaves = computed(() => ({
             </div>
           </div>
 
-          <!-- 目前戰力數值（隨升級／寶箱／商店即時更新） -->
+          <!-- 基礎戰力（固定 9 項，隨升級／寶箱／商店即時更新；穿透/投射/吸血等歸「特殊戰力」不佔行） -->
           <div v-if="gs.inter.me?.stats" class="mt-3 rounded-2xl border border-emerald-400/25 bg-emerald-500/5 p-3">
-            <p class="mb-1.5 text-xs font-black text-emerald-300">📊 目前戰力數值</p>
+            <p class="mb-1.5 text-xs font-black text-emerald-300">📊 基礎戰力</p>
             <div class="grid grid-cols-3 gap-1.5 text-[11px]">
-              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/40">❤️生命</span> <b>{{ gs.inter.me.stats.maxHp }}</b></div>
-              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/40">🗡️傷害</span> <b>×{{ gs.inter.me.stats.damage.toFixed(2) }}</b></div>
-              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/40">⚡攻速</span> <b>×{{ gs.inter.me.stats.attackSpeed.toFixed(2) }}</b></div>
-              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/40">👟移速</span> <b>{{ Math.round(gs.inter.me.stats.moveSpeed) }}</b></div>
-              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/40">🛡️護甲</span> <b>{{ gs.inter.me.stats.armor }}</b></div>
-              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/40">🎯暴擊</span> <b>{{ Math.round(gs.inter.me.stats.critChance * 100) }}%</b></div>
-              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/40">💥暴傷</span> <b>×{{ gs.inter.me.stats.critDamage.toFixed(2) }}</b></div>
-              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/40">⭕範圍</span> <b>×{{ gs.inter.me.stats.area.toFixed(2) }}</b></div>
-              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/40">💚回復</span> <b>{{ gs.inter.me.stats.regen.toFixed(1) }}</b></div>
-              <div v-if="gs.inter.me.stats.pierce" class="rounded bg-white/5 px-2 py-1"><span class="text-white/40">➡️穿透</span> <b>+{{ gs.inter.me.stats.pierce }}</b></div>
-              <div v-if="gs.inter.me.stats.projectiles" class="rounded bg-white/5 px-2 py-1"><span class="text-white/40">➕投射</span> <b>+{{ gs.inter.me.stats.projectiles }}</b></div>
-              <div v-if="gs.inter.me.stats.lifeOnKill" class="rounded bg-white/5 px-2 py-1"><span class="text-white/40">🩸吸血</span> <b>{{ gs.inter.me.stats.lifeOnKill }}</b></div>
+              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">❤️生命</span> <b>{{ gs.inter.me.stats.maxHp }}</b></div>
+              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">🗡️傷害</span> <b>×{{ gs.inter.me.stats.damage.toFixed(2) }}</b></div>
+              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">⚡攻速</span> <b>×{{ gs.inter.me.stats.attackSpeed.toFixed(2) }}</b></div>
+              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">👟移速</span> <b>{{ Math.round(gs.inter.me.stats.moveSpeed) }}</b></div>
+              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">🛡️護甲</span> <b>{{ gs.inter.me.stats.armor }}</b></div>
+              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">🎯暴擊</span> <b>{{ Math.round(gs.inter.me.stats.critChance * 100) }}%</b></div>
+              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">💥暴傷</span> <b>×{{ gs.inter.me.stats.critDamage.toFixed(2) }}</b></div>
+              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">⭕範圍</span> <b>×{{ gs.inter.me.stats.area.toFixed(2) }}</b></div>
+              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">💚回復</span> <b>{{ gs.inter.me.stats.regen.toFixed(1) }}</b></div>
             </div>
 
-            <!-- 特殊戰力（點一下開關、預設收起）：只列特殊能力（擊殺回血/詛咒/傳說/武器特化…） -->
+            <!-- 特殊戰力（點一下開關、預設收起）：每項一行不換行；詳細說明用 hover title 帶出 -->
             <template v-if="specialAbilities.length">
               <button class="mt-2 flex w-full items-center justify-between rounded-lg bg-fuchsia-500/10 px-2 py-1.5" @click="showSpecial = !showSpecial; sfx.click()">
                 <span class="text-[11px] font-black text-fuchsia-300">✨ 特殊戰力（{{ specialAbilities.length }}）</span>
                 <span class="text-[10px] text-white/40">{{ showSpecial ? '收起 ▲' : '展開 ▼' }}</span>
               </button>
               <div v-if="showSpecial" class="mt-1.5 space-y-1">
-                <div v-for="a in specialAbilities" :key="a.name" class="rounded-lg px-2 py-1" :class="a.cat === 'curse' ? 'bg-rose-900/30' : 'bg-white/5'">
-                  <p class="text-[11px] font-black" :class="a.cat === 'curse' ? 'text-rose-300' : a.cat === 'legendary' ? 'text-amber-300' : 'text-white/85'">
-                    {{ a.cat === 'curse' ? '😈 ' : a.cat === 'legendary' ? '🌟 ' : '' }}{{ a.name }}<span v-if="a.count > 1" class="text-white/50"> ×{{ a.count }}</span>
-                  </p>
-                  <p class="text-[10px] leading-tight text-white/50">{{ a.desc }}</p>
+                <div
+                  v-for="a in specialAbilities" :key="a.name"
+                  class="flex items-center gap-1 truncate rounded-lg px-2 py-1 text-[11px] font-black"
+                  :class="a.cat === 'curse' ? 'bg-rose-900/30 text-rose-300' : a.cat === 'legendary' ? 'bg-white/5 text-amber-300' : 'bg-white/5 text-white/85'"
+                  :title="a.desc"
+                >
+                  <span class="truncate">{{ a.cat === 'curse' ? '😈 ' : a.cat === 'legendary' ? '🌟 ' : '' }}{{ a.name }}</span>
+                  <span v-if="a.count > 1" class="shrink-0 text-white/50">×{{ a.count }}</span>
                 </div>
               </div>
             </template>
