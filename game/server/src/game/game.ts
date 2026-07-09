@@ -19,7 +19,7 @@ import type {
   SPlayer, SEnemy, SProjectile, SEnemyProj, SZone, SMine, STurret,
   SDrop, SObjective, SBoss, MissionRt, EventRt, RouteMods, TeamState, WaveStat,
 } from './state'
-import { defaultRouteMods } from './state'
+import { defaultRouteMods, newOwnedWeapon } from './state'
 import { dist2, norm, clamp, clampArena } from './util'
 import { recomputeEffects, eff } from './stats'
 import { newDirector, directorTick, spawnMult, healDropMult, type DirectorState } from './director'
@@ -129,7 +129,7 @@ export class Game {
       const p: SPlayer = {
         id: r.id, name: r.name, token: r.token, socketId: r.socketId,
         connected: true, disconnectAt: 0,
-        char, weapons: [{ data: weaponData, level: 1, cdLeft: 0, orbitAngle: 0, hitMemo: new Map() }],
+        char, weapons: [newOwnedWeapon(weaponData)],
         upgrades: new Map(), effects: new Map(),
         x: ARENA.w / 2 + (idx - roster.length / 2) * spread, y: ARENA.h * 0.6,
         lastX: 0, lastY: 0,

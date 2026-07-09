@@ -49,7 +49,9 @@ export interface CharacterData {
   }
   /** 若指定，此角色只能裝備該類別武器（例：反甲坦克只能拿 melee） */
   weaponClass?: WeaponCategory
-  /** 初始武器三選一 */
+  /** 親和 tag：商店/福袋/寶箱抽武器時，帶這些 tag 的武器權重提高（角色風格傾向，非硬限制） */
+  affinityTags?: string[]
+  /** 初始武器三選一（簽名武器＋親和推薦） */
   startWeapons: string[]
   unlockCondition?: string
   rarity: 'common' | 'rare' | 'epic'
@@ -92,6 +94,9 @@ export interface WeaponData {
   maxLevel: number
   critModifier?: number
   specialEffect?: string
+  /** 武器專屬機制（每把武器的「特色」）：id 對應 server combat.ts / enemies.ts 的 hook，params 為數值參數。
+   *  未知 id 安全忽略 → 加機制 = combat 寫一次 hook，之後全是資料。 */
+  mech?: { id: string; params?: Record<string, number> }
   tags: string[]
   price: number           // 商店基準價（隨波數上浮）
   tier: 1 | 2 | 3

@@ -1,5 +1,5 @@
 // 怪物：生成器（budget-based）、10 種 behavior AI、傷害/擊殺管線、詞綴。
-import { ENEMY_MAP, TIER_COST, AFFIXES, AFFIX_MAP } from '../../../shared/content/index'
+import { ENEMY_MAP, TIER_COST, AFFIXES, AFFIX_MAP, weaponStatsAt } from '../../../shared/content/index'
 import {
   PLAYER_SCALING, DIFFICULTIES, enemyHpScale, enemyDmgScale,
   eliteChance, endlessAffixCount, ARENA, caps, ENEMY_SPEED_MULT,
@@ -68,7 +68,7 @@ export function spawnEnemy(g: Game, id: string, x: number, y: number, opts: {
     fuse: -1, fleeUntil: 0, stolenGold: 0,
     lungeVx: 0, lungeVy: 0, lungeUntil: 0, windupUntil: 0, lootDropCd: 0,
     shieldTick: 0, trailTick: 0, targetId: null, splitChild: !!opts.child,
-    burnDps: 0, burnUntil: 0,
+    burnDps: 0, burnUntil: 0, markedUntil: 0, markMult: 1,
   }
   clampArena(e, 10)
   g.enemies.push(e)
@@ -397,11 +397,14 @@ export interface DamageOpts {
   crit?: boolean
   knockX?: number; knockY?: number
   srcX?: number; srcY?: number
+  weaponId?: string              // 造成傷害的武器（擊殺類 mech：killGold/splitOnKill/frenzyKill）
 }
 
 export function damageEnemyImpl(g: Game, e: SEnemy, dmg: number, opts: DamageOpts = {}): number {
   if (e.hp <= 0) return 0
   let d = dmg * (1 - e.dr)
+  // 倒鉤鏢標記：期間內受到所有來源的傷害加成
+  if (g.time < e.markedUntil) d *= e.markMult
   // 盾殼蟲正面減傷
   if (e.data.behavior === 'shielded' && opts.srcX !== undefined) {
     const tgt = pickTarget(g, e)
@@ -435,7 +438,7 @@ export function damageEnemyImpl(g: Game, e: SEnemy, dmg: number, opts: DamageOpt
     }
   }
   if (e.hp <= 0) {
-    killEnemy(g, e, opts.ownerId ?? null)
+    killEnemy(g, e, opts.ownerId ?? null, opts.weaponId)
     g.enemies = g.enemies.filter(x => x !== e)
   }
   return d
@@ -448,12 +451,44 @@ function removeEnemy(g: Game, e: SEnemy, exploded: boolean): void {
 
 let killGuard = new WeakSet<SEnemy>()
 
-export function killEnemy(g: Game, e: SEnemy, byPlayerId: string | null): void {
+export function killEnemy(g: Game, e: SEnemy, byPlayerId: string | null, byWeaponId?: string): void {
   if (killGuard.has(e)) return
   killGuard.add(e)
   const p = byPlayerId ? g.players.get(byPlayerId) : null
   g.ev({ t: 'kill', i: e.i, x: Math.round(e.x), y: Math.round(e.y), by: byPlayerId ?? undefined })
   g.director.recentKills.push(g.time)
+
+  // 武器擊殺類 mech（killGold / splitOnKill / frenzyKill）
+  if (p && byWeaponId) {
+    const w = p.weapons.find(w => w.data.id === byWeaponId)
+    const mech = w?.data.mech
+    if (w && mech) {
+      const prm = mech.params ?? {}
+      if (mech.id === 'killGold' && g.rng() < (prm.chance ?? 0.3)) {
+        g.dropGold(e.x, e.y, prm.gold ?? 2)
+      }
+      if (mech.id === 'frenzyKill') {
+        w.frenzyUntil = g.time + (prm.dur ?? 1.2)
+      }
+      if (mech.id === 'splitOnKill') {
+        const n = prm.count ?? 3
+        const dmg = Math.max(2, weaponStatsAt(w.data, w.level).damage * p.stats.damage * (prm.pct ?? 0.4))
+        const baseAng = g.rng() * Math.PI * 2
+        for (let k = 0; k < n; k++) {
+          const ang = baseAng + (k / n) * Math.PI * 2
+          g.projectiles.push({
+            x: e.x, y: e.y,
+            vx: Math.cos(ang) * 460, vy: Math.sin(ang) * 460,
+            damage: dmg, pierce: 0, knockback: 20,
+            left: 180, initLeft: 180, ownerId: p.id, weaponId: byWeaponId, crit: false,
+            explodeRadius: 0, slow: 0, slowDur: 0, freezeChance: 0,
+            hitSet: new Set([e.i]), bounces: 0, jumps: 0,   // 不帶 mech → 不會無限分裂
+          })
+        }
+        g.ev({ t: 'shoot', id: p.id, w: byWeaponId, x: Math.round(e.x), y: Math.round(e.y), tx: Math.round(e.x), ty: Math.round(e.y - 10), n })
+      }
+    }
+  }
 
   if (p) {
     p.wave.kills++; p.total.kills++

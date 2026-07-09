@@ -11,6 +11,15 @@ export interface OwnedWeapon {
   cdLeft: number
   orbitAngle: number
   hitMemo: Map<number, number>   // orbit/melee 對每隻怪的命中冷卻（enemyIdx → time）
+  // mech 執行期狀態
+  counter: number                // comboNova / critEvery 的擊發計數
+  heat: number                   // spinUp 熱度（0~max）
+  frenzyUntil: number            // frenzyKill 狂熱結束時間
+}
+
+/** 建立 OwnedWeapon（game.ts 開局與 shop.ts addWeapon 共用，避免欄位漏初始化） */
+export function newOwnedWeapon(data: WeaponData, orbitAngle = 0): OwnedWeapon {
+  return { data, level: 1, cdLeft: 0, orbitAngle, hitMemo: new Map(), counter: 0, heat: 0, frenzyUntil: 0 }
 }
 
 export interface Buffs {
@@ -117,6 +126,7 @@ export interface SEnemy {
   targetId: string | null
   splitChild: boolean
   burnDps: number; burnUntil: number
+  markedUntil: number; markMult: number   // 倒鉤鏢標記：期間內受到所有來源傷害 ×markMult
 }
 
 export interface SProjectile {
@@ -129,6 +139,12 @@ export interface SProjectile {
   explodeRadius: number
   slow: number; slowDur: number; freezeChance: number
   hitSet: Set<number>
+  // 武器 mech（split 子彈不繼承 mech，避免無限分裂）
+  mechId?: string
+  mechP?: Record<string, number>
+  initLeft: number                        // 出膛時的 left（rangeRamp/closeRamp 用）
+  bounces: number                         // wallBounce 剩餘反彈數
+  jumps: number                           // ricochet 剩餘彈射數
 }
 
 export interface SEnemyProj {
@@ -143,6 +159,12 @@ export interface SZone {
   kind: 'poison' | 'heal' | 'fire' | 'frost' | 'spike' | 'haze'
   hostile: boolean                        // 對玩家有害
   tick: number
+  // 武器 mech 分化（zone 四把四種玩法）
+  stack?: boolean                         // stackDot：毒素疊加（burnDps 累加而非取 max）
+  slowPct?: number; freeze?: number       // frostZone：圈內減速 + 每 tick 凍結機率
+  ramp?: number                           // rampZone：dps 每 0.5s 遞增比例
+  pulseKb?: number                        // pulseZone：每 tick 擊退力道
+  born?: number                           // rampZone 起算時間
 }
 
 export interface SMine {

@@ -1,12 +1,13 @@
 // 商店 + 升級三選一 + 寶箱 + 團隊獎勵（免費多選）。
 import {
-  CHARACTERS, WEAPONS, WEAPON_MAP, UPGRADES, UPGRADE_MAP, CHEST_REWARDS,
+  WEAPONS, WEAPON_MAP, UPGRADES, UPGRADE_MAP, CHEST_REWARDS,
   TEAM_REWARDS, ITEMS,
 } from '../../../shared/content/index'
 import { SHOP } from '../../../shared/balance'
 import { weightedR, intR, shuffleR } from '../../../shared/rng'
-import type { Rarity, ShopOffer, UpgradeData, ChestPending } from '../../../shared/types'
+import type { Rarity, ShopOffer, UpgradeData, ChestPending, WeaponData } from '../../../shared/types'
 import type { SPlayer } from './state'
+import { newOwnedWeapon } from './state'
 import type { Game } from './game'
 import { recomputeEffects, eff, maxWeapons } from './stats'
 import { healPlayer, addReviveShard } from './drops'
@@ -14,22 +15,40 @@ import { healPlayer, addReviveShard } from './drops'
 let offerSeq = 1
 const oid = () => `o${offerSeq++}`
 
-// 只作用於「射彈」武器的升級（穿透 +1 / 多管 +1）。判準用武器 behavior 而非 category——
-// 近戰類的長槍其實是 projectile、照樣吃穿透，所以只看角色專屬武器池裡有沒有 projectile 行為
-// 的武器。整池皆非射彈（純近戰/環繞/區域限定角色）者，這些升級無用，不進商店/升級/寶箱。
-const PROJECTILE_ONLY_UPGRADES = new Set(
-  UPGRADES.filter(u => u.statMods && ('pierce' in u.statMods || 'projectiles' in u.statMods)).map(u => u.id),
-)
-const CHARS_NO_PROJECTILE = new Set(
-  CHARACTERS.filter(c => !WEAPONS.some(w => w.charId === c.id && w.behavior === 'projectile')).map(c => c.id),
-)
+// 穿透/多管升級只在「目前持有能吃到的武器」時才上架（共用池時代不能再用角色判定）。
+const PIERCE_UPGRADES = new Set(UPGRADES.filter(u => u.statMods && 'pierce' in u.statMods).map(u => u.id))
+const MULTI_UPGRADES = new Set(UPGRADES.filter(u => u.statMods && 'projectiles' in u.statMods).map(u => u.id))
+
+// -------------------------------------------------------- 武器池（共用池 + 簽名武器 + 親和權重）
+
+/** 此玩家可取得的武器池：共用池 + 自己的簽名武器（排除進化型/已滿級） */
+function weaponPool(p: SPlayer): WeaponData[] {
+  return WEAPONS.filter(w => !w.evolvedForm && (!w.charId || w.charId === p.char.id)).filter(w => {
+    const owned = p.weapons.find(x => x.data.id === w.id)
+    return !owned || owned.level < w.maxLevel
+  })
+}
+
+/** 依角色親和 tag 加權抽武器：簽名武器與親和 tag 權重高，但任何武器都抽得到 */
+function pickWeaponWeighted(g: Game, p: SPlayer, pool: WeaponData[]): WeaponData | null {
+  if (!pool.length) return null
+  const aff = new Set(p.char.affinityTags ?? [])
+  const entries = pool.map(wd => ({
+    wd,
+    weight: 1 + (wd.charId ? 1.5 : 0)
+      + wd.tags.reduce((s, t) => s + (aff.has(t) ? 0.8 : 0), 0)
+      + (p.weapons.some(x => x.data.id === wd.id) ? 1.2 : 0),   // 已持有 → 容易再出現讓你升級
+  }))
+  return weightedR(g.rng, entries).wd
+}
 
 // -------------------------------------------------------- 資格判定
 
 function upgradeEligible(g: Game, p: SPlayer, u: UpgradeData): boolean {
   if ((p.upgrades.get(u.id) ?? 0) >= u.maxStacks) return false
   if (u.conflicts?.some(c => p.upgrades.has(c))) return false
-  if (PROJECTILE_ONLY_UPGRADES.has(u.id) && CHARS_NO_PROJECTILE.has(p.char.id)) return false
+  if (PIERCE_UPGRADES.has(u.id) && !p.weapons.some(w => w.data.behavior === 'projectile' || w.data.behavior === 'drone')) return false
+  if (MULTI_UPGRADES.has(u.id) && !p.weapons.some(w => ['projectile', 'drone', 'orbit'].includes(w.data.behavior))) return false
   if (u.category === 'coop' && g.playerCount === 1 && ['c_pos1', 'c_pos2', 'c_pos3', 'c_pos4', 'c_res1', 'c_res2', 'c_def3', 'c_def4', 'c_rescue3', 'c_rescue4'].includes(u.id)) return false
   for (const req of u.requirements ?? []) {
     if (req.startsWith('char:') && p.char.id !== req.slice(5)) return false
@@ -86,28 +105,53 @@ export function applyUpgrade(g: Game, p: SPlayer, upgradeId: string): void {
 
 // -------------------------------------------------------- 個人商店
 
+/** 商店價格倍率（波數上浮 × 折扣 × 詛咒背包） */
+function priceMultOf(g: Game, p: SPlayer): number {
+  return (1 + g.wave * SHOP.priceWaveGrowth)
+    * (1 - g.shopDiscountFor(p))
+    * (eff(p, 'curseBag') ? 1.25 : 1)
+}
+
+const weaponOfferPrice = (g: Game, p: SPlayer, w: WeaponData, ownedLevel: number, special: boolean) =>
+  Math.max(1, Math.round(w.price * priceMultOf(g, p) * (special ? 0.85 : 1) * (ownedLevel ? 1 + ownedLevel * 0.5 : 1)))
+
+/** 任何管道取得/升級武器後，同步未售出的同武器上架格（等級標示+價格；滿級直接下架）。
+ *  修掉「兩格同武器 Lv2/Lv2，買一格另一格不會變 Lv3」的舊 bug。 */
+export function syncWeaponOffers(g: Game, p: SPlayer): void {
+  for (const o of p.shopOffers) {
+    if (o.kind !== 'weapon' || o.sold) continue
+    const data = WEAPON_MAP.get(o.refId)
+    if (!data) continue
+    const owned = p.weapons.find(x => x.data.id === o.refId)
+    if (owned && owned.level >= data.maxLevel) { o.sold = true; continue }   // 滿級 → 這格作廢
+    const nextLevel = owned ? owned.level + 1 : 1   // 賣掉後也會回到 Lv1
+    if (o.weaponLevel !== nextLevel) {
+      o.weaponLevel = nextLevel
+      o.price = weaponOfferPrice(g, p, data, owned?.level ?? 0, g.routeMods.specialShop)
+      o.origPrice = undefined
+    }
+  }
+}
+
 export function generateShopOffers(g: Game, p: SPlayer): void {
   const kept = p.shopOffers.filter(o => o.locked && !o.sold)
   p.shopOffers = [...kept]
-  const priceMult = (1 + g.wave * SHOP.priceWaveGrowth)
-    * (1 - g.shopDiscountFor(p))
-    * (eff(p, 'curseBag') ? 1.25 : 1)
   const special = g.routeMods.specialShop
+  const priceMult = priceMultOf(g, p)
 
   while (p.shopOffers.length < SHOP.offers) {
     const roll = g.rng()
-    if (roll < 0.45) {   // 武器是角色核心，提高出現率讓玩家湊齊武器組
-      // 武器（進化型不進商店；已滿級的不再出現）
-      const pool = WEAPONS.filter(w => w.charId === p.char.id).filter(w => {
-        const owned = p.weapons.find(x => x.data.id === w.id)
-        return !owned || owned.level < w.maxLevel
-      }).filter(w => special || w.tier <= (g.wave < 5 ? 2 : 3))
-      if (pool.length) {
-        const w = pool[Math.floor(g.rng() * pool.length)]
+    if (roll < 0.45) {   // 武器是 build 核心，出現率高
+      // 共用池 + 簽名武器（親和 tag 加權）；同一把武器不重複上架
+      const pool = weaponPool(p)
+        .filter(w => special || w.tier <= (g.wave < 5 ? 2 : 3))
+        .filter(w => !p.shopOffers.some(o => o.kind === 'weapon' && o.refId === w.id && !o.sold))
+      const w = pickWeaponWeighted(g, p, pool)
+      if (w) {
         const owned = p.weapons.find(x => x.data.id === w.id)
         p.shopOffers.push({
           offerId: oid(), kind: 'weapon', refId: w.id,
-          price: Math.max(1, Math.round(w.price * priceMult * (special ? 0.85 : 1) * (owned ? 1 + owned.level * 0.5 : 1))),
+          price: weaponOfferPrice(g, p, w, owned?.level ?? 0, special),
           locked: false, sold: false,
           weaponLevel: owned ? owned.level + 1 : 1,
         })
@@ -156,17 +200,18 @@ export function buyOffer(g: Game, p: SPlayer, offerId: string): string | null {
   if (o.kind === 'weapon') {
     const err = addWeapon(g, p, o.refId)
     if (err) return err
+    syncWeaponOffers(g, p)
   } else if (o.kind === 'upgrade') {
     applyUpgrade(g, p, o.refId)
   } else if (o.kind === 'mystery') {
     const rareBox = o.refId === 'rare'
-    const pool = WEAPONS.filter(w => w.charId === p.char.id)
-      .filter(w => { const owned = p.weapons.find(x => x.data.id === w.id); return !owned || owned.level < w.maxLevel })
+    const pool = weaponPool(p)
     if (rareBox) {
       // ✨ 稀有福袋：必開好料 — 優先武器，否則稀有升級，否則大筆金幣
-      if (pool.length) {
-        const w = pool[Math.floor(g.rng() * pool.length)]
+      const w = pickWeaponWeighted(g, p, pool)
+      if (w) {
         addWeapon(g, p, w.id)
+        syncWeaponOffers(g, p)
         g.toastTo(p, `✨ 稀有福袋開出：${w.name}！`, 'good')
       } else {
         const u = pickUpgradeByRarity(g, p, g.rng() < 0.4 ? 'epic' : 'rare')
@@ -174,11 +219,12 @@ export function buyOffer(g: Game, p: SPlayer, offerId: string): string | null {
         else { const gold = 40 + g.wave * 4; p.gold += gold; g.toastTo(p, `✨ 稀有福袋開出：金幣 +${gold}！`, 'good') }
       }
     } else {
-      // 🎁 一般福袋：50% 隨機專屬武器、30% 隨機道具、20% 一筆金幣
+      // 🎁 一般福袋：50% 隨機武器、30% 隨機道具、20% 一筆金幣
       const r = g.rng()
-      if (r < 0.5 && pool.length) {
-        const w = pool[Math.floor(g.rng() * pool.length)]
+      const w = r < 0.5 ? pickWeaponWeighted(g, p, pool) : null
+      if (w) {
         addWeapon(g, p, w.id)
+        syncWeaponOffers(g, p)
         g.toastTo(p, `🎁 福袋開出：${w.name}！`, 'good')
       } else if (r < 0.8) {
         const it = weightedR(g.rng, ITEMS)
@@ -216,6 +262,7 @@ export function sellWeapon(g: Game, p: SPlayer, index: number): string | null {
   p.weapons.splice(index, 1)
   const refund = Math.round(w.data.price * (1 + (w.level - 1) * 0.5) * SHOP.sellPct)
   p.gold += refund
+  syncWeaponOffers(g, p)
   return null
 }
 
@@ -230,7 +277,7 @@ export function addWeapon(g: Game, p: SPlayer, weaponId: string): string | null 
     return null
   }
   if (p.weapons.length >= maxWeapons(p)) return '武器欄已滿（可先賣掉一把）'
-  p.weapons.push({ data, level: 1, cdLeft: 0, orbitAngle: g.rng() * Math.PI * 2, hitMemo: new Map() })
+  p.weapons.push(newOwnedWeapon(data, g.rng() * Math.PI * 2))
   return null
 }
 
@@ -249,9 +296,11 @@ export function checkEvolutions(g: Game, p: SPlayer): boolean {
     w.level = 1
     w.cdLeft = 0
     w.hitMemo = new Map()
+    w.counter = 0; w.heat = 0; w.frenzyUntil = 0
     g.broadcastToast(`✨ ${p.name} 的武器進化 → ${into.name}！`, 'good')
     changed = true
   }
+  if (changed) syncWeaponOffers(g, p)
   return changed
 }
 
@@ -274,9 +323,8 @@ export function rollChestOptions(g: Game, p: SPlayer): ChestPending['options'] {
           break
         }
         case 'weapon': {
-          const pool = WEAPONS.filter(x => x.charId === p.char.id)
-          if (!pool.length) continue
-          const w = pool[Math.floor(g.rng() * pool.length)]
+          const w = pickWeaponWeighted(g, p, weaponPool(p))
+          if (!w) continue
           opts.push({ rewardId: cr.id, detail: `武器：${w.name}`, refId: w.id })
           break
         }
@@ -314,6 +362,7 @@ export function applyChestChoice(g: Game, p: SPlayer, chestId: string, rewardId:
     case 'cr_weapon': {
       const err = addWeapon(g, p, opt.refId!)
       if (err) { p.gold += 15; g.toastTo(p, `武器欄已滿，折抵 15 金幣`) }
+      else syncWeaponOffers(g, p)
       break
     }
     case 'cr_upgrade': case 'cr_curse': applyUpgrade(g, p, opt.refId!); break
@@ -359,6 +408,7 @@ export function applyTeamReward(g: Game, id: string): void {
         const ws = p.weapons.filter(w => w.level < w.data.maxLevel)
         const w = ws[Math.floor(g.rng() * ws.length)]
         w.level++
+        syncWeaponOffers(g, p)
         g.broadcastToast(`${p.name} 的 ${w.data.name} 升到 Lv.${w.level}！`, 'good')
       }
       break

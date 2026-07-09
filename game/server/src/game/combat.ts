@@ -1,8 +1,10 @@
-// 玩家武器行為模擬：9 種 behavior 一次寫好，之後加武器基本只加資料。
+// 玩家武器行為模擬：9 種 behavior + 武器專屬 mech hook。加武器基本只加資料；
+// 加機制 = 在這裡（或 enemies.ts 的擊殺類）寫一次 hook。
 // 命中結果全部在 server 判定；client 只畫視覺投射物。
 import { weaponStatsAt } from '../../../shared/content/index'
+import { ARENA } from '../../../shared/balance'
 import type { WeaponStats } from '../../../shared/types'
-import type { SPlayer, OwnedWeapon, SProjectile } from './state'
+import type { SPlayer, OwnedWeapon, SProjectile, SEnemy } from './state'
 import type { Game } from './game'
 import { dist2, norm, clampArena } from './util'
 import { damageEnemyImpl } from './enemies'
@@ -17,7 +19,12 @@ export function weaponsTick(g: Game, dt: number): void {
     if (!p.connected || p.status !== 'alive') continue
     const atkSpd = attackSpeedOf(g, p)
     for (const w of p.weapons) {
-      w.cdLeft -= dt * atkSpd
+      let cdTick = dt * atkSpd
+      // frenzyKill：擊殺後短暫狂熱攻速（飛刀）
+      if (w.frenzyUntil > g.time) cdTick *= 1 + (w.data.mech?.params?.atk ?? 0.5)
+      w.cdLeft -= cdTick
+      // spinUp：停火時熱度慢慢冷卻（加特林）
+      if (w.data.mech?.id === 'spinUp' && w.heat > 0) w.heat = Math.max(0, w.heat - dt * 0.2)
       const st = effectiveStats(g, p, w)
       switch (w.data.behavior) {
         case 'projectile': fireProjectile(g, p, w, st); break
@@ -65,11 +72,13 @@ function effectiveStats(g: Game, p: SPlayer, w: OwnedWeapon): WeaponStats {
   // 投射物加成
   st.projectileCount += p.stats.projectiles
   st.pierce += p.stats.pierce
+  // spinUp：熱度提高攻速（縮短冷卻）
+  if (w.data.mech?.id === 'spinUp' && w.heat > 0) st.cooldown /= 1 + w.heat
   return st
 }
 
-/** 傷害合成（含站位合作加成/暴擊） */
-export function rollDamage(g: Game, p: SPlayer, base: number, critMod = 1): { dmg: number; crit: boolean } {
+/** 傷害合成（含站位合作加成/暴擊）；forceCrit = critEvery 之類的必暴機制 */
+export function rollDamage(g: Game, p: SPlayer, base: number, critMod = 1, forceCrit = false): { dmg: number; crit: boolean } {
   let mult = p.stats.damage
   if (eff(p, 'nearAllyDamage')) {
     for (const q of g.players.values()) {
@@ -79,10 +88,87 @@ export function rollDamage(g: Game, p: SPlayer, base: number, critMod = 1): { dm
       }
     }
   }
-  const crit = g.rng() < p.stats.critChance * critMod
+  const crit = forceCrit || g.rng() < p.stats.critChance * critMod
   if (crit) mult *= p.stats.critDamage
   else if (eff(p, 'curseEdge')) mult *= 0.8
   return { dmg: base * mult, crit }
+}
+
+// -------------------------------------------------------- 武器 mech hook
+
+/** 命中前傷害倍率類 mech（依目標狀態）：處決 / 碎殼重壓 / 一之太刀 */
+function enemyMechMult(mechId: string | undefined, prm: Record<string, number>, e: SEnemy): number {
+  if (mechId === 'execute' && e.hp / e.maxHp < (prm.below ?? 0.3)) return prm.mult ?? 2
+  if (mechId === 'bossKiller' && e.elite) return prm.mult ?? 1.5
+  if (mechId === 'firstStrike' && e.hp >= e.maxHp) return prm.mult ?? 1.6
+  return 1
+}
+
+/** 命中後效果類 mech：標記/流血點燃/混亂/暈眩/吸血/荊棘護盾/孢子雲/分裂 */
+function onHitMech(
+  g: Game, ownerId: string, weaponId: string,
+  mechId: string | undefined, prm: Record<string, number>,
+  e: SEnemy, dealt: number, crit: boolean,
+): void {
+  if (!mechId) return
+  const p = g.players.get(ownerId)
+  if (!p) return
+  switch (mechId) {
+    case 'markHit':
+      if (e.hp > 0) { e.markedUntil = g.time + (prm.dur ?? 3); e.markMult = Math.max(e.markMult, prm.mult ?? 1.15) }
+      break
+    case 'dotHit':
+      if (e.hp > 0) {
+        e.burnDps = Math.max(e.burnDps, dealt * (prm.pct ?? 0.3))
+        e.burnUntil = Math.max(e.burnUntil, g.time + (prm.dur ?? 3))
+      }
+      break
+    case 'confuseHit':
+      if (e.hp > 0 && g.rng() < (prm.chance ?? 0.2)) {
+        e.confusedUntil = Math.max(e.confusedUntil, g.time + (e.elite ? (prm.dur ?? 1.5) / 2 : (prm.dur ?? 1.5)))
+      }
+      break
+    case 'stunHit':
+      if (e.hp > 0 && g.rng() < (prm.chance ?? 0.3)) {
+        if (e.elite) { e.slowUntil = g.time + (prm.dur ?? 0.6); e.slowPct = Math.max(e.slowPct, 0.5) }
+        else e.frozenUntil = g.time + (prm.dur ?? 0.6)
+      }
+      break
+    case 'lifesteal':
+      if (dealt > 0) healPlayer(g, p, dealt * (prm.pct ?? 0.12))
+      break
+    case 'thornShield':
+      if (p.shield < (prm.cap ?? 20)) p.shield = Math.min(prm.cap ?? 20, p.shield + (prm.amount ?? 0.5))
+      break
+    case 'sporeCloud':
+      if (g.rng() < (prm.chance ?? 0.25)) {
+        g.zones.push({ x: e.x, y: e.y, radius: prm.radius ?? 75, dps: 0, hps: 0, until: g.time + (prm.dur ?? 1.5), ownerId, kind: 'haze', hostile: false, tick: 0 })
+        g.ev({ t: 'aoe', x: Math.round(e.x), y: Math.round(e.y), r: prm.radius ?? 75, kind: 'haze' })
+      }
+      break
+    case 'splitOnHit':
+      if (g.rng() < (prm.chance ?? 0.3)) spawnSplinters(g, ownerId, weaponId, e.x, e.y, prm.count ?? 2, dealt * (prm.pct ?? 0.5), e.i)
+      break
+    case 'splitOnCrit':
+      if (crit) spawnSplinters(g, ownerId, weaponId, e.x, e.y, prm.count ?? 2, dealt * (prm.pct ?? 0.5), e.i)
+      break
+  }
+}
+
+/** 分裂小彈（splitOnHit / splitOnCrit；不繼承 mech → 不會連鎖分裂） */
+function spawnSplinters(g: Game, ownerId: string, weaponId: string, x: number, y: number, count: number, dmg: number, excludeIdx: number): void {
+  const baseAng = g.rng() * Math.PI * 2
+  for (let k = 0; k < count; k++) {
+    const ang = baseAng + (k / count) * Math.PI * 2
+    g.projectiles.push({
+      x, y, vx: Math.cos(ang) * 440, vy: Math.sin(ang) * 440,
+      damage: Math.max(1, dmg), pierce: 0, knockback: 15,
+      left: 170, initLeft: 170, ownerId, weaponId, crit: false,
+      explodeRadius: 0, slow: 0, slowDur: 0, freezeChance: 0,
+      hitSet: new Set([excludeIdx]), bounces: 0, jumps: 0,
+    })
+  }
+  g.ev({ t: 'shoot', id: ownerId, w: weaponId, x: Math.round(x), y: Math.round(y), tx: Math.round(x), ty: Math.round(y - 10), n: count })
 }
 
 function nearestEnemy(g: Game, x: number, y: number, range: number): { e: typeof g.enemies[number]; d2: number } | null {
@@ -92,6 +178,18 @@ function nearestEnemy(g: Game, x: number, y: number, range: number): { e: typeof
     if (e.hp <= 0) continue
     const d2 = dist2(x, y, e.x, e.y)
     if (d2 < r2 && (!best || d2 < best.d2)) best = { e, d2 }
+  }
+  return best
+}
+
+/** ricochet 用：最近的「還沒被這顆子彈打過」的敵人 */
+function nearestEnemyExcluding(g: Game, x: number, y: number, range: number, exclude: Set<number>): SEnemy | null {
+  let best: SEnemy | null = null
+  let bd = range * range
+  for (const e of g.enemies) {
+    if (e.hp <= 0 || exclude.has(e.i)) continue
+    const d2 = dist2(x, y, e.x, e.y)
+    if (d2 < bd) { bd = d2; best = e }
   }
   return best
 }
@@ -140,21 +238,33 @@ function fireDrone(g: Game, p: SPlayer, w: OwnedWeapon, st: WeaponStats, dt: num
 function spawnVolley(g: Game, p: SPlayer, w: OwnedWeapon, st: WeaponStats, fx: number, fy: number, tx: number, ty: number): void {
   const n = Math.max(1, Math.round(st.projectileCount))
   g.ev({ t: 'shoot', id: p.id, w: w.data.id, x: Math.round(fx), y: Math.round(fy), tx: Math.round(tx), ty: Math.round(ty), n })
+  const mech = w.data.mech
+  const prm = mech?.params ?? {}
+  // volley 級 mech：骰子傷害 / 每第 N 發必暴 / 加特林熱度
+  let volleyMult = 1
+  let forceCrit = false
+  if (mech?.id === 'diceDamage') volleyMult = (prm.min ?? 0.4) + g.rng() * ((prm.max ?? 2.5) - (prm.min ?? 0.4))
+  if (mech?.id === 'critEvery') { w.counter++; if (w.counter % (prm.n ?? 5) === 0) forceCrit = true }
+  if (mech?.id === 'spinUp') w.heat = Math.min(prm.max ?? 0.6, w.heat + (prm.ramp ?? 0.05))
   const [nx, ny] = norm(tx - fx, ty - fy)
   const baseAng = Math.atan2(ny, nx)
   const spread = n > 1 ? 0.16 : 0
   for (let k = 0; k < n; k++) {
     const ang = baseAng + (k - (n - 1) / 2) * spread
-    const { dmg, crit } = rollDamage(g, p, st.damage, w.data.critModifier ?? 1)
+    const { dmg, crit } = rollDamage(g, p, st.damage * volleyMult, w.data.critModifier ?? 1, forceCrit)
     const proj: SProjectile = {
       x: fx, y: fy,
       vx: Math.cos(ang) * (st.speed ?? 480), vy: Math.sin(ang) * (st.speed ?? 480),
       damage: dmg, pierce: st.pierce, knockback: st.knockback,
-      left: st.range * 1.25, ownerId: p.id, weaponId: w.data.id, crit,
+      left: st.range * 1.25, initLeft: st.range * 1.25,
+      ownerId: p.id, weaponId: w.data.id, crit,
       explodeRadius: w.data.specialEffect === 'explode' ? (st.radius ?? 0) : 0,
       slow: st.slow ?? 0, slowDur: st.duration ?? 2,
       freezeChance: st.freezeChance ?? 0,
       hitSet: new Set(),
+      mechId: mech?.id, mechP: mech?.params,
+      bounces: mech?.id === 'wallBounce' ? (prm.bounces ?? 2) : 0,
+      jumps: mech?.id === 'ricochet' ? (prm.jumps ?? 2) : 0,
     }
     g.projectiles.push(proj)
   }
@@ -174,9 +284,10 @@ function tickOrbit(g: Game, p: SPlayer, w: OwnedWeapon, st: WeaponStats, dt: num
       const last = w.hitMemo.get(e.i) ?? -99
       if (now - last < st.cooldown) continue
       w.hitMemo.set(e.i, now)
-      const { dmg, crit } = rollDamage(g, p, st.damage)
+      const { dmg, crit } = rollDamage(g, p, st.damage, w.data.critModifier ?? 1)
       const [kx, ky] = norm(e.x - p.x, e.y - p.y)
-      damageEnemyImpl(g, e, dmg * meleeMult(p), { ownerId: p.id, crit, knockX: kx * st.knockback, knockY: ky * st.knockback, srcX: p.x, srcY: p.y })
+      const dealt = damageEnemyImpl(g, e, dmg * meleeMult(p), { ownerId: p.id, crit, knockX: kx * st.knockback, knockY: ky * st.knockback, srcX: p.x, srcY: p.y, weaponId: w.data.id })
+      onHitMech(g, p.id, w.data.id, w.data.mech?.id, w.data.mech?.params ?? {}, e, dealt, crit)
     }
   }
   // 環繞刀刃拆箱（memo key 用 objective 的全域唯一 id，不會撞怪物 id）
@@ -215,20 +326,37 @@ const meleeMult = (p: SPlayer) => p.char.passive.effect === 'meleeBoostRescueShi
 
 function fireMelee(g: Game, p: SPlayer, w: OwnedWeapon, st: WeaponStats): void {
   if (w.cdLeft > 0) return
-  const r = st.radius ?? 110
+  let r = st.radius ?? 110
   const tgt = nearestTargetPos(g, p.x, p.y, r)
   if (!tgt) { w.cdLeft = 0.08; return }
   w.cdLeft = st.cooldown
+  const mech = w.data.mech
+  const prm = mech?.params ?? {}
+  let swingMult = 1
+  // comboNova：每第 N 擊蓄力橫掃（範圍/傷害放大）
+  if (mech?.id === 'comboNova') {
+    w.counter++
+    if (w.counter % (prm.every ?? 3) === 0) { r *= prm.radiusMult ?? 1.6; swingMult *= prm.dmgMult ?? 1.5 }
+  }
+  const hits = g.enemies.filter(e => e.hp > 0 && dist2(p.x, p.y, e.x, e.y) <= (r + e.radius) ** 2)
+  // crowdBonus：掃到越多越痛
+  if (mech?.id === 'crowdBonus' && hits.length > 1) {
+    swingMult *= 1 + Math.min(prm.cap ?? 0.8, (prm.per ?? 0.08) * (hits.length - 1))
+  }
   g.ev({ t: 'aoe', x: Math.round(p.x), y: Math.round(p.y), r, kind: 'swing', w: w.data.id, id: p.id })
-  for (const e of g.enemies) {
-    if (e.hp <= 0 || dist2(p.x, p.y, e.x, e.y) > (r + e.radius) ** 2) continue
-    const { dmg, crit } = rollDamage(g, p, st.damage)
+  for (const e of hits) {
+    if (e.hp <= 0) continue
+    const { dmg, crit } = rollDamage(g, p, st.damage * swingMult)
     const [kx, ky] = norm(e.x - p.x, e.y - p.y)
-    damageEnemyImpl(g, e, dmg * meleeMult(p), { ownerId: p.id, crit, knockX: kx * st.knockback, knockY: ky * st.knockback, srcX: p.x, srcY: p.y })
+    const dealt = damageEnemyImpl(g, e, dmg * meleeMult(p) * enemyMechMult(mech?.id, prm, e), {
+      ownerId: p.id, crit, knockX: kx * st.knockback, knockY: ky * st.knockback, srcX: p.x, srcY: p.y, weaponId: w.data.id,
+    })
+    onHitMech(g, p.id, w.data.id, mech?.id, prm, e, dealt, crit)
   }
   if (tryHitBoss(g, p.x, p.y, r)) {
-    const { dmg } = rollDamage(g, p, st.damage)
-    damageBoss(g, dmg * meleeMult(p), p.id, p.x, p.y)
+    const { dmg } = rollDamage(g, p, st.damage * swingMult)
+    const bossMult = mech?.id === 'bossKiller' ? (prm.mult ?? 1.5) : 1
+    damageBoss(g, dmg * meleeMult(p) * bossMult, p.id, p.x, p.y)
   }
   // 近戰掄擊也拆箱
   for (const o of destructibles(g)) {
@@ -338,22 +466,55 @@ function fireZone(g: Game, p: SPlayer, w: OwnedWeapon, st: WeaponStats): void {
   if (!tgt) { w.cdLeft = 0.08; return }
   w.cdLeft = st.cooldown
   const { dmg } = rollDamage(g, p, st.burn ?? 6)
+  const mech = w.data.mech
+  const prm = mech?.params ?? {}
+  // zone 四把四種玩法：疊毒 / 冰霜凍結 / 雷射遞增 / 地刺脈衝
+  const kind = mech?.id === 'frostZone' ? 'frost' as const
+    : mech?.id === 'rampZone' ? 'fire' as const
+    : mech?.id === 'pulseZone' ? 'spike' as const
+    : 'poison' as const
   g.zones.push({
     x: tgt.e.x, y: tgt.e.y, radius: st.radius ?? 110,
     dps: dmg, hps: 0, until: g.time + (st.duration ?? 4),
-    ownerId: p.id, kind: 'poison', hostile: false, tick: 0,
+    ownerId: p.id, kind, hostile: false, tick: 0,
+    stack: mech?.id === 'stackDot' || undefined,
+    slowPct: mech?.id === 'frostZone' ? (prm.slow ?? 0.5) : undefined,
+    freeze: mech?.id === 'frostZone' ? (prm.freeze ?? 0.06) : undefined,
+    ramp: mech?.id === 'rampZone' ? (prm.per ?? 0.18) : undefined,
+    pulseKb: mech?.id === 'pulseZone' ? (prm.kb ?? 180) : undefined,
+    born: g.time,
   })
-  g.ev({ t: 'aoe', x: Math.round(tgt.e.x), y: Math.round(tgt.e.y), r: st.radius ?? 110, kind: 'poison' })
+  g.ev({ t: 'aoe', x: Math.round(tgt.e.x), y: Math.round(tgt.e.y), r: st.radius ?? 110, kind })
 }
 
 // -------------------------------------------------------- 投射物 / 地雷 / 砲塔 / 區域
 
 function projectilesTick(g: Game, dt: number): void {
   for (const pr of g.projectiles) {
+    // homing：朝最近敵人小幅轉向（轉速受 turn 參數限制）
+    if (pr.mechId === 'homing') {
+      const tgt = nearestEnemy(g, pr.x, pr.y, 260)
+      if (tgt) {
+        const sp = Math.hypot(pr.vx, pr.vy)
+        const cur = Math.atan2(pr.vy, pr.vx)
+        const want = Math.atan2(tgt.e.y - pr.y, tgt.e.x - pr.x)
+        let diff = want - cur
+        while (diff > Math.PI) diff -= Math.PI * 2
+        while (diff < -Math.PI) diff += Math.PI * 2
+        const maxTurn = (pr.mechP?.turn ?? 5) * dt
+        const ang = cur + Math.max(-maxTurn, Math.min(maxTurn, diff))
+        pr.vx = Math.cos(ang) * sp; pr.vy = Math.sin(ang) * sp
+      }
+    }
     pr.x += pr.vx * dt
     pr.y += pr.vy * dt
     pr.left -= Math.hypot(pr.vx, pr.vy) * dt
     if (pr.left <= 0) continue
+    // wallBounce：碰場邊反彈
+    if (pr.bounces > 0) {
+      if ((pr.x < 8 && pr.vx < 0) || (pr.x > ARENA.w - 8 && pr.vx > 0)) { pr.vx = -pr.vx; pr.bounces-- }
+      if ((pr.y < 8 && pr.vy < 0) || (pr.y > ARENA.h - 8 && pr.vy > 0)) { pr.vy = -pr.vy; pr.bounces-- }
+    }
     for (const e of g.enemies) {
       if (e.hp <= 0 || pr.hitSet.has(e.i)) continue
       if (dist2(pr.x, pr.y, e.x, e.y) > (e.radius + 10) ** 2) continue
@@ -363,12 +524,29 @@ function projectilesTick(g: Game, dt: number): void {
         g.ev({ t: 'aoe', x: Math.round(pr.x), y: Math.round(pr.y), r: pr.explodeRadius, kind: 'explosion' })
         for (const o of g.enemies) {
           if (o.hp <= 0 || dist2(o.x, o.y, pr.x, pr.y) > (pr.explodeRadius + o.radius) ** 2) continue
-          damageEnemyImpl(g, o, pr.damage, { ownerId: pr.ownerId, crit: pr.crit, knockX: kx * pr.knockback, knockY: ky * pr.knockback, srcX: pr.x, srcY: pr.y })
+          damageEnemyImpl(g, o, pr.damage, { ownerId: pr.ownerId, crit: pr.crit, knockX: kx * pr.knockback, knockY: ky * pr.knockback, srcX: pr.x, srcY: pr.y, weaponId: pr.weaponId })
+        }
+        // burnGround：爆炸點留下燃燒區（火球）
+        if (pr.mechId === 'burnGround') {
+          const prm = pr.mechP ?? {}
+          g.zones.push({
+            x: pr.x, y: pr.y, radius: pr.explodeRadius * 0.85,
+            dps: Math.max(2, pr.damage * (prm.pct ?? 0.35)), hps: 0,
+            until: g.time + (prm.dur ?? 2), ownerId: pr.ownerId, kind: 'fire', hostile: false, tick: 0,
+          })
         }
         pr.left = 0
         break
       }
-      damageEnemyImpl(g, e, pr.damage, { ownerId: pr.ownerId, crit: pr.crit, knockX: kx * pr.knockback, knockY: ky * pr.knockback, srcX: pr.x, srcY: pr.y })
+      // 飛行距離/穿透數傷害調整：狙擊(越遠越痛) / 霰彈(越近越痛) / 氣功波(每穿一個 +12%)
+      let hitDmg = pr.damage
+      const mp = pr.mechP ?? {}
+      if (pr.mechId === 'rangeRamp' && pr.initLeft > 0) hitDmg *= 1 + (mp.max ?? 1) * Math.min(1, Math.max(0, 1 - pr.left / pr.initLeft))
+      if (pr.mechId === 'closeRamp' && pr.initLeft > 0) hitDmg *= 1 + (mp.max ?? 0.8) * Math.max(0, Math.min(1, pr.left / pr.initLeft))
+      if (pr.mechId === 'pierceRamp') hitDmg *= 1 + (mp.per ?? 0.12) * Math.max(0, pr.hitSet.size - 1)
+      hitDmg *= enemyMechMult(pr.mechId, mp, e)
+      const dealt = damageEnemyImpl(g, e, hitDmg, { ownerId: pr.ownerId, crit: pr.crit, knockX: kx * pr.knockback, knockY: ky * pr.knockback, srcX: pr.x, srcY: pr.y, weaponId: pr.weaponId })
+      onHitMech(g, pr.ownerId, pr.weaponId, pr.mechId, mp, e, dealt, pr.crit)
       if (pr.slow > 0) { e.slowUntil = g.time + pr.slowDur; e.slowPct = Math.max(e.slowPct, pr.slow) }
       // 菁英不被冰凍定身（改為重度緩速），才「被打不會停止」
       if (pr.freezeChance > 0 && g.rng() < pr.freezeChance) {
@@ -385,12 +563,39 @@ function projectilesTick(g: Game, dt: number): void {
         e.confusedUntil = Math.max(e.confusedUntil, g.time + (e.elite ? 1 : 2))
       }
       pr.pierce--
-      if (pr.pierce < 0) { pr.left = 0; break }
+      if (pr.pierce < 0) {
+        // ricochet：穿透耗盡時彈射到最近的未命中敵人（苦無）
+        if (pr.jumps > 0) {
+          const nxt = nearestEnemyExcluding(g, pr.x, pr.y, 260, pr.hitSet)
+          if (nxt) {
+            pr.jumps--
+            pr.pierce = 0
+            const sp = Math.hypot(pr.vx, pr.vy)
+            const [dx, dy] = norm(nxt.x - pr.x, nxt.y - pr.y)
+            pr.vx = dx * sp; pr.vy = dy * sp
+            pr.left = Math.max(pr.left, 320)
+            break
+          }
+        }
+        pr.left = 0
+        break
+      }
     }
     // 打 Boss
     if (pr.left > 0 && tryHitBoss(g, pr.x, pr.y, 10)) {
       if (pr.explodeRadius > 0) g.ev({ t: 'aoe', x: Math.round(pr.x), y: Math.round(pr.y), r: pr.explodeRadius, kind: 'explosion' })
-      damageBoss(g, pr.damage, pr.ownerId, pr.x, pr.y)
+      let bossDmg = pr.damage
+      const mp = pr.mechP ?? {}
+      if (pr.mechId === 'bossKiller') bossDmg *= mp.mult ?? 1.5
+      if (pr.mechId === 'rangeRamp' && pr.initLeft > 0) bossDmg *= 1 + (mp.max ?? 1) * Math.min(1, Math.max(0, 1 - pr.left / pr.initLeft))
+      if (pr.mechId === 'closeRamp' && pr.initLeft > 0) bossDmg *= 1 + (mp.max ?? 0.8) * Math.max(0, Math.min(1, pr.left / pr.initLeft))
+      if (pr.mechId === 'pierceRamp') bossDmg *= 1 + (mp.per ?? 0.12) * pr.hitSet.size
+      damageBoss(g, bossDmg, pr.ownerId, pr.x, pr.y)
+      // 吸血對 Boss 也有效
+      if (pr.mechId === 'lifesteal') {
+        const p = g.players.get(pr.ownerId)
+        if (p) healPlayer(g, p, bossDmg * ((mp.pct ?? 0.12)))
+      }
       pr.left = 0
     }
     // 打可破壞地圖物件
@@ -426,7 +631,7 @@ function minesTick(g: Game, dt: number): void {
         if (o.hp <= 0 || dist2(o.x, o.y, m.x, m.y) > (m.radius + o.radius) ** 2) continue
         const { dmg, crit } = p ? rollDamage(g, p, m.damage) : { dmg: m.damage, crit: false }
         const [kx, ky] = norm(o.x - m.x, o.y - m.y)
-        damageEnemyImpl(g, o, dmg, { ownerId: m.ownerId, crit, knockX: kx * 120, knockY: ky * 120, srcX: m.x, srcY: m.y })
+        damageEnemyImpl(g, o, dmg, { ownerId: m.ownerId, crit, knockX: kx * 120, knockY: ky * 120, srcX: m.x, srcY: m.y, weaponId: m.weaponId })
       }
       m.until = -1
       break
@@ -501,11 +706,34 @@ function zonesTick(g: Game, dt: number): void {
           if (p.status === 'alive' && dist2(p.x, p.y, z.x, z.y) < z.radius * z.radius) healPlayer(g, p, z.hps * 0.5)
         }
       }
-      if (z.dps > 0) {
+      if (z.dps > 0 || z.slowPct || z.freeze || z.pulseKb) {
+        // rampZone：存在越久 dps 越高（雷射柵欄）
+        const rampMult = z.ramp ? 1 + z.ramp * Math.floor((g.time - (z.born ?? g.time)) / 0.5) : 1
         for (const e of g.enemies) {
           if (e.hp <= 0 || dist2(e.x, e.y, z.x, z.y) > (z.radius + e.radius) ** 2) continue
-          e.burnDps = Math.max(e.burnDps, z.dps)
-          e.burnUntil = Math.max(e.burnUntil, g.time + 1)
+          if (z.dps > 0) {
+            if (z.stack) {
+              // stackDot：毒素疊加（上限 3 倍）
+              e.burnDps = Math.min(e.burnDps + z.dps * 0.35, z.dps * 3)
+              e.burnUntil = Math.max(e.burnUntil, g.time + 1.5)
+            } else {
+              e.burnDps = Math.max(e.burnDps, z.dps * rampMult)
+              e.burnUntil = Math.max(e.burnUntil, g.time + 1)
+            }
+          }
+          // frostZone：圈內重度減速 + 機率凍結
+          if (z.slowPct) { e.slowUntil = g.time + 0.6; e.slowPct = Math.max(e.slowPct, z.slowPct) }
+          if (z.freeze && g.rng() < z.freeze) {
+            if (e.elite) { e.slowUntil = g.time + 0.8; e.slowPct = Math.max(e.slowPct, 0.5) }
+            else e.frozenUntil = g.time + 0.8
+          }
+          // pulseZone：每次脈衝把敵人往外彈（地刺柱）
+          if (z.pulseKb && !e.elite) {
+            const [kx, ky] = norm(e.x - z.x, e.y - z.y)
+            const resist = e.data.tier === 3 ? 0.3 : e.data.tier === 2 ? 0.6 : 1
+            e.kbVx += kx * z.pulseKb * resist
+            e.kbVy += ky * z.pulseKb * resist
+          }
         }
       }
     }
