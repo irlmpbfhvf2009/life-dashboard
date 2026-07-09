@@ -872,9 +872,17 @@ function orbGlow(g: Ctx, s: number, col: string, r = 0.3): void {
   ellipse(g, -s * r * 0.35, -s * r * 0.35, s * r * 0.28, s * r * 0.28); g.fill()
 }
 
+/** 進化武器 → 沿用基底武器的形狀繪製（色盤仍取進化武器自己的，呈現金色質感） */
+const ART_ALIAS: Record<string, string> = {
+  w_excal: 'w_sword', g_magnum: 'pea_gun', m_sanctuary: 'heal_orb', e_bastion: 'turret_gun',
+  y_avalanche: 'ice_shard', t_jackpot: 't_dice', a_phantom: 'knife', s_zantetsu: 's_iai',
+  c_colossus: 'c_gauntlet', k_hundred: 'k_fist', d_storm: 'd_thornshot', h_dream: 'h_spore',
+}
+
 /** 武器圖示（size = 直徑基準；t 供旋轉/閃爍動畫）。 */
 export function drawWeaponIcon(g: Ctx, weaponId: string, size: number, t: number): void {
   const [col, acc] = WEAPON_MAP.get(weaponId)?.palette ?? ['#cfd8dc', '#78909c']
+  weaponId = ART_ALIAS[weaponId] ?? weaponId
   const s = size
   g.save()
   switch (weaponId) {
@@ -1278,6 +1286,7 @@ function drawProp(g: Ctx, kind: string, s: number): void {
 /** 貼身武器視覺：環繞刀刃（迴旋斧）— 圍著玩家轉的斧刃 */
 export function drawOrbitWeapon(g: Ctx, weaponId: string, radius: number, count: number, t: number): void {
   const [body, accent] = WEAPON_MAP.get(weaponId)?.palette ?? ['#ff9f43', '#b0682a']
+  weaponId = ART_ALIAS[weaponId] ?? weaponId
   const spin = t * 3.2
   for (let k = 0; k < count; k++) {
     const ang = spin + (k / count) * Math.PI * 2
@@ -1326,6 +1335,7 @@ export function drawOrbitWeapon(g: Ctx, weaponId: string, radius: number, count:
 /** 握持的近戰武器（behavior='melee'）：畫在角色身邊，刀尖朝上(-y)，柄在下(+y) */
 export function drawMeleeHeld(g: Ctx, weaponId: string, t: number): void {
   const [body, accent] = WEAPON_MAP.get(weaponId)?.palette ?? ['#cfd8dc', '#8d99a6']
+  weaponId = ART_ALIAS[weaponId] ?? weaponId
   const sway = Math.sin(t * 3) * 0.12
   g.rotate(sway)
   switch (weaponId) {
@@ -1417,6 +1427,7 @@ export function drawTurret(g: Ctx, t: number, guard = false): void {
 /** 武器投射物（客戶端純視覺） */
 export function drawProjectile(g: Ctx, weaponId: string, t: number): void {
   // 投射物已被 render 旋轉成「朝上(-y)＝前進方向」
+  weaponId = ART_ALIAS[weaponId] ?? weaponId
   switch (weaponId) {
     // ---- 槍械子彈 ----
     case 'pea_gun': case 'g_smg': case 'g_minigun': {

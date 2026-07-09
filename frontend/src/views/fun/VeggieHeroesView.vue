@@ -218,6 +218,9 @@ const WEAPON_EMOJI: Record<string, string> = {
   d_thornshot: '📌', d_spikefan: '🎇', d_caltrop: '✳️', d_spikeorbit: '🌟', d_barb: '🔱',
   // 迷幻大麻
   h_spore: '🍄', h_pollen: '🌼', h_smoke: '💨', h_mirage: '🍃', h_haze: '🔮',
+  // 進化武器
+  w_excal: '🌅', g_magnum: '✨', m_sanctuary: '💖', e_bastion: '🏰', y_avalanche: '🌨️', t_jackpot: '🎰',
+  a_phantom: '👻', s_zantetsu: '⚡', c_colossus: '🦾', k_hundred: '💥', d_storm: '🌪️', h_dream: '🌙',
 }
 const SKILL_EMOJI: Record<string, string> = {
   charge: '💨', bulwark: '🛡️', thornsNova: '🌵', rapidfire: '🔥',
