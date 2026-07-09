@@ -1183,9 +1183,28 @@ const bestWaves = computed(() => ({
             <p v-for="r in gs.inter.settlement.rewards" :key="r" class="text-xs text-amber-200">🎁 {{ r }}</p>
             <div class="mt-2 space-y-1 text-left text-[11px]">
               <div v-for="(st, pid) in gs.inter.settlement.perPlayer" :key="pid" class="flex justify-between rounded bg-white/5 px-2 py-1">
-                <span class="font-bold" :class="pid === gs.playerId ? 'text-amber-300' : 'text-white/70'">{{ playerName2(String(pid)) }}</span>
-                <span class="text-white/50">擊殺{{ st.kills }} · 傷害{{ fmtNum(st.dmg) }} · 受傷{{ fmtNum(st.dmgTaken) }} · 救{{ st.rescues }}</span>
+                <span class="shrink-0 font-bold" :class="pid === gs.playerId ? 'text-amber-300' : 'text-white/70'">{{ playerName2(String(pid)) }}{{ pid === gs.playerId ? '（你）' : '' }}</span>
+                <span class="text-right text-white/50">擊殺{{ st.kills }} · 傷害{{ fmtNum(st.dmg) }} · 受傷{{ fmtNum(st.dmgTaken) }} · 救{{ st.rescues }}</span>
               </div>
+            </div>
+          </div>
+
+          <!-- 目前戰力數值（隨升級／寶箱／商店即時更新） -->
+          <div v-if="gs.inter.me?.stats" class="mt-3 rounded-2xl border border-emerald-400/25 bg-emerald-500/5 p-3">
+            <p class="mb-1.5 text-xs font-black text-emerald-300">📊 目前戰力數值</p>
+            <div class="grid grid-cols-3 gap-1.5 text-[11px]">
+              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/40">❤️生命</span> <b>{{ gs.inter.me.stats.maxHp }}</b></div>
+              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/40">🗡️傷害</span> <b>×{{ gs.inter.me.stats.damage.toFixed(2) }}</b></div>
+              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/40">⚡攻速</span> <b>×{{ gs.inter.me.stats.attackSpeed.toFixed(2) }}</b></div>
+              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/40">👟移速</span> <b>{{ Math.round(gs.inter.me.stats.moveSpeed) }}</b></div>
+              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/40">🛡️護甲</span> <b>{{ gs.inter.me.stats.armor }}</b></div>
+              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/40">🎯暴擊</span> <b>{{ Math.round(gs.inter.me.stats.critChance * 100) }}%</b></div>
+              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/40">💥暴傷</span> <b>×{{ gs.inter.me.stats.critDamage.toFixed(2) }}</b></div>
+              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/40">⭕範圍</span> <b>×{{ gs.inter.me.stats.area.toFixed(2) }}</b></div>
+              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/40">💚回復</span> <b>{{ gs.inter.me.stats.regen.toFixed(1) }}</b></div>
+              <div v-if="gs.inter.me.stats.pierce" class="rounded bg-white/5 px-2 py-1"><span class="text-white/40">➡️穿透</span> <b>+{{ gs.inter.me.stats.pierce }}</b></div>
+              <div v-if="gs.inter.me.stats.projectiles" class="rounded bg-white/5 px-2 py-1"><span class="text-white/40">➕投射</span> <b>+{{ gs.inter.me.stats.projectiles }}</b></div>
+              <div v-if="gs.inter.me.stats.lifeOnKill" class="rounded bg-white/5 px-2 py-1"><span class="text-white/40">🩸吸血</span> <b>{{ gs.inter.me.stats.lifeOnKill }}</b></div>
             </div>
           </div>
 
@@ -1235,8 +1254,8 @@ const bestWaves = computed(() => ({
                 :class="o.sold ? 'opacity-30 border-white/10' : [RARITY_STYLE[offerRarity(o)], rarityFx(offerRarity(o))]"
               >
                 <button v-if="o.kind !== 'mystery'" class="absolute right-1.5 top-1.5 text-xs" @click="api.lock(o.offerId, !o.locked)">{{ o.locked ? '🔒' : '🔓' }}</button>
-                <span v-if="o.origPrice" class="absolute right-1.5 top-1.5 rounded bg-rose-500 px-1 text-[9px] font-black text-white">特價</span>
-                <p class="pr-8 text-xs font-black leading-tight">{{ offerName(o) }}</p>
+                <span v-if="o.origPrice" class="absolute left-1.5 top-1.5 rounded bg-rose-500 px-1 text-[9px] font-black text-white">特價</span>
+                <p class="text-xs font-black leading-tight" :class="o.origPrice ? 'pl-9 pr-8' : 'pr-8'">{{ offerName(o) }}</p>
                 <p class="mt-0.5 text-[10px] leading-tight opacity-70">{{ offerDesc(o) }}</p>
                 <button
                   class="mt-1.5 w-full rounded-lg py-1 text-xs font-black active:scale-95"
