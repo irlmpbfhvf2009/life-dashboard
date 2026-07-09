@@ -20,7 +20,11 @@ import { UPGRADE_MAP } from '@game/content/upgrades'
 import { ITEM_MAP } from '@game/content/pickups'
 import { EVENT_MAP } from '@game/content/events'
 import { ZONE_MAP } from '@game/content/zones'
+import { SHOP } from '@game/balance'
 import type { Mode } from '@game/types'
+
+// 賣出返還比例（跟後端 balance.ts 的 SHOP.sellPct 同步，避免文字寫死過時）
+const SELL_PCT_LABEL = Math.round(SHOP.sellPct * 100)
 
 const route = useRoute()
 const router = useRouter()
@@ -388,7 +392,7 @@ function offerRarity(o: { kind: string; refId: string }): string {
 const interReady = computed(() => !!gs.inter?.readySet.includes(gs.playerId))
 function sellWeapon(i: number, id: string, level: number) {
   if ((gs.inter?.me.weapons.length ?? 0) <= 1) { pushToast('至少要保留一把武器', 'warn'); return }
-  if (window.confirm(`賣出 ${wpn(id)?.name} Lv.${level}？（拿回 60% 金幣）`)) api.sell(i)
+  if (window.confirm(`賣出 ${wpn(id)?.name} Lv.${level}？（拿回 ${SELL_PCT_LABEL}% 金幣）`)) api.sell(i)
 }
 const connectedCount = computed(() => gs.room?.players.filter(p => p.connected).length ?? 1)
 
@@ -1214,13 +1218,17 @@ const fmtTime = (s: number) => {
               @click="api.refresh(); sfx.click()"
             >🔄 刷新商店（💰{{ gs.inter.shop.refreshCost }}）</button>
             <!-- 我的武器 -->
-            <p class="mt-3 text-xs font-bold text-white/40">我的武器（{{ gs.inter.me.weapons.length }}/6，點擊賣出 60%）</p>
+            <p class="mt-3 text-xs font-bold text-white/40">我的武器（{{ gs.inter.me.weapons.length }}/6，點擊賣出 {{ SELL_PCT_LABEL }}%）</p>
             <div class="mt-1 flex flex-wrap gap-1.5">
               <button
                 v-for="(w, i) in gs.inter.me.weapons" :key="i"
-                class="rounded-lg bg-white/10 px-2 py-1 text-xs font-bold active:bg-rose-500/30"
+                class="flex flex-col items-center gap-0.5 rounded-lg bg-white/10 px-2 py-1.5 leading-none active:bg-rose-500/30"
+                :title="wpn(w.id)?.name"
                 @click="sellWeapon(i, w.id, w.level)"
-              >{{ WEAPON_EMOJI[w.id] }} {{ wpn(w.id)?.name }} <span class="text-amber-300">Lv.{{ w.level }}</span></button>
+              >
+                <Portrait kind="weapon" :id="w.id" :size="30" />
+                <span class="text-[10px] font-black text-amber-300">Lv.{{ w.level }}</span>
+              </button>
             </div>
           </div>
 
