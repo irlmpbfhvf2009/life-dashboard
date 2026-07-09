@@ -37,12 +37,23 @@ interface CDrop { i: number; t: string; x: number; y: number; v: number; item?: 
 interface CProj { x: number; y: number; vx: number; vy: number; left: number; weapon: string; born: number }
 interface Particle { x: number; y: number; vx: number; vy: number; life: number; maxLife: number; color: string; size: number }
 interface DmgNum { x: number; y: number; v: number; crit: boolean; life: number }
+interface SkillCast { pid: string; name: string; color: string; born: number }
 interface Aoe { x: number; y: number; r: number; kind: string; life: number; maxLife: number; w?: string }
 
 const AOE_LIFE: Record<string, number> = {
-  explosion: 0.45, poison: 4, heal: 5, fire: 3, frost: 0.6, lightning: 0.35,
-  telegraph: 1.4, swing: 0.28, pulse: 0.7, summon: 0.5, mine: 10, deploy: 0.4,
-  slash: 0.3, thorns: 0.5, spikes: 0.5, haze: 0.7,
+  explosion: 0.45, poison: 4, heal: 5, fire: 3, frost: 0.7, lightning: 0.35,
+  telegraph: 1.4, swing: 0.28, pulse: 0.85, summon: 0.5, mine: 10, deploy: 0.55,
+  slash: 0.42, thorns: 0.6, spikes: 0.6, haze: 0.7,
+}
+
+// 技能 id → 顯示名稱（施放時在頭上冒出，仙境傳說式喊招）。由角色資料自動建，改名不用改這裡。
+const SKILL_NAME: Record<string, string> = {}
+for (const c of CHARACTER_MAP.values()) SKILL_NAME[c.active.id] = c.active.name
+// 技能主題色（頭上字＋施放粒子）
+const SKILL_COLOR: Record<string, string> = {
+  bulwark: '#90caf9', rapidfire: '#ff8a65', healzone: '#69f0ae', turret: '#cfd8dc',
+  frostnova: '#a8e0ff', fateflip: '#ffd54f', charge: '#eeeeee', whirlslash: '#ff5252',
+  thornsNova: '#66bb6a', palmquake: '#ffca28', spikecharge: '#f0a83e', hallucinate: '#e05fd0',
 }
 
 export class Engine {
@@ -65,6 +76,7 @@ export class Engine {
   projectiles: CProj[] = []
   particles: Particle[] = []
   dmgNums: DmgNum[] = []
+  skillCasts: SkillCast[] = []
   aoes: Aoe[] = []
   bubbles = new Map<string, { text: string; until: number }>()
   meleeSwing = new Map<string, number>()   // `${playerId}:${weaponId}` → 揮砍起始 this.time
@@ -283,7 +295,19 @@ export class Engine {
         }
         case 'revive': sfx.revive(); break
         case 'teamRevive': sfx.teamRevive(); this.shake = 10; break
-        case 'skill': sfx.skill(); break
+        case 'skill': {
+          sfx.skill()
+          const nm = SKILL_NAME[ev.s]
+          const col = SKILL_COLOR[ev.s] ?? '#ffe066'
+          if (nm) this.skillCasts.push({ pid: ev.id, name: nm, color: col, born: this.time })
+          const pl = this.players.get(ev.id)
+          if (pl) {
+            this.burst(pl.tx, pl.ty, 18, col, 5)
+            this.burst(pl.tx, pl.ty, 8, '#ffffff', 3)
+            if (ev.id === gs.playerId) this.shake = Math.min(this.shake + 4, 10)
+          }
+          break
+        }
         case 'item': break
         case 'aoe': {
           const life = AOE_LIFE[ev.kind] ?? 0.5
@@ -432,6 +456,7 @@ export class Engine {
     this.particles = this.particles.filter(p => p.life > 0)
     for (const d of this.dmgNums) { d.y -= 34 * dt; d.life -= dt }
     this.dmgNums = this.dmgNums.filter(d => d.life > 0)
+    this.skillCasts = this.skillCasts.filter(c => this.time - c.born < 1.1)
     for (const a of this.aoes) a.life -= dt
     this.aoes = this.aoes.filter(a => a.life > 0)
     if (this.shake > 0) this.shake = Math.max(0, this.shake - dt * 26)
@@ -660,10 +685,27 @@ export class Engine {
           g.beginPath(); g.arc(0, 0, a.r * (0.6 + (1 - pct) * 0.9), 0, Math.PI * 2); g.fill()
           break
         }
-        case 'frost':
-          g.fillStyle = `rgba(168,224,255,${pct * 0.4})`
-          g.beginPath(); g.arc(0, 0, a.r * (1 - pct * 0.3), 0, Math.PI * 2); g.fill()
+        case 'frost': {
+          // 冰霜爆發：擴張寒霜圈 + 白核衝擊 + 放射冰晶（六角尖刺）
+          const rr = a.r * (1 - pct * 0.15)
+          g.fillStyle = `rgba(168,224,255,${pct * 0.32})`
+          g.beginPath(); g.arc(0, 0, rr, 0, Math.PI * 2); g.fill()
+          g.strokeStyle = `rgba(224,246,255,${pct * 0.9})`; g.lineWidth = 3 * pct + 1
+          g.beginPath(); g.arc(0, 0, rr, 0, Math.PI * 2); g.stroke()
+          g.shadowColor = '#bde7ff'; g.shadowBlur = 10
+          for (let k = 0; k < 10; k++) {
+            const ang = k / 10 * Math.PI * 2 + this.time * 0.4
+            const cx = Math.cos(ang) * rr * 0.62, cy = Math.sin(ang) * rr * 0.62
+            g.fillStyle = `rgba(255,255,255,${pct * 0.85})`
+            g.save(); g.translate(cx, cy); g.rotate(ang)
+            g.beginPath(); g.moveTo(0, -6); g.lineTo(3.2, 0); g.lineTo(0, 6); g.lineTo(-3.2, 0); g.closePath(); g.fill()
+            g.restore()
+          }
+          g.shadowBlur = 0
+          g.fillStyle = `rgba(255,255,255,${pct * 0.9})`
+          g.beginPath(); g.arc(0, 0, 5 + (1 - pct) * 10, 0, Math.PI * 2); g.fill()
           break
+        }
         case 'lightning': {
           // 分叉電弧爆點：由中心往四周甩出多條鋸齒電光 + 白熱核
           g.shadowColor = '#fff59d'; g.shadowBlur = 12
@@ -713,10 +755,22 @@ export class Engine {
           break
         }
         case 'pulse': {
-          const rr = a.r * (1 - pct)
-          g.strokeStyle = `rgba(255,230,109,${pct * 0.8})`
-          g.lineWidth = 5
-          g.beginPath(); g.arc(0, 0, Math.min(rr, 600), 0, Math.PI * 2); g.stroke()
+          // 震地掌：雙層向外衝擊波 + 地裂放射線 + 塵環（震撼感）
+          const rr = Math.min(a.r * (1 - pct), 600)
+          g.strokeStyle = `rgba(255,213,79,${pct * 0.9})`; g.lineWidth = 7 * pct + 1
+          g.beginPath(); g.arc(0, 0, rr, 0, Math.PI * 2); g.stroke()
+          g.strokeStyle = `rgba(255,255,255,${pct * 0.6})`; g.lineWidth = 3 * pct
+          g.beginPath(); g.arc(0, 0, rr * 0.82, 0, Math.PI * 2); g.stroke()
+          // 地裂：中心往外的裂痕
+          g.strokeStyle = `rgba(180,120,40,${pct * 0.7})`; g.lineWidth = 2.5
+          for (let k = 0; k < 8; k++) {
+            const ang = k / 8 * Math.PI * 2 + 0.2
+            g.beginPath(); g.moveTo(Math.cos(ang) * rr * 0.2, Math.sin(ang) * rr * 0.2)
+            g.lineTo(Math.cos(ang) * rr * 0.95, Math.sin(ang) * rr * 0.95); g.stroke()
+          }
+          // 中心黃塵
+          g.fillStyle = `rgba(255,236,150,${pct * 0.45})`
+          g.beginPath(); g.arc(0, 0, rr * 0.35, 0, Math.PI * 2); g.fill()
           break
         }
         case 'mine':
@@ -730,30 +784,64 @@ export class Engine {
           g.lineWidth = 3
           g.beginPath(); g.arc(0, 0, a.r * (1 - pct * 0.5), 0, Math.PI * 2); g.stroke()
           break
+        case 'deploy': {
+          // 部署（砲塔）：藍白六角能量陣 + 旋轉外環 + 收束閃光
+          const rr = a.r * 1.6
+          g.save(); g.rotate(this.time * 1.5)
+          g.strokeStyle = `rgba(120,200,255,${pct * 0.9})`; g.lineWidth = 2.5
+          g.beginPath()
+          for (let k = 0; k <= 6; k++) { const ang = k / 6 * Math.PI * 2; const x = Math.cos(ang) * rr, y = Math.sin(ang) * rr; k ? g.lineTo(x, y) : g.moveTo(x, y) }
+          g.stroke()
+          g.restore()
+          g.strokeStyle = `rgba(207,216,220,${pct * 0.7})`; g.lineWidth = 2
+          g.beginPath(); g.arc(0, 0, rr * (1.15 - pct * 0.5), 0, Math.PI * 2); g.stroke()
+          g.fillStyle = `rgba(220,240,255,${pct * 0.8})`
+          g.beginPath(); g.arc(0, 0, 5 * pct + 2, 0, Math.PI * 2); g.fill()
+          break
+        }
         case 'slash': {
-          // 居合斬：白色弧形刀光
-          g.strokeStyle = `rgba(255,255,255,${pct * 0.9})`
-          g.lineWidth = 8 * pct
+          // 斬擊（居合/旋風）：大範圍旋轉刀光——掃過近 300°，主刃白熱 + 冷光殘影 + 邊緣火花
+          const sweep = Math.PI * 1.7
+          const start = -Math.PI / 2 + (1 - pct) * sweep      // 隨生命往前掃
           g.lineCap = 'round'
-          g.beginPath(); g.arc(0, 0, a.r, -Math.PI * 0.55, Math.PI * 0.15); g.stroke()
-          g.strokeStyle = `rgba(180,230,255,${pct * 0.5})`
-          g.lineWidth = 3 * pct
-          g.beginPath(); g.arc(0, 0, a.r * 1.08, -Math.PI * 0.55, Math.PI * 0.15); g.stroke()
+          g.shadowColor = '#cfefff'; g.shadowBlur = 10
+          // 冷光外殘影（三層淡出）
+          for (let i = 0; i < 3; i++) {
+            g.strokeStyle = `rgba(180,230,255,${pct * (0.35 - i * 0.1)})`
+            g.lineWidth = (10 - i * 2) * pct
+            g.beginPath(); g.arc(0, 0, a.r * (1 + i * 0.06), start, start + sweep * pct); g.stroke()
+          }
+          // 主刃白熱
+          g.strokeStyle = `rgba(255,255,255,${pct})`; g.lineWidth = 6 * pct + 1
+          g.beginPath(); g.arc(0, 0, a.r, start, start + sweep * pct); g.stroke()
+          g.shadowBlur = 0
+          // 刀尖火花
+          const tipAng = start + sweep * pct
+          g.fillStyle = `rgba(255,255,255,${pct})`
+          g.beginPath(); g.arc(Math.cos(tipAng) * a.r, Math.sin(tipAng) * a.r, 4 * pct + 1.5, 0, Math.PI * 2); g.fill()
           g.lineCap = 'butt'
           break
         }
         case 'thorns':
         case 'spikes': {
-          // 荊棘/蓄刺爆發：向外放射的尖刺（仙人掌=綠、榴槤=琥珀）
+          // 荊棘/蓄刺爆發：向外爆射的實心尖刺（仙人掌=綠、榴槤=琥珀）+ 中心衝擊環
           const col = a.kind === 'spikes' ? '240,168,62' : '120,200,110'
-          g.strokeStyle = `rgba(${col},${pct})`
-          g.lineWidth = 3
-          const rr = a.r * (1 - pct * 0.35)
-          for (let k = 0; k < 14; k++) {
-            const ang = k / 14 * Math.PI * 2
-            g.beginPath(); g.moveTo(Math.cos(ang) * rr * 0.4, Math.sin(ang) * rr * 0.4)
-            g.lineTo(Math.cos(ang) * rr, Math.sin(ang) * rr); g.stroke()
+          const rr = a.r * (1 - pct * 0.25)
+          g.shadowColor = `rgba(${col},0.8)`; g.shadowBlur = 8
+          const n = 16
+          for (let k = 0; k < n; k++) {
+            const ang = k / n * Math.PI * 2 + (k % 2) * 0.1
+            const len = rr * (k % 2 ? 1 : 0.82)
+            const bx = Math.cos(ang) * rr * 0.28, by = Math.sin(ang) * rr * 0.28
+            const tx = Math.cos(ang) * len, ty = Math.sin(ang) * len
+            const wx = -Math.sin(ang) * 5 * pct, wy = Math.cos(ang) * 5 * pct
+            g.fillStyle = `rgba(${col},${pct})`
+            g.beginPath(); g.moveTo(bx + wx, by + wy); g.lineTo(tx, ty); g.lineTo(bx - wx, by - wy); g.closePath(); g.fill()
           }
+          g.shadowBlur = 0
+          // 中心衝擊環
+          g.strokeStyle = `rgba(255,255,255,${pct * 0.7})`; g.lineWidth = 2.5 * pct + 1
+          g.beginPath(); g.arc(0, 0, rr * (0.5 + (1 - pct) * 0.5), 0, Math.PI * 2); g.stroke()
           break
         }
         case 'haze': {
@@ -1066,6 +1154,38 @@ export class Engine {
       g.strokeText(txt, d.x, d.y)
       g.fillText(txt, d.x, d.y)
       g.shadowBlur = 0
+    }
+    g.globalAlpha = 1
+
+    // 技能喊招（仙境傳說式）：施放時角色頭上彈出技能名 → 上升 → 淡出，跟著角色移動
+    for (const sc of this.skillCasts) {
+      const pl = this.players.get(sc.pid)
+      if (!pl) continue
+      const age = this.time - sc.born
+      const t01 = age / 1.1
+      const rise = Math.min(age * 46, 34)
+      const pop = age < 0.12 ? 0.45 + (age / 0.12) * 0.75 : Math.max(0.9, 1.2 - (age - 0.12) * 0.4)
+      g.save()
+      g.translate(pl.tx, pl.ty - 46 - rise)
+      g.scale(pop, pop)
+      g.globalAlpha = Math.max(0, Math.min(1, (1 - t01) * 2.4))
+      g.textAlign = 'center'; g.textBaseline = 'middle'
+      g.font = '900 15px sans-serif'
+      const label = sc.name + '!'
+      // 底光暈條
+      g.shadowColor = sc.color; g.shadowBlur = 14
+      g.lineWidth = 4.5; g.strokeStyle = 'rgba(0,0,0,0.9)'
+      g.strokeText(label, 0, 0)
+      g.fillStyle = '#fff'
+      g.fillText(label, 0, 0)
+      g.shadowBlur = 0
+      // 彩色描邊疊上（前 0.3 秒閃一下）
+      if (age < 0.3) {
+        g.globalAlpha *= 0.7 + Math.sin(age * 30) * 0.3
+        g.lineWidth = 1.5; g.strokeStyle = sc.color
+        g.strokeText(label, 0, 0)
+      }
+      g.restore()
     }
     g.globalAlpha = 1
     g.restore()

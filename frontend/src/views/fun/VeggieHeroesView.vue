@@ -117,7 +117,7 @@ function openBoard() {
 }
 watch([boardMode, boardPlayers], () => { if (showBoard.value) loadBoard() })
 const BOARD_MODES: { id: 'quick' | 'standard' | 'endless' | 'daily'; name: string }[] = [
-  { id: 'daily', name: '每日' }, { id: 'standard', name: '標準' }, { id: 'quick', name: '快速' }, { id: 'endless', name: '無盡' },
+  { id: 'daily', name: '每日' }, { id: 'standard', name: '標準' }, { id: 'endless', name: '無盡' },
 ]
 
 // ---------------------------------------------------------------- 大廳
@@ -985,8 +985,11 @@ const bestWaves = computed(() => ({
             <div class="h-1.5 overflow-hidden rounded-full bg-white/10">
               <div class="h-full rounded-full transition-all" :class="gs.hud.hp / Math.max(1, gs.hud.maxHp) > 0.5 ? 'bg-lime-400' : gs.hud.hp / Math.max(1, gs.hud.maxHp) > 0.25 ? 'bg-amber-400' : 'bg-rose-500'" :style="{ width: (gs.hud.hp / Math.max(1, gs.hud.maxHp) * 100) + '%' }" />
             </div>
-            <div class="mt-0.5 h-1 overflow-hidden rounded-full bg-white/10">
-              <div class="h-full bg-sky-300" :style="{ width: (gs.hud.xp / Math.max(1, gs.hud.nxp) * 100) + '%' }" />
+            <div class="mt-0.5 flex items-center gap-1">
+              <span class="text-[8px] font-black text-sky-300/80">Lv{{ gs.hud.lv }}</span>
+              <div class="h-1 flex-1 overflow-hidden rounded-full bg-white/10" title="經驗值：殺怪累積，滿了升級">
+                <div class="h-full bg-sky-300" :style="{ width: (gs.hud.xp / Math.max(1, gs.hud.nxp) * 100) + '%' }" />
+              </div>
             </div>
             <p class="mt-0.5 text-right text-[10px] font-black text-orange-300">🗡️ 傷害 {{ fmtNum(gs.hud.dmg) }}</p>
           </div>

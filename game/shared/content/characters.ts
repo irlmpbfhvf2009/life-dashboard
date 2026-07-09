@@ -74,7 +74,7 @@ export const CHARACTERS: CharacterData[] = [
     role: 'gambler',
     baseStats: { maxHp: 96, armor: 0, moveSpeed: 172, damage: 1.0, attackSpeed: 1.0, critChance: 0.18, critDamage: 1.8, pickupRange: 75, regen: 0.3 },
     passive: { description: '升級選項 +25% 機率升一階稀有度，但商店可能混入詛咒選項', effect: 'gamblerLuck' },
-    active: { id: 'fateflip', name: '命運翻牌', description: '隨機獲得一個強力增益，或一個小小的懲罰', cooldown: 12, params: {} },
+    active: { id: 'fateflip', name: '命運輪盤', description: '轉動命運輪盤，四種強力效果之一：骰子風暴轟炸全場／黃金狂熱／幸運爆發／蔬菜庇護', cooldown: 12, params: {} },
     affinityTags: ['gamble', 'crit', 'gold'],
     startWeapons: ['t_dice', 't_cards', 't_coin'],
     rarity: 'common',

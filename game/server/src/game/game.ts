@@ -944,6 +944,7 @@ export class Game {
             guard: eff(p, 'turretGuard') > 0,
           })
         }
+        this.ev({ t: 'aoe', x: Math.round(p.x), y: Math.round(p.y), r: 60, kind: 'deploy' })
         break
       }
       case 'frostnova': {
