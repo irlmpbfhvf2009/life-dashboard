@@ -28,7 +28,8 @@ export interface DifficultyMod { name: string; enemyHp: number; enemyDmg: number
 export const DIFFICULTIES: DifficultyMod[] = [
   { name: '普通', enemyHp: 1.0, enemyDmg: 1.0, goldMult: 1.0 },
   { name: '困難', enemyHp: 1.3, enemyDmg: 1.25, goldMult: 1.15 },
-  { name: '夢魘', enemyHp: 1.7, enemyDmg: 1.5, goldMult: 1.3 },
+  // 夢魘（固定難度）：主要難度改由 enemyHpScale 指數曲線扛，這裡別再疊太兇
+  { name: '夢魘', enemyHp: 1.35, enemyDmg: 1.4, goldMult: 1.3 },
 ]
 
 // ------------------------------------------------- 波次
@@ -65,15 +66,17 @@ export function spawnBudget(wave: number, players: number): number {
   return Math.round(base * PLAYER_SCALING[players].count * DENSITY_MULT)
 }
 
-/** 怪物血量隨波數成長（另乘人數 hp、難度 enemyHp、無盡加成） */
+/** 怪物血量隨波數成長（另乘人數 hp、難度 enemyHp）。
+ *  Brotato 式指數曲線：前 3 波溫和，之後每波 ×1.16 複利、無盡每波再 ×1.10 —
+ *  中後期怪血跟著玩家 build 一起爆炸；build 沒成形就是過不了。 */
 export function enemyHpScale(wave: number): number {
-  let s = 1 + (wave - 1) * 0.36
-  if (wave > 10) s += (wave - 10) * 0.22
-  if (wave > 20) s += (wave - 20) * 0.4   // 無盡加壓
-  return s
+  const linear = 1 + (wave - 1) * 0.28
+  const expo = Math.pow(1.12, Math.max(0, wave - 3))
+  const endless = wave > 20 ? Math.pow(1.09, wave - 20) : 1
+  return linear * expo * endless
 }
 export function enemyDmgScale(wave: number): number {
-  return 1 + (wave - 1) * 0.11 + Math.max(0, wave - 20) * 0.08
+  return (1 + (wave - 1) * 0.12) * Math.pow(1.035, Math.max(0, wave - 3))
 }
 
 /** 菁英機率（每次生成擲骰；導演可調） */
@@ -129,8 +132,9 @@ export const DROP_MERGE = { xpMergeRadius: 60, checkAt: 70 }
 // ------------------------------------------------- 掉落率
 
 export const DROPS = {
-  coinValue: { min: 1, max: 2 },        // 密度 ×2 → 單枚金幣下修，整體經濟約 ×1.3（見 xpForLevel 註）
-  eliteCoinBonus: 8,
+  coinValue: { min: 1, max: 2 },        // 密度 ×2 → 單枚金幣下修
+  coinChanceMult: 0.7,                  // 全域金幣掉落機率倍率（經濟緊縮：錢要花在刀口上）
+  eliteCoinBonus: 5,
   bossCoin: 60,
   heartChance: 0.018,           // 基準；乘導演 healDropMult
   heartHeal: 20,
@@ -152,7 +156,7 @@ export const SHOP = {
   offers: 4,
   refreshBase: 4,
   refreshGrowth: 2,             // 每次刷新 +2
-  priceWaveGrowth: 0.08,        // 價格隨波數上浮
+  priceWaveGrowth: 0.11,        // 價格隨波數上浮（經濟緊縮）
   sellPct: 0.8,
   maxWeapons: 6,
   teamReviveBasePrice: 28,

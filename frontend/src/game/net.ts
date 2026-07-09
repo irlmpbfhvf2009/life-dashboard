@@ -164,6 +164,7 @@ export function ensureSocket(): Socket {
   socket.on('wave:start', (w: WaveStartInfo) => {
     gs.waveInfo = w
     gs.inter = null
+    gs.over = null   // 進無盡模式續戰：勝利結算面板要收掉，否則畫面卡在結算
     gs.hud.wave = w.wave
     onWave?.(w)
   })

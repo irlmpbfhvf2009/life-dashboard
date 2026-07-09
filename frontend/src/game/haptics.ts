@@ -6,7 +6,8 @@ const on = ref(localStorage.getItem('veggie-haptics') !== '0')
 const supported = typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function'
 
 function buzz(pattern: number | number[]): void {
-  if (!on.value || !supported) return
+  // 以 localStorage 為準（雙保險：即使模組被打進兩個 chunk 出現兩份狀態，off 就是 off）
+  if (!on.value || !supported || localStorage.getItem('veggie-haptics') === '0') return
   try { navigator.vibrate(pattern) } catch { /* 某些瀏覽器需使用者手勢，忽略 */ }
 }
 

@@ -25,6 +25,7 @@ export function newOwnedWeapon(data: WeaponData, orbitAngle = 0): OwnedWeapon {
 export interface Buffs {
   hasteUntil: number; hasteAmt: number
   rageUntil: number; rageAmt: number
+  critUntil: number; critAmt: number   // 暴擊率 buff（賭徒幸運爆發等）
   invulnUntil: number
   shieldNextWave: number
 }
@@ -46,6 +47,11 @@ export interface SPlayer {
   weapons: OwnedWeapon[]
   upgrades: Map<string, number>          // upgradeId → stacks
   effects: Map<string, number>           // specialEffect id → stacks（由 upgrades 推導）
+  // 寶箱 boon（永久戰力，與 upgrades 分開記；stats.ts 折算）
+  boonMods: Partial<Record<string, number>>   // StatKey → 累計加成
+  boonDmgMult: number                    // 乘算傷害（狂暴基因 ×1.3 疊乘）
+  boonSkillPower: number                 // 技能傷害 +35%/層
+  boonSkillCd: number                    // 技能冷卻 -10%/層
 
   x: number; y: number
   lastX: number; lastY: number
@@ -184,6 +190,7 @@ export interface SDrop {
   x: number; y: number
   v: number
   item?: string
+  x2?: boolean                            // ×2 金幣（上一波沒吃到的補償）
   magnetTargetId: string | null
   bornAt: number
 }

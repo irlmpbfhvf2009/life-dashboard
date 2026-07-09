@@ -7,7 +7,8 @@ import {
   bindEngine, unbindEngine, bindChatBubble, bindEmote, pushToast,
 } from '@/game/net'
 import { voice, joinVoice, leaveVoice, toggleMute as toggleVoiceMute } from '@/game/voice'
-import { useHaptics } from '@/game/haptics'
+import { useHaptics, haptics } from '@/game/haptics'
+import { fmtNum } from '@/game/format'
 import { useAuthStore } from '@/stores/auth'
 import { veggieApi, socialApi, chatApi, type VeggieBoard } from '@/api'
 import type { SocialUser } from '@/types'
@@ -511,7 +512,6 @@ const submitResult = ref<{ best: boolean; rank: number } | null>(null)
 watch(() => gs.over, async (o) => {
   if (!o) return
   if (o.victory) sfx.victory(); else sfx.defeat()
-  const { haptics } = await import('@/game/haptics')
   haptics.gameover()
   // 紀錄最高波數（本機）
   const key = `veggie-best-${o.mode}`
@@ -655,7 +655,8 @@ const bestWaves = computed(() => ({
     </div>
 
     <!-- ============================================================ 排行榜 overlay -->
-    <div v-if="showBoard" class="absolute inset-0 z-[70] flex flex-col overflow-y-auto bg-[#0d1a0d]/95 px-5 py-6 backdrop-blur" style="touch-action: pan-y;">
+    <!-- z-[90]：要蓋過結算面板（z-[80]），勝利畫面點「查看排行榜」才看得到 -->
+    <div v-if="showBoard" class="absolute inset-0 z-[90] flex flex-col overflow-y-auto bg-[#0d1a0d]/95 px-5 py-6 backdrop-blur" style="touch-action: pan-y;">
       <div class="mx-auto w-full max-w-md">
         <div class="mb-3 flex items-center justify-between">
           <h2 class="text-xl font-black text-amber-300">🏆 排行榜</h2>
@@ -987,7 +988,7 @@ const bestWaves = computed(() => ({
             <div class="mt-0.5 h-1 overflow-hidden rounded-full bg-white/10">
               <div class="h-full bg-sky-300" :style="{ width: (gs.hud.xp / Math.max(1, gs.hud.nxp) * 100) + '%' }" />
             </div>
-            <p class="mt-0.5 text-right text-[10px] font-black text-orange-300">🗡️ 傷害 {{ gs.hud.dmg.toLocaleString() }}</p>
+            <p class="mt-0.5 text-right text-[10px] font-black text-orange-300">🗡️ 傷害 {{ fmtNum(gs.hud.dmg) }}</p>
           </div>
           <div v-for="m in gs.hud.mates" :key="m.id" class="rounded-lg bg-black/40 px-2 py-1 backdrop-blur-sm">
             <div class="flex justify-between text-[10px]">
@@ -1100,7 +1101,8 @@ const bestWaves = computed(() => ({
       </div>
 
       <!-- Toasts（z 拉到最高，才不會被中場面板蓋住，例如金幣不足警告） -->
-      <div class="pointer-events-none absolute inset-x-0 bottom-28 z-[60] flex flex-col items-center gap-1 px-4">
+      <!-- toast：z-[95] 蓋過中場/結算面板，「金幣不足」等提示才不會被遮住 -->
+      <div class="pointer-events-none absolute inset-x-0 bottom-28 z-[95] flex flex-col items-center gap-1 px-4">
         <p
           v-for="t in gs.toasts" :key="t.id"
           class="rounded-full px-4 py-1.5 text-xs font-bold backdrop-blur-sm"
@@ -1159,7 +1161,7 @@ const bestWaves = computed(() => ({
             <div class="mt-2 space-y-1 text-left text-[11px]">
               <div v-for="(st, pid) in gs.inter.settlement.perPlayer" :key="pid" class="flex justify-between rounded bg-white/5 px-2 py-1">
                 <span class="font-bold" :class="pid === gs.playerId ? 'text-amber-300' : 'text-white/70'">{{ playerName2(String(pid)) }}</span>
-                <span class="text-white/50">擊殺{{ st.kills }} · 傷害{{ st.dmg.toLocaleString() }} · 受傷{{ st.dmgTaken }} · 救{{ st.rescues }}</span>
+                <span class="text-white/50">擊殺{{ st.kills }} · 傷害{{ fmtNum(st.dmg) }} · 受傷{{ fmtNum(st.dmgTaken) }} · 救{{ st.rescues }}</span>
               </div>
             </div>
           </div>
@@ -1294,7 +1296,7 @@ const bestWaves = computed(() => ({
           <div class="mt-4 space-y-1.5 text-left text-xs">
             <div v-for="(st, pid) in gs.over.perPlayer" :key="pid" class="flex justify-between rounded-lg bg-white/5 px-3 py-2">
               <span class="font-bold" :class="pid === gs.playerId ? 'text-amber-300' : 'text-white/80'">{{ playerName2(String(pid)) }}</span>
-              <span class="text-white/50">擊殺{{ st.kills }} · 傷害{{ st.dmg.toLocaleString() }} · 倒地{{ st.downs }} · 救援{{ st.rescues }}</span>
+              <span class="text-white/50">擊殺{{ st.kills }} · 傷害{{ fmtNum(st.dmg) }} · 倒地{{ st.downs }} · 救援{{ st.rescues }}</span>
             </div>
           </div>
           <div class="mt-6 space-y-2">
@@ -1309,7 +1311,7 @@ const bestWaves = computed(() => ({
               @click="shareResult"
             >{{ shared ? '✅ 已分享到聊天室' : '📣 分享戰績到公開聊天室' }}</button>
             <button
-              v-if="gs.over.victory && isHost && (gs.over.mode === 'standard' || gs.over.mode === 'quick')"
+              v-if="gs.over.victory && isHost && gs.over.mode === 'standard'"
               class="w-full rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-600 py-3 font-black active:scale-95"
               @click="api.endless()"
             >🌊 進入無盡模式</button>

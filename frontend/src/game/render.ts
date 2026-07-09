@@ -9,6 +9,7 @@ import { WEAPON_MAP, weaponStatsAt } from '@game/content/weapons'
 import { drawCharacter, drawEnemy, drawBoss, drawDrop, drawObjective, drawProjectile, drawOrbitWeapon, drawDroneCraft, drawTurret, drawMeleeHeld } from './art'
 import { sfx, playMusic } from './sound'
 import { haptics } from './haptics'
+import { fmtNum } from './format'
 import { gs, api, type WaveStartInfo } from './net'
 
 export const EMOTES = ['👍', '😆', '🆘', '❤️', '🎉', '😱', '🙏', '💪']
@@ -32,7 +33,7 @@ interface CPlayer {
   x: number; y: number; tx: number; ty: number
   status: string; hp: number; mhp: number; sh: number; rp: number; fx?: string; lv: number
 }
-interface CDrop { i: number; t: string; x: number; y: number; v: number; item?: string }
+interface CDrop { i: number; t: string; x: number; y: number; v: number; item?: string; x2?: boolean }
 interface CProj { x: number; y: number; vx: number; vy: number; left: number; weapon: string; born: number }
 interface Particle { x: number; y: number; vx: number; vy: number; life: number; maxLife: number; color: string; size: number }
 interface DmgNum { x: number; y: number; v: number; crit: boolean; life: number }
@@ -253,7 +254,7 @@ export class Engine {
           }
           break
         }
-        case 'drop': this.drops.set(ev.d.i, { i: ev.d.i, t: ev.d.t, x: ev.d.x, y: ev.d.y, v: ev.d.v ?? 0, item: ev.d.it }); break
+        case 'drop': this.drops.set(ev.d.i, { i: ev.d.i, t: ev.d.t, x: ev.d.x, y: ev.d.y, v: ev.d.v ?? 0, item: ev.d.it, x2: ev.d.x2 === 1 }); break
         case 'pick': {
           const d = this.drops.get(ev.i)
           this.drops.delete(ev.i)
@@ -793,7 +794,7 @@ export class Engine {
     // 掉落物
     for (const d of this.drops.values()) {
       g.save(); g.translate(d.x, d.y)
-      drawDrop(g, d.t, d.v, this.time, d.item)
+      drawDrop(g, d.t, d.v, this.time, d.item, d.x2)
       g.restore()
     }
 
@@ -1061,8 +1062,9 @@ export class Engine {
       }
       g.strokeStyle = 'rgba(0,0,0,0.8)'
       g.lineWidth = 3
-      g.strokeText(String(d.v), d.x, d.y)
-      g.fillText(String(d.v), d.x, d.y)
+      const txt = fmtNum(d.v)
+      g.strokeText(txt, d.x, d.y)
+      g.fillText(txt, d.x, d.y)
       g.shadowBlur = 0
     }
     g.globalAlpha = 1

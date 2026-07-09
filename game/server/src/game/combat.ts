@@ -88,7 +88,9 @@ export function rollDamage(g: Game, p: SPlayer, base: number, critMod = 1, force
       }
     }
   }
-  const crit = forceCrit || g.rng() < p.stats.critChance * critMod
+  // 暴擊率 = 屬性 + 暫時 buff（賭徒幸運爆發等）
+  const critCh = p.stats.critChance + (p.buffs.critUntil > g.time ? p.buffs.critAmt : 0)
+  const crit = forceCrit || g.rng() < critCh * critMod
   if (crit) mult *= p.stats.critDamage
   else if (eff(p, 'curseEdge')) mult *= 0.8
   return { dmg: base * mult, crit }

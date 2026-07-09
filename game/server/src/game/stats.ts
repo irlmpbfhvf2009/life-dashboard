@@ -20,6 +20,8 @@ export function recomputeStats(p: SPlayer): void {
     if (!u?.statMods) continue
     for (const [k, v] of Object.entries(u.statMods)) bump(k as StatKey, (v as number) * stacks)
   }
+  // 寶箱 boon（永久戰力）
+  for (const [k, v] of Object.entries(p.boonMods ?? {})) bump(k as StatKey, v as number)
   if (p.char.passive.mods) {
     for (const [k, v] of Object.entries(p.char.passive.mods)) bump(k as StatKey, v as number)
   }
@@ -36,7 +38,10 @@ export function recomputeStats(p: SPlayer): void {
     pierce: add.pierce ?? 0,
     lifeOnKill: add.lifeOnKill ?? 0,
     moveSpeed: b.moveSpeed * (1 + (pct.moveSpeed ?? 0)),
-    damage: b.damage * (1 + (pct.damage ?? 0) + lvl * 0.02),
+    // 傷害＝基礎 ×(1+加算%) × boon 乘算 × 禁忌菜譜(×1.4^層) — 乘算是後期傷害滾到千萬/億的引擎
+    damage: b.damage * (1 + (pct.damage ?? 0) + lvl * 0.02)
+      * (p.boonDmgMult ?? 1)
+      * Math.pow(1.4, p.effects.get('dmgX') ?? 0),
     attackSpeed: b.attackSpeed * (1 + (pct.attackSpeed ?? 0)),
     critChance: Math.min(0.8, b.critChance + (pct.critChance ?? 0)),
     critDamage: b.critDamage + (pct.critDamage ?? 0),

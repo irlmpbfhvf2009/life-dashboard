@@ -761,10 +761,24 @@ function star(g: Ctx, x: number, y: number, r: number): void {
 }
 
 /** 掉落物 */
-export function drawDrop(g: Ctx, type: string, v: number, t: number, item?: string): void {
+export function drawDrop(g: Ctx, type: string, v: number, t: number, item?: string, x2?: boolean): void {
   const bob = Math.sin(t * 4 + v) * 2
   g.save()
   g.translate(0, bob)
+  // ×2 金幣（上一波沒吃到的補償）：加大 + 金光脈動 + ×2 標記
+  if (type === 'coin' && x2) {
+    const pulse = 1.5 + Math.sin(t * 5) * 0.12
+    g.scale(pulse, pulse)
+    g.shadowColor = '#ffd700'; g.shadowBlur = 14
+    outlined(g, '#ffd700', gg => ellipse(gg, 0, 0, 8, 8), 2)
+    g.fillStyle = '#8a5a00'
+    g.font = 'bold 8px sans-serif'
+    g.textAlign = 'center'; g.textBaseline = 'middle'
+    g.fillText('×2', 0, 0.5)
+    g.shadowBlur = 0
+    g.restore()
+    return
+  }
   switch (type) {
     case 'xp': {
       const r = v >= 20 ? 10 : v >= 8 ? 7.5 : 5.5

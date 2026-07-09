@@ -25,7 +25,7 @@ import { recomputeEffects, eff } from './stats'
 import { newDirector, directorTick, spawnMult, healDropMult, type DirectorState } from './director'
 import { weaponsTick, enemyProjsTick } from './combat'
 import { spawnerTick, enemiesTick, spawnEnemy, edgeSpawnPos, damageEnemyImpl } from './enemies'
-import { spawnBoss, bossTick } from './boss'
+import { spawnBoss, bossTick, damageBoss } from './boss'
 import { dropsTick, vacuumAll, spawnDrop, healPlayer, applyItem, gainGold, gainXp } from './drops'
 import {
   rollMission, setupMission, missionTick, grantMissionRewards,
@@ -97,6 +97,9 @@ export class Game {
   spawner = { budgetLeft: 0, budgetTotal: 0, timer: 1 }
   caps = capsOf(1)
 
+  /** ×2 金幣 charge：上一波沒吃到的金幣數（掉金幣時消耗，spawnDrop 處理；跨波保留） */
+  goldX2Charges = 0
+
   // 中場
   interStep: 'settlement' = 'settlement'
   settlement: WaveSettlement | null = null
@@ -131,12 +134,13 @@ export class Game {
         connected: true, disconnectAt: 0,
         char, weapons: [newOwnedWeapon(weaponData)],
         upgrades: new Map(), effects: new Map(),
+        boonMods: {}, boonDmgMult: 1, boonSkillPower: 0, boonSkillCd: 0,
         x: ARENA.w / 2 + (idx - roster.length / 2) * spread, y: ARENA.h * 0.6,
         lastX: 0, lastY: 0,
         status: 'alive', hp: 1, shield: 0, gold: 8, xp: 0, level: 1, pendingLevelups: 0,
         stats: null as never,
         skillCdLeft: 0, skillCharges: 1, skillMaxCharges: 1,
-        buffs: { hasteUntil: 0, hasteAmt: 0, rageUntil: 0, rageAmt: 0, invulnUntil: 0, shieldNextWave: 0 },
+        buffs: { hasteUntil: 0, hasteAmt: 0, rageUntil: 0, rageAmt: 0, critUntil: 0, critAmt: 0, invulnUntil: 0, shieldNextWave: 0 },
         dashUntil: 0, dashVx: 0, dashVy: 0,
         bulwarkUntil: 0, bulwarkVx: 0, bulwarkVy: 0,
         downedCount: 0, reviveProgress: 0, bleedOutAt: 0, lastHitAt: -99, fogTick: 0,
@@ -260,7 +264,7 @@ export class Game {
       // （例如殘留的盾牌衝鋒/衝刺會讓角色自己往施放方向走，直到重新施放技能才好）
       p.dashUntil = 0; p.dashVx = 0; p.dashVy = 0
       p.bulwarkUntil = 0; p.bulwarkVx = 0; p.bulwarkVy = 0
-      p.buffs.hasteUntil = 0; p.buffs.rageUntil = 0; p.buffs.invulnUntil = 0
+      p.buffs.hasteUntil = 0; p.buffs.rageUntil = 0; p.buffs.critUntil = 0; p.buffs.invulnUntil = 0
       p.fx = ''; p.fxUntil = 0
       p.lastHitAt = -99
       if (p.status === 'downed') { p.status = 'alive'; p.hp = Math.round(p.stats.maxHp * 0.4) }
@@ -554,7 +558,7 @@ export class Game {
           if (e.hp <= 0 || dist2(e.x, e.y, p.x, p.y) > (e.radius + 30) ** 2) continue
           const prm = p.char.active.params ?? {}
           const [kx, ky] = norm(e.x - p.x, e.y - p.y)
-          damageEnemyImpl(this, e, (prm.damage ?? 25) * p.stats.damage, { ownerId: p.id, knockX: kx * (prm.knockback ?? 200), knockY: ky * (prm.knockback ?? 200), srcX: p.x, srcY: p.y })
+          damageEnemyImpl(this, e, (prm.damage ?? 25) * p.stats.damage * this.skillPowerOf(p), { ownerId: p.id, knockX: kx * (prm.knockback ?? 200), knockY: ky * (prm.knockback ?? 200), srcX: p.x, srcY: p.y })
         }
       } else if (p.bulwarkUntil > now) {
         // 盾牌衝鋒：緩速往前推進，撞飛沿路怪物（減傷在 damagePlayer 處理）
@@ -858,6 +862,11 @@ export class Game {
     p.lastY = clamp(y, 26, ARENA.h - 26)
   }
 
+  /** 技能傷害倍率：奧義精通升級 + 寶箱「奧義精髓」boon，各 +35%/層 — 技能後期化的引擎 */
+  skillPowerOf(p: SPlayer): number {
+    return 1 + 0.35 * (eff(p, 'skillPower') + p.boonSkillPower)
+  }
+
   onSkill(playerId: string, aim?: { x?: number; y?: number; charge?: number }): void {
     const p = this.players.get(playerId)
     if (!p || p.status !== 'alive' || this.phase !== 'combat') return
@@ -867,8 +876,10 @@ export class Game {
     if (p.skillCdLeft <= 0) {
       let cd = p.char.active.cooldown
       if (eff(p, 'charTank') && p.char.active.id === 'charge') cd *= 1 - 0.25 * eff(p, 'charTank')
+      cd *= Math.max(0.4, 1 - 0.1 * p.boonSkillCd)   // 寶箱「靜心冥想」：技能冷卻 -10%/層
       p.skillCdLeft = cd
     }
+    const sp = this.skillPowerOf(p)
     const prm = p.char.active.params ?? {}
     this.ev({ t: 'skill', id: p.id, s: p.char.active.id, x: aim?.x, y: aim?.y })
     switch (p.char.active.id) {
@@ -901,7 +912,7 @@ export class Game {
         for (const e of this.enemies) {
           if (e.hp <= 0 || dist2(e.x, e.y, p.x, p.y) > radius * radius) continue
           const [kx, ky] = norm(e.x - p.x, e.y - p.y)
-          damageEnemyImpl(this, e, (prm.damage ?? 34) * p.stats.damage, { ownerId: p.id, knockX: kx * (prm.knockback ?? 260), knockY: ky * (prm.knockback ?? 260), srcX: p.x, srcY: p.y })
+          damageEnemyImpl(this, e, (prm.damage ?? 34) * p.stats.damage * sp, { ownerId: p.id, knockX: kx * (prm.knockback ?? 260), knockY: ky * (prm.knockback ?? 260), srcX: p.x, srcY: p.y })
         }
         break
       }
@@ -917,7 +928,7 @@ export class Game {
         let radius = (prm.radius ?? 130) * p.stats.area
         if (eff(p, 'charMed')) radius *= 1 + 0.4 * eff(p, 'charMed')
         this.zones.push({
-          x: p.x, y: p.y, radius, dps: 0, hps: prm.hps ?? 6,
+          x: p.x, y: p.y, radius, dps: 0, hps: (prm.hps ?? 6) * sp,
           until: this.time + (prm.duration ?? 6), ownerId: p.id, kind: 'heal', hostile: true, tick: 0,
         })
         break
@@ -927,7 +938,7 @@ export class Game {
         for (let k = 0; k < count; k++) {
           this.turrets.push({
             x: p.x + (this.rng() - 0.5) * 100, y: p.y + (this.rng() - 0.5) * 100,
-            damage: prm.damage ?? 6, range: prm.range ?? 320,
+            damage: (prm.damage ?? 6) * p.stats.damage * sp, range: prm.range ?? 320,
             fireCd: prm.fireCd ?? 0.5, cdLeft: 0,
             until: this.time + (prm.duration ?? 10), ownerId: p.id,
             guard: eff(p, 'turretGuard') > 0,
@@ -944,22 +955,43 @@ export class Game {
           if (dist2(e.x, e.y, p.x, p.y) > radius * radius) continue
           if (e.elite) { e.slowUntil = this.time + freeze; e.slowPct = Math.max(e.slowPct, 0.5) }  // 菁英不被定身
           else e.frozenUntil = this.time + freeze
-          damageEnemyImpl(this, e, (prm.damage ?? 18) * p.stats.damage, { ownerId: p.id, srcX: p.x, srcY: p.y })
+          damageEnemyImpl(this, e, (prm.damage ?? 18) * p.stats.damage * sp, { ownerId: p.id, srcX: p.x, srcY: p.y })
         }
         break
       }
       case 'fateflip': {
-        const badChance = eff(p, 'charGam') ? 0.15 : 0.3
-        if (this.rng() < badChance) {
-          const bad = Math.floor(this.rng() * 2)
-          if (bad === 0) { p.hp = Math.max(1, p.hp - Math.round(p.stats.maxHp * 0.05)); this.toastTo(p, '🎲 翻到衰牌：損失 5% 生命', 'warn') }
-          else { p.buffs.hasteUntil = this.time + 2; p.buffs.hasteAmt = -0.3; this.toastTo(p, '🎲 翻到衰牌：減速 2 秒', 'warn') }
+        // 命運輪盤（重做）：沒有衰牌，四種全是強效果；效果隨 build（damage/sp）成長，
+        // 賭運高漲（charGam）提高「頭獎」骰子風暴的機率。
+        const jackpotChance = 0.25 + 0.1 * eff(p, 'charGam')
+        const roll = this.rng()
+        if (roll < jackpotChance) {
+          // 🎰 骰子風暴：全場敵人各承受一顆隨機骰子（20~66 點 × 傷害 × 技能強化）
+          this.ev({ t: 'aoe', x: Math.round(p.x), y: Math.round(p.y), r: 400, kind: 'lightning' })
+          for (const e of this.enemies) {
+            if (e.hp <= 0) continue
+            const dice = 20 + this.rng() * 46
+            damageEnemyImpl(this, e, dice * p.stats.damage * sp, { ownerId: p.id, crit: this.rng() < 0.3, srcX: p.x, srcY: p.y })
+          }
+          if (this.boss) damageBoss(this, 40 * p.stats.damage * sp, p.id, p.x, p.y)
+          this.toastTo(p, '🎰 頭獎！骰子風暴轟炸全場！', 'good')
+        } else if (roll < jackpotChance + 0.25) {
+          // 🔥 黃金狂熱：攻速 +60%、金幣掉落翻倍感（直接給錢）
+          p.buffs.rageUntil = this.time + 6
+          p.buffs.rageAmt = 0.6
+          gainGold(this, p, 6 + this.wave, false)
+          this.toastTo(p, `🎲 黃金狂熱：攻速 +60%（6 秒）、金幣 +${6 + this.wave}`, 'good')
+        } else if (roll < jackpotChance + 0.5) {
+          // 🍀 幸運爆發：暴擊率 +40%、移速 +15%（8 秒）
+          p.buffs.critUntil = this.time + 8
+          p.buffs.critAmt = 0.4
+          p.buffs.hasteUntil = this.time + 8
+          p.buffs.hasteAmt = 0.15
+          this.toastTo(p, '🎲 幸運爆發：暴擊率 +40%、移速 +15%（8 秒）', 'good')
         } else {
-          const good = Math.floor(this.rng() * 4)
-          if (good === 0) { p.buffs.rageUntil = this.time + 6; p.buffs.rageAmt = 0.6; this.toastTo(p, '🎲 命運眷顧：攻速大增！', 'good') }
-          else if (good === 1) { healPlayer(this, p, p.stats.maxHp * 0.3); this.toastTo(p, '🎲 命運眷顧：回復 30% 生命', 'good') }
-          else if (good === 2) { gainGold(this, p, 10, false); this.toastTo(p, '🎲 命運眷顧：金幣 +10', 'good') }
-          else { p.shield += 40; this.toastTo(p, '🎲 命運眷顧：護盾 +40', 'good') }
+          // 🛡️ 蔬菜庇護：護盾 30% 最大生命 + 回復 25% 生命
+          p.shield += Math.round(p.stats.maxHp * 0.3)
+          healPlayer(this, p, p.stats.maxHp * 0.25)
+          this.toastTo(p, '🎲 蔬菜庇護：大護盾 + 回復 25% 生命', 'good')
         }
         break
       }
@@ -970,7 +1002,7 @@ export class Game {
         for (const e of this.enemies) {
           if (e.hp <= 0 || dist2(e.x, e.y, p.x, p.y) > radius * radius) continue
           const [kx, ky] = norm(e.x - p.x, e.y - p.y)
-          damageEnemyImpl(this, e, (prm.damage ?? 45) * p.stats.damage, { ownerId: p.id, crit: this.rng() < p.stats.critChance, knockX: kx * (prm.knockback ?? 200), knockY: ky * (prm.knockback ?? 200), srcX: p.x, srcY: p.y })
+          damageEnemyImpl(this, e, (prm.damage ?? 45) * p.stats.damage * sp, { ownerId: p.id, crit: this.rng() < p.stats.critChance, knockX: kx * (prm.knockback ?? 200), knockY: ky * (prm.knockback ?? 200), srcX: p.x, srcY: p.y })
         }
         break
       }
@@ -978,7 +1010,7 @@ export class Game {
         // 榴槤：蓄刺爆發 — 蓄力越久（charge 0~1）範圍越大、傷害最高 1.5 倍，往四周噴刺並留尖刺區持續傷害
         const rMin = prm.radius ?? 300, rMax = prm.maxRadius ?? 1700
         const radius = (rMin + (rMax - rMin) * charge) * p.stats.area
-        const dmg = (prm.damage ?? 30) * (1 + 0.5 * charge) * p.stats.damage
+        const dmg = (prm.damage ?? 30) * (1 + 0.5 * charge) * p.stats.damage * sp
         this.ev({ t: 'aoe', x: Math.round(p.x), y: Math.round(p.y), r: Math.round(radius), kind: 'spikes' })
         for (const e of this.enemies) {
           if (e.hp <= 0 || dist2(e.x, e.y, p.x, p.y) > radius * radius) continue
@@ -987,7 +1019,7 @@ export class Game {
         }
         // 尖刺區持續傷害
         this.zones.push({
-          x: p.x, y: p.y, radius: Math.min(radius, 300) , dps: (prm.zoneDps ?? 8) * p.stats.damage, hps: 0,
+          x: p.x, y: p.y, radius: Math.min(radius, 300), dps: (prm.zoneDps ?? 8) * p.stats.damage * sp, hps: 0,
           until: this.time + (prm.zoneDur ?? 1.5), ownerId: p.id, kind: 'spike', hostile: true, tick: 0,
         })
         break
@@ -999,7 +1031,7 @@ export class Game {
         for (const e of this.enemies) {
           if (e.hp <= 0 || dist2(e.x, e.y, p.x, p.y) > radius * radius) continue
           const [kx, ky] = norm(e.x - p.x, e.y - p.y)
-          damageEnemyImpl(this, e, (prm.damage ?? 26) * p.stats.damage, { ownerId: p.id, knockX: kx * (prm.knockback ?? 240), knockY: ky * (prm.knockback ?? 240), srcX: p.x, srcY: p.y })
+          damageEnemyImpl(this, e, (prm.damage ?? 26) * p.stats.damage * sp, { ownerId: p.id, knockX: kx * (prm.knockback ?? 240), knockY: ky * (prm.knockback ?? 240), srcX: p.x, srcY: p.y })
           if (!e.elite) e.stunUntil = this.time + (prm.stun ?? 1.5)
         }
         break
@@ -1013,7 +1045,7 @@ export class Game {
         for (const e of this.enemies) {
           if (e.hp <= 0 || dist2(e.x, e.y, p.x, p.y) > radius * radius) continue
           e.confusedUntil = Math.max(e.confusedUntil, this.time + confuse * (e.elite ? 0.5 : 1))
-          damageEnemyImpl(this, e, (prm.damage ?? 14) * p.stats.damage, { ownerId: p.id, srcX: p.x, srcY: p.y })
+          damageEnemyImpl(this, e, (prm.damage ?? 14) * p.stats.damage * sp, { ownerId: p.id, srcX: p.x, srcY: p.y })
         }
         // 留存的孢子雲（非傷害，持續施加混亂；見 combat.zonesTick 的 haze 分支）
         this.zones.push({

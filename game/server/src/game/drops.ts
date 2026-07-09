@@ -12,10 +12,17 @@ import { rollChestOptions } from './shop'
 export function spawnDrop(g: Game, t: SDrop['t'], x: number, y: number, v = 0, item?: string): void {
   if (g.drops.length >= caps(g.playerCount).drops) mergeXpDrops(g)
   if (g.drops.length >= caps(g.playerCount).drops && (t === 'xp' || t === 'coin')) return
-  const d: SDrop = { i: nextId(), t, x, y, v, item, magnetTargetId: null, bornAt: g.time }
+  // ×2 金幣（土豆兄弟式）：上一波沒吃到的金幣換成這一波的 ×2 charge，掉金幣時消耗
+  let x2 = false
+  if (t === 'coin' && g.goldX2Charges > 0) {
+    g.goldX2Charges--
+    v *= 2
+    x2 = true
+  }
+  const d: SDrop = { i: nextId(), t, x, y, v, item, x2, magnetTargetId: null, bornAt: g.time }
   clampArena(d, 30)
   g.drops.push(d)
-  g.ev({ t: 'drop', d: { i: d.i, t, x: Math.round(x), y: Math.round(y), v, it: item } })
+  g.ev({ t: 'drop', d: { i: d.i, t, x: Math.round(x), y: Math.round(y), v, it: item, x2: x2 ? 1 : undefined } })
 }
 
 /** 超量時合併鄰近經驗球（效能保護） */
@@ -42,20 +49,18 @@ export function dropsFromKill(g: Game, x: number, y: number, opts: {
   xpSize: number; coinChance: number; elite: boolean; boss?: boolean
 }): void {
   const rm = rewardMult(g) * g.routeMods.rewardMult * g.routeMods.dropMult * (g.eventMods.dropMult ?? 1)
-  // 經驗球
-  const xpVal = Math.round(DROPS.xpValue[opts.xpSize] * rm)
-  if (opts.boss) {
-    for (let k = 0; k < 8; k++) spawnDrop(g, 'xp', x + (g.rng() - 0.5) * 140, y + (g.rng() - 0.5) * 140, DROPS.xpValue[3])
-  } else {
-    spawnDrop(g, 'xp', x, y, xpVal)
+  // 經驗：不再掉球，擊殺直接發給全體存活玩家（各自吃 xpGain 加成）
+  const xpVal = Math.round(DROPS.xpValue[opts.boss ? 3 : opts.xpSize] * rm) * (opts.boss ? 8 : 1)
+  for (const p of g.players.values()) {
+    if (p.connected && p.status === 'alive') addXpDirect(g, p, xpVal * p.stats.xpGain)
   }
-  // 金幣
+  // 金幣（全域緊縮倍率 → 錢要花在刀口上）
   const coinMult = (g.eventMods.coinMult ?? 1) * g.routeMods.goldMult
   if (opts.boss) {
     for (let k = 0; k < 6; k++) spawnDrop(g, 'coin', x + (g.rng() - 0.5) * 160, y + (g.rng() - 0.5) * 160, Math.ceil(DROPS.bossCoin / 6))
   } else if (opts.elite) {
     spawnDrop(g, 'coin', x, y, Math.round((intR(g.rng, DROPS.coinValue.min, DROPS.coinValue.max) + DROPS.eliteCoinBonus) * coinMult))
-  } else if (g.rng() < opts.coinChance * coinMult) {
+  } else if (g.rng() < opts.coinChance * coinMult * DROPS.coinChanceMult) {
     spawnDrop(g, 'coin', x, y, intR(g.rng, DROPS.coinValue.min, DROPS.coinValue.max))
   }
   // 補血（受導演壓力調節 — 壓力高掉更多）
@@ -163,6 +168,9 @@ function addXp(g: Game, p: SPlayer, v: number): void {
   }
 }
 
+/** 擊殺直接發經驗（經驗不再掉落地面） */
+export function addXpDirect(g: Game, p: SPlayer, v: number): void { addXp(g, p, v) }
+
 export function gainGold(g: Game, p: SPlayer, v: number, allowShare: boolean): void {
   const amt = Math.round(v * p.stats.goldGain * (g.eventMods.coinMult ?? 1) * (eff(p, 'curseGreed') ? 1.5 : 1))
   p.gold += amt
@@ -241,9 +249,12 @@ export function applyItem(g: Game, p: SPlayer, itemId: string): void {
   }
 }
 
-/** 波次結束：自動吸取剩餘掉落物（寶箱也直接入袋） */
+/** 波次結束：金幣「不」自動吸——沒吃到的變成下一波的 ×2 金幣 charge（土豆兄弟式）；
+ *  其餘掉落物（愛心/道具/寶箱）照舊自動入袋。 */
 export function vacuumAll(g: Game): void {
+  let missedCoins = 0
   for (const d of g.drops.slice()) {
+    if (d.t === 'coin') { missedCoins++; g.ev({ t: 'pick', i: d.i, id: '' }); continue }
     // 找最近的存活玩家收走
     let best: SPlayer | null = null
     let bd = Infinity
@@ -255,4 +266,8 @@ export function vacuumAll(g: Game): void {
     if (best) collect(g, best, d)
   }
   g.drops = []
+  if (missedCoins > 0) {
+    g.goldX2Charges = Math.min(50, g.goldX2Charges + missedCoins)
+    g.broadcastToast(`💰 沒撿的 ${missedCoins} 枚金幣 → 下一波前 ${missedCoins} 枚金幣 ×2！`, 'info')
+  }
 }

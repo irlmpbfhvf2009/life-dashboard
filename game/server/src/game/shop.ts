@@ -1,6 +1,6 @@
 // 商店 + 升級三選一 + 寶箱 + 團隊獎勵（免費多選）。
 import {
-  WEAPONS, WEAPON_MAP, UPGRADES, UPGRADE_MAP, CHEST_REWARDS,
+  WEAPONS, WEAPON_MAP, UPGRADES, UPGRADE_MAP, CHEST_BOONS,
   TEAM_REWARDS, ITEMS,
 } from '../../../shared/content/index'
 import { SHOP } from '../../../shared/balance'
@@ -21,10 +21,13 @@ const MULTI_UPGRADES = new Set(UPGRADES.filter(u => u.statMods && 'projectiles' 
 
 // -------------------------------------------------------- 武器池（共用池 + 簽名武器 + 親和權重）
 
-/** 此玩家可取得的武器池：共用池 + 自己的簽名武器（排除進化型/已滿級） */
+/** 此玩家可取得的武器池：共用池 + 自己的簽名武器（排除進化型/已滿級）。
+ *  武器欄已滿 → 只出「已持有」的武器（買了＝升級），不再出新武器。 */
 function weaponPool(p: SPlayer): WeaponData[] {
+  const full = p.weapons.length >= maxWeapons(p)
   return WEAPONS.filter(w => !w.evolvedForm && (!w.charId || w.charId === p.char.id)).filter(w => {
     const owned = p.weapons.find(x => x.data.id === w.id)
+    if (full && !owned) return false
     return !owned || owned.level < w.maxLevel
   })
 }
@@ -186,10 +189,19 @@ export function generateShopOffers(g: Game, p: SPlayer): void {
         continue
       }
     }
-    const u = pickUpgradeByRarity(g, p, rollRarity(g, p, true))
-    if (!u) break
-    if (p.shopOffers.some(o => o.kind === 'upgrade' && o.refId === u.id)) continue
-    p.shopOffers.push({ offerId: oid(), kind: 'upgrade', refId: u.id, price: Math.max(1, Math.round(u.price * priceMult)), locked: false, sold: false })
+    // 升級：試抽 8 次（避開已上架的同名）；抽不到＝池子乾了 → 補福袋，保證商店永遠 4 格滿
+    let filled = false
+    for (let tries = 0; tries < 8; tries++) {
+      const u = pickUpgradeByRarity(g, p, rollRarity(g, p, true))
+      if (!u) break
+      if (p.shopOffers.some(o => o.kind === 'upgrade' && o.refId === u.id)) continue
+      p.shopOffers.push({ offerId: oid(), kind: 'upgrade', refId: u.id, price: Math.max(1, Math.round(u.price * priceMult)), locked: false, sold: false })
+      filled = true
+      break
+    }
+    if (!filled) {
+      p.shopOffers.push({ offerId: oid(), kind: 'mystery', refId: '', price: Math.max(5, Math.round(8 + g.wave * 1.5)), locked: false, sold: false })
+    }
   }
 
   // 🎁 福袋：35% 機率把一個非鎖定格換成福袋；其中 30% 是「稀有福袋」（金色、貴一倍、必開好料）
@@ -336,53 +348,25 @@ export function checkEvolutions(g: Game, p: SPlayer): boolean {
 
 // -------------------------------------------------------- 寶箱
 
+/** 寶箱三選一：全部是「永久戰力 boon」——build 成形（傷害滾雪球）的主要來源。
+ *  武器改由商店購買、復活碎片已移除。 */
 export function rollChestOptions(g: Game, p: SPlayer): ChestPending['options'] {
-  const n = 2 + (eff(p, 'chestBonus') ? 1 : 0) + (p.chestKeyBonus > 0 ? 1 : 0)
+  const n = 3 + (eff(p, 'chestBonus') ? 1 : 0) + (p.chestKeyBonus > 0 ? 1 : 0)
   if (p.chestKeyBonus > 0) p.chestKeyBonus--
   const opts: ChestPending['options'] = []
   const used = new Set<string>()
   for (let k = 0; k < n; k++) {
-    for (let tries = 0; tries < 6; tries++) {
-      const cr = weightedR(g.rng, CHEST_REWARDS)
-      if (used.has(cr.id) && tries < 5) continue
-      used.add(cr.id)
-      switch (cr.type) {
-        case 'gold': {
-          const amt = intR(g.rng, 12, 20) + g.wave * 2
-          opts.push({ rewardId: cr.id, detail: `金幣 +${amt}`, refId: String(amt) })
-          break
-        }
-        case 'weapon': {
-          const w = pickWeaponWeighted(g, p, weaponPool(p))
-          if (!w) continue
-          opts.push({ rewardId: cr.id, detail: `武器：${w.name}`, refId: w.id })
-          break
-        }
-        case 'weaponUp': {
-          // 隨機升級一把「還沒滿級」的武器（含簽名武器）
-          const upgradable = p.weapons.filter(w => w.level < w.data.maxLevel)
-          if (!upgradable.length) continue
-          const w = upgradable[Math.floor(g.rng() * upgradable.length)]
-          opts.push({ rewardId: cr.id, detail: `升級武器：${w.data.name} → Lv.${w.level + 1}`, refId: w.data.id })
-          break
-        }
-        case 'upgrade': {
-          const u = pickUpgradeByRarity(g, p, g.rng() < 0.5 ? 'rare' : 'epic')
-          if (!u) continue
-          opts.push({ rewardId: cr.id, detail: `升級：${u.name}（${u.description}）`, refId: u.id })
-          break
-        }
-        case 'reviveShard':
-          opts.push({ rewardId: cr.id, detail: '復活碎片 ×1', refId: '' })
-          break
-        case 'curse': {
-          const pool = UPGRADES.filter(u => u.category === 'curse' && upgradeEligible(g, p, u))
-          if (!pool.length) continue
-          const u = pool[Math.floor(g.rng() * pool.length)]
-          opts.push({ rewardId: cr.id, detail: `詛咒：${u.name}（${u.description}）`, refId: u.id })
-          break
-        }
-      }
+    for (let tries = 0; tries < 8; tries++) {
+      const b = weightedR(g.rng, CHEST_BOONS)
+      if (used.has(b.id) && tries < 7) continue
+      // 情境過濾
+      if (b.effect === 'weaponUp' && !p.weapons.some(w => w.level < w.data.maxLevel)) continue
+      if (b.effect === 'allWeaponUp' && !p.weapons.some(w => w.level < w.data.maxLevel)) continue
+      if (b.effect === 'curse' && !UPGRADES.some(u => u.category === 'curse' && upgradeEligible(g, p, u))) continue
+      if (used.has(b.id)) continue
+      used.add(b.id)
+      const detail = b.effect === 'gold' ? `金幣 +${18 + g.wave * 2}` : b.detail
+      opts.push({ rewardId: b.id, detail: `${b.name}：${detail}`, refId: b.id })
       break
     }
   }
@@ -395,24 +379,64 @@ export function applyChestChoice(g: Game, p: SPlayer, chestId: string, rewardId:
   const opt = chest.options.find(o => o.rewardId === rewardId)
   if (!opt) return '找不到獎勵'
   p.chests = p.chests.filter(c => c !== chest)
-  switch (rewardId) {
-    case 'cr_gold': p.gold += Number(opt.refId); break
-    case 'cr_weapon': {
-      const err = addWeapon(g, p, opt.refId!)
-      if (err) { p.gold += 15; g.toastTo(p, `武器欄已滿，折抵 15 金幣`) }
-      else syncWeaponOffers(g, p)
+  const boon = CHEST_BOONS.find(b => b.id === rewardId)
+  if (!boon) return '未知獎勵'
+  // 永久屬性 boon
+  if (boon.statMods) {
+    for (const [k, v] of Object.entries(boon.statMods)) {
+      p.boonMods[k] = (p.boonMods[k] ?? 0) + (v as number)
+    }
+    recomputeEffects(p)
+    g.toastTo(p, `✨ ${boon.name}：${boon.detail}`, 'good')
+    return null
+  }
+  switch (boon.effect) {
+    case 'dmgMult':
+      p.boonDmgMult *= boon.params?.mult ?? 1.3
+      recomputeEffects(p)
+      g.toastTo(p, `✨ ${boon.name}：傷害 ×${boon.params?.mult ?? 1.3}（現在 ×${p.boonDmgMult.toFixed(2)}）`, 'good')
+      break
+    case 'skillPower':
+      p.boonSkillPower++
+      g.toastTo(p, `✨ ${boon.name}：技能傷害 +35%（共 +${p.boonSkillPower * 35}%）`, 'good')
+      break
+    case 'skillCd':
+      p.boonSkillCd++
+      g.toastTo(p, `✨ ${boon.name}：技能冷卻 -10%`, 'good')
+      break
+    case 'weaponUp': {
+      const upgradable = p.weapons.filter(w => w.level < w.data.maxLevel)
+      if (upgradable.length) {
+        const w = upgradable[Math.floor(g.rng() * upgradable.length)]
+        w.level++
+        syncWeaponOffers(g, p)
+        g.toastTo(p, `⬆️ ${w.data.name} → Lv.${w.level}`, 'good')
+      } else { p.gold += 15; g.toastTo(p, '武器都滿級了，折抵 15 金幣') }
       break
     }
-    case 'cr_weaponup': {
-      // 指定武器 +1 級（若該武器已被賣掉/滿級則挑另一把可升的）
-      let w = p.weapons.find(w => w.data.id === opt.refId && w.level < w.data.maxLevel)
-      if (!w) w = p.weapons.find(w => w.level < w.data.maxLevel)
-      if (w) { w.level++; syncWeaponOffers(g, p); g.toastTo(p, `⬆️ ${w.data.name} → Lv.${w.level}`, 'good') }
-      else { p.gold += 15; g.toastTo(p, '武器都滿級了，折抵 15 金幣') }
+    case 'allWeaponUp': {
+      let n = 0
+      for (const w of p.weapons) if (w.level < w.data.maxLevel) { w.level++; n++ }
+      syncWeaponOffers(g, p)
+      g.toastTo(p, `🚀 全軍突擊：${n} 把武器全部 +1 級！`, 'good')
       break
     }
-    case 'cr_upgrade': case 'cr_curse': applyUpgrade(g, p, opt.refId!); break
-    case 'cr_shard': addReviveShard(g, p.name); break
+    case 'epicUpgrade': {
+      const u = pickUpgradeByRarity(g, p, 'epic')
+      if (u) { applyUpgrade(g, p, u.id); g.toastTo(p, `✨ 神秘天賦：${u.name}（${u.description}）`, 'good') }
+      else { p.gold += 20; g.toastTo(p, '天賦已滿，折抵 20 金幣') }
+      break
+    }
+    case 'gold': p.gold += 18 + g.wave * 2; break
+    case 'curse': {
+      const pool = UPGRADES.filter(u => u.category === 'curse' && upgradeEligible(g, p, u))
+      if (pool.length) {
+        const u = pool[Math.floor(g.rng() * pool.length)]
+        applyUpgrade(g, p, u.id)
+        g.toastTo(p, `😈 ${u.name}：${u.description}`, 'warn')
+      } else { p.gold += 15 }
+      break
+    }
   }
   return null
 }

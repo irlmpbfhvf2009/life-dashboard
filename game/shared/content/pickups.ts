@@ -1,4 +1,4 @@
-import type { ItemData, ChestRewardData } from '../types'
+import type { ItemData, ChestBoonData } from '../types'
 
 // 10 種臨時掉落道具（撿到立即生效；effect 由 server drops.ts 實作）。
 export const ITEMS: ItemData[] = [
@@ -16,12 +16,28 @@ export const ITEMS: ItemData[] = [
 
 export const ITEM_MAP = new Map(ITEMS.map(i => [i.id, i]))
 
-// 5 種寶箱獎勵類型（開箱時擲出其中一種，玩家從選項中挑）。
-export const CHEST_REWARDS: ChestRewardData[] = [
-  { id: 'cr_gold', name: '高額金幣', type: 'gold', weight: 22 },
-  { id: 'cr_weapon', name: '隨機武器', type: 'weapon', weight: 20 },
-  { id: 'cr_weaponup', name: '隨機武器升級', type: 'weaponUp', weight: 20 },
-  { id: 'cr_upgrade', name: '稀有升級', type: 'upgrade', weight: 26 },
-  { id: 'cr_shard', name: '復活碎片', type: 'reviveShard', weight: 10 },
-  { id: 'cr_curse', name: '詛咒升級（高風險高報酬）', type: 'curse', weight: 14 },
+// 寶箱 boon 池（開箱三選一，全部是「永久戰力」——這是 build 成形/傷害滾雪球的主要來源）。
+// 武器改由商店購買、復活碎片已移除。加 boon = 加一筆資料。
+export const CHEST_BOONS: ChestBoonData[] = [
+  // ---- 屬性加成（疊加）
+  { id: 'boon_dmg', name: '力量果實', detail: '傷害 +15%（永久）', weight: 20, statMods: { damage: 0.15 } },
+  { id: 'boon_atk', name: '疾風之葉', detail: '攻擊速度 +12%（永久）', weight: 16, statMods: { attackSpeed: 0.12 } },
+  { id: 'boon_spd', name: '風行根鬚', detail: '移動速度 +8%（永久）', weight: 10, statMods: { moveSpeed: 0.08 } },
+  { id: 'boon_hp', name: '巨壯塊莖', detail: '最大生命 +30（永久）', weight: 12, statMods: { maxHp: 30 } },
+  { id: 'boon_crit', name: '銳眼之種', detail: '暴擊率 +8%（永久）', weight: 12, statMods: { critChance: 0.08 } },
+  { id: 'boon_critd', name: '致命棘刺', detail: '暴擊傷害 +35%（永久）', weight: 12, statMods: { critDamage: 0.35 } },
+  { id: 'boon_area', name: '沃土擴張', detail: '範圍效果 +15%（永久）', weight: 10, statMods: { area: 0.15 } },
+  { id: 'boon_proj', name: '分裂胚芽', detail: '投射物 +1（永久）', weight: 4, statMods: { projectiles: 1 } },
+  { id: 'boon_pierce', name: '貫穿尖芽', detail: '穿透 +1（永久）', weight: 6, statMods: { pierce: 1 } },
+  { id: 'boon_life', name: '汲血菌絲', detail: '擊殺回復 +2 生命（永久）', weight: 8, statMods: { lifeOnKill: 2 } },
+  { id: 'boon_regen', name: '光合強化', detail: '每秒回復 +1.5（永久）', weight: 8, statMods: { regen: 1.5 } },
+  // ---- 乘算/技能/特殊（爆發 build 的核心）
+  { id: 'boon_dmgx', name: '狂暴基因', detail: '傷害 ×1.3（乘算，可疊）', weight: 6, effect: 'dmgMult', params: { mult: 1.3 } },
+  { id: 'boon_skill', name: '奧義精髓', detail: '主動技能傷害 +35%（永久）', weight: 10, effect: 'skillPower' },
+  { id: 'boon_skillcd', name: '靜心冥想', detail: '技能冷卻 -10%（永久）', weight: 8, effect: 'skillCd' },
+  { id: 'boon_weaponup', name: '武器精鍊', detail: '隨機一把武器 +1 級', weight: 14, effect: 'weaponUp' },
+  { id: 'boon_allweaponup', name: '全軍突擊', detail: '所有武器 +1 級！', weight: 3, effect: 'allWeaponUp' },
+  { id: 'boon_upgrade', name: '神秘天賦', detail: '獲得一個隨機史詩升級', weight: 8, effect: 'epicUpgrade' },
+  { id: 'boon_gold', name: '高額金幣', detail: '立即獲得大筆金幣', weight: 10, effect: 'gold' },
+  { id: 'boon_curse', name: '詛咒契約', detail: '隨機詛咒（高風險高報酬）', weight: 8, effect: 'curse' },
 ]

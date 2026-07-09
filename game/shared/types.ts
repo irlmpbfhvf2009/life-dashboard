@@ -254,11 +254,17 @@ export interface ItemData {
   weight: number
 }
 
-export interface ChestRewardData {
+/** 寶箱 boon：開箱三選一的「永久戰力」——build 成形的主要來源（武器/復活碎片已移出寶箱）。
+ *  statMods = 永久屬性加成（疊加到 SPlayer.boonMods）；effect = 特殊效果（server 實作）。 */
+export interface ChestBoonData {
   id: string
   name: string
-  type: 'gold' | 'weapon' | 'weaponUp' | 'upgrade' | 'teamItem' | 'reviveShard' | 'curse'
+  detail: string
   weight: number
+  statMods?: StatMods
+  /** dmgMult=傷害×params.mult（乘算） / weaponUp / allWeaponUp / gold / epicUpgrade / curse / skillPower / skillCd */
+  effect?: string
+  params?: Record<string, number>
 }
 
 export interface RouteData {
@@ -359,6 +365,7 @@ export interface DropSpawnEv {
   x: number; y: number
   v?: number                     // xp 量級 / 金幣值 / 愛心大小
   it?: string                    // ItemData id
+  x2?: 1                         // ×2 金幣（上一波沒吃到的補償，樣式加大）
 }
 
 export interface ObjectiveSnap {
