@@ -9,7 +9,7 @@ export const ITEMS: ItemData[] = [
   { id: 'rage', name: '狂暴藥水', emoji: '🔥', description: '攻速 +50%，持續 6 秒', effect: 'rageBuff', params: { duration: 6, amount: 0.5 }, weight: 10 },
   { id: 'freeze', name: '冰凍球', emoji: '❄️', description: '凍結附近敵人 2.5 秒', effect: 'freezeNearby', params: { radius: 280, duration: 2.5 }, weight: 8 },
   { id: 'energy', name: '技能球', emoji: '🔮', description: '主動技能冷卻 -50%', effect: 'skillCd', params: { amount: 0.5 }, weight: 8 },
-  { id: 'key', name: '寶箱鑰匙', emoji: '🗝️', description: '本波寶箱獎勵 +1 選項', effect: 'chestKey', weight: 5 },
+  { id: 'key', name: '寶箱鑰匙', emoji: '🗝️', description: '下次開寶箱時多 1 個選項可挑', effect: 'chestKey', weight: 5 },
   { id: 'coinbag', name: '金幣袋', emoji: '💰', description: '立即獲得金幣', effect: 'instantGold', params: { min: 8, max: 18 }, weight: 10 },
   { id: 'medkit', name: '急救包', emoji: '💊', description: '立即回復 40% 生命', effect: 'instantHeal', params: { pct: 0.4 }, weight: 9 },
 ]

@@ -49,7 +49,8 @@ function upgradeEligible(g: Game, p: SPlayer, u: UpgradeData): boolean {
   if (u.conflicts?.some(c => p.upgrades.has(c))) return false
   if (PIERCE_UPGRADES.has(u.id) && !p.weapons.some(w => w.data.behavior === 'projectile' || w.data.behavior === 'drone')) return false
   if (MULTI_UPGRADES.has(u.id) && !p.weapons.some(w => ['projectile', 'drone', 'orbit'].includes(w.data.behavior))) return false
-  if (u.category === 'coop' && g.playerCount === 1 && ['c_pos1', 'c_pos2', 'c_pos3', 'c_pos4', 'c_res1', 'c_res2', 'c_def3', 'c_def4', 'c_rescue3', 'c_rescue4'].includes(u.id)) return false
+  // 單人遊戲：完全不出合作/團隊類升級（救援護盾、並肩作戰、共享資源…都沒意義）
+  if (u.category === 'coop' && g.playerCount === 1) return false
   for (const req of u.requirements ?? []) {
     if (req.startsWith('char:') && p.char.id !== req.slice(5)) return false
     if (req.startsWith('weaponTag:') && !p.weapons.some(w => w.data.tags.includes(req.slice(10)))) return false

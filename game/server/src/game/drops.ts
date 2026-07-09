@@ -198,7 +198,7 @@ function itemEffectText(g: Game, p: SPlayer, itemId: string): string {
     case 'rageBuff': return `🔥 攻速 +${Math.round(prm.amount * 100)}%（${prm.duration} 秒）`
     case 'freezeNearby': return `❄️ 凍結周圍敵人 ${prm.duration} 秒`
     case 'skillCd': return `🔮 技能冷卻 -${Math.round(prm.amount * 100)}%`
-    case 'chestKey': return '🗝️ 本波寶箱獎勵 +1 選項'
+    case 'chestKey': return '🗝️ 寶箱鑰匙：下次開寶箱多 1 個選項'
     case 'instantHeal': return `💊 生命 +${Math.round(p.stats.maxHp * prm.pct)}（${Math.round(prm.pct * 100)}%）`
     default: return `${it.emoji} ${it.name}`
   }

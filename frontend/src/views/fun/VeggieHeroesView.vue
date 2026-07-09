@@ -49,12 +49,21 @@ const busy = ref(false)
 const homeError = ref('')
 // 難度固定夢魘（difficulty=2，不再讓玩家選）；人數預設 1
 const cfg = ref<{ mode: Mode; difficulty: number; maxPlayers: number }>({ mode: 'standard', difficulty: 2, maxPlayers: 1 })
+// 模式：標準 / 無盡 / 每日挑戰（快速已移除）。每日＝單人、全球同種子、拚排行。
 const MODES: { id: Mode; name: string; desc: string }[] = [
-  { id: 'quick', name: '快速', desc: '10 波 · 約 10 分鐘' },
   { id: 'standard', name: '標準', desc: '20 波 · 雙 Boss' },
   { id: 'endless', name: '無盡', desc: '20 波後無盡加壓' },
+  { id: 'daily', name: '每日挑戰', desc: '全球同種子 · 拚排行' },
 ]
 const modeName = (m: string) => m === 'daily' ? '每日挑戰' : (MODES.find(x => x.id === m)?.name ?? '無盡')
+// 房內模式切換（可多人）不含每日
+const ROOM_MODES = MODES.filter(m => m.id !== 'daily')
+
+// 建房/開始：每日走 startDaily（單人固定），其餘正常建房
+async function doCreateOrDaily() {
+  if (cfg.value.mode === 'daily') { await startDaily(); return }
+  await doCreate()
+}
 
 async function doCreate() {
   if (!playerName.value.trim()) { homeError.value = '先取個名字吧'; return }
@@ -395,10 +404,20 @@ function offerRarity(o: { kind: string; refId: string }): string {
 const interReady = computed(() => !!gs.inter?.readySet.includes(gs.playerId))
 // 職業專屬（簽名）武器：帶 charId ＝ 只有本角色拿得到 → 不可出售
 const isSigWeapon = (id: string) => !!wpn(id)?.charId
-function sellWeapon(i: number, id: string, level: number) {
-  if (isSigWeapon(id)) { pushToast('職業專屬武器無法出售', 'warn'); return }
+// 賣武器：點一下選取（該格下方冒出「售出」鈕），再點才賣（不用 alert）
+const sellSel = ref<number | null>(null)
+const sellRefund = (id: string, level: number) =>
+  Math.max(1, Math.round((wpn(id)?.price ?? 0) * (1 + (level - 1) * 0.5) * SHOP.sellPct))
+function toggleSell(i: number, id: string) {
+  if (isSigWeapon(id)) { pushToast('職業專屬武器無法出售', 'warn'); sellSel.value = null; return }
   if ((gs.inter?.me.weapons.length ?? 0) <= 1) { pushToast('至少要保留一把武器', 'warn'); return }
-  if (window.confirm(`賣出 ${wpn(id)?.name} Lv.${level}？（拿回 ${SELL_PCT_LABEL}% 金幣）`)) api.sell(i)
+  sellSel.value = sellSel.value === i ? null : i
+  sfx.click()
+}
+function confirmSell(i: number) {
+  api.sell(i)
+  sellSel.value = null
+  sfx.buy()
 }
 const connectedCount = computed(() => gs.room?.players.filter(p => p.connected).length ?? 1)
 
@@ -542,9 +561,9 @@ function backToStudio() {
 }
 
 const bestWaves = computed(() => ({
-  quick: localStorage.getItem('veggie-best-quick') ?? '—',
   standard: localStorage.getItem('veggie-best-standard') ?? '—',
   endless: localStorage.getItem('veggie-best-endless') ?? '—',
+  daily: localStorage.getItem('veggie-best-daily') ?? '—',
 }))
 </script>
 
@@ -581,8 +600,8 @@ const bestWaves = computed(() => ({
               <span class="block text-[10px] opacity-70">{{ m.desc }}</span>
             </button>
           </div>
-          <div class="mb-3 flex items-center justify-between gap-2 text-sm">
-            <span class="rounded-full bg-rose-500/25 px-2.5 py-1 text-xs font-bold text-rose-200">🔥 夢魘難度</span>
+          <!-- 每日＝單人固定，不顯示人數 -->
+          <div v-if="cfg.mode !== 'daily'" class="mb-3 flex items-center justify-end gap-2 text-sm">
             <div class="flex items-center gap-1">
               <span class="text-xs text-white/50">人數上限</span>
               <button
@@ -593,10 +612,12 @@ const bestWaves = computed(() => ({
               >{{ n }}</button>
             </div>
           </div>
+          <div v-else class="mb-3 text-center text-[11px] text-fuchsia-300/80">📅 單人挑戰，全球同一種子、記入排行榜</div>
           <button
-            class="w-full rounded-xl bg-gradient-to-r from-lime-500 to-emerald-600 py-3 text-lg font-black text-white shadow-lg shadow-lime-900/40 active:scale-95 disabled:opacity-50"
-            :disabled="busy" @click="doCreate"
-          >🏡 建立房間</button>
+            class="w-full rounded-xl py-3 text-lg font-black text-white shadow-lg active:scale-95 disabled:opacity-50"
+            :class="cfg.mode === 'daily' ? 'bg-gradient-to-r from-fuchsia-600 to-purple-600 shadow-fuchsia-900/40' : 'bg-gradient-to-r from-lime-500 to-emerald-600 shadow-lime-900/40'"
+            :disabled="busy" @click="doCreateOrDaily"
+          >{{ cfg.mode === 'daily' ? '📅 開始每日挑戰' : '🏡 建立房間' }}</button>
         </div>
         <!-- 加入 -->
         <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -613,32 +634,22 @@ const bestWaves = computed(() => ({
             >🚪 加入房間</button>
           </div>
         </div>
-        <!-- 每日挑戰 + 排行榜 -->
-        <div class="grid grid-cols-2 gap-3">
-          <button
-            class="rounded-2xl border border-fuchsia-400/40 bg-gradient-to-br from-fuchsia-600/20 to-transparent p-4 text-center active:scale-95 disabled:opacity-50"
-            :disabled="busy" @click="startDaily"
-          >
-            <span class="block text-2xl">📅</span>
-            <span class="block text-sm font-black text-fuchsia-200">每日挑戰</span>
-            <span class="block text-[10px] text-white/40">全球同種子 · 單人 · 拚排行</span>
-          </button>
-          <button
-            class="rounded-2xl border border-amber-400/40 bg-gradient-to-br from-amber-500/20 to-transparent p-4 text-center active:scale-95"
-            @click="openBoard"
-          >
-            <span class="block text-2xl">🏆</span>
-            <span class="block text-sm font-black text-amber-200">排行榜</span>
-            <span class="block text-[10px] text-white/40">最高波數 · 分模式/人數</span>
-          </button>
-        </div>
+        <!-- 排行榜（每日挑戰已整併進上方模式選單） -->
+        <button
+          class="w-full rounded-2xl border border-amber-400/40 bg-gradient-to-br from-amber-500/20 to-transparent p-4 text-center active:scale-95"
+          @click="openBoard"
+        >
+          <span class="text-2xl">🏆</span>
+          <span class="ml-2 text-sm font-black text-amber-200">排行榜</span>
+          <span class="ml-1 text-[10px] text-white/40">最高波數 · 分模式/人數</span>
+        </button>
         <p v-if="homeError" class="text-center text-sm font-bold text-rose-400">{{ homeError }}</p>
         <p v-if="!gs.connected && gs.connecting" class="text-center text-xs text-white/40">連線中…</p>
         <p v-else-if="gs.error" class="text-center text-xs text-rose-300/70">{{ gs.error }}（伺服器沒開？）</p>
         <div class="rounded-xl bg-white/5 px-4 py-3 text-center text-xs text-white/40">
-          我的最高　快速 <b class="text-amber-300">{{ bestWaves.quick }}</b> 波 ·
-          標準 <b class="text-amber-300">{{ bestWaves.standard }}</b> 波 ·
-          無盡 <b class="text-amber-300">{{ bestWaves.endless }}</b> 波
+          我的最高　標準 <b class="text-amber-300">{{ bestWaves.standard }}</b> 波 ·
+          無盡 <b class="text-amber-300">{{ bestWaves.endless }}</b> 波 ·
+          每日 <b class="text-amber-300">{{ bestWaves.daily }}</b> 波
         </div>
       </div>
     </div>
@@ -756,7 +767,7 @@ const bestWaves = computed(() => ({
         <span v-if="gs.room!.config.mode === 'daily'" class="rounded-full bg-fuchsia-500/25 px-3 py-1 font-bold text-fuchsia-200">📅 每日挑戰</span>
         <template v-else-if="isHost">
           <button
-            v-for="m in MODES" :key="m.id"
+            v-for="m in ROOM_MODES" :key="m.id"
             class="rounded-full border px-3 py-1 font-bold"
             :class="gs.room!.config.mode === m.id ? 'border-lime-400 bg-lime-400/20 text-lime-200' : 'border-white/10 text-white/40'"
             @click="api.setConfig({ mode: m.id })"
@@ -766,7 +777,6 @@ const bestWaves = computed(() => ({
           <span class="rounded-full bg-lime-400/20 px-3 py-1 font-bold text-lime-200">{{ modeName(gs.room!.config.mode) }}模式</span>
           <span class="rounded-full bg-sky-400/20 px-3 py-1 font-bold text-sky-200">最多 {{ gs.room!.config.maxPlayers }} 人</span>
         </template>
-        <span class="rounded-full bg-rose-400/20 px-3 py-1 font-bold text-rose-200">🔥 夢魘難度</span>
       </div>
 
       <!-- 玩家列表 -->
@@ -1220,20 +1230,26 @@ const bestWaves = computed(() => ({
               class="mt-2 w-full rounded-lg bg-white/10 py-1.5 text-xs font-bold text-white/70 active:scale-95"
               @click="api.refresh(); sfx.click()"
             >🔄 刷新商店（💰{{ gs.inter.shop.refreshCost }}）</button>
-            <!-- 我的武器 -->
-            <p class="mt-3 text-xs font-bold text-white/40">我的武器（{{ gs.inter.me.weapons.length }}/6，點擊賣出 {{ SELL_PCT_LABEL }}%；🔒＝專屬不可賣）</p>
-            <div class="mt-1 flex flex-wrap gap-1.5">
-              <button
-                v-for="(w, i) in gs.inter.me.weapons" :key="i"
-                class="veg-wslot relative flex flex-col items-center gap-0.5 rounded-lg px-1.5 pb-1 pt-1.5 leading-none active:scale-95"
-                :class="isSigWeapon(w.id) ? 'opacity-90 ring-1 ring-amber-400/50' : ''"
-                :title="isSigWeapon(w.id) ? `${wpn(w.id)?.name}（職業專屬，不可賣）` : wpn(w.id)?.name"
-                @click="sellWeapon(i, w.id, w.level)"
-              >
-                <span v-if="isSigWeapon(w.id)" class="absolute -right-0.5 -top-0.5 text-[10px]">🔒</span>
-                <Portrait kind="weapon" :id="w.id" :size="36" />
-                <span class="mt-0.5 rounded bg-black/40 px-1 text-[10px] font-black text-amber-300">Lv.{{ w.level }}</span>
-              </button>
+            <!-- 我的武器：點一下選取→下方「售出」鈕再點才賣；🔒＝專屬不可賣 -->
+            <p class="mt-3 text-xs font-bold text-white/40">我的武器（{{ gs.inter.me.weapons.length }}/6，點武器可售出 {{ SELL_PCT_LABEL }}%）</p>
+            <div class="mt-1 flex flex-wrap items-start gap-1.5">
+              <div v-for="(w, i) in gs.inter.me.weapons" :key="i" class="flex flex-col items-center gap-0.5">
+                <button
+                  class="veg-wslot relative flex flex-col items-center gap-0.5 rounded-lg px-1.5 pb-1 pt-1.5 leading-none active:scale-95"
+                  :class="[isSigWeapon(w.id) ? 'opacity-90 ring-1 ring-amber-400/50' : '', sellSel === i ? 'ring-2 ring-rose-400' : '']"
+                  :title="isSigWeapon(w.id) ? `${wpn(w.id)?.name}（職業專屬，不可賣）` : wpn(w.id)?.name"
+                  @click="toggleSell(i, w.id)"
+                >
+                  <span v-if="isSigWeapon(w.id)" class="absolute -right-0.5 -top-0.5 text-[10px]">🔒</span>
+                  <Portrait kind="weapon" :id="w.id" :size="36" />
+                  <span class="mt-0.5 rounded bg-black/40 px-1 text-[10px] font-black text-amber-300">Lv.{{ w.level }}</span>
+                </button>
+                <button
+                  v-if="sellSel === i"
+                  class="rounded bg-rose-500/90 px-1.5 py-0.5 text-[10px] font-black text-white shadow active:scale-95"
+                  @click="confirmSell(i)"
+                >售出 💰{{ sellRefund(w.id, w.level) }}</button>
+              </div>
             </div>
           </div>
 
