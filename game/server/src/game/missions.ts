@@ -97,11 +97,10 @@ export function onPropDestroyed(g: Game, o: SObjective): void {
 
 // -------------------------------------------------------- 任務
 
-export function rollMission(g: Game): MissionData | null {
-  if (g.wave < MISSION.minWave) return g.wave === 1 ? MISSIONS[0] : (g.rng() < 0.5 ? MISSIONS[0] : null)
-  if (g.rng() > MISSION.chancePerWave) return MISSIONS[0]     // 沒抽到 → 純生存
-  const pool = MISSIONS.filter(m => g.wave >= m.minWave)
-  return weightedR(g.rng, pool.map(m => ({ ...m, w: 1 })))
+export function rollMission(_g: Game): MissionData | null {
+  // 已簡化（使用者要求「不要弄太複雜」）：不再有守目標/收集/搶點等複雜任務，
+  // 每波只有「清光本波怪」的生存目標——打完怪就能進下一波。
+  return MISSIONS.find(m => m.type === 'survive') ?? null
 }
 
 export function setupMission(g: Game): void {

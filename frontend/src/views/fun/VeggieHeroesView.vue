@@ -215,7 +215,7 @@ const WEAPON_EMOJI: Record<string, string> = {
   // 冰法
   ice_shard: '❄️', fireball: '🔥', lightning: '⚡', y_orb: '🔮', y_frost: '🌨️',
   // 賭徒
-  t_dice: '🎲', t_cards: '🃏', t_coin: '🪙', t_orbit: '🍀', t_roulette: '🎰',
+  t_dice: '🎲', t_cards: '🃏', t_coin: '💰', t_orbit: '🍀', t_roulette: '🎰',
   // 刺客
   knife: '🔪', a_fan: '🌀', a_shuriken: '⭐', poison_flask: '🧪', a_drone: '🐝',
   // 武士
@@ -1097,6 +1097,18 @@ const bestWaves = computed(() => ({
 
       <!-- 技能按鈕（吃 pointerdown → 移動時也能按） -->
       <div v-if="myChar && myChar.active.id !== 'none'" class="absolute bottom-5 right-4 z-20 flex flex-col items-center gap-3">
+        <!-- Auto 自動施放（獨立小鈕，放在技能鈕上方）：開啟時兩個箭頭順時鐘旋轉 -->
+        <button
+          class="relative grid h-10 w-10 touch-none place-items-center rounded-full border text-[8px] font-black backdrop-blur-sm transition-colors active:scale-90"
+          :class="autoSkill ? 'border-lime-300/80 bg-lime-500/30 text-lime-100' : 'border-white/25 bg-black/40 text-white/50'"
+          @pointerdown.stop.prevent="toggleAuto"
+        >
+          <svg v-if="autoSkill" class="absolute h-9 w-9 veg-auto-spin" viewBox="0 0 24 24" fill="none" stroke="rgb(190,242,100)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 8a8 8 0 0 0-14-3" /><path d="M20 3v5h-5" />
+            <path d="M4 16a8 8 0 0 0 14 3" /><path d="M4 21v-5h5" />
+          </svg>
+          <span class="relative">AUTO</span>
+        </button>
         <button
           class="relative grid h-20 w-20 touch-none place-items-center rounded-full border-4 text-3xl shadow-xl active:scale-90"
           :class="skillCdPct > 0 ? 'border-white/20 bg-black/50 grayscale' : (isChargeSkill && charging ? 'border-lime-300 bg-gradient-to-br from-lime-500 to-emerald-600' : 'border-amber-300 bg-gradient-to-br from-amber-500 to-orange-600')"
@@ -1110,18 +1122,6 @@ const bestWaves = computed(() => ({
             <circle cx="20" cy="20" r="17" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="4" :stroke-dasharray="`${(1 - skillCdPct) * 107} 107`" />
           </svg>
           <span v-if="skillCdPct > 0" class="absolute text-sm font-black text-white">{{ Math.ceil(gs.hud.skillCd) }}</span>
-          <!-- Auto 徽章：半透明圈，開啟時兩個箭頭順時鐘旋轉（仿手遊自動戰鬥） -->
-          <span
-            class="absolute -right-1 -top-1 grid h-8 w-8 touch-none place-items-center rounded-full border text-[8px] font-black backdrop-blur-sm transition-colors"
-            :class="autoSkill ? 'border-lime-300/80 bg-lime-500/30 text-lime-100' : 'border-white/25 bg-black/45 text-white/45'"
-            @pointerdown.stop.prevent="toggleAuto"
-          >
-            <svg v-if="autoSkill" class="absolute h-7 w-7 veg-auto-spin" viewBox="0 0 24 24" fill="none" stroke="rgb(190,242,100)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 8a8 8 0 0 0-14-3" /><path d="M20 3v5h-5" />
-              <path d="M4 16a8 8 0 0 0 14 3" /><path d="M4 21v-5h5" />
-            </svg>
-            <span class="relative">AUTO</span>
-          </span>
         </button>
       </div>
 
