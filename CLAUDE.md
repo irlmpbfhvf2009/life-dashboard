@@ -142,7 +142,7 @@ infra/billing-guard/          費用自動關閉的 Cloud Function
 1. **Vercel `vercel env add` 在 Windows PowerShell 管線會在值開頭塞 BOM**，弄壞 Firebase API key（auth/network-request-failed）。→ 改用「本機 build 烤入值 + `--prebuilt` 部署」，雲端 env vars 不可靠、別依賴。
 2. **PowerShell 沙箱誤判**：指令裡同時有 `rm`/`Remove-Item` 與字串 `C:\Program...` 會被擋（"Remove-Item on system path"）。→ 用 `[System.IO.Directory]::Delete()` 取代 Remove-Item，或別讓 `C:\Program` 字面值與 rm 同段；必要時 `dangerouslyDisableSandbox`。
 3. **git commit -m 用 PowerShell here-string 時，訊息內含半形雙引號 `"` 會把參數截斷** → commit message 別用 `"`。
-4. **GitHub raw 有 404 負快取**（曾請求過不存在的路徑）；App 抓取一律帶 `?t=時間戳` 繞過（已內建於 stockResearch.ts）。
+4. **GitHub raw 有 404 負快取**（曾請求過不存在的路徑）；App 抓取帶 `?t=` cache-bust 繞過。**但別用每次唯一的 `Date.now()`**——那會繞掉 raw 的 CDN 快取、每次重整都回源，很快把 IP 打成 **429 rate-limit**（AI 股票整頁載不出）。`stockResearch.ts` 已改成**每分鐘一桶** `Math.floor(Date.now()/60000)`（同分鐘走 CDN 快取、跨分鐘才回源）＋ **raw 429/失敗自動退回 jsDelivr**（`cdn.jsdelivr.net/gh/…@main/…`，額度寬鬆，query string 被其 CDN 忽略故不需 bucket）。
 5. **vercel CLI 在這環境的互動/管線常卡住**（env add 空值、project rm 卡住）；能避則避，改網頁操作。
 6. **台股顏色**：漲=紅、跌=綠（`utils/format.ts` 的 `twPriceClass`），與一般西方相反；關鍵字highlight刻意用靛/琥珀，不用紅綠以免衝突。
 7. **Gemini 模型 free tier=0**：現用金鑰對 `gemini-2.0-flash` 免費額度是 0（呼叫回 429 `limit: 0`，所有 in-app AI 都會降級成「尚未啟用」）。改用 **`gemini-2.5-flash`** 即正常。已在線上 `GEMINI_MODEL=gemini-2.5-flash`（`gcloud run services update`）並改 `application.yml`/`GeminiClient` 預設。換 key 或模型壞掉時先用 `models/{model}:generateContent` 直接打 API 看 429/200。

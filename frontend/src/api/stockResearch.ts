@@ -8,12 +8,29 @@ import type { AnalysisData, PerformanceData, ArchiveData, ResultData } from '@/t
 const BASE =
   import.meta.env.VITE_STOCK_DATA_BASE ||
   'https://raw.githubusercontent.com/irlmpbfhvf2009/life-dashboard/main/stock-radar/public'
+// Fallback CDN (same GitHub content, far more generous rate limits) for when
+// raw.githubusercontent.com rate-limits this IP with a 429.
+const FALLBACK_BASE =
+  'https://cdn.jsdelivr.net/gh/irlmpbfhvf2009/life-dashboard@main/stock-radar/public'
 
 async function getJson<T>(file: string): Promise<T> {
-  // Cache-bust so a fresh daily commit shows up without a hard refresh.
-  const res = await fetch(`${BASE}/${file}?t=${Date.now()}`, { cache: 'no-store' })
-  if (!res.ok) throw new Error(`無法載入 ${file}（${res.status}）`)
-  return res.json() as Promise<T>
+  // Coarse (per-minute) cache-bust: fresh enough for a once-daily commit, while
+  // letting GitHub's CDN serve repeated hits within the same minute. A unique
+  // per-request timestamp (Date.now()) bypassed the CDN entirely and hammered
+  // raw.githubusercontent.com into 429 rate-limits on refresh. The changing
+  // minute bucket still sidesteps GitHub raw's 404 negative-cache (gotcha #4).
+  const bucket = Math.floor(Date.now() / 60_000)
+  try {
+    const res = await fetch(`${BASE}/${file}?t=${bucket}`)
+    if (!res.ok) throw new Error(`無法載入 ${file}（${res.status}）`)
+    return (await res.json()) as T
+  } catch (primaryErr) {
+    // raw 429 / network hiccup → fall back to jsDelivr (query string ignored by
+    // its CDN, so no per-minute bucket needed).
+    const res = await fetch(`${FALLBACK_BASE}/${file}`)
+    if (!res.ok) throw primaryErr
+    return (await res.json()) as T
+  }
 }
 
 export const stockResearchApi = {
