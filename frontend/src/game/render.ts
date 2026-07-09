@@ -15,6 +15,9 @@ import { gs, api, type WaveStartInfo } from './net'
 export const EMOTES = ['👍', '😆', '🆘', '❤️', '🎉', '😱', '🙏', '💪']
 
 const SNAP_DT = 0.1
+// Jitter buffer（抖動緩衝）：快照刻意延遲 ~120ms 才播放，用穩定節奏播出忽快忽慢到達的快照，
+// 把網路/伺服器抖動抹平（其他玩家/怪更順）。自己的角色是本地預測、不受影響。
+const INTERP_DELAY = 0.12
 const MAX_PARTICLES = 220
 const MAX_DMG_NUMS = 30
 const MAX_COSMETIC_PROJ = 90
@@ -89,6 +92,8 @@ export class Engine {
   myServerSpeed = 0               // server 快照送來的實際移速（含升級/buff；0=尚未收到）
   lastMoveSent = 0
   serverMyX = 900; serverMyY = 900
+  // Jitter buffer：收到的快照先進佇列（帶到達時間），update() 以延遲 INTERP_DELAY 的節奏才 commit
+  private snapBuf: { s: Snapshot; at: number }[] = []
   myCharge = 0                    // 蓄力型技能（榴槤）本地蓄力進度 0~1，用於畫蓄力環
   private resyncMe = false        // 換波時要求硬對齊自機到 server 權威位置
   // 衝刺預測（server 驅動的位移，本地同步演算避免橡皮筋瞬移）
@@ -159,6 +164,7 @@ export class Engine {
     // 新波開場：清掉衝刺/衝鋒預測殘留，並要求下一個快照硬對齊自機位置（消除換波瞬移）
     this.dashUntil = 0; this.bulwarkUntil = 0; this.myCharge = 0
     this.resyncMe = true
+    this.snapBuf = []                 // 換波清空 jitter buffer，避免上一波殘留快照被延遲播出
     this.genDecor(w.zone, w.wave)
     this.enemies.clear()
     this.drops.clear()
@@ -174,7 +180,22 @@ export class Engine {
     else playMusic(ZONE_MAP.get(w.zone)?.musicMood ?? 'farm')
   }
 
+  /** 快照到達：進 jitter buffer（不立即套用），由 update() 延遲播放抹平抖動 */
   applySnapshot(s: Snapshot): void {
+    this.snapBuf.push({ s, at: this.time })
+    // 防呆：佇列異常堆積（分頁背景回來等）時，只留最近幾筆
+    if (this.snapBuf.length > 20) this.snapBuf.splice(0, this.snapBuf.length - 6)
+  }
+
+  /** 從 buffer 釋放「到達已滿 INTERP_DELAY」的最新快照並套用（丟棄更舊的） */
+  private drainSnapBuf(): void {
+    const playHead = this.time - INTERP_DELAY
+    let latest: Snapshot | null = null
+    while (this.snapBuf.length && this.snapBuf[0].at <= playHead) latest = this.snapBuf.shift()!.s
+    if (latest) this.commitSnapshot(latest)
+  }
+
+  private commitSnapshot(s: Snapshot): void {
     // 玩家
     for (const ps of s.players) {
       let p = this.players.get(ps.id)
@@ -404,6 +425,8 @@ export class Engine {
   private update(dt: number): void {
     this.time += dt
     if (this.waveFlash > 0) this.waveFlash -= dt
+    // Jitter buffer：以延遲節奏釋放快照（抹平到達抖動），再做下面的插值
+    this.drainSnapBuf()
 
     // 自機預測移動
     const me = this.players.get(gs.playerId)
