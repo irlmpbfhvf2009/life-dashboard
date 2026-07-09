@@ -3,7 +3,7 @@ import {
   WEAPONS, WEAPON_MAP, UPGRADES, UPGRADE_MAP, CHEST_BOONS, BOSS_BOONS,
   TEAM_REWARDS, ITEMS,
 } from '../../../shared/content/index'
-import { SHOP } from '../../../shared/balance'
+import { SHOP, NO_SKILL_DMG_ACTIVES } from '../../../shared/balance'
 import { weightedR, intR, shuffleR } from '../../../shared/rng'
 import type { Rarity, ShopOffer, UpgradeData, ChestPending, WeaponData, ChestBoonData } from '../../../shared/types'
 import type { SPlayer } from './state'
@@ -52,6 +52,8 @@ function upgradeEligible(g: Game, p: SPlayer, u: UpgradeData): boolean {
   if (u.conflicts?.some(c => p.upgrades.has(c))) return false
   // 武器精研：有可升級的武器才上架
   if (u.specialEffect === 'weaponLevelUp' && !p.weapons.some(w => w.level < w.data.maxLevel)) return false
+  // 技能傷害升級：主動技不吃技傷的角色（槍手火力全開/戰士盾牌衝鋒）不上架
+  if (u.specialEffect === 'skillPower' && NO_SKILL_DMG_ACTIVES.has(p.char.active.id)) return false
   if (PIERCE_UPGRADES.has(u.id) && !p.weapons.some(w => w.data.behavior === 'projectile' || w.data.behavior === 'drone')) return false
   if (MULTI_UPGRADES.has(u.id) && !p.weapons.some(w => ['projectile', 'drone', 'orbit'].includes(w.data.behavior))) return false
   // 單人遊戲：完全不出合作/團隊類升級（救援護盾、並肩作戰、共享資源…都沒意義）
@@ -387,6 +389,7 @@ export function rollChestOptions(g: Game, p: SPlayer): ChestPending['options'] {
       if (b.effect === 'weaponUp' && !p.weapons.some(w => w.level < w.data.maxLevel)) continue
       if (b.effect === 'allWeaponUp' && !p.weapons.some(w => w.level < w.data.maxLevel)) continue
       if (b.effect === 'curse' && !UPGRADES.some(u => u.category === 'curse' && upgradeEligible(g, p, u))) continue
+      if (b.effect === 'skillPower' && NO_SKILL_DMG_ACTIVES.has(p.char.active.id)) continue
       if (used.has(b.id)) continue
       used.add(b.id)
       const detail = b.effect === 'gold' ? `金幣 +${goldReward(g)}` : b.detail
@@ -505,7 +508,9 @@ export function bossChestDraw(g: Game): void {
   g.broadcastToast('👑 首領寶箱！全員抽獎——', 'good')
   for (const p of g.players.values()) {
     if (!p.connected || p.status === 'dead') continue
-    const boon = weightedR(g.rng, BOSS_BOONS)
+    // 技傷大獎不發給「主動技不吃技傷」的角色（槍手/戰士）——抽了等於空獎
+    const pool = BOSS_BOONS.filter(b => !(b.effect === 'skillBoost' && NO_SKILL_DMG_ACTIVES.has(p.char.active.id)))
+    const boon = weightedR(g.rng, pool)
     applyBoon(g, p, boon, '👑')
     g.broadcastToast(`👑 ${p.name} 抽中【${boon.name}】`, 'good')
   }

@@ -582,6 +582,54 @@ export function drawEnemy(g: Ctx, kindId: string, size: number, t: number, opts:
       ellipse(g, s * 0.22, -s * 0.07, s * 0.04, s * 0.04); g.fill()
       break
     }
+    case 'phantom': {
+      // 幻影螳螂：細長身軀 + 鐮刀前肢（隱形時整體由 render 降透明度）
+      outlined(g, body, gg => ellipse(gg, 0, s * 0.05, s * 0.24, s * 0.4))
+      // 鐮刀前肢（左右各一，隨時間微微張合）
+      const flex = Math.sin(t * 5) * 0.1
+      for (const side of [-1, 1]) {
+        outlined(g, accent, gg => {
+          gg.beginPath()
+          gg.moveTo(side * s * 0.16, -s * 0.05)
+          gg.quadraticCurveTo(side * s * (0.52 + flex), -s * 0.3, side * s * 0.38, -s * 0.52)
+          gg.quadraticCurveTo(side * s * (0.4 + flex), -s * 0.24, side * s * 0.2, -s * 0.14)
+          gg.closePath()
+        }, 2)
+      }
+      // 三角頭 + 殘影光暈
+      outlined(g, body, gg => { gg.beginPath(); gg.moveTo(0, -s * 0.58); gg.lineTo(s * 0.18, -s * 0.32); gg.lineTo(-s * 0.18, -s * 0.32); gg.closePath() }, 2)
+      angryEyes(g, s * 0.7, -s * 0.4)
+      break
+    }
+    case 'orbiter': {
+      // 刺球金龜：圓滾硬殼 + 身邊三顆旋轉刺球（實際傷害判定＝整個環帶，畫淡環提示危險區）
+      const ringR = s * 1.85
+      g.strokeStyle = 'rgba(255,120,80,0.3)'
+      g.lineWidth = s * 0.5
+      g.beginPath(); g.arc(0, 0, ringR, 0, Math.PI * 2); g.stroke()
+      // 刺球
+      for (let k = 0; k < 3; k++) {
+        const a = t * 2.4 + (k / 3) * Math.PI * 2
+        const ox = Math.cos(a) * ringR, oy = Math.sin(a) * ringR
+        outlined(g, accent, gg => {
+          gg.beginPath()
+          for (let j = 0; j < 8; j++) {
+            const b2 = a + (j / 8) * Math.PI * 2
+            const r2 = j % 2 === 0 ? s * 0.26 : s * 0.13
+            const px = ox + Math.cos(b2) * r2, py = oy + Math.sin(b2) * r2
+            if (j === 0) gg.moveTo(px, py); else gg.lineTo(px, py)
+          }
+          gg.closePath()
+        }, 2)
+      }
+      // 本體：金龜殼
+      outlined(g, body, gg => ellipse(gg, 0, 0, s * 0.44, s * 0.4))
+      g.strokeStyle = accent; g.lineWidth = s * 0.05
+      g.beginPath(); g.moveTo(0, -s * 0.36); g.lineTo(0, s * 0.36); g.stroke()
+      g.beginPath(); g.arc(0, 0, s * 0.3, Math.PI * 0.15, Math.PI * 0.85); g.stroke()
+      angryEyes(g, s * 0.85, -s * 0.08)
+      break
+    }
     default:
       outlined(g, body, gg => ellipse(gg, 0, 0, s * 0.4, s * 0.4))
       angryEyes(g, s, 0)

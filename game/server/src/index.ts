@@ -73,6 +73,7 @@ io.on('connection', (socket: Socket) => {
       if (typeof p === 'string') { ack?.({ ok: false, error: p }); return }
       data.roomCode = code
       data.playerId = p.id
+      r.autoAdvanceSolo()   // 單人房/每日：跳過大廳直接選角
       ack?.({ ok: true, playerId: p.id, token: p.token, room: r.toInfo() })
     } catch (e) {
       ack?.({ ok: false, error: '建立房間失敗' })

@@ -76,10 +76,14 @@ export function enemyHpScale(wave: number): number {
   const expo = Math.pow(1.17, Math.max(0, wave - 3))
   const late = Math.pow(1.25, Math.max(0, wave - 15))
   const deep = Math.pow(1.12, Math.max(0, wave - 25))
-  return linear * expo * late * deep
+  // 中期跳階（使用者實測「買了 3 把武器後每關秒殺」）：前 3 波維持教學難度，
+  // 第 4 波起 3 波內 ramp 到 ×10 —— 玩家武器成形的同時怪也跟著硬起來
+  const mid = 1 + 9 * Math.min(1, Math.max(0, (wave - 3) / 3))
+  return linear * expo * late * deep * mid
 }
 export function enemyDmgScale(wave: number): number {
-  return (1 + (wave - 1) * 0.12) * Math.pow(1.05, Math.max(0, wave - 3))
+  const mid = 1 + 0.5 * Math.min(1, Math.max(0, (wave - 3) / 3))
+  return (1 + (wave - 1) * 0.12) * Math.pow(1.05, Math.max(0, wave - 3)) * mid
 }
 /** 怪物移動速度隨波數成長（每波 +1.2%，封頂 +45%）——後期怪更快更兇 */
 export function enemySpeedScale(wave: number): number {
@@ -100,6 +104,10 @@ export function eliteChance(wave: number): number {
 export function endlessAffixCount(wave: number): number {
   return wave <= 20 ? 0 : Math.floor((wave - 20) / 10) + 1
 }
+
+/** 主動技能「不吃技能傷害加成」的角色（純 buff/防禦技）：
+ *  技能傷害升級/寶箱選項不該出現在這些角色身上（槍手=火力全開純攻速、戰士=盾牌衝鋒）。 */
+export const NO_SKILL_DMG_ACTIVES = new Set(['rapidfire', 'bulwark'])
 
 // ------------------------------------------------- 玩家 / 經驗 / 復活
 
@@ -154,7 +162,7 @@ export const DROPS = {
   teamHeartChance: 0.06,        // 掉愛心時升級成團隊愛心
   teamHeartHeal: 15,
   itemChance: 0.012,
-  chestChanceElite: 0.35,
+  chestChanceElite: 0.18,       // 基準；乘擊殺者幸運（開寶箱開到累 → 降頻、單顆變強、幸運 build 撿更多）
   chestChanceBoss: 1.0,
   xpValue: { 1: 3, 2: 8, 3: 20 } as Record<number, number>,
   pickupBaseRange: 70,

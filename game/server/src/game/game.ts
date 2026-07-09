@@ -1270,7 +1270,7 @@ export class Game {
       enemies: this.enemies.map(e => ({
         i: e.i, x: Math.round(e.x), y: Math.round(e.y),
         h: Math.max(0, Math.round((e.hp / e.maxHp) * 100)),
-        f: (e.shield > 0 ? 1 : 0) | (e.frozenUntil > now ? 2 : 0) | (e.slowUntil > now ? 4 : 0) | (e.fuse >= 0 ? 8 : 0) | (e.confusedUntil > now ? 16 : 0),
+        f: (e.shield > 0 ? 1 : 0) | (e.frozenUntil > now ? 2 : 0) | (e.slowUntil > now ? 4 : 0) | (e.fuse >= 0 ? 8 : 0) | (e.confusedUntil > now ? 16 : 0) | (e.cloaked ? 32 : 0),
       })),
       objectives: this.objectives.map(o => ({
         i: o.i, t: o.t, x: Math.round(o.x), y: Math.round(o.y),

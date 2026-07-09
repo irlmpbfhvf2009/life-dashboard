@@ -133,7 +133,7 @@ export interface UpgradeData {
 export type EnemyBehavior =
   | 'chase' | 'fast' | 'tank' | 'ranged' | 'exploder'
   | 'shielded' | 'summoner' | 'toxic' | 'lunger' | 'thief'
-  | 'kiter' | 'charger' | 'looter'
+  | 'kiter' | 'charger' | 'looter' | 'stalker' | 'orbiter'
 
 export interface EnemyData {
   id: string
@@ -352,7 +352,7 @@ export interface PlayerSnap {
 
 /** 生成時一次送 full spawn（game:ev），之後快照只送位置與血量 */
 export interface EnemySnap { i: number; x: number; y: number; h: number; f?: number }
-/** f bitflags: 1=shielded 2=frozen 4=slowed 8=enraged */
+/** f bitflags: 1=shielded 2=frozen 4=slowed 8=enraged 16=confused 32=cloaked（隱形，client 畫微光殘影） */
 
 export interface EnemySpawnEv {
   i: number; k: string          // EnemyData id

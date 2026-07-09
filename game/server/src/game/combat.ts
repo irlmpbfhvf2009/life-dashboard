@@ -67,8 +67,12 @@ function effectiveStats(g: Game, p: SPlayer, w: OwnedWeapon): WeaponStats {
   if (eff(p, 'turretDuration') && w.data.behavior === 'turret') st.duration = (st.duration ?? 8) * (1 + 0.4 * eff(p, 'turretDuration'))
   if (eff(p, 'frostDuration') && w.data.tags.includes('frost')) st.duration = (st.duration ?? 2) * (1 + 0.3 * eff(p, 'frostDuration'))
   if (eff(p, 'dotUp') && st.burn) st.burn *= 1 + 0.3 * eff(p, 'dotUp')
-  // 範圍加成
+  // 開局收斂：基礎半徑/射程略小 → 「範圍效果」升級近戰遠程都有感、值得選
+  if (st.radius) st.radius *= 0.85
+  st.range *= 0.9
+  // 範圍加成：半徑全吃 area；射程吃一半（遠程 build 也想要範圍效果）
   if (st.radius) st.radius *= p.stats.area
+  st.range *= 1 + (p.stats.area - 1) * 0.5
   // 投射物加成
   st.projectileCount += p.stats.projectiles
   st.pierce += p.stats.pierce
@@ -179,7 +183,7 @@ function nearestEnemy(g: Game, x: number, y: number, range: number): { e: typeof
   let best = null as { e: typeof g.enemies[number]; d2: number } | null
   const r2 = range * range
   for (const e of g.enemies) {
-    if (e.hp <= 0) continue
+    if (e.hp <= 0 || e.cloaked) continue      // 隱形怪：自動瞄準鎖不到（範圍波及仍會打到並使其現形）
     const d2 = dist2(x, y, e.x, e.y)
     if (d2 < r2 && (!best || d2 < best.d2)) best = { e, d2 }
   }
@@ -191,7 +195,7 @@ function nearestEnemyExcluding(g: Game, x: number, y: number, range: number, exc
   let best: SEnemy | null = null
   let bd = range * range
   for (const e of g.enemies) {
-    if (e.hp <= 0 || exclude.has(e.i)) continue
+    if (e.hp <= 0 || e.cloaked || exclude.has(e.i)) continue
     const d2 = dist2(x, y, e.x, e.y)
     if (d2 < bd) { bd = d2; best = e }
   }
@@ -652,7 +656,7 @@ function turretsTick(g: Game, dt: number): void {
     let target = null as typeof g.enemies[number] | null
     let bd = t.range * t.range
     for (const e of g.enemies) {
-      if (e.hp <= 0) continue
+      if (e.hp <= 0 || e.cloaked) continue
       const d2 = dist2(t.x, t.y, e.x, e.y)
       if (d2 > t.range * t.range) continue
       let score = d2

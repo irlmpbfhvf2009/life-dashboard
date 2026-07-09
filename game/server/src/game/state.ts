@@ -134,6 +134,8 @@ export interface SEnemy {
   splitChild: boolean
   burnDps: number; burnUntil: number
   markedUntil: number; markMult: number   // 倒鉤鏢標記：期間內受到所有來源傷害 ×markMult
+  cloaked: boolean                        // stalker：隱形中（自動瞄準鎖不到、client 畫殘影）
+  ringTick: number                        // orbiter：刺球環傷害節拍
 }
 
 export interface SProjectile {

@@ -46,7 +46,7 @@ function mergeXpDrops(g: Game): void {
 
 /** 擊殺掉落（怪物死亡時呼叫） */
 export function dropsFromKill(g: Game, x: number, y: number, opts: {
-  xpSize: number; coinChance: number; elite: boolean; boss?: boolean
+  xpSize: number; coinChance: number; elite: boolean; boss?: boolean; luck?: number
 }): void {
   const rm = rewardMult(g) * g.routeMods.rewardMult * g.routeMods.dropMult * (g.eventMods.dropMult ?? 1)
   // 經驗：不再掉球，擊殺直接發給全體存活玩家（各自吃 xpGain 加成）
@@ -74,10 +74,10 @@ export function dropsFromKill(g: Game, x: number, y: number, opts: {
   if (g.rng() < DROPS.itemChance) {
     spawnDrop(g, 'item', x, y, 0, weightedR(g.rng, ITEMS).id)
   }
-  // 寶箱（Boss 掉「首領寶箱」——撿到全員直接抽超大獎）
+  // 寶箱（Boss 掉「首領寶箱」——撿到全員直接抽超大獎）；菁英寶箱率乘擊殺者幸運
   if (opts.boss) {
     spawnDrop(g, 'chest', x, y, 0, 'boss')
-  } else if (opts.elite && g.rng() < DROPS.chestChanceElite) {
+  } else if (opts.elite && g.rng() < Math.min(0.6, DROPS.chestChanceElite * (opts.luck ?? 1))) {
     spawnDrop(g, 'chest', x, y)
   }
 }

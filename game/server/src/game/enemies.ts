@@ -69,6 +69,7 @@ export function spawnEnemy(g: Game, id: string, x: number, y: number, opts: {
     lungeVx: 0, lungeVy: 0, lungeUntil: 0, windupUntil: 0, lootDropCd: 0,
     shieldTick: 0, trailTick: 0, targetId: null, splitChild: !!opts.child,
     burnDps: 0, burnUntil: 0, markedUntil: 0, markMult: 1,
+    cloaked: data.behavior === 'stalker', ringTick: 0,
   }
   clampArena(e, 10)
   g.enemies.push(e)
@@ -338,6 +339,50 @@ export function enemiesTick(g: Game, dt: number): void {
         e.x -= nx * spd * dt; e.y -= ny * spd * dt
         break
       }
+      case 'stalker': {
+        // 幻影螳螂：隱形接近（自動瞄準鎖不到）→ 現身蓄力預警 → 高速突刺 → 一段時間後重新隱形
+        const prm = e.data.params!
+        if (e.lungeUntil > now) {
+          e.x += e.lungeVx * dt; e.y += e.lungeVy * dt
+          touchAttack(g, e, tgt, dd, dt)
+        } else if (e.windupUntil > now) {
+          // 現身蓄力：原地不動（telegraph 已發，玩家可躲）
+        } else if (e.windupUntil > 0) {
+          e.windupUntil = 0
+          e.lungeUntil = now + (prm.lungeDist ?? 250) / (prm.lungeSpeed ?? 560)
+        } else if (e.cloaked) {
+          e.x += nx * spd * dt; e.y += ny * spd * dt
+          if (dd < (prm.revealRange ?? 200)) {
+            e.cloaked = false
+            e.windupUntil = now + (prm.windup ?? 0.55)
+            e.actCd = prm.cloakCd ?? 3.5          // 現身多久後重新隱形
+            e.lungeVx = nx * (prm.lungeSpeed ?? 560); e.lungeVy = ny * (prm.lungeSpeed ?? 560)
+            g.ev({ t: 'aoe', x: Math.round(e.x), y: Math.round(e.y), r: 60, kind: 'telegraph' })
+          }
+        } else {
+          // 現身狀態：普通追擊；冷卻到就重新隱形
+          moveAndTouch(g, e, nx, ny, spd, dd, tgt, dt)
+          if (e.actCd <= 0) e.cloaked = true
+        }
+        break
+      }
+      case 'orbiter': {
+        // 刺球金龜：緩速逼近；身邊的旋轉刺球環（環帶碰撞）持續刺傷站在圈上的玩家
+        const prm = e.data.params!
+        moveAndTouch(g, e, nx, ny, spd, dd, tgt, dt)
+        e.ringTick -= dt
+        if (e.ringTick <= 0) {
+          e.ringTick = 0.5
+          const rr = (prm.ringRadius ?? 64) * e.sizeMult
+          const band = (prm.ringWidth ?? 20) + 13
+          for (const p of g.players.values()) {
+            if (p.status !== 'alive') continue
+            const d = Math.sqrt(dist2(p.x, p.y, e.x, e.y))
+            if (Math.abs(d - rr) < band) g.damagePlayer(p, e.damage * 0.5)
+          }
+        }
+        break
+      }
       case 'thief': {
         const prm = e.data.params!
         if (e.fleeUntil > 0) {
@@ -431,6 +476,11 @@ export function damageEnemyImpl(g: Game, e: SEnemy, dmg: number, opts: DamageOpt
     d -= absorbed
   }
   e.hp -= d
+  // 隱形怪受擊 → 被打回現形（短時間不重新隱形）
+  if (e.cloaked && d > 0) {
+    e.cloaked = false
+    e.actCd = Math.max(e.actCd, 2.5)
+  }
   if ((opts.knockX || opts.knockY) && !e.elite) {   // 菁英被打不會被擊退/停頓
     const resist = e.data.tier === 3 ? 0.3 : e.data.tier === 2 ? 0.6 : 1
     e.kbVx += (opts.knockX ?? 0) * resist
@@ -545,5 +595,5 @@ export function killEnemy(g: Game, e: SEnemy, byPlayerId: string | null, byWeapo
   // 金袋地精：擊殺噴大量金幣
   if (e.data.behavior === 'looter') g.dropGold(e.x, e.y, e.data.params?.deathGold ?? 40)
 
-  dropsFromKill(g, e.x, e.y, { xpSize: e.data.xpSize, coinChance: e.data.coinChance, elite: e.elite })
+  dropsFromKill(g, e.x, e.y, { xpSize: e.data.xpSize, coinChance: e.data.coinChance, elite: e.elite, luck: p?.stats.luck })
 }

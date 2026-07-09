@@ -904,12 +904,15 @@ export class Engine {
       g.save()
       g.translate(e.x, e.y)
       const size = 34 * e.size
+      // 隱形（幻影螳螂）：只剩微微閃爍的殘影，血條也不畫——現身突襲才嚇人
+      const cloaked = (e.flags & 32) !== 0
+      if (cloaked) g.globalAlpha = 0.1 + Math.sin(this.time * 6 + e.i) * 0.04
       drawEnemy(g, e.kind, size, this.time, {
         elite: e.elite,
         affixColors: e.affixes.length ? ['#e040fb'] : undefined,
         flags: e.flags,
       })
-      if (e.hpPct < 100) {
+      if (e.hpPct < 100 && !cloaked) {
         g.fillStyle = 'rgba(0,0,0,0.5)'
         g.fillRect(-size * 0.5, -size * 0.72, size, 4)
         g.fillStyle = e.hpPct > 50 ? '#69f0ae' : e.hpPct > 25 ? '#ffd54f' : '#ef5350'

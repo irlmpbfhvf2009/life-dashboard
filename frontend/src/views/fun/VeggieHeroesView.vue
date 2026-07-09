@@ -879,7 +879,8 @@ const bestWaves = computed(() => ({
     </div>
 
     <!-- ============================================================ 選角 -->
-    <div v-if="screen === 'select'" class="flex flex-1 flex-col overflow-y-auto px-4 py-5" style="touch-action: pan-y;">
+    <div v-if="screen === 'select'" class="relative flex flex-1 flex-col overflow-y-auto px-4 py-5" style="touch-action: pan-y;">
+      <button class="absolute left-3 top-3 z-10 rounded-lg bg-white/10 px-3 py-1.5 text-xs text-white/70" @click="exitGame">← 離開</button>
       <h2 class="text-center text-xl font-black text-lime-300">選擇你的勇者</h2>
       <div class="mx-auto mt-3 grid w-full max-w-md grid-cols-5 gap-1.5">
         <button
@@ -1187,6 +1188,8 @@ const bestWaves = computed(() => ({
 
       <!-- ============================ 中場（結算/升級/寶箱/商店/路線） -->
       <div v-if="gs.inter" class="absolute inset-0 z-[75] overflow-y-auto bg-black/80 backdrop-blur-sm" style="touch-action: pan-y;">
+        <!-- 中場也能退出遊戲（確認層 z-85 蓋得過本面板） -->
+        <button class="fixed right-3 top-3 z-[80] rounded-lg bg-white/10 px-3 py-1.5 text-xs text-white/70" @click="confirmExit">🚪 退出</button>
         <div class="mx-auto max-w-md px-4 py-5 pb-24">
           <!-- 結算 -->
           <div class="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">

@@ -32,27 +32,28 @@ export function recomputeStats(p: SPlayer): void {
   // 暴擊率溢出：超過 100% 的部分 1:1 轉成暴擊傷害（賭徒等暴擊 build 才不會滿爆就浪費）
   const rawCrit = b.critChance + (pct.critChance ?? 0)
   const critOverflow = Math.max(0, rawCrit - 1)
+  // 下限保護：取捨型 boon（血怒菌株/重錘孢子…）帶負值，疊多也不能把屬性打到 0 或負
   const s: ComputedStats = {
-    maxHp: Math.round((b.maxHp + lvl * 3 + (add.maxHp ?? 0)) * (p.effects.has('curseGlass') ? 0.75 : 1)),
-    armor: b.armor + (add.armor ?? 0),
+    maxHp: Math.max(30, Math.round((b.maxHp + lvl * 3 + (add.maxHp ?? 0)) * (p.effects.has('curseGlass') ? 0.75 : 1))),
+    armor: Math.max(0, b.armor + (add.armor ?? 0)),
     regen: p.effects.has('curseShell') ? 0 : b.regen + (add.regen ?? 0),
     pickupRange: b.pickupRange + (add.pickupRange ?? 0),
     projectiles: add.projectiles ?? 0,
     pierce: add.pierce ?? 0,
     lifeOnKill: add.lifeOnKill ?? 0,
-    moveSpeed: b.moveSpeed * (1 + (pct.moveSpeed ?? 0)),
+    moveSpeed: b.moveSpeed * Math.max(0.5, 1 + (pct.moveSpeed ?? 0)),
     // 傷害＝基礎 ×(1+加算%＋等級加成) × boon 乘算 × 乘算階梯（複利刀法/倍力精華/禁忌菜譜）
     // —— 乘算是後期傷害滾到百萬/千萬的引擎；賢者之石(sage)讓每等級加成翻倍（經驗 build 的出口）
-    damage: b.damage * (1 + (pct.damage ?? 0) + lvl * 0.02 * (1 + (p.effects.get('sage') ?? 0)))
+    damage: b.damage * Math.max(0.15, 1 + (pct.damage ?? 0) + lvl * 0.02 * (1 + (p.effects.get('sage') ?? 0)))
       * (p.boonDmgMult ?? 1)
       * Math.pow(1.08, p.effects.get('dmgXr') ?? 0)
       * Math.pow(1.18, p.effects.get('dmgXe') ?? 0)
       * Math.pow(1.4, p.effects.get('dmgX') ?? 0),
-    attackSpeed: b.attackSpeed * (1 + (pct.attackSpeed ?? 0)),
-    critChance: Math.min(1, rawCrit),
+    attackSpeed: b.attackSpeed * Math.max(0.3, 1 + (pct.attackSpeed ?? 0)),
+    critChance: Math.min(1, Math.max(0, rawCrit)),
     critDamage: b.critDamage + (pct.critDamage ?? 0) + critOverflow,
     cooldown: Math.min(0.6, pct.cooldown ?? 0),
-    area: 1 + (pct.area ?? 0),
+    area: Math.max(0.4, 1 + (pct.area ?? 0)),
     goldGain: 1 + (pct.goldGain ?? 0),
     xpGain: 1 + (pct.xpGain ?? 0),
     reviveSpeed: 1 + (pct.reviveSpeed ?? 0) + (p.char.passive.effect === 'auraHealFastRescue' ? 0.4 : 0),

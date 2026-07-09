@@ -80,6 +80,20 @@ export const ENEMIES: EnemyData[] = [
     params: { fleeRange: 520, hitGold: 2, deathGold: 40 },
     tags: ['loot'], tier: 2, minWave: 3, palette: ['#7e57c2', '#4527a0'],
   },
+  {
+    // 幻影螳螂：隱形接近（自動瞄準鎖不到）→ 靠近現身、蓄力預警 → 高速突刺；受擊會被打回現形
+    id: 'phantom', name: '幻影螳螂', baseHp: 26, speed: 122, damage: 15, radius: 17,
+    scoreValue: 32, coinChance: 0.24, xpSize: 2, behavior: 'stalker',
+    params: { revealRange: 200, windup: 0.55, lungeSpeed: 560, lungeDist: 250, cloakCd: 3.5 },
+    tags: ['fast', 'stealth'], tier: 2, minWave: 6, palette: ['#b0f0c8', '#2e7d5b'],
+  },
+  {
+    // 刺球金龜：身邊環繞旋轉尖刺球——站進刺環帶就持續受傷，逼玩家保持距離或速殺
+    id: 'orbiter', name: '刺球金龜', baseHp: 44, speed: 60, damage: 11, radius: 20,
+    scoreValue: 34, coinChance: 0.3, xpSize: 2, behavior: 'orbiter',
+    params: { ringRadius: 64, ringWidth: 20, orbs: 3, spin: 2.4 },
+    tags: ['tanky', 'orbit'], tier: 2, minWave: 7, palette: ['#ffca7a', '#8a5a1e'],
+  },
 ]
 
 export const ENEMY_MAP = new Map(ENEMIES.map(e => [e.id, e]))

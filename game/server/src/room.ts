@@ -176,6 +176,16 @@ export class Room {
     if (this.phase === 'select') this.maybeBeginGame()
   }
 
+  /** 單人房/每日挑戰：不需要大廳（房號/邀請/聊天），建房後直接進選角 */
+  autoAdvanceSolo(): void {
+    if (this.phase !== 'lobby') return
+    if (this.config.maxPlayers === 1 || this.config.mode === 'daily') {
+      this.phase = 'select'
+      for (const p of this.players.values()) p.ready = false
+      this.pushState()
+    }
+  }
+
   /** 房主按開始 → 進入選角 */
   start(playerId: string): void {
     if (playerId !== this.hostId) return
