@@ -138,7 +138,7 @@ console.log('  參考怪:雜魚=蠐螬(46) 菁英=蠐螬×6。單人夢魘(×1.3
 console.log('波 | P50 DPS  P90 DPS |    雜魚TTK    |    菁英TTK    |         BOSS TTK')
 console.log('   |                  |  P50    P90   |  P50    P90   |  P50    P90    (誰)')
 console.log('---+------------------+---------------+---------------+---------------------------')
-for (const w of [1, 3, 5, 8, 10, 15, 20, 25, 30, 35, 40]) {
+for (const w of [1, 2, 3, 4, 5, 8, 10, 15, 20, 25, 30, 35, 40]) {
   const d50 = benchDPS(p50(w), 1)
   const d90 = benchDPS(p90(w), 1)
   const trash = normalHp(46, w), elite = normalHp(46, w, true)

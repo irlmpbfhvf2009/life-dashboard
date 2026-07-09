@@ -76,13 +76,13 @@ export function enemyHpScale(wave: number): number {
   const expo = Math.pow(1.17, Math.max(0, wave - 3))
   const late = Math.pow(1.25, Math.max(0, wave - 15))
   const deep = Math.pow(1.12, Math.max(0, wave - 25))
-  // 中期跳階（使用者實測「買了 3 把武器後每關秒殺」）：前 3 波維持教學難度，
-  // 第 4 波起 3 波內 ramp 到 ×10 —— 玩家武器成形的同時怪也跟著硬起來
-  const mid = 1 + 9 * Math.min(1, Math.max(0, (wave - 3) / 3))
+  // 中期跳階：只有第 1 波是純暖身，第 2 波起 3 波內 ramp 到 ×10（使用者回報前 3 波太簡單，
+  // 把陡升從第 4 波前移到第 2 波、抹平原本第 3→4 波的斷崖）。ramp 第 4 波封頂 → 第 6 波以後不變。
+  const mid = 1 + 9 * Math.min(1, Math.max(0, (wave - 1) / 3))
   return linear * expo * late * deep * mid
 }
 export function enemyDmgScale(wave: number): number {
-  const mid = 1 + 0.5 * Math.min(1, Math.max(0, (wave - 3) / 3))
+  const mid = 1 + 0.5 * Math.min(1, Math.max(0, (wave - 1) / 3))
   return (1 + (wave - 1) * 0.12) * Math.pow(1.05, Math.max(0, wave - 3)) * mid
 }
 /** 怪物移動速度隨波數成長（每波 +1.2%，封頂 +45%）——後期怪更快更兇 */
