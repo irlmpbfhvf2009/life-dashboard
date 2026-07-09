@@ -13,11 +13,14 @@ export const ENEMY_SPEED_MULT = 1.2
 // ------------------------------------------------- 人數縮放
 
 export interface PlayerScale { hp: number; count: number; boss: number; objective: number }
+// 人數縮放：**怪物數量不隨人數增加**（count 恆 1.0），改成「每隻血更多」（hp）維持總難度。
+// 目的＝多人時場上實體數維持單人水準，減輕免費伺服器 CPU 與客戶端渲染負擔（＝更順）。
+// hp 值＝舊制的「count×hp 總血池」（2p:1.35×1.4≈1.9、3p:1.65×1.8≈3.0、4p:1.9×2.2≈4.2），總難度不變。
 export const PLAYER_SCALING: Record<number, PlayerScale> = {
   1: { hp: 1.0, count: 1.0, boss: 1.0, objective: 1.0 },
-  2: { hp: 1.4, count: 1.35, boss: 1.8, objective: 1.35 },
-  3: { hp: 1.8, count: 1.65, boss: 2.5, objective: 1.7 },
-  4: { hp: 2.2, count: 1.9, boss: 3.2, objective: 2.0 },
+  2: { hp: 1.9, count: 1.0, boss: 1.8, objective: 1.35 },
+  3: { hp: 3.0, count: 1.0, boss: 2.5, objective: 1.7 },
+  4: { hp: 4.2, count: 1.0, boss: 3.2, objective: 2.0 },
 }
 /** 機關型任務（符文/踩點）依人數要求的機關數 */
 export const OBJECT_COUNT: Record<number, number> = { 1: 1, 2: 2, 3: 2, 4: 3 }
@@ -144,10 +147,12 @@ export const DOWNED = {
 
 // ------------------------------------------------- 效能上限（依人數）
 
-export function caps(players: number) {
+export function caps(_players: number) {
   return {
-    enemies: [0, 95, 115, 130, 145][players] ?? 145,   // 密度 ×2、殺光制 → 提高場上上限
-    elites: [0, 6, 7, 8, 9][players] ?? 9,
+    // 場上實體上限固定在單人水準（不隨人數加）——多人改用「怪更壯」不「怪更多」，
+    // 讓伺服器 CPU 與客戶端渲染負擔維持單人水準（＝更順）。
+    enemies: 95,
+    elites: 6,
     drops: 90,
     enemyProjectiles: 36,
     // 客戶端視覺（render.ts 遵守）
