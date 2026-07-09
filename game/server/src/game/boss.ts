@@ -267,6 +267,8 @@ export function damageBoss(g: Game, dmg: number, ownerId?: string, srcX?: number
   let d = dmg
   const owner = ownerId ? g.players.get(ownerId) : null
   d *= 1 + g.team.bossDamage
+  // 獵魔專精：對 Boss 傷害 +30%/層
+  if (owner) d *= 1 + 0.3 * eff(owner, 'eliteDmg')
   // 符文護盾期間大幅減傷
   if (b.shield > 0) d *= 0.1
   // 南瓜戰車正面減傷（暈眩時失效）

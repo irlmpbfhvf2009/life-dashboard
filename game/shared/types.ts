@@ -262,9 +262,12 @@ export interface ChestBoonData {
   detail: string
   weight: number
   statMods?: StatMods
-  /** dmgMult=傷害×params.mult（乘算） / weaponUp / allWeaponUp / gold / epicUpgrade / curse / skillPower / skillCd */
+  /** dmgMult=傷害×params.mult（乘算） / weaponUp / allWeaponUp / gold / epicUpgrade / curse / skillPower / skillCd
+   *  / waveShield（每波開場護盾） / fullHeal / skillBoost / richGold（首領寶箱用） */
   effect?: string
   params?: Record<string, number>
+  /** 高價值選項：出現權重乘上玩家幸運（讓幸運 build 有感） */
+  shiny?: boolean
 }
 
 export interface RouteData {
@@ -343,6 +346,7 @@ export interface PlayerSnap {
   dn: number              // downedCount
   pu: number              // 待選升級數
   dmg: number             // 整局累計總傷害量
+  spd?: number            // 目前移動速度（含 buff）——client 自機預測用（升級移速才會真的變快）
   fx?: string             // 短暫狀態: 'dash'|'rage'|...
 }
 

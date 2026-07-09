@@ -1,8 +1,8 @@
 // 怪物：生成器（budget-based）、10 種 behavior AI、傷害/擊殺管線、詞綴。
 import { ENEMY_MAP, TIER_COST, AFFIXES, AFFIX_MAP, weaponStatsAt } from '../../../shared/content/index'
 import {
-  PLAYER_SCALING, DIFFICULTIES, enemyHpScale, enemyDmgScale,
-  eliteChance, endlessAffixCount, ARENA, caps, ENEMY_SPEED_MULT,
+  PLAYER_SCALING, DIFFICULTIES, enemyHpScale, enemyDmgScale, enemySpeedScale,
+  eliteChance, endlessAffixCount, ARENA, caps, ENEMY_SPEED_MULT, coinWaveMult,
 } from '../../../shared/balance'
 import { weightedR } from '../../../shared/rng'
 import type { EnemyData } from '../../../shared/types'
@@ -27,7 +27,7 @@ export function spawnEnemy(g: Game, id: string, x: number, y: number, opts: {
   const diff = DIFFICULTIES[g.difficulty] ?? DIFFICULTIES[0]
   const globalAffix = endlessAffixCount(g.wave)
   let hp = data.baseHp * enemyHpScale(g.wave) * PLAYER_SCALING[g.playerCount].hp * diff.enemyHp * (1 + globalAffix * 0.1)
-  let speed = data.speed * ENEMY_SPEED_MULT * (g.eventMods.enemySpeedMult ?? 1) * (1 + globalAffix * 0.04)
+  let speed = data.speed * ENEMY_SPEED_MULT * enemySpeedScale(g.wave) * (g.eventMods.enemySpeedMult ?? 1) * (1 + globalAffix * 0.04)
   let damage = data.damage * enemyDmgScale(g.wave) * diff.enemyDmg
   let size = 1
   let dr = 0
@@ -408,6 +408,11 @@ export function damageEnemyImpl(g: Game, e: SEnemy, dmg: number, opts: DamageOpt
   let d = dmg * (1 - e.dr)
   // 倒鉤鏢標記：期間內受到所有來源的傷害加成
   if (g.time < e.markedUntil) d *= e.markMult
+  // 獵魔專精：對菁英傷害 +30%/層
+  if (e.elite && opts.ownerId) {
+    const o = g.players.get(opts.ownerId)
+    if (o) d *= 1 + 0.3 * eff(o, 'eliteDmg')
+  }
   // 盾殼蟲正面減傷
   if (e.data.behavior === 'shielded' && opts.srcX !== undefined) {
     const tgt = pickTarget(g, e)
@@ -496,6 +501,8 @@ export function killEnemy(g: Game, e: SEnemy, byPlayerId: string | null, byWeapo
   if (p) {
     p.wave.kills++; p.total.kills++
     if (p.stats.lifeOnKill) g.healEv(p, p.stats.lifeOnKill)
+    // 邁達斯之手：擊殺機率噴金幣
+    if (eff(p, 'midas') && g.rng() < 0.12) g.dropGold(e.x, e.y, Math.max(2, Math.round(3 * coinWaveMult(g.wave))))
     if (e.elite && eff(p, 'eliteTrophy')) {
       p.eliteTrophyStacks++
       g.ev({ t: 'toast', msg: `獵人勳章：傷害永久 +3%（×${p.eliteTrophyStacks}）`, kind: 'good' })

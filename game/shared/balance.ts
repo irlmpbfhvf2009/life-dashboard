@@ -45,11 +45,12 @@ export function spawnWindow(wave: number): number {
   return Math.min(16 + wave * 0.6, 26)
 }
 
+/** 每 5 波必有 Boss（殺 Boss 掉「首領寶箱」＝隨機大獎）：5/15/25…小 Boss、10/20/30…大 Boss（前期 10 波先給小 Boss 緩衝） */
 export function isBossWave(mode: Mode, wave: number): 'mini' | 'big' | null {
+  if (mode === 'quick' || mode === 'daily') return wave === 10 ? 'big' : wave === 5 ? 'mini' : null
   if (wave <= 20) {
-    if (mode === 'quick' || mode === 'daily') return wave === 10 ? 'big' : null
-    if (wave === 10) return 'mini'
     if (wave === 20) return 'big'
+    if (wave % 5 === 0) return 'mini'   // 5 / 10 / 15
     return null
   }
   // 無盡：每 10 波大 Boss，每 5 波小 Boss
@@ -67,16 +68,26 @@ export function spawnBudget(wave: number, players: number): number {
 }
 
 /** 怪物血量隨波數成長（另乘人數 hp、難度 enemyHp）。
- *  Brotato 式指數曲線：前 3 波溫和，之後每波 ×1.16 複利、無盡每波再 ×1.10 —
- *  中後期怪血跟著玩家 build 一起爆炸；build 沒成形就是過不了。 */
+ *  多段複利曲線（2026-07 大改）：前 3 波溫和 → 每波 ×1.17 → 15 波後再 ×1.25 → 25 波後再 ×1.12。
+ *  設計目標：30 波小怪 ≈ 數十萬～百萬 HP、菁英數百萬；40 波 ≈ 上億 —
+ *  中庸 build（純加算傷害%）15~20 波撐不住；只有疊出乘算引擎的 build 能破 40 出頭。 */
 export function enemyHpScale(wave: number): number {
-  const linear = 1 + (wave - 1) * 0.28
-  const expo = Math.pow(1.12, Math.max(0, wave - 3))
-  const endless = wave > 20 ? Math.pow(1.09, wave - 20) : 1
-  return linear * expo * endless
+  const linear = 1 + (wave - 1) * 0.3
+  const expo = Math.pow(1.17, Math.max(0, wave - 3))
+  const late = Math.pow(1.25, Math.max(0, wave - 15))
+  const deep = Math.pow(1.12, Math.max(0, wave - 25))
+  return linear * expo * late * deep
 }
 export function enemyDmgScale(wave: number): number {
-  return (1 + (wave - 1) * 0.12) * Math.pow(1.035, Math.max(0, wave - 3))
+  return (1 + (wave - 1) * 0.12) * Math.pow(1.05, Math.max(0, wave - 3))
+}
+/** 怪物移動速度隨波數成長（每波 +1.2%，封頂 +45%）——後期怪更快更兇 */
+export function enemySpeedScale(wave: number): number {
+  return Math.min(1 + wave * 0.012, 1.45)
+}
+/** 金幣價值隨波數成長（後期商店價格上漲，收入也要跟上，否則乘算升級買不起） */
+export function coinWaveMult(wave: number): number {
+  return 1 + wave * 0.05
 }
 
 /** 菁英機率（每次生成擲骰；導演可調） */

@@ -41,9 +41,12 @@ export function recomputeStats(p: SPlayer): void {
     pierce: add.pierce ?? 0,
     lifeOnKill: add.lifeOnKill ?? 0,
     moveSpeed: b.moveSpeed * (1 + (pct.moveSpeed ?? 0)),
-    // 傷害＝基礎 ×(1+加算%) × boon 乘算 × 禁忌菜譜(×1.4^層) — 乘算是後期傷害滾到千萬/億的引擎
-    damage: b.damage * (1 + (pct.damage ?? 0) + lvl * 0.02)
+    // 傷害＝基礎 ×(1+加算%＋等級加成) × boon 乘算 × 乘算階梯（複利刀法/倍力精華/禁忌菜譜）
+    // —— 乘算是後期傷害滾到百萬/千萬的引擎；賢者之石(sage)讓每等級加成翻倍（經驗 build 的出口）
+    damage: b.damage * (1 + (pct.damage ?? 0) + lvl * 0.02 * (1 + (p.effects.get('sage') ?? 0)))
       * (p.boonDmgMult ?? 1)
+      * Math.pow(1.08, p.effects.get('dmgXr') ?? 0)
+      * Math.pow(1.18, p.effects.get('dmgXe') ?? 0)
       * Math.pow(1.4, p.effects.get('dmgX') ?? 0),
     attackSpeed: b.attackSpeed * (1 + (pct.attackSpeed ?? 0)),
     critChance: Math.min(1, rawCrit),

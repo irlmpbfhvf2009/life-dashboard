@@ -1230,12 +1230,14 @@ const bestWaves = computed(() => ({
               <div v-if="showSpecial" class="mt-1.5 space-y-1">
                 <div
                   v-for="a in specialAbilities" :key="a.name"
-                  class="flex items-center gap-1 truncate rounded-lg px-2 py-1 text-[11px] font-black"
-                  :class="a.cat === 'curse' ? 'bg-rose-900/30 text-rose-300' : a.cat === 'legendary' ? 'bg-white/5 text-amber-300' : 'bg-white/5 text-white/85'"
+                  class="flex items-baseline gap-1.5 rounded-lg px-2 py-1 text-[11px]"
+                  :class="a.cat === 'curse' ? 'bg-rose-900/30' : 'bg-white/5'"
                   :title="a.desc"
                 >
-                  <span class="truncate">{{ a.cat === 'curse' ? '😈 ' : a.cat === 'legendary' ? '🌟 ' : '' }}{{ a.name }}</span>
-                  <span v-if="a.count > 1" class="shrink-0 text-white/50">×{{ a.count }}</span>
+                  <span class="shrink-0 font-black" :class="a.cat === 'curse' ? 'text-rose-300' : a.cat === 'legendary' ? 'text-amber-300' : 'text-white/85'">
+                    {{ a.cat === 'curse' ? '😈' : a.cat === 'legendary' ? '🌟' : '' }}{{ a.name }}<span v-if="a.count > 1" class="text-white/50">×{{ a.count }}</span>
+                  </span>
+                  <span class="truncate text-[10px] text-white/50">{{ a.desc }}</span>
                 </div>
               </div>
             </template>

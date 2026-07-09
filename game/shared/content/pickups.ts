@@ -17,27 +17,57 @@ export const ITEMS: ItemData[] = [
 export const ITEM_MAP = new Map(ITEMS.map(i => [i.id, i]))
 
 // 寶箱 boon 池（開箱三選一，全部是「永久戰力」——這是 build 成形/傷害滾雪球的主要來源）。
-// 武器改由商店購買、復活碎片已移除。加 boon = 加一筆資料。
+// 2026-07 大擴充：池子變「雜」——輸出/防禦/回復/功能/賭博混在一起，
+// 開箱可能整排都不是你要的（不再保證天胡）；shiny=true 的高價值選項權重乘幸運。
 export const CHEST_BOONS: ChestBoonData[] = [
-  // ---- 屬性加成（疊加）
-  { id: 'boon_dmg', name: '力量果實', detail: '傷害 +15%（永久）', weight: 20, statMods: { damage: 0.15 } },
-  { id: 'boon_atk', name: '疾風之葉', detail: '攻擊速度 +12%（永久）', weight: 16, statMods: { attackSpeed: 0.12 } },
-  { id: 'boon_spd', name: '風行根鬚', detail: '移動速度 +8%（永久）', weight: 10, statMods: { moveSpeed: 0.08 } },
-  { id: 'boon_hp', name: '巨壯塊莖', detail: '最大生命 +30（永久）', weight: 12, statMods: { maxHp: 30 } },
-  { id: 'boon_crit', name: '銳眼之種', detail: '暴擊率 +8%（永久）', weight: 12, statMods: { critChance: 0.08 } },
-  { id: 'boon_critd', name: '致命棘刺', detail: '暴擊傷害 +35%（永久）', weight: 12, statMods: { critDamage: 0.35 } },
-  { id: 'boon_area', name: '沃土擴張', detail: '範圍效果 +15%（永久）', weight: 10, statMods: { area: 0.15 } },
-  { id: 'boon_proj', name: '分裂胚芽', detail: '投射物 +1（永久）', weight: 4, statMods: { projectiles: 1 } },
-  { id: 'boon_pierce', name: '貫穿尖芽', detail: '穿透 +1（永久）', weight: 6, statMods: { pierce: 1 } },
+  // ---- 輸出（權重下修：不再整箱都是輸出）
+  { id: 'boon_dmg', name: '力量果實', detail: '傷害 +15%（永久）', weight: 12, statMods: { damage: 0.15 } },
+  { id: 'boon_atk', name: '疾風之葉', detail: '攻擊速度 +12%（永久）', weight: 10, statMods: { attackSpeed: 0.12 } },
+  { id: 'boon_crit', name: '銳眼之種', detail: '暴擊率 +8%（永久）', weight: 9, statMods: { critChance: 0.08 } },
+  { id: 'boon_critd', name: '致命棘刺', detail: '暴擊傷害 +35%（永久）', weight: 9, statMods: { critDamage: 0.35 } },
+  { id: 'boon_area', name: '沃土擴張', detail: '範圍效果 +15%（永久）', weight: 8, statMods: { area: 0.15 } },
+  { id: 'boon_proj', name: '分裂胚芽', detail: '投射物 +1（永久）', weight: 4, statMods: { projectiles: 1 }, shiny: true },
+  { id: 'boon_pierce', name: '貫穿尖芽', detail: '穿透 +1（永久）', weight: 5, statMods: { pierce: 1 } },
+  // ---- 防禦 / 生存
+  { id: 'boon_hp', name: '巨壯塊莖', detail: '最大生命 +30（永久）', weight: 10, statMods: { maxHp: 30 } },
+  { id: 'boon_armor', name: '硬化樹皮', detail: '護甲 +2（永久）', weight: 9, statMods: { armor: 2 } },
+  { id: 'boon_shield', name: '甲殼共生', detail: '每波開場護盾 +25（永久）', weight: 8, effect: 'waveShield', params: { amount: 25 } },
   { id: 'boon_life', name: '汲血菌絲', detail: '擊殺回復 +2 生命（永久）', weight: 8, statMods: { lifeOnKill: 2 } },
   { id: 'boon_regen', name: '光合強化', detail: '每秒回復 +1.5（永久）', weight: 8, statMods: { regen: 1.5 } },
-  // ---- 乘算/技能/特殊（爆發 build 的核心）
-  { id: 'boon_dmgx', name: '狂暴基因', detail: '傷害 ×1.3（乘算，可疊）', weight: 6, effect: 'dmgMult', params: { mult: 1.3 } },
-  { id: 'boon_skill', name: '奧義精髓', detail: '主動技能傷害 +35%（永久）', weight: 10, effect: 'skillPower' },
-  { id: 'boon_skillcd', name: '靜心冥想', detail: '技能冷卻 -10%（永久）', weight: 8, effect: 'skillCd' },
-  { id: 'boon_weaponup', name: '武器精鍊', detail: '隨機一把武器 +1 級', weight: 14, effect: 'weaponUp' },
-  { id: 'boon_allweaponup', name: '全軍突擊', detail: '所有武器 +1 級！', weight: 3, effect: 'allWeaponUp' },
-  { id: 'boon_upgrade', name: '神秘天賦', detail: '獲得一個隨機史詩升級', weight: 8, effect: 'epicUpgrade' },
-  { id: 'boon_gold', name: '高額金幣', detail: '立即獲得大筆金幣', weight: 10, effect: 'gold' },
-  { id: 'boon_curse', name: '詛咒契約', detail: '隨機詛咒（高風險高報酬）', weight: 8, effect: 'curse' },
+  // ---- 功能 / 經濟（幸運・金幣・經驗 build 的糧食）
+  { id: 'boon_spd', name: '風行根鬚', detail: '移動速度 +8%（永久）', weight: 8, statMods: { moveSpeed: 0.08 } },
+  { id: 'boon_goldpct', name: '生財之葉', detail: '金幣獲得 +25%（永久）', weight: 9, statMods: { goldGain: 0.25 } },
+  { id: 'boon_xppct', name: '智慧年輪', detail: '經驗獲得 +25%（永久）', weight: 9, statMods: { xpGain: 0.25 } },
+  { id: 'boon_luck', name: '幸運瓢蟲', detail: '幸運 +20%（稀有度/掉落判定，永久）', weight: 8, statMods: { luck: 0.2 } },
+  { id: 'boon_pick', name: '藤蔓觸手', detail: '拾取範圍 +70（永久）', weight: 6, statMods: { pickupRange: 70 } },
+  // ---- 乘算/技能/特殊（爆發 build 的核心；shiny → 幸運加權）
+  { id: 'boon_dmgx', name: '狂暴基因', detail: '傷害 ×1.3（乘算，可疊）', weight: 6, effect: 'dmgMult', params: { mult: 1.3 }, shiny: true },
+  { id: 'boon_skill', name: '奧義精髓', detail: '主動技能傷害 +35%（永久）', weight: 9, effect: 'skillPower' },
+  { id: 'boon_skillcd', name: '靜心冥想', detail: '技能冷卻 -10%（永久）', weight: 7, effect: 'skillCd' },
+  { id: 'boon_weaponup', name: '武器精鍊', detail: '隨機一把武器 +1 級', weight: 11, effect: 'weaponUp' },
+  { id: 'boon_allweaponup', name: '全軍突擊', detail: '所有武器 +1 級！', weight: 3, effect: 'allWeaponUp', shiny: true },
+  { id: 'boon_upgrade', name: '神秘天賦', detail: '獲得一個隨機史詩升級', weight: 7, effect: 'epicUpgrade', shiny: true },
+  { id: 'boon_gold', name: '高額金幣', detail: '立即獲得大筆金幣', weight: 8, effect: 'gold' },
+  { id: 'boon_curse', name: '詛咒契約', detail: '隨機詛咒（高風險高報酬）', weight: 7, effect: 'curse' },
+]
+
+// 首領寶箱（每 5 波 Boss 必掉）：不三選一、直接隨機抽一個超大獎——攻擊/防禦/回復/輔助
+// 都可能，賭的就是心跳。每個存活玩家各自抽一次（server drops.ts / shop.ts bossChestDraw）。
+export const BOSS_BOONS: ChestBoonData[] = [
+  // 攻擊
+  { id: 'bb_dmgx', name: '滅世孢子', detail: '傷害 ×1.5（乘算）', weight: 8, effect: 'dmgMult', params: { mult: 1.5 } },
+  { id: 'bb_allweapon', name: '軍火盛宴', detail: '所有武器 +2 級！', weight: 8, effect: 'allWeaponUp', params: { levels: 2 } },
+  { id: 'bb_crit', name: '獵殺本能', detail: '暴擊率 +15%＆暴擊傷害 +60%', weight: 8, statMods: { critChance: 0.15, critDamage: 0.6 } },
+  { id: 'bb_proj', name: '瘋狂增殖', detail: '投射物 +1＆傷害 +15%', weight: 7, statMods: { projectiles: 1, damage: 0.15 } },
+  // 防禦
+  { id: 'bb_tank', name: '鋼鐵菜心', detail: '護甲 +4＆最大生命 +80', weight: 8, statMods: { armor: 4, maxHp: 80 } },
+  { id: 'bb_shield', name: '聖盾祝福', detail: '每波開場護盾 +50（永久）', weight: 8, effect: 'waveShield', params: { amount: 50 } },
+  // 回復
+  { id: 'bb_regen', name: '生命之泉', detail: '每秒回復 +4＆擊殺回復 +3', weight: 8, statMods: { regen: 4, lifeOnKill: 3 } },
+  { id: 'bb_heal', name: '女神的擁抱', detail: '全體立即回滿＆最大生命 +50', weight: 7, effect: 'fullHeal', params: { hp: 50 } },
+  // 輔助 / 功能
+  { id: 'bb_skill', name: '奧義覺醒', detail: '技能傷害 +70%＆技能冷卻 -10%', weight: 8, effect: 'skillBoost' },
+  { id: 'bb_speed', name: '疾風祝福', detail: '移動速度 +12%＆拾取範圍 +80', weight: 7, statMods: { moveSpeed: 0.12, pickupRange: 80 } },
+  { id: 'bb_rich', name: '黃金雨', detail: '金幣獲得 +50%＆立即一大筆金幣', weight: 7, effect: 'richGold' },
+  { id: 'bb_lucky', name: '命運眷顧', detail: '幸運 +35%＆經驗獲得 +35%', weight: 7, statMods: { luck: 0.35, xpGain: 0.35 } },
 ]

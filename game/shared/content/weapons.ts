@@ -477,6 +477,7 @@ export function weaponsForChar(charId: string): WeaponData[] {
 }
 
 // 計算武器在指定等級的實際數值（base + perLevel×(level-1)；projectileCount 向下取整、冷卻有下限）
+// 傷害另乘 1.15^(level-1) 複利：武器升級要「有感」（滿級 ≈ 加算版的 ×1.75）
 export function weaponStatsAt(w: WeaponData, level: number) {
   const s = { ...w.base }
   const lv = Math.min(level, w.maxLevel) - 1
@@ -485,6 +486,7 @@ export function weaponStatsAt(w: WeaponData, level: number) {
     const val = (s[key] ?? 0) + (v as number) * lv
     ;(s as Record<string, number>)[key] = key === 'projectileCount' ? Math.floor(val) : val
   }
+  s.damage *= Math.pow(1.15, lv)
   s.cooldown = Math.max(0.15, s.cooldown)
   return s
 }

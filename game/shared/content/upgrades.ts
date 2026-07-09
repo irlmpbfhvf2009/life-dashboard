@@ -56,6 +56,8 @@ export const UPGRADES: UpgradeData[] = [
   U('wmine', '快速佈雷', '地雷/工程武器冷卻 -15%', 'rare', 'weapon', { specialEffect: 'engineerCd', maxStacks: 3, tags: ['engineer'], requirements: ['weaponTag:engineer'] }),
   U('wturret', '加固底座', '砲塔持續時間 +40%', 'rare', 'weapon', { specialEffect: 'turretDuration', maxStacks: 3, tags: ['engineer'], requirements: ['weaponTag:summon'] }),
   U('wknock', '衝擊配重', '擊退 +40%', 'common', 'weapon', { specialEffect: 'knockbackUp', maxStacks: 3 }),
+  // 武器精研：唯一「免費升武器」管道（升級三選一常駐）——修掉「簽名武器 30 波還是 Lv1」
+  U('w_up', '武器精研', '最低等級的一把武器 +1 級（優先職業專屬武器）', 'common', 'weapon', { specialEffect: 'weaponLevelUp', maxStacks: 99, weight: 65, price: 14 }),
   U('wpoison', '濃縮毒素', '持續傷害 +30%', 'rare', 'weapon', { specialEffect: 'dotUp', maxStacks: 3, tags: ['poison'], requirements: ['weaponTag:poison'] }),
   U('wheal', '強效藥劑', '治療效果 +30%', 'rare', 'weapon', { specialEffect: 'healPower', maxStacks: 3, tags: ['heal'] }),
   U('wspeed', '流線彈道', '投射物速度 +25%、射程 +10%', 'common', 'weapon', { specialEffect: 'projSpeed', maxStacks: 3 }),
@@ -123,6 +125,20 @@ export const UPGRADES: UpgradeData[] = [
   U('dmg5', '巨人之力', '傷害 +40%', 'epic', 'stat', { statMods: { damage: 0.4 }, maxStacks: 5 }),
   U('sk_pow', '奧義精通', '主動技能傷害 +35%', 'rare', 'stat', { specialEffect: 'skillPower', maxStacks: 6 }),
   U('l_dmgx', '禁忌菜譜', '傷害 ×1.4（乘算）', 'legendary', 'legendary', { specialEffect: 'dmgX', maxStacks: 3, weight: 4 }),
+  // ---- 乘算傷害階梯（rare→epic→legendary）：後期滾到百萬/千萬的引擎，不疊乘算 = 過不了 25 波
+  U('dmgx_r', '複利刀法', '傷害 ×1.08（乘算，可疊）', 'rare', 'stat', { specialEffect: 'dmgXr', maxStacks: 8, price: 26 }),
+  U('dmgx_e', '倍力精華', '傷害 ×1.18（乘算，可疊）', 'epic', 'stat', { specialEffect: 'dmgXe', maxStacks: 6, price: 48 }),
+  // ---- 對象特化
+  U('hunt_e', '獵魔專精', '對菁英與 Boss 傷害 +30%', 'rare', 'stat', { specialEffect: 'eliteDmg', maxStacks: 3, price: 24 }),
+  // ---- 防禦 / 開場
+  U('armor3', '龜甲祕術', '護甲 +3', 'epic', 'stat', { statMods: { armor: 3 }, maxStacks: 4 }),
+  U('wshield', '晨間武裝', '每波開場獲得 20 點護盾', 'rare', 'stat', { specialEffect: 'waveShieldUp', maxStacks: 3, price: 20 }),
+  // ---- 功能型（經驗/金幣/幸運 build——要能跟輸出流分庭抗禮）
+  U('xp2', '天才筆記', '經驗獲得 +25%', 'rare', 'stat', { statMods: { xpGain: 0.25 }, maxStacks: 4 }),
+  U('gold3', '點石成金', '金幣獲得 +40%', 'epic', 'stat', { statMods: { goldGain: 0.4 }, maxStacks: 3 }),
+  U('luck2', '四葉幸運草', '幸運 +25%（稀有度/掉落判定）', 'epic', 'stat', { statMods: { luck: 0.25 }, maxStacks: 3 }),
+  U('l_sage', '賢者之石', '經驗獲得 +60%，且每等級的傷害加成翻倍', 'legendary', 'legendary', { statMods: { xpGain: 0.6 }, specialEffect: 'sage', maxStacks: 1 }),
+  U('l_midas', '邁達斯之手', '金幣獲得 +60%，擊殺 12% 機率噴出金幣', 'legendary', 'legendary', { statMods: { goldGain: 0.6 }, specialEffect: 'midas', maxStacks: 1 }),
 
   // ============================== 追加基礎/吸血（純數值，擴充 build 空間）
   U('life1', '嗜血', '每擊殺回復 1 生命', 'common', 'stat', { statMods: { lifeOnKill: 1 }, maxStacks: 6 }),

@@ -52,6 +52,7 @@ export interface SPlayer {
   boonDmgMult: number                    // 乘算傷害（狂暴基因 ×1.3 疊乘）
   boonSkillPower: number                 // 技能傷害 +35%/層
   boonSkillCd: number                    // 技能冷卻 -10%/層
+  boonWaveShield: number                 // 每波開場護盾（甲殼共生/聖盾祝福累積）
 
   x: number; y: number
   lastX: number; lastY: number

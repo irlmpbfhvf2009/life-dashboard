@@ -1,11 +1,11 @@
 // 商店 + 升級三選一 + 寶箱 + 團隊獎勵（免費多選）。
 import {
-  WEAPONS, WEAPON_MAP, UPGRADES, UPGRADE_MAP, CHEST_BOONS,
+  WEAPONS, WEAPON_MAP, UPGRADES, UPGRADE_MAP, CHEST_BOONS, BOSS_BOONS,
   TEAM_REWARDS, ITEMS,
 } from '../../../shared/content/index'
 import { SHOP } from '../../../shared/balance'
 import { weightedR, intR, shuffleR } from '../../../shared/rng'
-import type { Rarity, ShopOffer, UpgradeData, ChestPending, WeaponData } from '../../../shared/types'
+import type { Rarity, ShopOffer, UpgradeData, ChestPending, WeaponData, ChestBoonData } from '../../../shared/types'
 import type { SPlayer } from './state'
 import { newOwnedWeapon } from './state'
 import type { Game } from './game'
@@ -50,6 +50,8 @@ function pickWeaponWeighted(g: Game, p: SPlayer, pool: WeaponData[]): WeaponData
 function upgradeEligible(g: Game, p: SPlayer, u: UpgradeData): boolean {
   if ((p.upgrades.get(u.id) ?? 0) >= u.maxStacks) return false
   if (u.conflicts?.some(c => p.upgrades.has(c))) return false
+  // 武器精研：有可升級的武器才上架
+  if (u.specialEffect === 'weaponLevelUp' && !p.weapons.some(w => w.level < w.data.maxLevel)) return false
   if (PIERCE_UPGRADES.has(u.id) && !p.weapons.some(w => w.data.behavior === 'projectile' || w.data.behavior === 'drone')) return false
   if (MULTI_UPGRADES.has(u.id) && !p.weapons.some(w => ['projectile', 'drone', 'orbit'].includes(w.data.behavior))) return false
   // 單人遊戲：完全不出合作/團隊類升級（救援護盾、並肩作戰、共享資源…都沒意義）
@@ -61,15 +63,16 @@ function upgradeEligible(g: Game, p: SPlayer, u: UpgradeData): boolean {
   return true
 }
 
-/** 稀有度擲骰（幸運 / 賭徒被動 / 任務 rareBoost / 路線 rareChance 影響） */
+/** 稀有度擲骰（幸運 / 賭徒被動 / 任務 rareBoost / 路線 rareChance 影響）。
+ *  幸運乘在「整條機率」上（含波數成長）——疊幸運的 build 後期商店明顯更金光閃閃。 */
 function rollRarity(g: Game, p: SPlayer, allowCursed: boolean): Rarity {
   const luck = p.stats.luck * (1 + g.nextRareBoost + g.routeMods.rareChance)
   const gambler = p.char.passive.effect === 'gamblerLuck'
   let r = g.rng()
   if (gambler && g.rng() < 0.25) r *= 0.55       // 賭徒：往稀有偏
-  const epicP = 0.06 * luck + g.wave * 0.003
-  const rareP = 0.22 * luck + g.wave * 0.006
-  const legP = Math.max(0, 0.008 * luck + (g.wave - 8) * 0.002)
+  const epicP = (0.06 + g.wave * 0.003) * luck
+  const rareP = (0.22 + g.wave * 0.006) * luck
+  const legP = Math.max(0, (0.008 + Math.max(0, g.wave - 8) * 0.002) * luck)
   if (allowCursed && (gambler ? g.rng() < 0.12 : g.rng() < 0.05)) return 'cursed'
   if (r < legP) return 'legendary'
   if (r < legP + epicP) return 'epic'
@@ -89,17 +92,37 @@ function pickUpgradeByRarity(g: Game, p: SPlayer, rarity: Rarity): UpgradeData |
 export function rollLevelupChoices(g: Game, p: SPlayer): void {
   p.levelupChoices = []
   const seen = new Set<string>()
-  for (let k = 0; k < 3; k++) {
+  // 武器精研保底：有可升級的武器時，35% 機率佔一格——武器（尤其簽名武器）才有免費升級管道
+  const wup = UPGRADE_MAP.get('w_up')
+  if (wup && upgradeEligible(g, p, wup) && g.rng() < 0.35) {
+    seen.add('w_up')
+    p.levelupChoices.push({ offerId: oid(), upgradeId: 'w_up' })
+  }
+  while (p.levelupChoices.length < 3) {
+    let filled = false
     for (let tries = 0; tries < 8; tries++) {
       const u = pickUpgradeByRarity(g, p, rollRarity(g, p, p.char.passive.effect === 'gamblerLuck'))
-      if (u && !seen.has(u.id)) { seen.add(u.id); p.levelupChoices.push({ offerId: oid(), upgradeId: u.id }); break }
+      if (u && !seen.has(u.id)) { seen.add(u.id); p.levelupChoices.push({ offerId: oid(), upgradeId: u.id }); filled = true; break }
     }
+    if (!filled) break
   }
 }
 
 export function applyUpgrade(g: Game, p: SPlayer, upgradeId: string): void {
   const u = UPGRADE_MAP.get(upgradeId)
   if (!u) return
+  // 武器精研：即時效果，不佔升級欄——最低等級武器 +1 級（同級時職業專屬優先）
+  if (u.specialEffect === 'weaponLevelUp') {
+    const ws = p.weapons.filter(w => w.level < w.data.maxLevel)
+    if (!ws.length) return
+    ws.sort((a, b) => (a.level - b.level)
+      || (b.data.charId === p.char.id ? 1 : 0) - (a.data.charId === p.char.id ? 1 : 0))
+    const w = ws[0]
+    w.level++
+    syncWeaponOffers(g, p)
+    g.toastTo(p, `⬆️ 武器精研：${w.data.name} → Lv.${w.level}`, 'good')
+    return
+  }
   p.upgrades.set(upgradeId, (p.upgrades.get(upgradeId) ?? 0) + 1)
   recomputeEffects(p)
   // 即時性效果
@@ -349,15 +372,16 @@ export function checkEvolutions(g: Game, p: SPlayer): boolean {
 // -------------------------------------------------------- 寶箱
 
 /** 寶箱三選一：全部是「永久戰力 boon」——build 成形（傷害滾雪球）的主要來源。
- *  武器改由商店購買、復活碎片已移除。 */
+ *  池子含輸出/防禦/回復/功能/賭博（可能整排都不是你要的）；shiny 選項權重乘幸運。 */
 export function rollChestOptions(g: Game, p: SPlayer): ChestPending['options'] {
   const n = 3 + (eff(p, 'chestBonus') ? 1 : 0) + (p.chestKeyBonus > 0 ? 1 : 0)
   if (p.chestKeyBonus > 0) p.chestKeyBonus--
   const opts: ChestPending['options'] = []
   const used = new Set<string>()
+  const pool = CHEST_BOONS.map(b => ({ ...b, weight: b.weight * (b.shiny ? p.stats.luck : 1) }))
   for (let k = 0; k < n; k++) {
     for (let tries = 0; tries < 8; tries++) {
-      const b = weightedR(g.rng, CHEST_BOONS)
+      const b = weightedR(g.rng, pool)
       if (used.has(b.id) && tries < 7) continue
       // 情境過濾
       if (b.effect === 'weaponUp' && !p.weapons.some(w => w.level < w.data.maxLevel)) continue
@@ -365,7 +389,7 @@ export function rollChestOptions(g: Game, p: SPlayer): ChestPending['options'] {
       if (b.effect === 'curse' && !UPGRADES.some(u => u.category === 'curse' && upgradeEligible(g, p, u))) continue
       if (used.has(b.id)) continue
       used.add(b.id)
-      const detail = b.effect === 'gold' ? `金幣 +${18 + g.wave * 2}` : b.detail
+      const detail = b.effect === 'gold' ? `金幣 +${goldReward(g)}` : b.detail
       opts.push({ rewardId: b.id, detail: `${b.name}：${detail}`, refId: b.id })
       break
     }
@@ -373,37 +397,57 @@ export function rollChestOptions(g: Game, p: SPlayer): ChestPending['options'] {
   return opts
 }
 
-export function applyChestChoice(g: Game, p: SPlayer, chestId: string, rewardId: string): string | null {
-  const chest = p.chests.find(c => c.chestId === chestId)
-  if (!chest) return '找不到寶箱'
-  const opt = chest.options.find(o => o.rewardId === rewardId)
-  if (!opt) return '找不到獎勵'
-  p.chests = p.chests.filter(c => c !== chest)
-  const boon = CHEST_BOONS.find(b => b.id === rewardId)
-  if (!boon) return '未知獎勵'
+const goldReward = (g: Game) => Math.round((18 + g.wave * 2) * (1 + g.wave * 0.05))
+
+/** 套用一個 boon（寶箱三選一與首領寶箱共用）；prefix 用於 toast 圖示 */
+export function applyBoon(g: Game, p: SPlayer, boon: ChestBoonData, prefix = '✨'): void {
   // 永久屬性 boon
   if (boon.statMods) {
     for (const [k, v] of Object.entries(boon.statMods)) {
       p.boonMods[k] = (p.boonMods[k] ?? 0) + (v as number)
     }
     recomputeEffects(p)
-    g.toastTo(p, `✨ ${boon.name}：${boon.detail}`, 'good')
-    return null
+    g.toastTo(p, `${prefix} ${boon.name}：${boon.detail}`, 'good')
+    return
   }
   switch (boon.effect) {
     case 'dmgMult':
       p.boonDmgMult *= boon.params?.mult ?? 1.3
       recomputeEffects(p)
-      g.toastTo(p, `✨ ${boon.name}：傷害 ×${boon.params?.mult ?? 1.3}（現在 ×${p.boonDmgMult.toFixed(2)}）`, 'good')
+      g.toastTo(p, `${prefix} ${boon.name}：傷害 ×${boon.params?.mult ?? 1.3}（現在 ×${p.boonDmgMult.toFixed(2)}）`, 'good')
       break
     case 'skillPower':
       p.boonSkillPower++
-      g.toastTo(p, `✨ ${boon.name}：技能傷害 +35%（共 +${p.boonSkillPower * 35}%）`, 'good')
+      g.toastTo(p, `${prefix} ${boon.name}：技能傷害 +35%（共 +${p.boonSkillPower * 35}%）`, 'good')
       break
     case 'skillCd':
       p.boonSkillCd++
-      g.toastTo(p, `✨ ${boon.name}：技能冷卻 -10%`, 'good')
+      g.toastTo(p, `${prefix} ${boon.name}：技能冷卻 -10%`, 'good')
       break
+    case 'skillBoost':
+      p.boonSkillPower += 2
+      p.boonSkillCd++
+      g.toastTo(p, `${prefix} ${boon.name}：技能傷害 +70%、冷卻 -10%`, 'good')
+      break
+    case 'waveShield':
+      p.boonWaveShield += boon.params?.amount ?? 25
+      p.shield += boon.params?.amount ?? 25
+      g.toastTo(p, `${prefix} ${boon.name}：每波開場護盾 +${boon.params?.amount ?? 25}（共 ${p.boonWaveShield}）`, 'good')
+      break
+    case 'fullHeal':
+      p.boonMods.maxHp = (p.boonMods.maxHp ?? 0) + (boon.params?.hp ?? 50)
+      recomputeEffects(p)
+      for (const q of g.players.values()) if (q.status === 'alive') healPlayer(g, q, q.stats.maxHp)
+      g.toastTo(p, `${prefix} ${boon.name}：全體回滿、最大生命 +${boon.params?.hp ?? 50}`, 'good')
+      break
+    case 'richGold': {
+      p.boonMods.goldGain = (p.boonMods.goldGain ?? 0) + 0.5
+      recomputeEffects(p)
+      const gold = goldReward(g) * 2
+      p.gold += gold
+      g.toastTo(p, `${prefix} ${boon.name}：金幣獲得 +50%、金幣 +${gold}`, 'good')
+      break
+    }
     case 'weaponUp': {
       const upgradable = p.weapons.filter(w => w.level < w.data.maxLevel)
       if (upgradable.length) {
@@ -415,19 +459,22 @@ export function applyChestChoice(g: Game, p: SPlayer, chestId: string, rewardId:
       break
     }
     case 'allWeaponUp': {
+      const levels = boon.params?.levels ?? 1
       let n = 0
-      for (const w of p.weapons) if (w.level < w.data.maxLevel) { w.level++; n++ }
+      for (const w of p.weapons) {
+        for (let k = 0; k < levels && w.level < w.data.maxLevel; k++) { w.level++; n++ }
+      }
       syncWeaponOffers(g, p)
-      g.toastTo(p, `🚀 全軍突擊：${n} 把武器全部 +1 級！`, 'good')
+      g.toastTo(p, `🚀 ${boon.name}：武器共升了 ${n} 級！`, 'good')
       break
     }
     case 'epicUpgrade': {
       const u = pickUpgradeByRarity(g, p, 'epic')
-      if (u) { applyUpgrade(g, p, u.id); g.toastTo(p, `✨ 神秘天賦：${u.name}（${u.description}）`, 'good') }
+      if (u) { applyUpgrade(g, p, u.id); g.toastTo(p, `${prefix} 神秘天賦：${u.name}（${u.description}）`, 'good') }
       else { p.gold += 20; g.toastTo(p, '天賦已滿，折抵 20 金幣') }
       break
     }
-    case 'gold': p.gold += 18 + g.wave * 2; break
+    case 'gold': p.gold += goldReward(g); break
     case 'curse': {
       const pool = UPGRADES.filter(u => u.category === 'curse' && upgradeEligible(g, p, u))
       if (pool.length) {
@@ -438,7 +485,30 @@ export function applyChestChoice(g: Game, p: SPlayer, chestId: string, rewardId:
       break
     }
   }
+}
+
+export function applyChestChoice(g: Game, p: SPlayer, chestId: string, rewardId: string): string | null {
+  const chest = p.chests.find(c => c.chestId === chestId)
+  if (!chest) return '找不到寶箱'
+  const opt = chest.options.find(o => o.rewardId === rewardId)
+  if (!opt) return '找不到獎勵'
+  p.chests = p.chests.filter(c => c !== chest)
+  const boon = CHEST_BOONS.find(b => b.id === rewardId)
+  if (!boon) return '未知獎勵'
+  applyBoon(g, p, boon)
   return null
+}
+
+/** 首領寶箱（每 5 波 Boss 必掉）：撿到當下，全體存活玩家各自「抽」一個超大獎——
+ *  攻/防/回/輔都可能，開到什麼看命（抽獎賭博的快感）。 */
+export function bossChestDraw(g: Game): void {
+  g.broadcastToast('👑 首領寶箱！全員抽獎——', 'good')
+  for (const p of g.players.values()) {
+    if (!p.connected || p.status === 'dead') continue
+    const boon = weightedR(g.rng, BOSS_BOONS)
+    applyBoon(g, p, boon, '👑')
+    g.broadcastToast(`👑 ${p.name} 抽中【${boon.name}】`, 'good')
+  }
 }
 
 // -------------------------------------------------------- 團隊獎勵（每波免費多選）

@@ -86,6 +86,7 @@ export class Engine {
   myX = 900; myY = 1100
   moveDir = { x: 0, y: 0, active: false }
   mySpeed = 170
+  myServerSpeed = 0               // server 快照送來的實際移速（含升級/buff；0=尚未收到）
   lastMoveSent = 0
   serverMyX = 900; serverMyY = 900
   myCharge = 0                    // 蓄力型技能（榴槤）本地蓄力進度 0~1，用於畫蓄力環
@@ -186,6 +187,8 @@ export class Engine {
       p.status = ps.st; p.hp = ps.hp; p.mhp = ps.mhp; p.sh = ps.sh; p.rp = ps.rp; p.fx = ps.fx; p.lv = ps.lv
       if (ps.id === gs.playerId) {
         this.serverMyX = ps.x; this.serverMyY = ps.y
+        // server 送來的實際移速（含升級/寶箱/加速 buff）——移速加成才會真的變快
+        if (ps.spd) this.myServerSpeed = ps.spd
         if (ps.st !== 'alive' || this.resyncMe) { this.myX = ps.x; this.myY = ps.y; this.resyncMe = false }
       }
     }
@@ -324,7 +327,16 @@ export class Engine {
         case 'bossDead': sfx.bossDead(); this.shake = 14; break
         case 'objSpawn': this.objectives.set(ev.o.i, ev.o); break
         case 'objRemove': this.objectives.delete(ev.i); break
-        case 'chestOpen': break
+        case 'chestOpen':
+          // 首領寶箱：金色大爆發＋震動（全員抽獎的儀式感）
+          if (ev.reward === 'boss') {
+            sfx.chest()
+            this.shake = Math.min(this.shake + 8, 14)
+            this.burst(ev.x, ev.y, 26, '#ffd700', 6)
+            this.burst(ev.x, ev.y, 14, '#fff8e1', 4)
+            this.aoes.push({ x: ev.x, y: ev.y, r: 220, kind: 'pulse', life: 0.7, maxLife: 0.7 })
+          }
+          break
         case 'dead': break
         case 'toast': break
       }
@@ -397,7 +409,8 @@ export class Engine {
     const me = this.players.get(gs.playerId)
     const alive = me?.status === 'alive'
     const char = CHARACTER_MAP.get(me?.charId ?? '')
-    this.mySpeed = (char?.baseStats.moveSpeed ?? 170) * 1.2
+    // 優先用 server 送來的實際移速（含移速升級/寶箱/加速 buff）；沒收到前退回角色基礎值
+    this.mySpeed = (this.myServerSpeed || char?.baseStats.moveSpeed || 170) * 1.2
     const dashing = alive && this.time < this.dashUntil
     const bulwarking = alive && this.time < this.bulwarkUntil
     if (alive && this.moveDir.active && !bulwarking) {   // 盾牌衝鋒期間忽略搖桿輸入

@@ -1,5 +1,5 @@
 // 掉落系統：生成、磁吸、撿取、超量合併、臨時道具效果、波末吸取。
-import { DROPS, DROP_MERGE, caps, xpForLevel } from '../../../shared/balance'
+import { DROPS, DROP_MERGE, caps, xpForLevel, coinWaveMult } from '../../../shared/balance'
 import { ITEMS, ITEM_MAP } from '../../../shared/content/index'
 import { weightedR, intR } from '../../../shared/rng'
 import type { SDrop, SPlayer } from './state'
@@ -7,7 +7,7 @@ import type { Game } from './game'
 import { dist2, nextId, clampArena } from './util'
 import { healDropMult, rewardMult } from './director'
 import { eff, recomputeStats } from './stats'
-import { rollChestOptions } from './shop'
+import { rollChestOptions, bossChestDraw } from './shop'
 
 export function spawnDrop(g: Game, t: SDrop['t'], x: number, y: number, v = 0, item?: string): void {
   if (g.drops.length >= caps(g.playerCount).drops) mergeXpDrops(g)
@@ -54,14 +54,15 @@ export function dropsFromKill(g: Game, x: number, y: number, opts: {
   for (const p of g.players.values()) {
     if (p.connected && p.status === 'alive') addXpDirect(g, p, xpVal * p.stats.xpGain)
   }
-  // 金幣（全域緊縮倍率 → 錢要花在刀口上）
+  // 金幣（全域緊縮倍率 → 錢要花在刀口上；單枚價值隨波數成長，後期乘算升級才買得起）
   const coinMult = (g.eventMods.coinMult ?? 1) * g.routeMods.goldMult
+  const waveMult = coinWaveMult(g.wave)
   if (opts.boss) {
-    for (let k = 0; k < 6; k++) spawnDrop(g, 'coin', x + (g.rng() - 0.5) * 160, y + (g.rng() - 0.5) * 160, Math.ceil(DROPS.bossCoin / 6))
+    for (let k = 0; k < 6; k++) spawnDrop(g, 'coin', x + (g.rng() - 0.5) * 160, y + (g.rng() - 0.5) * 160, Math.ceil(DROPS.bossCoin * waveMult / 6))
   } else if (opts.elite) {
-    spawnDrop(g, 'coin', x, y, Math.round((intR(g.rng, DROPS.coinValue.min, DROPS.coinValue.max) + DROPS.eliteCoinBonus) * coinMult))
+    spawnDrop(g, 'coin', x, y, Math.round((intR(g.rng, DROPS.coinValue.min, DROPS.coinValue.max) + DROPS.eliteCoinBonus) * coinMult * waveMult))
   } else if (g.rng() < opts.coinChance * coinMult * DROPS.coinChanceMult) {
-    spawnDrop(g, 'coin', x, y, intR(g.rng, DROPS.coinValue.min, DROPS.coinValue.max))
+    spawnDrop(g, 'coin', x, y, Math.max(1, Math.round(intR(g.rng, DROPS.coinValue.min, DROPS.coinValue.max) * waveMult)))
   }
   // 補血（受導演壓力調節 — 壓力高掉更多）
   if (g.rng() < DROPS.heartChance * healDropMult(g)) {
@@ -73,8 +74,10 @@ export function dropsFromKill(g: Game, x: number, y: number, opts: {
   if (g.rng() < DROPS.itemChance) {
     spawnDrop(g, 'item', x, y, 0, weightedR(g.rng, ITEMS).id)
   }
-  // 寶箱
-  if ((opts.elite && g.rng() < DROPS.chestChanceElite) || opts.boss) {
+  // 寶箱（Boss 掉「首領寶箱」——撿到全員直接抽超大獎）
+  if (opts.boss) {
+    spawnDrop(g, 'chest', x, y, 0, 'boss')
+  } else if (opts.elite && g.rng() < DROPS.chestChanceElite) {
     spawnDrop(g, 'chest', x, y)
   }
 }
@@ -118,6 +121,12 @@ function collect(g: Game, p: SPlayer, d: SDrop): void {
     }
     case 'item': if (d.item) applyItem(g, p, d.item); break
     case 'chest': {
+      if (d.item === 'boss') {
+        // 首領寶箱：撿到當下全員各自抽一個超大獎（不用等中場）
+        g.ev({ t: 'chestOpen', x: d.x, y: d.y, reward: 'boss' })
+        bossChestDraw(g)
+        break
+      }
       p.chests.push({ chestId: `ch${d.i}`, options: rollChestOptions(g, p) })
       g.ev({ t: 'chestOpen', x: d.x, y: d.y, reward: '' })
       g.ev({ t: 'toast', msg: `${p.name} 撿到寶箱！中場開啟`, kind: 'good' })

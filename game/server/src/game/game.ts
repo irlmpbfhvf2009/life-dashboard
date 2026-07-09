@@ -134,7 +134,7 @@ export class Game {
         connected: true, disconnectAt: 0,
         char, weapons: [newOwnedWeapon(weaponData)],
         upgrades: new Map(), effects: new Map(),
-        boonMods: {}, boonDmgMult: 1, boonSkillPower: 0, boonSkillCd: 0,
+        boonMods: {}, boonDmgMult: 1, boonSkillPower: 0, boonSkillCd: 0, boonWaveShield: 0,
         x: ARENA.w / 2 + (idx - roster.length / 2) * spread, y: ARENA.h * 0.6,
         lastX: 0, lastY: 0,
         status: 'alive', hp: 1, shield: 0, gold: 8, xp: 0, level: 1, pendingLevelups: 0,
@@ -269,7 +269,8 @@ export class Game {
       p.lastHitAt = -99
       if (p.status === 'downed') { p.status = 'alive'; p.hp = Math.round(p.stats.maxHp * 0.4) }
       if (p.status === 'alive') {
-        p.shield += this.team.waveShield            // 團隊獎勵：每波開場永久護盾
+        // 每波開場護盾：團隊獎勵 + 寶箱 boon（甲殼共生/聖盾祝福） + 晨間武裝升級
+        p.shield += this.team.waveShield + p.boonWaveShield + 20 * eff(p, 'waveShieldUp')
         // 上一波買的道具開場生效
         for (const it of p.pendingItems) applyItem(this, p, it)
         p.pendingItems = []
@@ -1262,6 +1263,8 @@ export class Game {
         xp: Math.round(p.xp), nxp: xpForLevel(p.level),
         dn: p.downedCount, pu: p.pendingLevelups,
         dmg: Math.round(p.total.dmgDealt),
+        // 目前移速（含加速 buff）——client 自機預測用（升級移速才會真的變快）
+        spd: Math.round(p.stats.moveSpeed * (p.buffs.hasteUntil > now ? 1 + p.buffs.hasteAmt : 1)),
         fx: p.fx || undefined,
       })),
       enemies: this.enemies.map(e => ({
