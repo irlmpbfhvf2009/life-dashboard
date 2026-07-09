@@ -71,6 +71,9 @@ export function spawnBudget(wave: number, players: number): number {
  *  多段複利曲線（2026-07 大改）：前 3 波溫和 → 每波 ×1.17 → 15 波後再 ×1.25 → 25 波後再 ×1.12。
  *  設計目標：30 波小怪 ≈ 數十萬～百萬 HP、菁英數百萬；40 波 ≈ 上億 —
  *  中庸 build（純加算傷害%）15~20 波撐不住；只有疊出乘算引擎的 build 能破 40 出頭。 */
+/** 全域難度倍率：怪物血量整體縮放（1.0＝基準）。使用者回報偏難 → 0.7（降約 30%）。 */
+export const DIFFICULTY_HP_MULT = 0.7
+
 export function enemyHpScale(wave: number): number {
   const linear = 1 + (wave - 1) * 0.3
   const expo = Math.pow(1.17, Math.max(0, wave - 3))
@@ -79,7 +82,7 @@ export function enemyHpScale(wave: number): number {
   // 中期跳階：只有第 1 波是純暖身，第 2 波起 3 波內 ramp 到 ×10（使用者回報前 3 波太簡單，
   // 把陡升從第 4 波前移到第 2 波、抹平原本第 3→4 波的斷崖）。ramp 第 4 波封頂 → 第 6 波以後不變。
   const mid = 1 + 9 * Math.min(1, Math.max(0, (wave - 1) / 3))
-  return linear * expo * late * deep * mid
+  return linear * expo * late * deep * mid * DIFFICULTY_HP_MULT
 }
 export function enemyDmgScale(wave: number): number {
   const mid = 1 + 0.5 * Math.min(1, Math.max(0, (wave - 1) / 3))
@@ -95,7 +98,7 @@ export function enemySpeedScale(wave: number): number {
  *  用平滑指數,調到:強 build 打 Boss 約 6~15 秒(有壓力但可解)、中庸 build 更吃力。
  *  取代舊的 `1 + max(0,波-10)×0.06`（幾乎不長 → Boss 一秒被秒）。 */
 export function bossHpScale(wave: number): number {
-  return (1 + wave * 0.6) * Math.pow(1.145, wave)
+  return (1 + wave * 0.6) * Math.pow(1.145, wave) * DIFFICULTY_HP_MULT
 }
 /** 金幣價值隨波數成長（後期商店價格上漲，收入也要跟上，否則乘算升級買不起） */
 export function coinWaveMult(wave: number): number {
@@ -129,9 +132,9 @@ export const REVIVES_PER_MODE: Record<Mode, number> = { quick: 1, standard: 2, e
 export const TEAM_REVIVE = { healPct: 0.4, clearRadius: 320 }
 
 export const DOWNED = {
-  baseReviveTime: 5.0,          // 秒（單人救，站著約 5 秒救起）
+  baseReviveTime: 3.0,          // 秒（單人救，站著約 3 秒救起）
   reviveTimePerDown: 0.5,       // 每次倒地 +0.5s
-  maxReviveTime: 7.0,
+  maxReviveTime: 5.0,
   crawlSpeed: 40,
   reviveRadius: 105,            // 站進圈圈即施救
   revivedHpPct: 0.4,

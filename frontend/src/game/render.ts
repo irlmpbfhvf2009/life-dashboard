@@ -408,6 +408,7 @@ export class Engine {
     // 自機預測移動
     const me = this.players.get(gs.playerId)
     const alive = me?.status === 'alive'
+    const downed = me?.status === 'downed'
     const char = CHARACTER_MAP.get(me?.charId ?? '')
     // 優先用 server 送來的實際移速（含移速升級/寶箱/加速 buff）；沒收到前退回角色基礎值
     this.mySpeed = (this.myServerSpeed || char?.baseStats.moveSpeed || 170) * 1.2
@@ -426,6 +427,11 @@ export class Engine {
     } else if (bulwarking) {
       this.myX = Math.max(26, Math.min(this.arena.w - 26, this.myX + this.bulwarkVx * dt))
       this.myY = Math.max(26, Math.min(this.arena.h - 26, this.myY + this.bulwarkVy * dt))
+    } else if (downed) {
+      // 倒地爬行：平滑跟隨 server 權威位置（server 以 crawlSpeed 往拖曳方向爬）
+      const kk = Math.min(1, dt * 10)
+      this.myX += (this.serverMyX - this.myX) * kk
+      this.myY += (this.serverMyY - this.myY) * kk
     }
     // 與 server 位置融合：**只在嚴重偏差時**才平滑拉回（穿牆/被伺服器擋/大延遲/作弊校正）。
     // 一般移動完全信任本地預測 —— 因為 server 本來就只是「追著 client 回報的目標」跑，兩者不會拉開。
@@ -438,9 +444,16 @@ export class Engine {
       this.myY += (this.serverMyY - this.myY) * k
     }
     // 傳送位置（15Hz）
-    if (alive && this.time - this.lastMoveSent > 1 / 15) {
+    if (this.time - this.lastMoveSent > 1 / 15) {
       this.lastMoveSent = this.time
-      api.move(Math.round(this.myX), Math.round(this.myY))
+      if (alive) {
+        api.move(Math.round(this.myX), Math.round(this.myY))
+      } else if (downed) {
+        // 倒地爬行：把拖曳方向當爬行目標送給 server（不拖曳＝目標＝原地→停爬）
+        const tx = this.moveDir.active ? this.serverMyX + this.moveDir.x * 300 : this.serverMyX
+        const ty = this.moveDir.active ? this.serverMyY + this.moveDir.y * 300 : this.serverMyY
+        api.move(Math.round(tx), Math.round(ty))
+      }
     }
 
     // 插值（10Hz 快照 → 60fps）
