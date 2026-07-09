@@ -51,10 +51,21 @@ io.on('connection', (socket: Socket) => {
   const game = () => room()?.game ?? null
   const pid = () => data.playerId ?? ''
 
+  // 先離開目前所在的房間再進新房 —— 否則同一 socket 會同時訂閱兩個房間的廣播，
+  // 造成事件/快照跨房干擾（開新房卻進到舊房的角色/畫面）。
+  function detachFromRoom(): void {
+    const r = room()
+    if (r && data.playerId) r.removePlayer(data.playerId)
+    if (data.roomCode) socket.leave(data.roomCode)
+    data.roomCode = undefined
+    data.playerId = undefined
+  }
+
   socket.on('room:create', (req: { name: string; config: RoomConfig }, ack) => {
     try {
       // 成本保險：單 instance 房間總量上限（免費層保護）
       if (rooms.size >= 50) { ack?.({ ok: false, error: '伺服器房間已滿，請稍後再試' }); return }
+      detachFromRoom()
       const code = genCode()
       const r = new Room(io, code, req?.config ?? { mode: 'standard', difficulty: 0, maxPlayers: 4 })
       rooms.set(code, r)
@@ -71,6 +82,7 @@ io.on('connection', (socket: Socket) => {
   socket.on('room:join', (req: { code: string; name: string }, ack) => {
     const r = rooms.get(String(req?.code ?? '').toUpperCase().trim())
     if (!r) { ack?.({ ok: false, error: '找不到房間（房號錯誤或已解散）' }); return }
+    if (data.roomCode && data.roomCode !== r.code) detachFromRoom()
     const p = r.addPlayer(socket, req?.name)
     if (typeof p === 'string') { ack?.({ ok: false, error: p }); return }
     data.roomCode = r.code
@@ -81,6 +93,7 @@ io.on('connection', (socket: Socket) => {
   socket.on('room:reconnect', (req: { code: string; playerId: string; token: string }, ack) => {
     const r = rooms.get(String(req?.code ?? '').toUpperCase().trim())
     if (!r) { ack?.({ ok: false, error: '房間已不存在' }); return }
+    if (data.roomCode && data.roomCode !== r.code) detachFromRoom()
     const p = r.reconnect(socket, req?.playerId, req?.token)
     if (typeof p === 'string') { ack?.({ ok: false, error: p }); return }
     data.roomCode = r.code
