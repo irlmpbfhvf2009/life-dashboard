@@ -341,6 +341,12 @@ const RARITY_STYLE: Record<string, string> = {
   cursed: 'border-rose-500/80 bg-rose-600/15 text-rose-100',
 }
 const RARITY_NAME: Record<string, string> = { common: '普通', rare: '稀有', epic: '史詩', legendary: '傳說', cursed: '詛咒' }
+// 高稀有度額外爽度：光暈＋流光掃過（史詩/傳說），詛咒紅光。common/rare 維持乾淨。
+const rarityFx = (r: string): string =>
+  r === 'legendary' ? 'rar-shine rar-legendary'
+    : r === 'epic' ? 'rar-shine rar-epic'
+    : r === 'cursed' ? 'rar-cursed'
+    : ''
 const upg = (id: string) => UPGRADE_MAP.get(id)
 const wpn = (id: string) => WEAPON_MAP.get(id)
 const itemOf = (id: string) => ITEM_MAP.get(id)
@@ -1126,7 +1132,7 @@ const fmtTime = (s: number) => {
           <!-- 結算 -->
           <div class="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
             <p class="text-xs text-white/40">第 {{ gs.inter.wave }} 波完成</p>
-            <p class="mt-1 text-4xl font-black" :class="gs.inter.settlement.teamGrade === 'S' ? 'text-amber-300' : gs.inter.settlement.teamGrade === 'A' ? 'text-lime-300' : 'text-white/70'">
+            <p class="mt-1 inline-block text-4xl font-black grade-pop" :class="[gs.inter.settlement.teamGrade === 'S' ? 'text-amber-300 grade-s' : gs.inter.settlement.teamGrade === 'A' ? 'text-lime-300' : 'text-white/70']">
               {{ gs.inter.settlement.teamGrade }}
             </p>
             <p class="text-xs" :class="gs.inter.settlement.missionDone ? 'text-lime-300' : 'text-rose-300'">
@@ -1148,7 +1154,7 @@ const fmtTime = (s: number) => {
               <button
                 v-for="c in gs.inter.levelupChoices" :key="c.offerId"
                 class="w-full rounded-xl border-2 p-3 text-left active:scale-[0.98]"
-                :class="RARITY_STYLE[c.rarity]"
+                :class="[RARITY_STYLE[c.rarity], rarityFx(c.rarity)]"
                 @click="api.levelup(c.offerId); sfx.levelup()"
               >
                 <div class="flex items-center justify-between">
@@ -1184,7 +1190,7 @@ const fmtTime = (s: number) => {
               <div
                 v-for="o in gs.inter.shop.offers" :key="o.offerId"
                 class="relative rounded-xl border-2 p-2.5"
-                :class="o.sold ? 'opacity-30 border-white/10' : RARITY_STYLE[offerRarity(o)]"
+                :class="o.sold ? 'opacity-30 border-white/10' : [RARITY_STYLE[offerRarity(o)], rarityFx(offerRarity(o))]"
               >
                 <button v-if="o.kind !== 'mystery'" class="absolute right-1.5 top-1.5 text-xs" @click="api.lock(o.offerId, !o.locked)">{{ o.locked ? '🔒' : '🔓' }}</button>
                 <span v-if="o.origPrice" class="absolute right-1.5 top-1.5 rounded bg-rose-500 px-1 text-[9px] font-black text-white">特價</span>
@@ -1291,3 +1297,41 @@ const fmtTime = (s: number) => {
     </div>
   </div>
 </template>
+
+<style scoped>
+/* 稀有度爽度：史詩/傳說卡片流光掃過 + 光暈；波末評分彈跳揭曉 */
+.rar-shine { position: relative; overflow: hidden; }
+.rar-shine::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 32%, rgba(255, 255, 255, 0.4) 48%, transparent 64%);
+  transform: translateX(-120%);
+  animation: rar-shine-sweep 2.8s ease-in-out infinite;
+}
+@keyframes rar-shine-sweep {
+  0% { transform: translateX(-120%); }
+  55%, 100% { transform: translateX(120%); }
+}
+.rar-epic { box-shadow: 0 0 18px -4px rgba(167, 139, 250, 0.65); }
+.rar-legendary { animation: rar-legendary-glow 1.7s ease-in-out infinite; }
+@keyframes rar-legendary-glow {
+  0%, 100% { box-shadow: 0 0 14px -4px rgba(251, 191, 36, 0.5); }
+  50% { box-shadow: 0 0 30px 1px rgba(251, 191, 36, 0.9); }
+}
+.rar-cursed { box-shadow: 0 0 20px -3px rgba(244, 63, 94, 0.6); }
+
+.grade-pop { animation: grade-pop 0.55s cubic-bezier(0.2, 1.5, 0.4, 1) both; transform-origin: center; }
+@keyframes grade-pop {
+  0% { transform: scale(0.2); opacity: 0; }
+  60% { transform: scale(1.18); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.grade-s { text-shadow: 0 0 14px rgba(251, 191, 36, 0.85), 0 0 4px rgba(251, 191, 36, 0.9); }
+
+@media (prefers-reduced-motion: reduce) {
+  .rar-shine::before { display: none; }
+  .rar-legendary, .grade-pop { animation: none; }
+}
+</style>
