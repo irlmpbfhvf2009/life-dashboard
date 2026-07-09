@@ -52,7 +52,7 @@ export const gs = reactive({
     status: 'alive' as string, reviveProgress: 0, enemiesLeft: 0, spawning: false, dmg: 0,
     mission: null as null | { name: string; progress: number; target: number; done: boolean; failed?: boolean },
     boss: null as null | { name: string; hp: number; mhp: number; sh?: number },
-    mates: [] as { id: string; name: string; charId: string; hp: number; mhp: number; st: string; rp: number }[],
+    mates: [] as { id: string; name: string; charId: string; hp: number; mhp: number; st: string; rp: number; lv: number; sh: number }[],
     pressureLevel: 3,
   },
 })
@@ -220,7 +220,7 @@ function syncHud(s: Snapshot): void {
     id: p.id,
     name: gs.begin?.players.find(b => b.id === p.id)?.name ?? '',
     charId: gs.begin?.players.find(b => b.id === p.id)?.charId ?? '',
-    hp: p.hp, mhp: p.mhp, st: p.st, rp: p.rp,
+    hp: p.hp, mhp: p.mhp, st: p.st, rp: p.rp, lv: p.lv, sh: p.sh,
   }))
   h.boss = null // boss 由 render 引擎透過 hudBoss 更新（含名稱）
   if (s.boss) {

@@ -21,11 +21,11 @@ const { coins, refresh } = useWallet()
 const canPlayCasino = computed(() => auth.isPlayer)
 
 const CATEGORIES = [
-  { key: 'electronic', label: '電子', emoji: '🎰' },
-  { key: 'fishing', label: '捕魚', emoji: '🐟' },
   { key: 'coop', label: '合作', emoji: '🥬' },
+  { key: 'fishing', label: '捕魚', emoji: '🐟' },
+  { key: 'electronic', label: '電子', emoji: '🎰' },
 ]
-const activeCat = ref('electronic')
+const activeCat = ref('coop')   // 預設先看到合作的菜菜勇者團
 const openGame = ref<'horus' | 'fish' | null>(null)
 
 // tiny animated preview for the fish card

@@ -303,6 +303,24 @@ function releaseSkill() {
   useSkill(c)
 }
 
+// Auto 自動施放：開啟後只要 CD 好就自動放技能（蓄力技自動滿蓄）。記憶到 localStorage。
+const autoSkill = ref(localStorage.getItem('veggie-autoskill') === '1')
+function toggleAuto() {
+  autoSkill.value = !autoSkill.value
+  localStorage.setItem('veggie-autoskill', autoSkill.value ? '1' : '0')
+  sfx.click()
+}
+let autoTimer: ReturnType<typeof setInterval> | null = null
+onMounted(() => {
+  autoTimer = setInterval(() => {
+    if (!autoSkill.value) return
+    if (gs.hud.status !== 'alive' || gs.inter || gs.over) return
+    if (gs.hud.skillCd > 0 || charging.value) return
+    useSkill(isChargeSkill.value ? 1 : undefined)   // 蓄力技自動以滿蓄施放
+  }, 250)
+})
+onBeforeUnmount(() => { if (autoTimer) clearInterval(autoTimer) })
+
 // ---------------------------------------------------------------- 鍵盤操作（電腦瀏覽器）
 // WASD / 方向鍵移動，空白鍵放技能。手機用拖曳搖桿，兩者可並存。
 const keys = new Set<string>()
@@ -985,22 +1003,27 @@ const bestWaves = computed(() => ({
             <div class="h-1.5 overflow-hidden rounded-full bg-white/10">
               <div class="h-full rounded-full transition-all" :class="gs.hud.hp / Math.max(1, gs.hud.maxHp) > 0.5 ? 'bg-lime-400' : gs.hud.hp / Math.max(1, gs.hud.maxHp) > 0.25 ? 'bg-amber-400' : 'bg-rose-500'" :style="{ width: (gs.hud.hp / Math.max(1, gs.hud.maxHp) * 100) + '%' }" />
             </div>
+            <!-- 技能冷卻條（滿＝可施放）；等級改在右側小字顯示 -->
             <div class="mt-0.5 flex items-center gap-1">
-              <span class="text-[8px] font-black text-sky-300/80">Lv{{ gs.hud.lv }}</span>
-              <div class="h-1 flex-1 overflow-hidden rounded-full bg-white/10" title="經驗值：殺怪累積，滿了升級">
-                <div class="h-full bg-sky-300" :style="{ width: (gs.hud.xp / Math.max(1, gs.hud.nxp) * 100) + '%' }" />
+              <span class="text-[8px]">{{ SKILL_EMOJI[myChar?.active.id ?? ''] ?? '✨' }}</span>
+              <div class="h-1 flex-1 overflow-hidden rounded-full bg-white/10" title="技能冷卻（滿＝可施放）">
+                <div class="h-full transition-all" :class="skillCdPct <= 0 ? 'bg-amber-300' : 'bg-amber-500/45'" :style="{ width: ((1 - skillCdPct) * 100) + '%' }" />
               </div>
             </div>
-            <p class="mt-0.5 text-right text-[10px] font-black text-orange-300">🗡️ 傷害 {{ fmtNum(gs.hud.dmg) }}</p>
+            <p class="mt-0.5 flex items-center justify-between text-[10px] font-black">
+              <span class="text-sky-300/80">Lv.{{ gs.hud.lv }}</span>
+              <span class="text-orange-300">🗡️ 傷害 {{ fmtNum(gs.hud.dmg) }}</span>
+            </p>
           </div>
           <div v-for="m in gs.hud.mates" :key="m.id" class="rounded-lg bg-black/40 px-2 py-1 backdrop-blur-sm">
-            <div class="flex justify-between text-[10px]">
-              <span :class="m.st === 'downed' ? 'text-rose-400 font-bold' : m.st === 'disconnected' ? 'text-white/30' : 'text-white/70'">
+            <div class="flex items-center justify-between text-[10px]">
+              <span :class="m.st === 'downed' ? 'text-rose-400 font-bold' : m.st === 'disconnected' ? 'text-white/30' : 'text-white/80'">
                 {{ m.name }} {{ m.st === 'downed' ? '🆘' : m.st === 'disconnected' ? '📴' : m.st === 'dead' ? '💀' : '' }}
               </span>
+              <span class="text-white/45">Lv.{{ m.lv }}<span v-if="m.st !== 'dead'" class="ml-1 text-white/60">{{ Math.round(m.hp) }}/{{ m.mhp }}</span></span>
             </div>
             <div class="h-1 overflow-hidden rounded-full bg-white/10">
-              <div class="h-full rounded-full" :class="m.st === 'downed' ? 'bg-rose-500' : 'bg-emerald-400'" :style="{ width: (m.st === 'downed' ? m.rp * 100 : m.hp / Math.max(1, m.mhp) * 100) + '%' }" />
+              <div class="h-full rounded-full transition-all" :class="m.st === 'downed' ? 'bg-rose-500' : 'bg-emerald-400'" :style="{ width: (m.st === 'downed' ? m.rp * 100 : m.hp / Math.max(1, m.mhp) * 100) + '%' }" />
             </div>
           </div>
         </div>
@@ -1087,6 +1110,18 @@ const bestWaves = computed(() => ({
             <circle cx="20" cy="20" r="17" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="4" :stroke-dasharray="`${(1 - skillCdPct) * 107} 107`" />
           </svg>
           <span v-if="skillCdPct > 0" class="absolute text-sm font-black text-white">{{ Math.ceil(gs.hud.skillCd) }}</span>
+          <!-- Auto 徽章：半透明圈，開啟時兩個箭頭順時鐘旋轉（仿手遊自動戰鬥） -->
+          <span
+            class="absolute -right-1 -top-1 grid h-8 w-8 touch-none place-items-center rounded-full border text-[8px] font-black backdrop-blur-sm transition-colors"
+            :class="autoSkill ? 'border-lime-300/80 bg-lime-500/30 text-lime-100' : 'border-white/25 bg-black/45 text-white/45'"
+            @pointerdown.stop.prevent="toggleAuto"
+          >
+            <svg v-if="autoSkill" class="absolute h-7 w-7 veg-auto-spin" viewBox="0 0 24 24" fill="none" stroke="rgb(190,242,100)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 8a8 8 0 0 0-14-3" /><path d="M20 3v5h-5" />
+              <path d="M4 16a8 8 0 0 0 14 3" /><path d="M4 21v-5h5" />
+            </svg>
+            <span class="relative">AUTO</span>
+          </span>
         </button>
       </div>
 
@@ -1372,8 +1407,12 @@ const bestWaves = computed(() => ({
 }
 .veg-wslot:active { background: rgba(244, 63, 94, 0.28); border-color: rgba(251, 113, 133, 0.6); }
 
+/* Auto 自動戰鬥：兩個箭頭順時鐘旋轉 */
+@keyframes veg-auto-spin { to { transform: rotate(360deg); } }
+.veg-auto-spin { animation: veg-auto-spin 2.4s linear infinite; }
+
 @media (prefers-reduced-motion: reduce) {
   .rar-shine::before { display: none; }
-  .rar-legendary, .grade-pop { animation: none; }
+  .rar-legendary, .grade-pop, .veg-auto-spin { animation: none; }
 }
 </style>

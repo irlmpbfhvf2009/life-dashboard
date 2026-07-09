@@ -367,6 +367,13 @@ export class Game {
       perPlayer, teamGrade: grade, rewards,
     }
 
+    // 任務未完成 = 輸（有任務就必須達成，不能進下一波）
+    if (this.mission && !this.mission.done) {
+      this.broadcastToast('❌ 任務未完成，農場淪陷！', 'warn')
+      this.gameOver(false)
+      return
+    }
+
     // 勝利判定
     const finalWave = MODE_WAVES[this.mode]
     if (this.wave >= finalWave && this.mode !== 'endless') {
@@ -478,6 +485,11 @@ export class Game {
       eventTick(this, dt)
       strikesTick(this)
       this.fogTick(dt)
+      // 任務失敗（目標被摧毀等）= 直接輸，不能進下一波
+      if (this.mission?.failed && this.phase === 'combat') {
+        this.broadcastToast('❌ 任務失敗，農場淪陷！', 'warn')
+        this.gameOver(false)
+      }
       this.checkWaveEnd()
       this.checkWipe()
     }
@@ -509,7 +521,7 @@ export class Game {
       spawnEnemy(this, 'slug', pos.x, pos.y, { elite: true })
       this.broadcastToast('⚠️ 菁英怪出現了！', 'warn')
     }
-    if (this.forceEliteSpawns > 0 && this.time > 8) {
+    if (this.forceEliteSpawns > 0 && this.time > 2) {
       this.forceEliteSpawns--
       const pos = edgeSpawnPos(this)
       const pool = this.zone.enemyPool.filter(e => this.wave >= (e.fromWave ?? 1))
@@ -808,6 +820,7 @@ export class Game {
   }
 
   private checkWaveEnd(): void {
+    if (this.phase !== 'combat') return   // 任務失敗已切到 gameover → 別再結算成中場
     const bossWave = isBossWave(this.mode, this.wave)
     if (bossWave) {
       if (this.bossDefeated) this.endWave()
@@ -866,6 +879,11 @@ export class Game {
   skillPowerOf(p: SPlayer): number {
     return 1 + 0.35 * (eff(p, 'skillPower') + p.boonSkillPower)
   }
+  /** 技能範圍倍率：開局 0.72（收斂、不誇張），每級技能強化 +0.16 → 升級後才變誇張。
+   *  「享受成長感」：早期範圍小，靠奧義精通/奧義精髓一路長大。 */
+  skillRadiusScale(p: SPlayer): number {
+    return 0.72 + 0.16 * (eff(p, 'skillPower') + p.boonSkillPower)
+  }
 
   onSkill(playerId: string, aim?: { x?: number; y?: number; charge?: number }): void {
     const p = this.players.get(playerId)
@@ -906,7 +924,7 @@ export class Game {
         break
       }
       case 'thornsNova': {
-        const radius = (prm.radius ?? 190) * p.stats.area
+        const radius = (prm.radius ?? 190) * p.stats.area * this.skillRadiusScale(p)
         p.shield += prm.shield ?? 55
         this.ev({ t: 'aoe', x: Math.round(p.x), y: Math.round(p.y), r: Math.round(radius), kind: 'thorns' })
         for (const e of this.enemies) {
@@ -925,7 +943,7 @@ export class Game {
         break
       }
       case 'healzone': {
-        let radius = (prm.radius ?? 130) * p.stats.area
+        let radius = (prm.radius ?? 130) * p.stats.area * this.skillRadiusScale(p)
         if (eff(p, 'charMed')) radius *= 1 + 0.4 * eff(p, 'charMed')
         this.zones.push({
           x: p.x, y: p.y, radius, dps: 0, hps: (prm.hps ?? 6) * sp,
@@ -948,7 +966,7 @@ export class Game {
         break
       }
       case 'frostnova': {
-        let radius = (prm.radius ?? 220) * p.stats.area
+        let radius = (prm.radius ?? 200) * p.stats.area * this.skillRadiusScale(p)
         let freeze = prm.freeze ?? 2.5
         if (eff(p, 'charMage')) { radius *= 1 + 0.3 * eff(p, 'charMage'); freeze += eff(p, 'charMage') }
         this.ev({ t: 'aoe', x: Math.round(p.x), y: Math.round(p.y), r: Math.round(radius), kind: 'frost' })
@@ -998,7 +1016,7 @@ export class Game {
       }
       case 'whirlslash': {
         // 武士：旋風斬 — 旋身斬擊四周敵人並擊退（純爆發傷害）
-        const radius = (prm.radius ?? 190) * p.stats.area
+        const radius = (prm.radius ?? 190) * p.stats.area * this.skillRadiusScale(p)
         this.ev({ t: 'aoe', x: Math.round(p.x), y: Math.round(p.y), r: Math.round(radius), kind: 'slash' })
         for (const e of this.enemies) {
           if (e.hp <= 0 || dist2(e.x, e.y, p.x, p.y) > radius * radius) continue
@@ -1010,7 +1028,7 @@ export class Game {
       case 'spikecharge': {
         // 榴槤：蓄刺爆發 — 蓄力越久（charge 0~1）範圍越大、傷害最高 1.5 倍，往四周噴刺並留尖刺區持續傷害
         const rMin = prm.radius ?? 300, rMax = prm.maxRadius ?? 1700
-        const radius = (rMin + (rMax - rMin) * charge) * p.stats.area
+        const radius = (rMin + (rMax - rMin) * charge) * p.stats.area * this.skillRadiusScale(p)
         const dmg = (prm.damage ?? 30) * (1 + 0.5 * charge) * p.stats.damage * sp
         this.ev({ t: 'aoe', x: Math.round(p.x), y: Math.round(p.y), r: Math.round(radius), kind: 'spikes' })
         for (const e of this.enemies) {
@@ -1027,7 +1045,7 @@ export class Game {
       }
       case 'palmquake': {
         // 武僧：震地掌 — 拍地震盪，重擊、擊退並暈眩周圍敵人（菁英不被暈）
-        const radius = (prm.radius ?? 180) * p.stats.area
+        const radius = (prm.radius ?? 180) * p.stats.area * this.skillRadiusScale(p)
         this.ev({ t: 'aoe', x: Math.round(p.x), y: Math.round(p.y), r: Math.round(radius), kind: 'pulse' })
         for (const e of this.enemies) {
           if (e.hp <= 0 || dist2(e.x, e.y, p.x, p.y) > radius * radius) continue
@@ -1040,7 +1058,7 @@ export class Game {
       case 'hallucinate': {
         // 迷幻大麻：迷幻孢子 — 灑出幻覺雲，範圍內敵人陷入混亂（亂走、不攻擊）並受傷，
         // 並留下持續數秒的孢子雲，讓踏入的怪物持續混亂。菁英混亂時間減半。
-        const radius = (prm.radius ?? 240) * p.stats.area
+        const radius = (prm.radius ?? 190) * p.stats.area * this.skillRadiusScale(p)
         const confuse = prm.confuse ?? 4
         this.ev({ t: 'aoe', x: Math.round(p.x), y: Math.round(p.y), r: Math.round(radius), kind: 'haze' })
         for (const e of this.enemies) {
@@ -1050,7 +1068,7 @@ export class Game {
         }
         // 留存的孢子雲（非傷害，持續施加混亂；見 combat.zonesTick 的 haze 分支）
         this.zones.push({
-          x: p.x, y: p.y, radius: (prm.cloudRadius ?? 190) * p.stats.area, dps: 0, hps: 0,
+          x: p.x, y: p.y, radius: (prm.cloudRadius ?? 150) * p.stats.area * this.skillRadiusScale(p), dps: 0, hps: 0,
           until: this.time + (prm.cloudDur ?? 5), ownerId: p.id, kind: 'haze', hostile: false, tick: 0,
         })
         break

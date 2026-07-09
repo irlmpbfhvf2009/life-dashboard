@@ -181,8 +181,9 @@ export function missionTick(g: Game, dt: number): void {
 
   switch (m.data.type) {
     case 'survive':
-      m.progress = Math.min(g.time / g.duration, 1) * 100
-      if (g.time >= g.duration - 0.1) m.done = true
+      // 殺光制：撐到本波怪全數殲滅＝達成（不再看時間）
+      if (g.spawner.budgetLeft <= 0 && g.enemies.length === 0) m.done = true
+      m.progress = m.done ? 100 : 0
       return
     case 'kills': case 'elite': case 'orbs':
       if (m.progress >= m.target) m.done = true
@@ -198,8 +199,9 @@ export function missionTick(g: Game, dt: number): void {
       return
     case 'crystal': case 'base': {
       const o = g.objectives.find(o => o.t === 'crystal' || o.t === 'base')
+      // 目標被摧毀＝失敗；守到本波清光＝達成
       if (!o || o.hp <= 0) { m.failed = true; g.ev({ t: 'toast', msg: '任務失敗：目標被摧毀了…', kind: 'warn' }) }
-      else if (g.time >= g.duration - 0.1) m.done = true
+      else if (g.spawner.budgetLeft <= 0 && g.enemies.length === 0) m.done = true
       return
     }
     case 'cart': {
