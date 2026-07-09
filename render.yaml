@@ -1,0 +1,19 @@
+# Render Blueprint — 菜菜勇者團 game server（免費層 / Singapore）。
+# 用法：render.com → New → Blueprint → 選這個 repo，會照這份自動建立服務。
+# 注意：完全不影響 Google Cloud Run（那套仍用 game/Dockerfile 經 gcloud 部署、保留當備援）。
+# 免費層特性：閒置 15 分休眠（首位玩家冷啟動約 30~60s，client 會自動重連），每月 750 小時。
+services:
+  - type: web
+    name: veggie-game-server
+    runtime: docker
+    repo: https://github.com/irlmpbfhvf2009/life-dashboard
+    branch: main
+    rootDir: game            # Docker build context = game/（server 依賴 ../shared）
+    dockerfilePath: ./Dockerfile
+    region: singapore        # 離台灣最近的免費區
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: true         # push 到 main 自動重新部署
+    envVars:
+      - key: NODE_ENV
+        value: production

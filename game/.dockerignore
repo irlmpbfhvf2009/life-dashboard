@@ -1,0 +1,6 @@
+# 加速 Docker build（Render / Cloud Run 皆適用）：不要把本機 node_modules 塞進 build context。
+# 容器內會自己 npm ci 乾淨安裝。
+server/node_modules
+**/node_modules
+README.md
+.gcloudignore
