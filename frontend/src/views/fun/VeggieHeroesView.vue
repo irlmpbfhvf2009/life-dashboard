@@ -387,6 +387,23 @@ const wpn = (id: string) => WEAPON_MAP.get(id)
 const itemOf = (id: string) => ITEM_MAP.get(id)
 const playerName2 = (id: string) => gs.begin?.players.find(p => p.id === id)?.name ?? '?'
 
+// 特殊戰力面板（點一下開關、預設關）：只列「特殊能力」——擊殺回血、詛咒、傳說、
+// 武器特化、技能強化等（純數值屬性已在上面的數值面板呈現）。
+const showSpecial = ref(false)
+const specialAbilities = computed(() => {
+  const counts = new Map<string, number>()
+  for (const id of gs.inter?.me.upgrades ?? []) counts.set(id, (counts.get(id) ?? 0) + 1)
+  const out: { name: string; desc: string; count: number; cat: string }[] = []
+  for (const [id, count] of counts) {
+    const u = upg(id)
+    if (!u) continue
+    const special = !!u.specialEffect || ['curse', 'legendary', 'weapon', 'coop', 'character'].includes(u.category) || !!u.statMods?.lifeOnKill
+    if (special) out.push({ name: u.name, desc: u.description, count, cat: u.category })
+  }
+  const rank = (c: string) => (c === 'curse' ? 0 : c === 'legendary' ? 1 : 2)
+  return out.sort((a, b) => rank(a.cat) - rank(b.cat))
+})
+
 // 角色數值長條（跨全角色正規化，讓特性一目了然）
 function charStatRows(charId: string) {
   const b = CHARACTER_MAP.get(charId)?.baseStats
@@ -1206,6 +1223,22 @@ const bestWaves = computed(() => ({
               <div v-if="gs.inter.me.stats.projectiles" class="rounded bg-white/5 px-2 py-1"><span class="text-white/40">➕投射</span> <b>+{{ gs.inter.me.stats.projectiles }}</b></div>
               <div v-if="gs.inter.me.stats.lifeOnKill" class="rounded bg-white/5 px-2 py-1"><span class="text-white/40">🩸吸血</span> <b>{{ gs.inter.me.stats.lifeOnKill }}</b></div>
             </div>
+
+            <!-- 特殊戰力（點一下開關、預設收起）：只列特殊能力（擊殺回血/詛咒/傳說/武器特化…） -->
+            <template v-if="specialAbilities.length">
+              <button class="mt-2 flex w-full items-center justify-between rounded-lg bg-fuchsia-500/10 px-2 py-1.5" @click="showSpecial = !showSpecial; sfx.click()">
+                <span class="text-[11px] font-black text-fuchsia-300">✨ 特殊戰力（{{ specialAbilities.length }}）</span>
+                <span class="text-[10px] text-white/40">{{ showSpecial ? '收起 ▲' : '展開 ▼' }}</span>
+              </button>
+              <div v-if="showSpecial" class="mt-1.5 space-y-1">
+                <div v-for="a in specialAbilities" :key="a.name" class="rounded-lg px-2 py-1" :class="a.cat === 'curse' ? 'bg-rose-900/30' : 'bg-white/5'">
+                  <p class="text-[11px] font-black" :class="a.cat === 'curse' ? 'text-rose-300' : a.cat === 'legendary' ? 'text-amber-300' : 'text-white/85'">
+                    {{ a.cat === 'curse' ? '😈 ' : a.cat === 'legendary' ? '🌟 ' : '' }}{{ a.name }}<span v-if="a.count > 1" class="text-white/50"> ×{{ a.count }}</span>
+                  </p>
+                  <p class="text-[10px] leading-tight text-white/50">{{ a.desc }}</p>
+                </div>
+              </div>
+            </template>
           </div>
 
           <!-- 升級選擇 -->
