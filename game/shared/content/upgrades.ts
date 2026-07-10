@@ -38,6 +38,8 @@ export const UPGRADES: UpgradeData[] = [
   U('pick1', '長柄耙子', '拾取範圍 +25', 'common', 'stat', { statMods: { pickupRange: 25 }, maxStacks: 4 }),
   U('armor1', '木盾', '護甲 +1', 'common', 'stat', { statMods: { armor: 1 }, maxStacks: 8 }),
   U('armor2', '鐵鍋盾', '護甲 +2', 'rare', 'stat', { statMods: { armor: 2 }, maxStacks: 6 }),
+  U('dodge1', '柔軟身段', '迴避 +5%（上限 70%）', 'common', 'stat', { statMods: { dodge: 0.05 }, maxStacks: 8 }),
+  U('dodge2', '鬼影步法', '迴避 +8%（上限 70%）', 'rare', 'stat', { statMods: { dodge: 0.08 }, maxStacks: 6 }),
   U('regen1', '光合作用', '每秒回復 +0.5', 'common', 'stat', { statMods: { regen: 0.5 }, maxStacks: 8 }),
   U('regen2', '深根蓄水', '每秒回復 +1.2', 'rare', 'stat', { statMods: { regen: 1.2 }, maxStacks: 3 }),
   U('cdr1', '冷靜思考', '技能冷卻 -8%', 'common', 'stat', { statMods: { cooldown: 0.08 }, maxStacks: 4 }),

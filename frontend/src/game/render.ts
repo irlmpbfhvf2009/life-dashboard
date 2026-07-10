@@ -39,7 +39,7 @@ interface CPlayer {
 interface CDrop { i: number; t: string; x: number; y: number; v: number; item?: string; x2?: boolean }
 interface CProj { x: number; y: number; vx: number; vy: number; left: number; weapon: string; born: number }
 interface Particle { x: number; y: number; vx: number; vy: number; life: number; maxLife: number; color: string; size: number }
-interface DmgNum { x: number; y: number; v: number; crit: boolean; life: number }
+interface DmgNum { x: number; y: number; v: number; crit: boolean; life: number; txt?: string; col?: string }
 interface SkillCast { pid: string; name: string; color: string; born: number }
 interface Aoe { x: number; y: number; r: number; kind: string; life: number; maxLife: number; w?: string }
 
@@ -266,6 +266,14 @@ export class Engine {
           break
         case 'phit': {
           if (ev.id === gs.playerId) { this.shake = Math.min(this.shake + 5, 12); sfx.hit(); haptics.hit() }
+          break
+        }
+        case 'pmiss': {
+          // 迴避成功：頭上冒青色「閃避」浮字
+          const p = this.players.get(ev.id)
+          if (p && this.dmgNums.length < MAX_DMG_NUMS) {
+            this.dmgNums.push({ x: p.x, y: p.y - 22, v: 0, crit: false, life: 0.8, txt: '閃避', col: '#5fe3ff' })
+          }
           break
         }
         case 'shoot': {
@@ -1189,7 +1197,11 @@ export class Engine {
     for (const d of this.dmgNums) {
       g.globalAlpha = Math.min(1, d.life * 2)
       g.textAlign = 'center'
-      if (d.crit) {
+      if (d.txt) {
+        g.font = '900 15px sans-serif'
+        g.shadowColor = 'rgba(95,227,255,0.9)'; g.shadowBlur = 10
+        g.fillStyle = d.col ?? '#5fe3ff'
+      } else if (d.crit) {
         const age = 0.8 - d.life
         const pop = age < 0.16 ? 0.6 + (age / 0.16) * 0.6 : 1.2 - Math.max(0, (age - 0.16)) * 0.25
         const fs = Math.round(20 * Math.max(0.6, pop))
@@ -1202,7 +1214,7 @@ export class Engine {
       }
       g.strokeStyle = 'rgba(0,0,0,0.8)'
       g.lineWidth = 3
-      const txt = fmtNum(d.v)
+      const txt = d.txt ?? fmtNum(d.v)
       g.strokeText(txt, d.x, d.y)
       g.fillText(txt, d.x, d.y)
       g.shadowBlur = 0

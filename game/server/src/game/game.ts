@@ -713,6 +713,11 @@ export class Game {
     if (p.god || p.status !== 'alive') return
     const now = this.time
     if (p.buffs.invulnUntil > now || p.dashUntil > now) return
+    // 迴避：命中前擲骰，成功＝完全免傷（上限 70%）
+    if (p.stats.dodge > 0 && this.rng() < p.stats.dodge) {
+      this.ev({ t: 'pmiss', id: p.id })
+      return
+    }
     // 護甲：每點 -6%，上限 60%
     let armor = p.stats.armor
     if (eff(p, 'nearAllyArmor')) {

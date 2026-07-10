@@ -1218,6 +1218,7 @@ const bestWaves = computed(() => ({
               <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">⚡攻速</span> <b>×{{ gs.inter.me.stats.attackSpeed.toFixed(2) }}</b></div>
               <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">👟移速</span> <b>{{ Math.round(gs.inter.me.stats.moveSpeed) }}</b></div>
               <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">🛡️護甲</span> <b>{{ gs.inter.me.stats.armor }}</b></div>
+              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">🌀迴避</span> <b>{{ Math.round((gs.inter.me.stats.dodge ?? 0) * 100) }}%</b></div>
               <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">🎯暴擊</span> <b>{{ Math.round(gs.inter.me.stats.critChance * 100) }}%</b></div>
               <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">💥暴傷</span> <b>×{{ gs.inter.me.stats.critDamage.toFixed(2) }}</b></div>
               <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">⭕範圍</span> <b>×{{ gs.inter.me.stats.area.toFixed(2) }}</b></div>

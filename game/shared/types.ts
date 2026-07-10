@@ -16,7 +16,7 @@ export type Rarity = 'common' | 'rare' | 'epic' | 'legendary' | 'cursed'
 export type StatKey =
   | 'maxHp' | 'armor' | 'regen' | 'pickupRange' | 'projectiles' | 'pierce' | 'lifeOnKill'
   | 'moveSpeed' | 'damage' | 'attackSpeed' | 'critChance' | 'critDamage'
-  | 'cooldown' | 'area' | 'goldGain' | 'xpGain' | 'reviveSpeed' | 'luck'
+  | 'cooldown' | 'area' | 'goldGain' | 'xpGain' | 'reviveSpeed' | 'luck' | 'dodge'
 
 export type StatMods = Partial<Record<StatKey, number>>
 
@@ -26,6 +26,7 @@ export interface ComputedStats {
   moveSpeed: number; damage: number; attackSpeed: number
   critChance: number; critDamage: number; cooldown: number; area: number
   goldGain: number; xpGain: number; reviveSpeed: number; luck: number
+  dodge: number             // 閃避率 0~0.7（命中前擲骰，成功＝完全免傷）
 }
 
 // ---------------------------------------------------------------- 內容 schema
@@ -425,6 +426,7 @@ export type GameEv =
   | { t: 'kill'; i: number; x: number; y: number; by?: string }
   | { t: 'hit'; i: number; d: number; crit?: 1; x: number; y: number }
   | { t: 'phit'; id: string; d: number }                    // 玩家受擊
+  | { t: 'pmiss'; id: string }                              // 玩家閃避（迴避成功、完全免傷）
   | { t: 'shoot'; id: string; w: string; x: number; y: number; tx: number; ty: number; n: number }
   | { t: 'drop'; d: DropSpawnEv }
   | { t: 'pick'; i: number; id: string }

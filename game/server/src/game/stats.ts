@@ -58,6 +58,7 @@ export function recomputeStats(p: SPlayer): void {
     xpGain: 1 + (pct.xpGain ?? 0),
     reviveSpeed: 1 + (pct.reviveSpeed ?? 0) + (p.char.passive.effect === 'auraHealFastRescue' ? 0.4 : 0),
     luck: 1 + (pct.luck ?? 0),
+    dodge: Math.min(0.7, Math.max(0, pct.dodge ?? 0)),   // 閃避率上限 70%
   }
   const hpPct = p.stats ? p.hp / Math.max(1, p.stats.maxHp) : 1
   p.stats = s
