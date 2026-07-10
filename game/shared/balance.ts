@@ -245,3 +245,36 @@ export const MISSION = {
   minWave: 4,
   killTargetScale: { 1: 1.0, 2: 1.4, 3: 1.8, 4: 2.2 } as Record<number, number>,
 }
+
+// ------------------------------------------------- 睏寶：放置炸彈系統
+// 六個武器模組合成「一顆炸彈的規格」（見 game/DESIGN-kunbao.md）。
+// HARD_STOCK / CHAIN_CAP 是伺服器效能與傷害溢出的護欄，不是平衡旋鈕——別為了爽拿掉。
+
+export const BOMB = {
+  cell: 62,                 // 「一格火力」＝爆風臂長 62px
+  // 放彈間隔必須明顯短於引信，否則炸彈永遠只有一顆在地上、連鎖流不可能成立。
+  baseInterval: 1.1,        // 基礎放彈間隔（秒），除以攻速
+  baseFuse: 2.4,            // 基礎引信（秒）
+  baseDamage: 12,
+  basePower: 2,             // 基礎火力（格）
+  baseStock: 2,             // 基礎同時炸彈上限
+  hardStock: 12,            // 同時炸彈硬上限（實體數／手機渲染護欄）
+  armWidth: 46,             // 爆風寬度
+  chainCap: 8,              // 連鎖段數上限（每段 +chainStep 傷害）
+  chainStep: 0.12,
+  chainHealEvery: 5,        // 每 5 段回 3% 最大生命
+  chainHealPct: 0.03,
+  selfPush: 850,            // 爆風把睏寶推開的力道（要夠強才是「位移工具」而不是被推一下）
+  selfIframe: 0.25,         // 被自己爆風推開時的無敵幀
+  subFuse: 0.6,             // 異常核（紅）子炸彈引信
+  // 睡意
+  drowsyGain: 30,           // 靜止 +/秒
+  drowsyLoss: 45,           // 移動 −/秒
+  wakeLock: 0.8,            // 受擊後無法累積睡意的時間
+  lightAt: 40, deepAt: 80,
+  lightInterval: 0.75, lightFuse: -0.3,
+  deepInterval: 0.55, deepPower: 1, deepRegenPct: 0.015,
+} as const
+
+/** 睡意 → 階段（0 清醒 / 1 淺眠 / 2 熟睡） */
+export const drowsyTier = (d: number): 0 | 1 | 2 => (d >= BOMB.deepAt ? 2 : d >= BOMB.lightAt ? 1 : 0)

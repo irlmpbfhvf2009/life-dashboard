@@ -76,6 +76,8 @@ export interface CharacterData {
 export type WeaponBehavior =
   | 'projectile' | 'orbit' | 'chain' | 'mine' | 'turret'
   | 'healPulse' | 'zone' | 'drone' | 'melee'
+  /** 睏寶專屬：不自己開火，六個模組合成「一顆炸彈的規格」（server bombs.ts buildSpec） */
+  | 'bombModule'
 
 export type WeaponCategory = 'melee' | 'ranged' | 'magic' | 'engineer' | 'support' | 'summon'
 
@@ -362,6 +364,7 @@ export interface PlayerSnap {
   dmg: number             // 整局累計總傷害量
   spd?: number            // 目前移動速度（含 buff）——client 自機預測用（升級移速才會真的變快）
   fx?: string             // 短暫狀態: 'dash'|'rage'|...
+  dz?: number             // 睏寶睡意 0~100（client 畫睡意環／Zzz）
 }
 
 /** 生成時一次送 full spawn（game:ev），之後快照只送位置與血量 */
@@ -410,7 +413,11 @@ export interface BossSnap {
 // 場上「部署物」——砲塔/地面圈/地雷（持續存在於 server，需每快照送位置才畫得出來）
 export interface TurretSnap { x: number; y: number; g?: 1 }   // g=守護型（優先護隊友）
 export interface ZoneSnap { x: number; y: number; r: number; k: 'poison' | 'heal' | 'fire' | 'frost' | 'spike' | 'haze'; h?: 1 }   // h=1 對玩家有害（危險，畫紅）
-export interface MineSnap { x: number; y: number; r: number; a?: 1; b?: 1 }   // a=已佈署完成（可觸發）；b=水球炸彈（十字爆風，r=爆風臂長）
+export interface MineSnap { x: number; y: number; r: number; a?: 1 }   // a=已佈署完成（可觸發）
+/** 睏寶的放置炸彈：f=引信剩餘比例 0~1、r=爆風臂長、x=X型斜臂、s=子炸彈 */
+export interface BombSnap { x: number; y: number; f: number; r: number; x2?: 1; s?: 1 }
+/** 惡夢枕核心：吸引半徑 */
+export interface PillowSnap { x: number; y: number; r: number }
 
 export interface Snapshot {
   t: number                      // server 時間（秒，本波起算）
@@ -424,6 +431,8 @@ export interface Snapshot {
   turrets?: TurretSnap[]               // 部署中的砲塔
   zones?: ZoneSnap[]                   // 地面圈（治療/毒/火/冰）
   mines?: MineSnap[]                   // 地雷
+  bombs?: BombSnap[]                   // 睏寶的放置炸彈
+  pillows?: PillowSnap[]               // 惡夢枕核心
   director: { pressure: number; level: number }
   mission?: { name: string; progress: number; target: number; done: boolean; failed?: boolean }
   event?: string                 // 事件 id

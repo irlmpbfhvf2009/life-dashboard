@@ -34,7 +34,7 @@ interface CEnemy {
 interface CPlayer {
   id: string; name: string; charId: string
   x: number; y: number; tx: number; ty: number
-  status: string; hp: number; mhp: number; sh: number; rp: number; fx?: string; lv: number
+  status: string; hp: number; mhp: number; sh: number; rp: number; fx?: string; lv: number; dz?: number
 }
 interface CDrop { i: number; t: string; x: number; y: number; v: number; item?: string; x2?: boolean }
 interface CProj { x: number; y: number; vx: number; vy: number; left: number; weapon: string; born: number }
@@ -57,7 +57,7 @@ const SKILL_COLOR: Record<string, string> = {
   bulwark: '#90caf9', rapidfire: '#ff8a65', healzone: '#69f0ae', turret: '#cfd8dc',
   frostnova: '#a8e0ff', fateflip: '#ffd54f', charge: '#eeeeee', whirlslash: '#ff5252',
   thornsNova: '#66bb6a', palmquake: '#ffca28', spikecharge: '#f0a83e', hallucinate: '#e05fd0',
-  bombnap: '#5aa9e6',
+  nightmarePillow: '#5aa9e6',
 }
 
 export class Engine {
@@ -76,6 +76,8 @@ export class Engine {
   turrets: NonNullable<Snapshot['turrets']> = []
   snapZones: NonNullable<Snapshot['zones']> = []
   mines: NonNullable<Snapshot['mines']> = []
+  bombs: NonNullable<Snapshot['bombs']> = []
+  pillows: NonNullable<Snapshot['pillows']> = []
 
   projectiles: CProj[] = []
   particles: Particle[] = []
@@ -206,7 +208,7 @@ export class Engine {
         this.players.set(ps.id, p)
       }
       p.tx = ps.x; p.ty = ps.y
-      p.status = ps.st; p.hp = ps.hp; p.mhp = ps.mhp; p.sh = ps.sh; p.rp = ps.rp; p.fx = ps.fx; p.lv = ps.lv
+      p.status = ps.st; p.hp = ps.hp; p.mhp = ps.mhp; p.sh = ps.sh; p.rp = ps.rp; p.fx = ps.fx; p.lv = ps.lv; p.dz = ps.dz
       if (ps.id === gs.playerId) {
         this.serverMyX = ps.x; this.serverMyY = ps.y
         // server 送來的實際移速（含升級/寶箱/加速 buff）——移速加成才會真的變快
@@ -239,6 +241,8 @@ export class Engine {
     this.turrets = s.turrets ?? []
     this.snapZones = s.zones ?? []
     this.mines = s.mines ?? []
+    this.bombs = s.bombs ?? []
+    this.pillows = s.pillows ?? []
   }
 
   applyEvents(evs: GameEv[]): void {
@@ -667,29 +671,63 @@ export class Engine {
       }
       g.restore()
     }
-    // 地雷（已佈署＝亮黃閃爍；佈署中＝暗）／水球炸彈（藍色水球＋十字爆風預警）
+    // 睏寶的放置炸彈：十字（＋X）爆風預警 + 引信環（越接近爆炸越紅越急）
+    for (const b of this.bombs) {
+      g.save(); g.translate(b.x, b.y)
+      const urgency = 1 - b.f                     // 0 剛放下 → 1 即將爆炸
+      const blink = 0.35 + Math.abs(Math.sin(this.time * (4 + urgency * 14))) * 0.65
+      const bw = 46
+      g.fillStyle = `rgba(255,${Math.round(180 - urgency * 120)},60,${0.06 + urgency * 0.14})`
+      g.fillRect(-b.r, -bw / 2, b.r * 2, bw)
+      g.fillRect(-bw / 2, -b.r, bw, b.r * 2)
+      if (b.x2 === 1) {
+        g.save(); g.rotate(Math.PI / 4)
+        const xr = b.r * 0.6
+        g.fillRect(-xr, -bw / 2, xr * 2, bw)
+        g.fillRect(-bw / 2, -xr, bw, xr * 2)
+        g.restore()
+      }
+      const rad = b.s === 1 ? 8 : 12              // 子炸彈畫小一點
+      g.fillStyle = '#37474f'
+      g.beginPath(); g.arc(0, 0, rad, 0, Math.PI * 2); g.fill()
+      g.strokeStyle = 'rgba(0,0,0,0.7)'; g.lineWidth = 2
+      g.beginPath(); g.arc(0, 0, rad, 0, Math.PI * 2); g.stroke()
+      g.fillStyle = 'rgba(255,255,255,0.5)'
+      g.beginPath(); g.arc(-rad * 0.3, -rad * 0.3, rad * 0.26, 0, Math.PI * 2); g.fill()
+      // 引信環（剩餘比例）
+      g.strokeStyle = `rgba(255,${Math.round(200 - urgency * 150)},60,${blink})`; g.lineWidth = 3
+      g.beginPath(); g.arc(0, 0, rad + 5, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * b.f); g.stroke()
+      g.fillStyle = `rgba(255,150,40,${blink})`
+      g.beginPath(); g.arc(rad * 0.4, -rad - 5, 3, 0, Math.PI * 2); g.fill()
+      g.restore()
+    }
+
+    // 惡夢枕核心：吸引環 + 枕頭
+    for (const pl of this.pillows) {
+      g.save(); g.translate(pl.x, pl.y)
+      const pulse = 0.4 + Math.abs(Math.sin(this.time * 4)) * 0.4
+      g.strokeStyle = `rgba(140,120,230,${pulse})`; g.lineWidth = 3
+      g.setLineDash([10, 8]); g.lineDashOffset = -this.time * 40
+      g.beginPath(); g.arc(0, 0, pl.r, 0, Math.PI * 2); g.stroke()
+      g.setLineDash([])
+      g.fillStyle = 'rgba(140,120,230,0.12)'
+      g.beginPath(); g.arc(0, 0, pl.r, 0, Math.PI * 2); g.fill()
+      for (let k = 0; k < 6; k++) {                // 往內收的吸力粒子
+        const a = k / 6 * Math.PI * 2 + this.time * 0.6
+        const rr = pl.r * (0.9 - ((this.time * 0.5) % 1) * 0.5)
+        g.fillStyle = `rgba(200,190,255,${pulse * 0.7})`
+        g.beginPath(); g.arc(Math.cos(a) * rr, Math.sin(a) * rr, 3.5, 0, Math.PI * 2); g.fill()
+      }
+      g.fillStyle = '#e8eaf6'; g.strokeStyle = '#1a1208'; g.lineWidth = 2
+      g.beginPath(); g.roundRect(-17, -11, 34, 22, 7); g.fill(); g.stroke()
+      g.strokeStyle = '#9fa8da'
+      g.beginPath(); g.moveTo(-9, -6); g.lineTo(-9, 6); g.stroke()
+      g.restore()
+    }
+
+    // 地雷（已佈署＝亮黃閃爍；佈署中＝暗）
     for (const m of this.mines) {
       g.save(); g.translate(m.x, m.y)
-      if (m.b === 1) {
-        const blink = 0.5 + Math.abs(Math.sin(this.time * 9)) * 0.5
-        // 十字爆風預警
-        const w = Math.max(34, m.r * 0.2)
-        g.fillStyle = `rgba(90,169,230,${0.1 + blink * 0.08})`
-        g.fillRect(-m.r, -w / 2, m.r * 2, w)
-        g.fillRect(-w / 2, -m.r, w, m.r * 2)
-        // 水球本體
-        g.fillStyle = '#5aa9e6'
-        g.beginPath(); g.arc(0, 0, 10, 0, Math.PI * 2); g.fill()
-        g.strokeStyle = 'rgba(0,0,0,0.6)'; g.lineWidth = 2
-        g.beginPath(); g.arc(0, 0, 10, 0, Math.PI * 2); g.stroke()
-        g.fillStyle = 'rgba(255,255,255,0.65)'
-        g.beginPath(); g.arc(-3, -3, 3, 0, Math.PI * 2); g.fill()
-        // 引信火星
-        g.fillStyle = `rgba(255,140,40,${blink})`
-        g.beginPath(); g.arc(4, -12, 3, 0, Math.PI * 2); g.fill()
-        g.restore()
-        continue
-      }
       const armed = m.a === 1
       const blink = armed ? 0.6 + Math.sin(this.time * 6) * 0.35 : 0.3
       g.fillStyle = `rgba(255,207,92,${blink})`
@@ -924,26 +962,27 @@ export class Engine {
           break
         }
         case 'cross': {
-          // 水球十字爆風（睏寶）：四方向水柱由中心炸開，末端浪頭 + 水花
-          const w = Math.max(34, a.r * 0.2)
-          const reach = a.r * (1.05 - pct * 0.15)
-          g.shadowColor = 'rgba(90,169,230,0.9)'; g.shadowBlur = 12
-          for (let k = 0; k < 4; k++) {
-            g.save(); g.rotate(k * Math.PI / 2)
+          // 睏寶的十字爆風：四道火柱由中心炸開，末端爆頭；異常核（藍）多四道斜臂（ev.w==='x'）
+          const w = 46
+          const arm = (reach: number, alpha: number) => {
             const grad = g.createLinearGradient(0, 0, reach, 0)
-            grad.addColorStop(0, `rgba(227,242,253,${pct})`)
-            grad.addColorStop(1, `rgba(47,111,168,${pct * 0.15})`)
+            grad.addColorStop(0, `rgba(255,245,200,${alpha})`)
+            grad.addColorStop(0.5, `rgba(255,150,50,${alpha * 0.85})`)
+            grad.addColorStop(1, `rgba(200,60,20,${alpha * 0.15})`)
             g.fillStyle = grad
             g.beginPath(); g.roundRect(0, -w / 2, reach, w, w / 2); g.fill()
-            // 浪頭
-            g.fillStyle = `rgba(255,255,255,${pct * 0.8})`
+            g.fillStyle = `rgba(255,255,255,${alpha * 0.8})`
             g.beginPath(); g.arc(reach, 0, w * 0.34 * pct + 2, 0, Math.PI * 2); g.fill()
-            g.restore()
+          }
+          const reach = a.r * (1.05 - pct * 0.15)
+          g.shadowColor = 'rgba(255,140,40,0.9)'; g.shadowBlur = 14
+          for (let k = 0; k < 4; k++) { g.save(); g.rotate(k * Math.PI / 2); arm(reach, pct); g.restore() }
+          if (a.w === 'x') {
+            for (let k = 0; k < 4; k++) { g.save(); g.rotate(k * Math.PI / 2 + Math.PI / 4); arm(reach * 0.6, pct * 0.85); g.restore() }
           }
           g.shadowBlur = 0
-          // 中心水花環
-          g.strokeStyle = `rgba(255,255,255,${pct * 0.8})`; g.lineWidth = 3 * pct + 1
-          g.beginPath(); g.arc(0, 0, w * (0.6 + (1 - pct) * 1.2), 0, Math.PI * 2); g.stroke()
+          g.strokeStyle = `rgba(255,255,255,${pct * 0.85})`; g.lineWidth = 3 * pct + 1
+          g.beginPath(); g.arc(0, 0, w * (0.6 + (1 - pct) * 1.4), 0, Math.PI * 2); g.stroke()
           break
         }
         case 'haze': {
@@ -1086,18 +1125,25 @@ export class Engine {
         moving: p.id === gs.playerId ? this.moveDir.active : undefined,
         flash: p.fx === 'dash' || p.fx === 'rage',
       })
-      // 睏寶沉睡中：頭上飄 Zzz + 柔和光暈（回血/減傷生效中）
-      if (p.fx === 'doze' && !downed) {
+      // 睏寶的睡意環：0~100 繞一圈，淺眠(40)轉藍、熟睡(80)轉紫並飄 Zzz
+      if (p.dz !== undefined && !downed) {
+        const deep = p.dz >= 80, light = p.dz >= 40
         g.save()
-        g.strokeStyle = `rgba(180,220,255,${0.3 + Math.sin(this.time * 2) * 0.12})`
-        g.lineWidth = 3
-        g.beginPath(); g.arc(0, 0, 32, 0, Math.PI * 2); g.stroke()
-        g.font = 'bold 15px sans-serif'; g.textAlign = 'center'
-        for (let k = 0; k < 3; k++) {
-          const ph = (this.time * 0.55 + k / 3) % 1
-          g.globalAlpha = (1 - ph) * 0.9
-          g.fillStyle = '#dbeeff'
-          g.fillText('Z', 16 + ph * 16, -30 - ph * 26)
+        g.strokeStyle = 'rgba(255,255,255,0.10)'; g.lineWidth = 3
+        g.beginPath(); g.arc(0, 0, 30, 0, Math.PI * 2); g.stroke()
+        g.strokeStyle = deep ? '#b06fe0' : light ? '#5aa9e6' : '#90a4ae'
+        g.lineWidth = deep ? 4 : 3
+        if (deep) { g.shadowColor = '#b06fe0'; g.shadowBlur = 10 }
+        g.beginPath(); g.arc(0, 0, 30, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (p.dz / 100)); g.stroke()
+        g.shadowBlur = 0
+        if (deep) {
+          g.font = 'bold 15px sans-serif'; g.textAlign = 'center'
+          for (let k = 0; k < 3; k++) {
+            const ph = (this.time * 0.55 + k / 3) % 1
+            g.globalAlpha = (1 - ph) * 0.9
+            g.fillStyle = '#e6dbff'
+            g.fillText('Z', 16 + ph * 16, -30 - ph * 26)
+          }
         }
         g.restore()
       }

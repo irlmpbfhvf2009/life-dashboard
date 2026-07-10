@@ -377,7 +377,7 @@ export function drawCharacter(g: Ctx, charId: string, size: number, t: number, o
       }
       break
     }
-    case 'sleepy_melon': {
+    case 'kunbao': {
       // 睏寶冬瓜：淡綠圓身 + 藍白條紋睡帽 + 閉眼瞇笑 + 呼吸鼻涕泡；懷裡抱一顆水球炸彈
       const breathe = (Math.sin(t * 1.6) + 1) / 2          // 0~1 呼吸節拍
       outlined(g, body, gg => ellipse(gg, 0, s * 0.02, s * 0.46, s * 0.5))
@@ -981,7 +981,7 @@ const ART_ALIAS: Record<string, string> = {
   w_excal: 'w_sword', g_magnum: 'pea_gun', m_sanctuary: 'heal_orb', e_bastion: 'turret_gun',
   y_avalanche: 'ice_shard', t_jackpot: 't_dice', a_phantom: 'knife', s_zantetsu: 's_iai',
   c_colossus: 'c_gauntlet', k_hundred: 'k_fist', d_storm: 'd_thornshot', h_dream: 'h_spore',
-  b_deluge: 'b_waterbomb',
+
 }
 
 /** 武器圖示（size = 直徑基準；t 供旋轉/閃爍動畫）。 */
@@ -1175,16 +1175,65 @@ export function drawWeaponIcon(g: Ctx, weaponId: string, size: number, t: number
     case 'h_smoke':
       g.fillStyle = col; g.globalAlpha = 0.7; for (const [x, y, r] of [[-0.14, 0.1, 0.2], [0.12, 0.06, 0.22], [0, -0.14, 0.18], [-0.02, 0.16, 0.16]] as const) { ellipse(g, x * s + Math.sin(t + x) * s * 0.02, y * s, r * s, r * s); g.fill() } g.globalAlpha = 1
       g.fillStyle = acc; ellipse(g, s * 0.1, -s * 0.05, s * 0.05, s * 0.05); g.fill(); break
-    // ---- 睏寶
-    case 'b_waterbomb': {
-      outlined(g, col, gg => ellipse(gg, 0, s * 0.06, s * 0.32, s * 0.32), 2.5)     // 水球
-      g.fillStyle = 'rgba(255,255,255,0.6)'; ellipse(g, -s * 0.11, -s * 0.05, s * 0.09, s * 0.07); g.fill()
-      outlined(g, acc, gg => { gg.beginPath(); gg.rect(-s * 0.05, -s * 0.34, s * 0.1, s * 0.1) }, 2)   // 綁口
-      g.strokeStyle = '#ffca28'; g.lineWidth = s * 0.045; g.lineCap = 'round'                          // 引信
-      g.beginPath(); g.moveTo(0, -s * 0.32); g.quadraticCurveTo(s * 0.16, -s * 0.44, s * 0.1, -s * 0.5); g.stroke()
+    // ---- 睏寶：六個炸彈模組（不是六種炸彈，是同一顆炸彈的六個部位）
+    case 'k_fuse': {   // 引信：捲曲的導火線 + 火星
+      g.strokeStyle = col; g.lineWidth = s * 0.07; g.lineCap = 'round'
+      g.beginPath(); g.moveTo(-s * 0.3, s * 0.3)
+      g.bezierCurveTo(s * 0.1, s * 0.2, -s * 0.2, -s * 0.2, s * 0.18, -s * 0.34); g.stroke()
       g.lineCap = 'butt'
-      g.fillStyle = `rgba(255,120,40,${0.5 + Math.abs(Math.sin(t * 8)) * 0.5})`
-      ellipse(g, s * 0.1, -s * 0.5, s * 0.05, s * 0.05); g.fill()
+      const spark = 0.55 + Math.abs(Math.sin(t * 9)) * 0.45
+      g.fillStyle = `rgba(255,140,40,${spark})`; ellipse(g, s * 0.18, -s * 0.34, s * 0.1, s * 0.1); g.fill()
+      g.fillStyle = '#fff8e1'; ellipse(g, s * 0.18, -s * 0.34, s * 0.04, s * 0.04); g.fill()
+      break
+    }
+    case 'k_powder': {   // 火藥：桶身 + 骷髏標記
+      outlined(g, col, gg => { gg.beginPath(); gg.roundRect(-s * 0.26, -s * 0.24, s * 0.52, s * 0.52, s * 0.08) }, 2.5)
+      outlined(g, acc, gg => { gg.beginPath(); gg.rect(-s * 0.26, -s * 0.06, s * 0.52, s * 0.1) }, 0)
+      g.fillStyle = '#fff'; ellipse(g, 0, s * 0.14, s * 0.09, s * 0.08); g.fill()
+      g.fillStyle = OUTLINE; ellipse(g, -s * 0.035, s * 0.13, s * 0.02, s * 0.025); g.fill()
+      ellipse(g, s * 0.035, s * 0.13, s * 0.02, s * 0.025); g.fill()
+      break
+    }
+    case 'k_flame': {   // 火焰核：跳動的火苗
+      const f = 1 + Math.sin(t * 6) * 0.08
+      outlined(g, col, gg => {
+        gg.beginPath(); gg.moveTo(0, -s * 0.4 * f)
+        gg.quadraticCurveTo(s * 0.3, -s * 0.02, s * 0.16, s * 0.22)
+        gg.quadraticCurveTo(0, s * 0.42, -s * 0.16, s * 0.22)
+        gg.quadraticCurveTo(-s * 0.3, -s * 0.02, 0, -s * 0.4 * f)
+      }, 2.5)
+      g.fillStyle = '#ffe082'
+      g.beginPath(); g.moveTo(0, -s * 0.1); g.quadraticCurveTo(s * 0.12, s * 0.1, 0, s * 0.26)
+      g.quadraticCurveTo(-s * 0.12, s * 0.1, 0, -s * 0.1); g.fill()
+      break
+    }
+    case 'k_crate': {   // 彈藥箱：木箱 + 露出的炸彈
+      outlined(g, col, gg => { gg.beginPath(); gg.roundRect(-s * 0.34, -s * 0.1, s * 0.68, s * 0.42, s * 0.05) }, 2.5)
+      g.strokeStyle = acc; g.lineWidth = s * 0.04
+      g.beginPath(); g.moveTo(-s * 0.34, s * 0.06); g.lineTo(s * 0.34, s * 0.06); g.stroke()
+      for (const dx of [-0.16, 0.16]) { outlined(g, '#37474f', gg => ellipse(gg, s * dx, -s * 0.18, s * 0.11, s * 0.11), 2) }
+      break
+    }
+    case 'k_remote': {   // 遙控器：起爆器 + 天線訊號
+      outlined(g, col, gg => { gg.beginPath(); gg.roundRect(-s * 0.22, -s * 0.08, s * 0.44, s * 0.36, s * 0.06) }, 2.5)
+      outlined(g, '#e53935', gg => ellipse(gg, 0, s * 0.08, s * 0.08, s * 0.06), 2)
+      g.strokeStyle = acc; g.lineWidth = s * 0.045
+      g.beginPath(); g.moveTo(s * 0.14, -s * 0.08); g.lineTo(s * 0.24, -s * 0.34); g.stroke()
+      g.strokeStyle = `rgba(255,255,255,${0.35 + Math.abs(Math.sin(t * 5)) * 0.5})`; g.lineWidth = s * 0.03
+      for (const r of [0.1, 0.17]) { g.beginPath(); g.arc(s * 0.24, -s * 0.34, s * r, -Math.PI * 0.85, -Math.PI * 0.15); g.stroke() }
+      break
+    }
+    case 'k_core': {   // 異常核：旋轉的十字能量核
+      g.save(); g.rotate(t * 1.1)
+      g.fillStyle = col; g.shadowColor = col; g.shadowBlur = 10
+      for (let k = 0; k < 4; k++) {
+        g.save(); g.rotate(k * Math.PI / 2)
+        g.beginPath(); g.moveTo(-s * 0.06, 0); g.lineTo(0, -s * 0.42); g.lineTo(s * 0.06, 0); g.closePath(); g.fill()
+        g.restore()
+      }
+      g.shadowBlur = 0; g.restore()
+      outlined(g, acc, gg => ellipse(gg, 0, 0, s * 0.13, s * 0.13), 2)
+      g.fillStyle = '#fff'; ellipse(g, 0, 0, s * 0.05, s * 0.05); g.fill()
       break
     }
     case 'h_haze':

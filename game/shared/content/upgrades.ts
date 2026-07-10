@@ -103,7 +103,34 @@ export const UPGRADES: UpgradeData[] = [
   U('ch_monk', '拳意通神', '【武僧豆腐】攻速 +12%、傷害 +10%', 'rare', 'character', { statMods: { attackSpeed: 0.12, damage: 0.1 }, maxStacks: 3, requirements: ['char:monk_tofu'] }),
   U('ch_dur', '尖刺蓄能', '【暴刺榴槤】傷害 +12%、範圍 +10%', 'rare', 'character', { statMods: { damage: 0.12, area: 0.1 }, maxStacks: 3, requirements: ['char:durian_spike'] }),
   U('ch_hemp', '孢子共鳴', '【迷幻大麻】傷害 +12%、範圍 +12%', 'rare', 'character', { statMods: { damage: 0.12, area: 0.12 }, maxStacks: 3, requirements: ['char:hemp_mystic'] }),
-  U('ch_sleep', '安眠精髓', '【睏寶冬瓜】傷害 +12%、傷害減免 +5%', 'rare', 'character', { statMods: { damage: 0.12, damageReduction: 0.05 }, maxStacks: 3, requirements: ['char:sleepy_melon'] }),
+  U('ch_kun', '安眠精髓', '【睏寶】炸彈傷害 +14%、火力 +1', 'rare', 'character', { specialEffect: 'kunMastery', statMods: { damage: 0.14 }, maxStacks: 3, requirements: ['char:kunbao'] }),
+
+  // ============================== 睏寶專屬（放置炸彈；只在 char:kunbao 上架）
+  // 全部走 specialEffect，由 server bombs.ts 讀取——刻意沒有純數值選項。
+  U('kb_doze', '淺眠者', '【睏寶】睡意累積速度 +30%', 'common', 'character', { specialEffect: 'kbDoze', maxStacks: 3, requirements: ['char:kunbao'] }),
+  U('kb_short', '短引信', '【睏寶】引信時間 −0.2 秒', 'common', 'character', { specialEffect: 'kbShortFuse', maxStacks: 3, requirements: ['char:kunbao'] }),
+  U('kb_quilt', '厚棉被', '【睏寶】熟睡時減傷 25%', 'common', 'character', { specialEffect: 'kbQuilt', maxStacks: 2, requirements: ['char:kunbao'] }),
+  U('kb_stock', '多做一顆', '【睏寶】同時炸彈上限 +1', 'common', 'character', { specialEffect: 'kbStock', maxStacks: 5, requirements: ['char:kunbao'] }),
+  U('kb_power', '火力訓練', '【睏寶】火力 +1（爆風更長）', 'common', 'character', { specialEffect: 'kbPower', maxStacks: 5, requirements: ['char:kunbao'] }),
+  U('kb_talk', '夢話', '【睏寶】熟睡時每 2 秒額外自動放一顆炸彈', 'common', 'character', { specialEffect: 'kbSleepTalk', maxStacks: 1, requirements: ['char:kunbao'] }),
+  U('kb_breath', '深呼吸', '【睏寶】被打醒後的無法入睡時間 0.8→0.3 秒', 'common', 'character', { specialEffect: 'kbBreath', maxStacks: 1, requirements: ['char:kunbao'] }),
+
+  U('kb_reactor', '連鎖反應爐', '【睏寶】連鎖每段傷害加成 12% → 20%', 'rare', 'character', { specialEffect: 'kbReactor', maxStacks: 1, requirements: ['char:kunbao'] }),
+  U('kb_chaincap', '骨牌延伸', '【睏寶】連鎖段數上限 +2', 'rare', 'character', { specialEffect: 'kbChainCap', maxStacks: 2, requirements: ['char:kunbao'] }),
+  U('kb_jump', '炸彈跳躍', '【睏寶】被自己爆風炸飛時，移速 +50% 持續 1.5 秒', 'rare', 'character', { specialEffect: 'kbBombJump', maxStacks: 1, requirements: ['char:kunbao'] }),
+  U('kb_step', '踩雷者', '【睏寶】敵人踩到炸彈時，該炸彈引信 −50%', 'rare', 'character', { specialEffect: 'kbStepOn', maxStacks: 1, requirements: ['char:kunbao'] }),
+  U('kb_echo', '惡夢殘響', '【睏寶】惡夢枕爆炸後留下夢魘地帶（敵人移速 −40%，5 秒）', 'rare', 'character', { specialEffect: 'kbEcho', maxStacks: 1, requirements: ['char:kunbao'] }),
+  U('kb_sync', '定時同步', '【睏寶】場上所有炸彈的引信對齊到最短的那顆', 'rare', 'character', { specialEffect: 'kbSync', maxStacks: 1, requirements: ['char:kunbao'] }),
+  U('kb_cdblast', '冷卻爆破', '【睏寶】每次連鎖達 5 段以上，惡夢枕冷卻 −2 秒', 'rare', 'character', { specialEffect: 'kbCdBlast', maxStacks: 1, requirements: ['char:kunbao'] }),
+  U('kb_double', '二段引信', '【睏寶】炸彈爆炸後 0.5 秒，原地再炸一次（傷害 40%）', 'epic', 'character', { specialEffect: 'kbDoubleTap', maxStacks: 1, requirements: ['char:kunbao'] }),
+  U('kb_burn', '燒穿', '【睏寶】爆風無視敵人護甲與減傷', 'epic', 'character', { specialEffect: 'kbBurnThrough', maxStacks: 1, requirements: ['char:kunbao'] }),
+  U('kb_alarm', '貪睡鬧鐘', '【睏寶】被打醒後 3 秒內，放彈速度 ×2', 'epic', 'character', { specialEffect: 'kbAlarm', maxStacks: 1, requirements: ['char:kunbao'] }),
+
+  U('kb_domino', '骨牌宇宙', '【睏寶】連鎖段數不再有上限', 'legendary', 'character', { specialEffect: 'kbDomino', maxStacks: 1, requirements: ['char:kunbao'] }),
+  U('kb_fusion', '核心融合', '【睏寶】同時炸彈上限 −3，但炸彈傷害 ×3、火力 +3', 'legendary', 'character', { specialEffect: 'kbFusion', maxStacks: 1, requirements: ['char:kunbao'] }),
+  U('kb_night', '永夜', '【睏寶】睡意不再因移動下降，只在受擊時歸零', 'legendary', 'character', { specialEffect: 'kbEternalNight', maxStacks: 1, requirements: ['char:kunbao'] }),
+  U('kb_breed', '夢魘增殖', '【睏寶】每次連鎖達 8 段以上，場上免費生成 1 顆炸彈', 'legendary', 'character', { specialEffect: 'kbBreed', maxStacks: 1, requirements: ['char:kunbao'] }),
+  U('kb_paradox', '引信悖論', '【睏寶】引信 ×0.2，但炸彈傷害 ×0.4', 'legendary', 'character', { specialEffect: 'kbParadox', maxStacks: 1, requirements: ['char:kunbao'] }),
 
   // ============================== 詛咒（強力但有代價）
   U('x_glass', '玻璃大砲', '傷害 +40%，但最大生命 -25%', 'cursed', 'curse', { specialEffect: 'curseGlass', statMods: { damage: 0.4 }, maxStacks: 1 }),

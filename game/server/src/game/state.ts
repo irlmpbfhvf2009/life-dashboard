@@ -71,8 +71,15 @@ export interface SPlayer {
   buffs: Buffs
   dashUntil: number; dashVx: number; dashVy: number
   bulwarkUntil: number; bulwarkVx: number; bulwarkVy: number   // 戰士盾牌衝鋒（減傷+推進）
-  stillT: number                         // 連續靜止秒數（睏寶被動 sleepGuard）
-  sleeping: boolean                      // 沉睡中（額外減傷；受擊/移動即醒）
+  // 睏寶（dreamFuse）：睡意量表 + 放彈節拍 + 被自己爆風炸飛的擊退
+  drowsy: number                         // 睡意 0~100（靜止累積、移動流失、受擊歸零）
+  wakeLockUntil: number                  // 受擊後不能累積睡意到此時間
+  alarmUntil: number                     // 貪睡鬧鐘：被打醒後的放彈加速窗口
+  bombCd: number                         // 距離下一次放彈的秒數
+  sleepTalkCd: number                    // 夢話：熟睡時的額外放彈節拍
+  remoteCd: number                       // 遙控器（白）：每 6 秒自動引爆最舊的一顆
+  deathSyncAt: number                    // 遙控器（紫）：保命同步的下次可用時間
+  kbVx: number; kbVy: number; kbUntil: number   // 爆風把玩家炸飛（不造成傷害）
 
   downedCount: number
   reviveProgress: number                 // 0~1
@@ -176,16 +183,42 @@ export interface SZone {
   ramp?: number                           // rampZone：dps 每 0.5s 遞增比例
   pulseKb?: number                        // pulseZone：每 tick 擊退力道
   born?: number                           // rampZone 起算時間
+  ignite?: boolean                        // 睏寶火焰核（紫）：這片火痕可被爆風再次引爆
 }
 
 export interface SMine {
   x: number; y: number; radius: number; damage: number
   until: number; armAt: number; ownerId: string; weaponId: string
-  // 十字爆風（睏寶的水球炸彈 / 爆爆睡）：cross=臂長，crossW=爆風寬度
-  cross?: number; crossW?: number
-  slow?: number; slowDur?: number
-  fuse?: boolean                          // true = 定時引爆（不靠怪物觸發）
-  knockback?: number
+}
+
+/** 睏寶的一顆放置炸彈。規格（BombSpec）在放下的瞬間快照，之後升級不影響已放下的炸彈。 */
+export interface SBomb {
+  i: number
+  x: number; y: number
+  fuse: number                            // 剩餘引信（秒）
+  fuseMax: number
+  damage: number
+  arm: number                             // 爆風臂長（px）
+  ownerId: string
+  gen: number                             // 0=主炸彈 1=子炸彈（子炸彈不再生子炸彈）
+  crossX: boolean                         // 異常核（藍）：追加 X 型斜臂
+  sub: boolean                            // 異常核（紅）：爆風末端生子炸彈
+  contact: boolean                        // 引信（紅）：敵人碰到立即引爆
+  impatient: boolean                      // 引信（紫）：落地後沒人踩就自己燒完
+  overload: number                        // 火藥（紫）：引信剩越久傷害越高（最高 +overload）
+  flameDur: number                        // 火焰核（藍+）：爆風留下的火痕秒數
+  born: number
+  dead: boolean                           // 已排入本次連鎖（避免重複引爆）
+}
+
+/** 惡夢枕核心 */
+export interface SPillow {
+  x: number; y: number
+  until: number
+  radius: number
+  pull: number; slow: number
+  damage: number; arm: number
+  ownerId: string
 }
 
 export interface STurret {

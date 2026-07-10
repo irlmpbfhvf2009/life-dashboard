@@ -112,14 +112,44 @@ export const WEAPONS: WeaponData[] = [
     evolution: { requires: 'ch_hemp', into: 'h_dream' },
     maxLevel: 5, tags: ['spore', 'magic'], price: 12, tier: 1, palette: ['#9b7fd4', '#5a3f8f'],
   },
+  // ---------------------------------------------------------- 睏寶：六個炸彈模組
+  // 這六把不會自己開火（behavior='bombModule'）。它們合成「同一顆炸彈的規格」——
+  // 六個武器欄 = 你正在組裝的那顆炸彈。四個等級對應 白/藍/紫/紅（效果累積，見 bombs.ts buildSpec）。
   {
-    id: 'b_waterbomb', name: '水球炸彈', category: 'engineer', behavior: 'mine', charId: 'sleepy_melon',
-    description: '在腳邊放下水球炸彈；怪物碰到就爆——不是圓形爆炸，而是往四方轟出十字爆風，並把敵人潑濕減速。',
-    base: { damage: 22, cooldown: 3.0, range: 70, projectileCount: 1, pierce: 0, knockback: 200, radius: 90, duration: 10 },
-    perLevel: { damage: 9, radius: 8, cooldown: -0.25 },
-    mech: { id: 'crossBlast', params: { len: 230, w: 46, slow: 0.4, slowDur: 1.5 } },
-    evolution: { requires: 'ch_sleep', into: 'b_deluge' },
-    maxLevel: 5, tags: ['engineer', 'explosive'], price: 14, tier: 1, palette: ['#5aa9e6', '#2f6fa8'],
+    id: 'k_fuse', name: '引信', category: 'engineer', behavior: 'bombModule', charId: 'kunbao',
+    description: '控制多快放彈、多快爆。白：放彈間隔 −12%｜藍：引信 −0.25 秒｜紫：沒人踩就自己燒完（不耐煩引信）｜紅：敵人碰到立即引爆。',
+    base: { damage: 0, cooldown: 0, range: 0, projectileCount: 0, pierce: 0, knockback: 0 },
+    perLevel: {}, maxLevel: 4, tags: ['bomb', 'explosive'], price: 12, tier: 1, palette: ['#ffca28', '#c97b1e'],
+  },
+  {
+    id: 'k_powder', name: '火藥', category: 'engineer', behavior: 'bombModule', charId: 'kunbao',
+    description: '炸彈的傷害來源。白：+8｜藍：+24｜紫：過載——引信剩越久傷害越高（最高 +50%）｜紅：+64，暴擊只在爆心但暴傷 ×2。',
+    base: { damage: 0, cooldown: 0, range: 0, projectileCount: 0, pierce: 0, knockback: 0 },
+    perLevel: {}, maxLevel: 4, tags: ['bomb', 'explosive'], price: 12, tier: 1, palette: ['#e0512f', '#7a2414'],
+  },
+  {
+    id: 'k_flame', name: '火焰核', category: 'engineer', behavior: 'bombModule', charId: 'kunbao',
+    description: '爆風長度（火力）與火痕。白：火力 +1｜藍：火力 +2、爆風留下火痕｜紫：火痕可被爆風再次引爆｜紅：火力 +4、火痕內敵人受爆炸傷害 +25%。',
+    base: { damage: 0, cooldown: 0, range: 0, projectileCount: 0, pierce: 0, knockback: 0 },
+    perLevel: {}, maxLevel: 4, tags: ['bomb', 'fire'], price: 16, tier: 2, palette: ['#ff6b35', '#b03a10'],
+  },
+  {
+    id: 'k_crate', name: '彈藥箱', category: 'engineer', behavior: 'bombModule', charId: 'kunbao',
+    description: '同時存在的炸彈數——連鎖的地基。白：+1｜藍：+2、15% 放彈不消耗庫存｜紫：+4、每波開場鋪 3 顆｜紅：+6、庫存滿時一次放兩顆。',
+    base: { damage: 0, cooldown: 0, range: 0, projectileCount: 0, pierce: 0, knockback: 0 },
+    perLevel: {}, maxLevel: 4, tags: ['bomb'], price: 16, tier: 2, palette: ['#8a6d3b', '#5b4726'],
+  },
+  {
+    id: 'k_remote', name: '遙控器', category: 'engineer', behavior: 'bombModule', charId: 'kunbao',
+    description: '決定何時爆。白：每 6 秒自動引爆最舊的一顆｜藍：惡夢枕引爆全場（否則只引爆核心範圍內）｜紫：受致命傷時引爆身邊炸彈並無敵 1 秒｜紅：同步爆破——全部同時引爆並互相分享 15% 傷害。',
+    base: { damage: 0, cooldown: 0, range: 0, projectileCount: 0, pierce: 0, knockback: 0 },
+    perLevel: {}, maxLevel: 4, tags: ['bomb'], price: 20, tier: 2, palette: ['#b0bec5', '#455a64'],
+  },
+  {
+    id: 'k_core', name: '異常核', category: 'engineer', behavior: 'bombModule', charId: 'kunbao',
+    description: '改變爆炸的形狀。白：十字｜藍：追加 X 型斜臂｜紫：爆風加長 40% 且穿透敵人｜紅：爆風末端各生一顆子炸彈（自動擴散）。',
+    base: { damage: 0, cooldown: 0, range: 0, projectileCount: 0, pierce: 0, knockback: 0 },
+    perLevel: {}, maxLevel: 4, tags: ['bomb', 'explosive'], price: 24, tier: 3, palette: ['#b06fe0', '#5a2f8f'],
   },
 
   // ============================================================ 共用池 — 近戰
@@ -475,14 +505,6 @@ export const WEAPONS: WeaponData[] = [
     perLevel: {},
     mech: { id: 'sporeCloud', params: { chance: 0.5, radius: 110, dur: 2.5 } },
     maxLevel: 1, tags: ['spore', 'magic'], price: 45, tier: 3, palette: ['#ce93d8', '#4a148c'],
-  },
-  {
-    id: 'b_deluge', name: '大洪水炸彈', category: 'engineer', behavior: 'mine', charId: 'sleepy_melon', evolvedForm: true,
-    description: '水球炸彈的最終形態——十字爆風貫穿半個戰場，爆風更寬、濕滑更久。',
-    base: { damage: 72, cooldown: 2.4, range: 80, projectileCount: 1, pierce: 0, knockback: 280, radius: 120, duration: 12 },
-    perLevel: {},
-    mech: { id: 'crossBlast', params: { len: 460, w: 72, slow: 0.55, slowDur: 2.5 } },
-    maxLevel: 1, tags: ['engineer', 'explosive'], price: 45, tier: 3, palette: ['#b3e5fc', '#0277bd'],
   },
 ]
 

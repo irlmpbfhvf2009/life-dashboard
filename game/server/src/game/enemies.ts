@@ -447,11 +447,12 @@ export interface DamageOpts {
   knockX?: number; knockY?: number
   srcX?: number; srcY?: number
   weaponId?: string              // 造成傷害的武器（擊殺類 mech：killGold/splitOnKill/frenzyKill）
+  ignoreDr?: boolean             // 無視詞綴減傷（睏寶「燒穿」）
 }
 
 export function damageEnemyImpl(g: Game, e: SEnemy, dmg: number, opts: DamageOpts = {}): number {
   if (e.hp <= 0) return 0
-  let d = dmg * (1 - e.dr)
+  let d = dmg * (opts.ignoreDr ? 1 : 1 - e.dr)
   // 倒鉤鏢標記：期間內受到所有來源的傷害加成
   if (g.time < e.markedUntil) d *= e.markMult
   // 獵魔專精：對菁英傷害 +30%/層
