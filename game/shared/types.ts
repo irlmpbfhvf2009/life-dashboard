@@ -17,6 +17,13 @@ export type StatKey =
   | 'maxHp' | 'armor' | 'regen' | 'pickupRange' | 'projectiles' | 'pierce' | 'lifeOnKill'
   | 'moveSpeed' | 'damage' | 'attackSpeed' | 'critChance' | 'critDamage'
   | 'cooldown' | 'area' | 'goldGain' | 'xpGain' | 'reviveSpeed' | 'luck' | 'dodge'
+  // build 擴充軸（2026-07）
+  | 'flatDamage'                                        // 固定攻擊力（加在武器基礎、乘倍率之前；每發吃到）
+  | 'meleeDamage' | 'rangedDamage' | 'magicDamage' | 'engineerDamage'  // 分類傷害%（依武器 category）
+  | 'lifesteal'                                         // 吸血：造成傷害的 X% 轉生命
+  | 'dotDamage'                                         // 持續傷害%（毒/燃燒/地面 DoT）
+  | 'minionDamage'                                      // 召喚物傷害%（砲塔/無人機/地雷）
+  | 'damageReduction'                                   // 傷害減免%（護甲之外的第二層）
 
 export type StatMods = Partial<Record<StatKey, number>>
 
@@ -27,6 +34,12 @@ export interface ComputedStats {
   critChance: number; critDamage: number; cooldown: number; area: number
   goldGain: number; xpGain: number; reviveSpeed: number; luck: number
   dodge: number             // 閃避率 0~0.7（命中前擲骰，成功＝完全免傷）
+  flatDamage: number        // 固定攻擊力（加在武器基礎、乘傷害倍率之前）
+  meleeDamage: number; rangedDamage: number; magicDamage: number; engineerDamage: number  // 分類傷害%
+  lifesteal: number         // 吸血率 0~0.5（造成傷害 × 此值回血）
+  dotDamage: number         // 持續傷害加成%
+  minionDamage: number      // 召喚物傷害加成%
+  damageReduction: number   // 傷害減免% 0~0.5（護甲之外第二層）
 }
 
 // ---------------------------------------------------------------- 內容 schema

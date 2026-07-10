@@ -67,6 +67,13 @@ function effectiveStats(g: Game, p: SPlayer, w: OwnedWeapon): WeaponStats {
   if (eff(p, 'turretDuration') && w.data.behavior === 'turret') st.duration = (st.duration ?? 8) * (1 + 0.4 * eff(p, 'turretDuration'))
   if (eff(p, 'frostDuration') && w.data.tags.includes('frost')) st.duration = (st.duration ?? 2) * (1 + 0.3 * eff(p, 'frostDuration'))
   if (eff(p, 'dotUp') && st.burn) st.burn *= 1 + 0.3 * eff(p, 'dotUp')
+  // ── build 擴充軸：固定攻擊力（加在武器基礎）→ 分類傷害% → 召喚物傷害% → 持續傷害%
+  st.damage += p.stats.flatDamage
+  st.damage *= 1 + categoryDamageOf(p, w.data.category)
+  if (w.data.behavior === 'turret' || w.data.behavior === 'drone' || w.data.behavior === 'mine' || w.data.category === 'summon') {
+    st.damage *= 1 + p.stats.minionDamage
+  }
+  if (st.burn) st.burn *= 1 + p.stats.dotDamage
   // 開局收斂：基礎半徑/射程略小 → 「範圍效果」升級近戰遠程都有感、值得選
   if (st.radius) st.radius *= 0.85
   st.range *= 0.9
@@ -81,6 +88,15 @@ function effectiveStats(g: Game, p: SPlayer, w: OwnedWeapon): WeaponStats {
   return st
 }
 
+/** 分類傷害%：依武器 category 取對應加成（support/summon 只吃通用傷害%） */
+function categoryDamageOf(p: SPlayer, cat: string): number {
+  return cat === 'melee' ? p.stats.meleeDamage
+    : cat === 'ranged' ? p.stats.rangedDamage
+    : cat === 'magic' ? p.stats.magicDamage
+    : cat === 'engineer' ? p.stats.engineerDamage
+    : 0
+}
+
 /** 傷害合成（含站位合作加成/暴擊）；forceCrit = critEvery 之類的必暴機制 */
 export function rollDamage(g: Game, p: SPlayer, base: number, critMod = 1, forceCrit = false): { dmg: number; crit: boolean } {
   let mult = p.stats.damage
@@ -91,6 +107,10 @@ export function rollDamage(g: Game, p: SPlayer, base: number, critMod = 1, force
         break
       }
     }
+  }
+  // 力場護盾：目前護盾越滿，傷害越高（最多 +50%）
+  if (eff(p, 'shieldToDamage') && p.shield > 0) {
+    mult *= 1 + Math.min(0.5, p.shield / Math.max(1, p.stats.maxHp) * 0.5)
   }
   // 暴擊率 = 屬性 + 暫時 buff（賭徒幸運爆發等）
   const critCh = p.stats.critChance + (p.buffs.critUntil > g.time ? p.buffs.critAmt : 0)
@@ -127,7 +147,7 @@ function onHitMech(
       break
     case 'dotHit':
       if (e.hp > 0) {
-        e.burnDps = Math.max(e.burnDps, dealt * (prm.pct ?? 0.3))
+        e.burnDps = Math.max(e.burnDps, dealt * (prm.pct ?? 0.3) * (1 + p.stats.dotDamage))
         e.burnUntil = Math.max(e.burnUntil, g.time + (prm.dur ?? 3))
       }
       break

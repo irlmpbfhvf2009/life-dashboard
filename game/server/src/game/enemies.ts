@@ -489,7 +489,16 @@ export function damageEnemyImpl(g: Game, e: SEnemy, dmg: number, opts: DamageOpt
   }
   if (d > 0) {
     g.ev({ t: 'hit', i: e.i, d, crit: opts.crit ? 1 : undefined, x: Math.round(e.x), y: Math.round(e.y) })
-    if (opts.ownerId) { const o = g.players.get(opts.ownerId); if (o) { o.wave.dmgDealt += d; o.total.dmgDealt += d } }
+    if (opts.ownerId) {
+      const o = g.players.get(opts.ownerId)
+      if (o) {
+        o.wave.dmgDealt += d; o.total.dmgDealt += d
+        // 吸血：造成傷害 × 吸血率 → 回血
+        if (o.stats.lifesteal > 0) g.healEv(o, d * o.stats.lifesteal)
+        // 處決：非菁英/Boss 的雜魚殘血（<15%）直接斬殺
+        if (e.hp > 0 && !e.elite && e.data.tier < 3 && eff(o, 'executeLow') && e.hp / e.maxHp < 0.15) e.hp = 0
+      }
+    }
     // 金袋地精：被打就噴金幣（節流避免刷屏）
     if (e.data.behavior === 'looter' && e.hp > 0 && g.time >= e.lootDropCd) {
       e.lootDropCd = g.time + 0.22
@@ -552,6 +561,8 @@ export function killEnemy(g: Game, e: SEnemy, byPlayerId: string | null, byWeapo
   if (p) {
     p.wave.kills++; p.total.kills++
     if (p.stats.lifeOnKill) g.healEv(p, p.stats.lifeOnKill)
+    // 擊殺回盾（力場護盾流）
+    if (eff(p, 'shieldOnKill')) p.shield += 2 * eff(p, 'shieldOnKill')
     // 邁達斯之手：擊殺機率噴金幣
     if (eff(p, 'midas') && g.rng() < 0.12) g.dropGold(e.x, e.y, Math.max(2, Math.round(3 * coinWaveMult(g.wave))))
     if (e.elite && eff(p, 'eliteTrophy')) {

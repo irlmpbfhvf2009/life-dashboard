@@ -1223,6 +1223,16 @@ const bestWaves = computed(() => ({
               <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">💥暴傷</span> <b>×{{ gs.inter.me.stats.critDamage.toFixed(2) }}</b></div>
               <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">⭕範圍</span> <b>×{{ gs.inter.me.stats.area.toFixed(2) }}</b></div>
               <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">💚回復</span> <b>{{ gs.inter.me.stats.regen.toFixed(1) }}</b></div>
+              <!-- build 擴充軸：只顯示有值的 -->
+              <div v-if="(gs.inter.me.stats.flatDamage ?? 0) > 0" class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">➕固攻</span> <b>{{ gs.inter.me.stats.flatDamage }}</b></div>
+              <div v-if="(gs.inter.me.stats.lifesteal ?? 0) > 0" class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">🩸吸血</span> <b>{{ Math.round(gs.inter.me.stats.lifesteal * 100) }}%</b></div>
+              <div v-if="(gs.inter.me.stats.damageReduction ?? 0) > 0" class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">🧱減免</span> <b>{{ Math.round(gs.inter.me.stats.damageReduction * 100) }}%</b></div>
+              <div v-if="(gs.inter.me.stats.dotDamage ?? 0) > 0" class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">☠️毒傷</span> <b>+{{ Math.round(gs.inter.me.stats.dotDamage * 100) }}%</b></div>
+              <div v-if="(gs.inter.me.stats.minionDamage ?? 0) > 0" class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">🤖召喚</span> <b>+{{ Math.round(gs.inter.me.stats.minionDamage * 100) }}%</b></div>
+              <div v-if="(gs.inter.me.stats.meleeDamage ?? 0) > 0" class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">🗡️近戰</span> <b>+{{ Math.round(gs.inter.me.stats.meleeDamage * 100) }}%</b></div>
+              <div v-if="(gs.inter.me.stats.rangedDamage ?? 0) > 0" class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">🔫遠程</span> <b>+{{ Math.round(gs.inter.me.stats.rangedDamage * 100) }}%</b></div>
+              <div v-if="(gs.inter.me.stats.magicDamage ?? 0) > 0" class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">✨法術</span> <b>+{{ Math.round(gs.inter.me.stats.magicDamage * 100) }}%</b></div>
+              <div v-if="(gs.inter.me.stats.engineerDamage ?? 0) > 0" class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">⚙️工程</span> <b>+{{ Math.round(gs.inter.me.stats.engineerDamage * 100) }}%</b></div>
             </div>
 
             <!-- 特殊戰力（點一下開關、預設收起）：每項一行不換行；詳細說明用 hover title 帶出 -->

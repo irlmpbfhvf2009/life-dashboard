@@ -154,6 +154,33 @@ export const UPGRADES: UpgradeData[] = [
   U('gold2', '黃金之手', '金幣獲得 +25%', 'rare', 'stat', { statMods: { goldGain: 0.25 }, maxStacks: 3 }),
   U('hp3', '巨根之軀', '最大生命 +45', 'epic', 'stat', { statMods: { maxHp: 45 }, maxStacks: 3 }),
   U('regen3', '不竭生機', '每秒回復 +2', 'epic', 'stat', { statMods: { regen: 2 }, maxStacks: 2 }),
+
+  // ============================== build 擴充軸（2026-07，7 條新流派）
+  // ① 固定攻擊力（加在武器基礎、乘倍率前；高攻速/多發武器每發都吃到）
+  U('flat1', '力量手套', '固定攻擊力 +3', 'common', 'stat', { statMods: { flatDamage: 3 }, maxStacks: 10 }),
+  U('flat2', '巨力護腕', '固定攻擊力 +6', 'rare', 'stat', { statMods: { flatDamage: 6 }, maxStacks: 8 }),
+  U('flat3', '泰坦之握', '固定攻擊力 +12', 'epic', 'stat', { statMods: { flatDamage: 12 }, maxStacks: 5 }),
+  // ② 分類傷害%（依武器類別；配合角色親和分流派）
+  U('cat_melee', '近戰精通', '近戰武器傷害 +22%', 'rare', 'stat', { statMods: { meleeDamage: 0.22 }, maxStacks: 6 }),
+  U('cat_ranged', '射擊精通', '遠程武器傷害 +22%', 'rare', 'stat', { statMods: { rangedDamage: 0.22 }, maxStacks: 6 }),
+  U('cat_magic', '法術精通', '法術武器傷害 +22%', 'rare', 'stat', { statMods: { magicDamage: 0.22 }, maxStacks: 6 }),
+  U('cat_eng', '機械精通', '工程武器傷害 +22%', 'rare', 'stat', { statMods: { engineerDamage: 0.22 }, maxStacks: 6 }),
+  // ③ 吸血（造成傷害 X% 轉生命，上限 50%）
+  U('leech1', '吸血獠牙', '吸血 +4%', 'rare', 'stat', { statMods: { lifesteal: 0.04 }, maxStacks: 6 }),
+  U('leech2', '嗜血渴望', '吸血 +7%', 'epic', 'stat', { statMods: { lifesteal: 0.07 }, maxStacks: 4 }),
+  // ④ 持續傷害%（毒/燃燒/地面 DoT）
+  U('dot1', '劇毒淬鍊', '持續傷害 +30%', 'rare', 'stat', { statMods: { dotDamage: 0.3 }, maxStacks: 5, tags: ['poison'] }),
+  U('dot2', '瘟疫之種', '持續傷害 +55%', 'epic', 'stat', { statMods: { dotDamage: 0.55 }, maxStacks: 3, tags: ['poison'] }),
+  // ⑤ 召喚物傷害%（砲塔/無人機/地雷）
+  U('minion1', '傀儡師', '召喚物傷害 +25%', 'rare', 'stat', { statMods: { minionDamage: 0.25 }, maxStacks: 5, tags: ['engineer'] }),
+  U('minion2', '機械軍團', '召喚物傷害 +45%', 'epic', 'stat', { statMods: { minionDamage: 0.45 }, maxStacks: 3, tags: ['engineer'] }),
+  // ⑥ 防禦深度：減免% + 力場護盾流
+  U('dr1', '銅牆之皮', '傷害減免 +6%（護甲外第二層，上限 50%）', 'rare', 'stat', { statMods: { damageReduction: 0.06 }, maxStacks: 6 }),
+  U('dr2', '鐵壁之軀', '傷害減免 +10%（上限 50%）', 'epic', 'stat', { statMods: { damageReduction: 0.1 }, maxStacks: 3 }),
+  U('sh_kill', '擊殺充能', '每擊殺獲得 +2 點護盾', 'rare', 'stat', { specialEffect: 'shieldOnKill', maxStacks: 4 }),
+  U('sh_dmg', '力場超載', '護盾越滿傷害越高（最多 +50%）', 'epic', 'stat', { specialEffect: 'shieldToDamage', maxStacks: 1 }),
+  // ⑦ 處決：殘血雜魚直接斬殺
+  U('exec1', '死神鐮刀', '生命低於 15% 的雜魚直接斬殺（菁英/Boss 無效）', 'epic', 'stat', { specialEffect: 'executeLow', maxStacks: 1 }),
 ]
 
 export const UPGRADE_MAP = new Map(UPGRADES.map(u => [u.id, u]))

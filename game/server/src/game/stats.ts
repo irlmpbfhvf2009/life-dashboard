@@ -4,7 +4,7 @@ import type { ComputedStats, StatKey } from '../../../shared/types'
 import { UPGRADE_MAP } from '../../../shared/content/index'
 import type { SPlayer } from './state'
 
-const ADDITIVE: Set<StatKey> = new Set(['maxHp', 'armor', 'regen', 'pickupRange', 'projectiles', 'pierce', 'lifeOnKill'])
+const ADDITIVE: Set<StatKey> = new Set(['maxHp', 'armor', 'regen', 'pickupRange', 'projectiles', 'pierce', 'lifeOnKill', 'flatDamage'])
 
 export function recomputeStats(p: SPlayer): void {
   const b = p.char.baseStats
@@ -59,6 +59,16 @@ export function recomputeStats(p: SPlayer): void {
     reviveSpeed: 1 + (pct.reviveSpeed ?? 0) + (p.char.passive.effect === 'auraHealFastRescue' ? 0.4 : 0),
     luck: 1 + (pct.luck ?? 0),
     dodge: Math.min(0.7, Math.max(0, pct.dodge ?? 0)),   // 閃避率上限 70%
+    // build 擴充軸
+    flatDamage: Math.max(0, add.flatDamage ?? 0),
+    meleeDamage: pct.meleeDamage ?? 0,
+    rangedDamage: pct.rangedDamage ?? 0,
+    magicDamage: pct.magicDamage ?? 0,
+    engineerDamage: pct.engineerDamage ?? 0,
+    lifesteal: Math.min(0.5, Math.max(0, pct.lifesteal ?? 0)),        // 吸血上限 50%
+    dotDamage: pct.dotDamage ?? 0,
+    minionDamage: pct.minionDamage ?? 0,
+    damageReduction: Math.min(0.5, Math.max(0, pct.damageReduction ?? 0)),   // 減免上限 50%
   }
   const hpPct = p.stats ? p.hp / Math.max(1, p.stats.maxHp) : 1
   p.stats = s

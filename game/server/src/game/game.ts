@@ -726,6 +726,7 @@ export class Game {
       }
     }
     let d = dmg * (1 - Math.min(0.6, armor * 0.06))
+    if (p.stats.damageReduction > 0) d *= 1 - p.stats.damageReduction   // 傷害減免（護甲之外第二層，已於 stats 封頂 50%）
     if (p.bulwarkUntil > now) d *= 1 - (p.char.active.params?.dr ?? 0.9)   // 盾牌衝鋒減傷
     d = Math.max(1, Math.round(d))
     if (p.shield > 0) {
@@ -962,7 +963,7 @@ export class Game {
         for (let k = 0; k < count; k++) {
           this.turrets.push({
             x: p.x + (this.rng() - 0.5) * 100, y: p.y + (this.rng() - 0.5) * 100,
-            damage: (prm.damage ?? 6) * p.stats.damage * sp, range: prm.range ?? 320,
+            damage: (prm.damage ?? 6) * p.stats.damage * sp * (1 + p.stats.minionDamage), range: prm.range ?? 320,
             fireCd: prm.fireCd ?? 0.5, cdLeft: 0,
             until: this.time + (prm.duration ?? 10), ownerId: p.id,
             guard: eff(p, 'turretGuard') > 0,

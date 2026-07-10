@@ -18,6 +18,18 @@ const oid = () => `o${offerSeq++}`
 // 穿透/多管升級只在「目前持有能吃到的武器」時才上架（共用池時代不能再用角色判定）。
 const PIERCE_UPGRADES = new Set(UPGRADES.filter(u => u.statMods && 'pierce' in u.statMods).map(u => u.id))
 const MULTI_UPGRADES = new Set(UPGRADES.filter(u => u.statMods && 'projectiles' in u.statMods).map(u => u.id))
+// 情境型 build 軸：只有持有能吃到的武器時才上架（避免 trap 選項）
+const DOT_UP = new Set(UPGRADES.filter(u => u.statMods && 'dotDamage' in u.statMods).map(u => u.id))
+const MINION_UP = new Set(UPGRADES.filter(u => u.statMods && 'minionDamage' in u.statMods).map(u => u.id))
+const CAT_UP: Record<string, string> = { cat_melee: 'melee', cat_ranged: 'ranged', cat_magic: 'magic', cat_eng: 'engineer' }
+
+const hasDoTWeapon = (p: SPlayer) => p.weapons.some(w =>
+  w.data.behavior === 'zone' || (w.data.base.burn ?? 0) > 0
+  || w.data.tags.includes('poison') || w.data.tags.includes('fire')
+  || ['dotHit', 'stackDot', 'burnGround'].includes(w.data.mech?.id ?? ''))
+const hasMinionWeapon = (p: SPlayer) => p.weapons.some(w =>
+  w.data.behavior === 'turret' || w.data.behavior === 'drone' || w.data.behavior === 'mine' || w.data.category === 'summon')
+const hasCategoryWeapon = (p: SPlayer, cat: string) => p.weapons.some(w => w.data.category === cat)
 
 // -------------------------------------------------------- 武器池（共用池 + 簽名武器 + 親和權重）
 
@@ -56,6 +68,10 @@ function upgradeEligible(g: Game, p: SPlayer, u: UpgradeData): boolean {
   if (u.specialEffect === 'skillPower' && NO_SKILL_DMG_ACTIVES.has(p.char.active.id)) return false
   if (PIERCE_UPGRADES.has(u.id) && !p.weapons.some(w => w.data.behavior === 'projectile' || w.data.behavior === 'drone')) return false
   if (MULTI_UPGRADES.has(u.id) && !p.weapons.some(w => ['projectile', 'drone', 'orbit'].includes(w.data.behavior))) return false
+  // 情境型 build 軸：沒有能吃到的武器就不上架（DoT/召喚/分類傷害）
+  if (DOT_UP.has(u.id) && !hasDoTWeapon(p)) return false
+  if (MINION_UP.has(u.id) && !hasMinionWeapon(p)) return false
+  if (CAT_UP[u.id] && !hasCategoryWeapon(p, CAT_UP[u.id])) return false
   // 單人遊戲：完全不出合作/團隊類升級（救援護盾、並肩作戰、共享資源…都沒意義）
   if (u.category === 'coop' && g.playerCount === 1) return false
   for (const req of u.requirements ?? []) {
