@@ -39,7 +39,14 @@ export interface BombSpec {
   stock: number           // 同時炸彈上限（＝技能儲存次數）
   crossX: boolean         // 異常核（藍）X 型斜臂
   sub: boolean            // 異常核（紅）子炸彈
-  subMaxGen: number       // 子炸彈最多幾代（紅 = 1；Lv8「孫炸彈」= 2）
+  subMaxGen: number       // 子炸彈最多幾代（紅 = 1；Lv8「孫炸彈」= 2；「無盡分裂」再 +1）
+  subMid: boolean         // 「內爆核」：爆風中段也生子炸彈
+  subDiag: boolean        // 「四散彈幕」：斜四方也生子炸彈
+  subDmg: number          // 「子彈頭強化」：子炸彈傷害倍率
+  subFuse: number         // 「急速子彈」：子炸彈引信
+  coreHit: boolean        // 「爆心」：爆心格額外 100% 傷害
+  shrapnel: boolean       // 「破片」：爆風擊殺留下小炸彈
+  pressure: boolean       // 「高壓填裝」：場上炸彈越少傷害越高
   contact: boolean        // 引信（紅）碰到即爆
   impatient: number       // 引信（紫）沒人踩就自己燒完的秒數（0 = 沒有此能力）
   flameDur: number        // 火焰核（藍+）火痕秒數
@@ -107,7 +114,15 @@ export function buildSpec(g: Game, p: SPlayer): BombSpec {
   return {
     fuse, damage, power, arm, stock,
     xArm: coreL >= 6 ? 1 : 0.6,
-    crossX: coreL >= 2, sub: coreL >= 4, subMaxGen: coreL >= 8 ? 2 : 1,
+    crossX: coreL >= 2, sub: coreL >= 4,
+    subMaxGen: Math.min(3, (coreL >= 8 ? 2 : 1) + eff(p, 'kbSubGen')),
+    subMid: eff(p, 'kbSubMid') > 0,
+    subDiag: eff(p, 'kbSubDiag') > 0,
+    subDmg: 1 + 0.5 * eff(p, 'kbSubDmg'),
+    subFuse: BOMB.subFuse * (eff(p, 'kbSubFuse') ? 0.6 : 1),
+    coreHit: eff(p, 'kbCoreHit') > 0,
+    shrapnel: eff(p, 'kbShrapnel') > 0,
+    pressure: eff(p, 'kbPressure') > 0,
     contact: fuseL >= 4,
     impatient: fuseL >= 3 ? (fuseL >= 6 ? 0.15 : 0.4) : 0,
     flameDur: flameL >= 2 ? (flameL >= 4 ? 3 : 1.5) : 0,
@@ -167,9 +182,11 @@ export function placeBomb(g: Game, p: SPlayer, spec: BombSpec, x: number, y: num
 export function kunbaoSkill(g: Game, p: SPlayer): void {
   const spec = buildSpec(g, p)
   const held = heldBombs(g, p)
-  if (held.length < spec.stock) {
+  if (held.length < spec.stock || p.freeBombs > 0) {
     const b = placeBomb(g, p, spec, p.x, p.y)
     if (!b) { g.toastTo(p, '這一格已經有炸彈了', 'warn'); return }
+    // 拾荒者：撿來的那幾顆不佔庫存
+    if (held.length >= spec.stock && p.freeBombs > 0) { p.freeBombs--; b.free = true; return }
     // 彈藥箱 Lv6「快速裝填」：這一顆不佔庫存（技能的儲存次數不會少）
     if (spec.freeChance && g.rng() < spec.freeChance) { b.free = true; g.toastTo(p, '⚡ 快速裝填！', 'good') }
     // 彈藥箱 Lv8「雙手投擲」：放到最後一顆時順手再丟一顆到旁邊
@@ -198,9 +215,9 @@ export function bombsTick(g: Game, dt: number): void {
     const spec = buildSpec(g, p)
     const mine = myBombs(g, p)
 
-    // 技能儲存次數（HUD 直接讀 SPlayer.skillCharges）；「快速裝填」的炸彈不佔格
-    p.skillCharges = Math.max(0, spec.stock - heldBombs(g, p).length)
-    p.skillMaxCharges = spec.stock
+    // 技能儲存次數（HUD 直接讀 SPlayer.skillCharges）；「快速裝填」的炸彈不佔格，拾荒者撿的另計
+    p.skillCharges = Math.max(0, spec.stock - heldBombs(g, p).length) + p.freeBombs
+    p.skillMaxCharges = spec.stock + p.freeBombs
     p.skillCdLeft = 0
 
     // 「站在剛放下的炸彈上」→ 走離這一格之後它才變成實心（可踢）。這是經典放置炸彈的規則。
@@ -361,6 +378,8 @@ export function detonate(g: Game, seeds: SBomb[]): void {
 
   g.bombs = g.bombs.filter(b => !b.dead)
 
+  // 拾荒者：連鎖 3 段以上撿回一顆炸彈（每波最多 5 顆）
+  if (seg >= 3 && eff(owner, 'kbScavenge') && owner.freeBombs < 5) owner.freeBombs++
   if (seg >= 5) {
     if (eff(owner, 'kbSurf')) owner.buffs.invulnUntil = Math.max(owner.buffs.invulnUntil, g.time + 2)
     if (seg >= 8 && eff(owner, 'kbBreed')) placeBomb(g, owner, spec, owner.x + BOMB.cell, owner.y)
@@ -370,7 +389,9 @@ export function detonate(g: Game, seeds: SBomb[]): void {
 
 /** 單顆炸彈的爆風：傷害、擊退、把主人炸飛、火痕、子炸彈；回傳被爆風掃到的其他炸彈 */
 function blast(g: Game, owner: SPlayer, b: SBomb, mult: number, spec: BombSpec): SBomb[] {
-  const dmg = b.damage * mult
+  let dmg = b.damage * mult
+  // 高壓填裝：場上（還沒引爆的）炸彈越少，這一發越痛
+  if (spec.pressure) dmg *= 1 + 0.08 * Math.max(0, spec.stock - myBombs(g, owner).length)
   const ignoreDr = eff(owner, 'kbBurnThrough') > 0
 
   g.ev({ t: 'aoe', x: Math.round(b.x), y: Math.round(b.y), r: Math.round(b.arm), kind: 'cross', w: b.crossX ? 'x' : undefined })
@@ -379,8 +400,15 @@ function blast(g: Game, owner: SPlayer, b: SBomb, mult: number, spec: BombSpec):
     if (e.hp <= 0 || !inBlast(b, e.x, e.y, e.radius)) continue
     let d = dmg
     if (spec.flameAmp && inOwnFlame(g, owner, e.x, e.y)) d *= 1.25
+    // 爆心：站在炸彈那一格的敵人吃雙倍
+    if (spec.coreHit && dist2(e.x, e.y, b.x, b.y) < (BOMB.cell * 0.6 + e.radius) ** 2) d *= 2
     const [kx, ky] = norm(e.x - b.x, e.y - b.y)
+    const alive = e.hp
     damageEnemyImpl(g, e, d, { ownerId: owner.id, knockX: kx * 240, knockY: ky * 240, srcX: b.x, srcY: b.y, ignoreDr })
+    // 破片：被爆風炸死的敵人原地留下一顆小炸彈
+    if (spec.shrapnel && alive > 0 && e.hp <= 0 && g.rng() < 0.25) {
+      placeBomb(g, owner, spec, e.x, e.y, spec.subMaxGen, 0.5, 0.4)
+    }
   }
   if (g.boss && inBlast(b, g.boss.x, g.boss.y, g.boss.data.radius)) damageBoss(g, dmg, owner.id, b.x, b.y)
 
@@ -407,12 +435,24 @@ function blast(g: Game, owner: SPlayer, b: SBomb, mult: number, spec: BombSpec):
   // 二段引信：0.5 秒後原地再炸一次（40%）
   if (eff(owner, 'kbDoubleTap') && b.gen === 0) placeBomb(g, owner, spec, b.x, b.y, 1, 0.4 * mult, 0.5)
 
-  // 異常核（紅）：爆風末端生子炸彈（Lv8「孫炸彈」→ subMaxGen 2）
+  // 異常核（紅）：爆風末端生子炸彈（Lv8「孫炸彈」/「無盡分裂」→ subMaxGen 2~3）
   // gen 必須是 b.gen + 1，不能寫死 1——否則子炸彈生出的還是「子」，會一直生下去。
   if (b.sub && b.gen < spec.subMaxGen) {
-    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
-      placeBomb(g, owner, spec, b.x + dx * b.arm, b.y + dy * b.arm, b.gen + 1, 1, BOMB.subFuse)
+    const axes = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const
+    const spots: [number, number][] = []
+    for (const [dx, dy] of axes) {
+      spots.push([b.x + dx * b.arm, b.y + dy * b.arm])                    // 末端
+      // 內爆核：中段。至少離中心一格，否則小爆風時會跟中心/末端擠進同一格 → 被「一格一顆」擋掉。
+      if (spec.subMid && b.arm > BOMB.cell * 1.5) {
+        const mid = Math.max(BOMB.cell, b.arm * 0.5)
+        spots.push([b.x + dx * mid, b.y + dy * mid])
+      }
     }
+    if (spec.subDiag) {
+      const r = b.arm * b.xArm * Math.SQRT1_2
+      for (const [dx, dy] of [[1, 1], [1, -1], [-1, 1], [-1, -1]] as const) spots.push([b.x + dx * r, b.y + dy * r])
+    }
+    for (const [sx, sy] of spots) placeBomb(g, owner, spec, sx, sy, b.gen + 1, spec.subDmg, spec.subFuse)
   }
 
   // 火焰核（紫）：把自己的火痕也引爆（火痕成為連鎖介質）
@@ -438,6 +478,7 @@ function inOwnFlame(g: Game, p: SPlayer, x: number, y: number): boolean {
 
 export function bombsOnWaveStart(g: Game, p: SPlayer): void {
   if (!isKunbao(p)) return
+  p.freeBombs = 0
   p.drowsy = 0
   p.skillCdLeft = 0
   p.skillCharges = buildSpec(g, p).stock

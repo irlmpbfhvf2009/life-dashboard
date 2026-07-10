@@ -126,6 +126,19 @@ export const UPGRADES: UpgradeData[] = [
   U('kb_burn', '燒穿', '【睏寶】爆風無視敵人護甲與減傷', 'epic', 'character', { specialEffect: 'kbBurnThrough', maxStacks: 1, requirements: ['char:kunbao'] }),
   U('kb_alarm', '貪睡鬧鐘', '【睏寶】被打醒後 3 秒內，火力 +2', 'epic', 'character', { specialEffect: 'kbAlarm', maxStacks: 1, requirements: ['char:kunbao'] }),
 
+  // ── 子炸彈強化線（只有異常核到紅階、真的有子炸彈時才上架；shop.SUB_UPGRADES 判定）
+  U('kb_sub_mid', '內爆核', '【睏寶】子炸彈也會在爆風的中段生成（每條臂 2 顆）', 'rare', 'character', { specialEffect: 'kbSubMid', maxStacks: 1, requirements: ['char:kunbao'] }),
+  U('kb_sub_diag', '四散彈幕', '【睏寶】子炸彈也往斜四方生成', 'rare', 'character', { specialEffect: 'kbSubDiag', maxStacks: 1, requirements: ['char:kunbao'] }),
+  U('kb_sub_dmg', '子彈頭強化', '【睏寶】子炸彈傷害 +50%', 'rare', 'character', { specialEffect: 'kbSubDmg', maxStacks: 3, requirements: ['char:kunbao'] }),
+  U('kb_sub_fuse', '急速子彈', '【睏寶】子炸彈引信 −40%（更快接上連鎖）', 'rare', 'character', { specialEffect: 'kbSubFuse', maxStacks: 1, requirements: ['char:kunbao'] }),
+  U('kb_sub_gen', '無盡分裂', '【睏寶】子炸彈可以再多生一代', 'legendary', 'character', { specialEffect: 'kbSubGen', maxStacks: 1, requirements: ['char:kunbao'] }),
+
+  // ── 其他成長方向（他武器少，金幣要有別的去處）
+  U('kb_core_hit', '爆心', '【睏寶】站在爆心格的敵人額外受到 100% 傷害', 'rare', 'character', { specialEffect: 'kbCoreHit', maxStacks: 1, requirements: ['char:kunbao'] }),
+  U('kb_shrapnel', '破片', '【睏寶】爆風擊殺敵人時，25% 機率在原地留下一顆引信 0.4 秒的小炸彈', 'epic', 'character', { specialEffect: 'kbShrapnel', maxStacks: 1, requirements: ['char:kunbao'] }),
+  U('kb_scavenge', '拾荒者', '【睏寶】每次連鎖 3 段以上，回復 1 顆炸彈庫存（該波上限 5 次）', 'rare', 'character', { specialEffect: 'kbScavenge', maxStacks: 1, requirements: ['char:kunbao'] }),
+  U('kb_pressure', '高壓填裝', '【睏寶】場上炸彈越少，炸彈傷害越高（每少一顆 +8%）', 'epic', 'character', { specialEffect: 'kbPressure', maxStacks: 1, requirements: ['char:kunbao'] }),
+
   U('kb_domino', '骨牌宇宙', '【睏寶】連鎖段數不再有上限', 'legendary', 'character', { specialEffect: 'kbDomino', maxStacks: 1, requirements: ['char:kunbao'] }),
   U('kb_fusion', '核心融合', '【睏寶】同時炸彈上限 −3，但炸彈傷害 ×3、火力 +3', 'legendary', 'character', { specialEffect: 'kbFusion', maxStacks: 1, requirements: ['char:kunbao'] }),
   U('kb_night', '永夜', '【睏寶】睡意不再因移動下降，只在受擊時歸零', 'legendary', 'character', { specialEffect: 'kbEternalNight', maxStacks: 1, requirements: ['char:kunbao'] }),

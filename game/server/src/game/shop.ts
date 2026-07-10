@@ -57,6 +57,10 @@ const isBombChar = (p: SPlayer) => p.char.passive.effect === 'dreamFuse'
 const atLevelCap = (w: WeaponData, level: number) => w.levelCap !== undefined && level >= w.levelCap
 const canLevelUp = (w: { data: WeaponData; level: number }) => !atLevelCap(w.data, w.level)
 
+/** 子炸彈強化線：只有異常核到紅階（Lv4+，真的會生子炸彈）時才上架，否則是空選項 */
+const SUB_UPGRADES = new Set(['kb_sub_mid', 'kb_sub_diag', 'kb_sub_dmg', 'kb_sub_fuse', 'kb_sub_gen'])
+const hasSubBomb = (p: SPlayer) => (p.weapons.find(w => w.data.id === 'k_core')?.level ?? 0) >= 4
+
 /** 對睏寶完全沒有作用的升級（他不用武器開火、技能沒有冷卻） */
 const DEAD_FOR_BOMB = new Set(['atk1', 'atk2', 'atk3', 'cdr1', 'cdr2', 'wspeed', 'wmine', 'wknock', 'l_charge'])
 
@@ -92,6 +96,7 @@ function upgradeEligible(g: Game, p: SPlayer, u: UpgradeData): boolean {
   if (u.category === 'coop' && g.playerCount === 1) return false
   // 睏寶不用武器開火、技能也沒有冷卻 → 攻速/技能冷卻/投射物類升級對他完全沒作用，不上架
   if (isBombChar(p) && DEAD_FOR_BOMB.has(u.id)) return false
+  if (SUB_UPGRADES.has(u.id) && !hasSubBomb(p)) return false   // 沒有子炸彈就不出子炸彈強化
   for (const req of u.requirements ?? []) {
     if (req.startsWith('char:') && p.char.id !== req.slice(5)) return false
     if (req.startsWith('weaponTag:') && !p.weapons.some(w => w.data.tags.includes(req.slice(10)))) return false

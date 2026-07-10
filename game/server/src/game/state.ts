@@ -76,6 +76,7 @@ export interface SPlayer {
   wakeLockUntil: number                  // 受擊後不能累積睡意到此時間
   alarmUntil: number                     // 貪睡鬧鐘：被打醒後的火力窗口
   deathSyncAt: number                    // 遙控器（紫）：保命同步的下次可用時間
+  freeBombs: number                      // 拾荒者：不佔庫存的炸彈存量（每波重置）
   kbVx: number; kbVy: number; kbUntil: number   // 爆風把玩家炸飛（不造成傷害）
 
   downedCount: number

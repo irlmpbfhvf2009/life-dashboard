@@ -79,9 +79,9 @@ export function spawnBudget(wave: number, players: number): number {
  *  多段複利曲線（2026-07 大改）：前 3 波溫和 → 每波 ×1.17 → 15 波後再 ×1.25 → 25 波後再 ×1.12。
  *  設計目標：30 波小怪 ≈ 數十萬～百萬 HP、菁英數百萬；40 波 ≈ 上億 —
  *  中庸 build（純加算傷害%）15~20 波撐不住；只有疊出乘算引擎的 build 能破 40 出頭。 */
-/** 全域難度倍率：怪物血量整體縮放（1.0＝基準）。0.7（-30%）→ 使用者要「又更強」→ 0.85（怪更壯、淨約 -15%）。
+/** 全域難度倍率：怪物血量整體縮放（1.0＝基準）。歷程 0.7 →（要更難）0.85 →（2026-07-10 再 −30%）0.6。
  *  這是調整整體難度的唯一旋鈕：要更難調高、更簡單調低，sim-ttk 立刻看得到 TTK。 */
-export const DIFFICULTY_HP_MULT = 0.85
+export const DIFFICULTY_HP_MULT = 0.6
 
 export function enemyHpScale(wave: number): number {
   const linear = 1 + (wave - 1) * 0.3

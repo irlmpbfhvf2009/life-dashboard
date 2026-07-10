@@ -150,7 +150,7 @@ export class Game {
         buffs: { hasteUntil: 0, hasteAmt: 0, rageUntil: 0, rageAmt: 0, critUntil: 0, critAmt: 0, invulnUntil: 0, shieldNextWave: 0 },
         dashUntil: 0, dashVx: 0, dashVy: 0,
         bulwarkUntil: 0, bulwarkVx: 0, bulwarkVy: 0,
-        drowsy: 0, wakeLockUntil: 0, alarmUntil: 0, deathSyncAt: 0,
+        drowsy: 0, wakeLockUntil: 0, alarmUntil: 0, deathSyncAt: 0, freeBombs: 0,
         kbVx: 0, kbVy: 0, kbUntil: 0,
         downedCount: 0, reviveProgress: 0, bleedOutAt: 0, lastHitAt: -99, fogTick: 0,
         usedPhoenix: false, usedFirstDownRevive: false, eliteTrophyStacks: 0, pulseTimer: 10, regenTick: 0,
