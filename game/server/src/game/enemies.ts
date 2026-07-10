@@ -431,9 +431,10 @@ function touchAttack(g: Game, e: SEnemy, tgt: ReturnType<typeof pickTarget>, dd:
   if (tgt.player && tgt.player.status === 'alive' && dd < e.radius + 24) {
     e.touchCd = 0.9
     g.damagePlayer(tgt.player, e.damage)
-    // 尖刺反甲：近戰攻擊反甲坦克的怪物受到反傷（隨玩家傷害成長）
+    // 尖刺反甲：近戰攻擊反甲坦克的怪物受到反傷——**護甲越高、反傷越痛**（再乘玩家傷害成長，後期不失效）
     if (tgt.player.char.passive.effect === 'thornsReflect' && e.hp > 0) {
-      damageEnemyImpl(g, e, 10 + 14 * tgt.player.stats.damage, { ownerId: tgt.player.id, srcX: tgt.player.x, srcY: tgt.player.y })
+      const reflect = (8 + tgt.player.stats.armor * 5) * tgt.player.stats.damage
+      damageEnemyImpl(g, e, reflect, { ownerId: tgt.player.id, srcX: tgt.player.x, srcY: tgt.player.y })
     }
   }
 }

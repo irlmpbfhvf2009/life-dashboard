@@ -113,7 +113,7 @@ export const CHARACTERS: CharacterData[] = [
     description: '荊棘坦克。血厚甲高、渾身尖刺——近戰攻擊他的怪物自己也會受傷。移動慢、輸出偏低，但耐打。',
     role: 'tank',
     baseStats: { maxHp: 176, armor: 7, moveSpeed: 158, damage: 0.82, attackSpeed: 0.9, critChance: 0.03, critDamage: 1.5, pickupRange: 70, regen: 0.6 },
-    passive: { description: '尖刺反甲：近戰攻擊你的怪物受到反傷（依你的傷害成長）', effect: 'thornsReflect' },
+    passive: { description: '尖刺反甲：近戰攻擊你的怪物受到反傷——護甲越高反傷越痛（再依傷害成長）', effect: 'thornsReflect' },
     active: { id: 'thornsNova', name: '荊棘爆發', description: '向四周射出尖刺，重傷並擊退周圍敵人，並獲得護盾', cooldown: 10, params: { radius: 190, damage: 34, knockback: 260, shield: 55 } },
     affinityTags: ['thorn', 'melee', 'zone'],
     startWeapons: ['c_gauntlet', 'c_shield', 'c_whip'],
