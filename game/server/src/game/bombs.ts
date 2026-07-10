@@ -44,6 +44,9 @@ export interface BombSpec {
   subDiag: boolean        // 「四散彈幕」：斜四方也生子炸彈
   subDmg: number          // 「子彈頭強化」：子炸彈傷害倍率
   subFuse: number         // 「急速子彈」：子炸彈引信
+  lateral: boolean        // 「橫掃爆風」：只剩左右兩臂
+  selfPush: number        // 被自己爆風炸飛的力道
+  selfIframe: number      // 被炸飛時的無敵幀（「爆風推進器」= 0）
   coreHit: boolean        // 「爆心」：爆心格額外 100% 傷害
   shrapnel: boolean       // 「破片」：爆風擊殺留下小炸彈
   pressure: boolean       // 「高壓填裝」：場上炸彈越少傷害越高
@@ -86,13 +89,21 @@ export function buildSpec(g: Game, p: SPlayer): BombSpec {
   if (eff(p, 'kbSleepTalk') && tier === 2) fuse *= 0.6
   if (eff(p, 'kbParadox')) fuse *= 0.2
   fuse *= Math.pow(0.97, oFuse)                       // Lv5 起每級 −3%
+  if (eff(p, 'kbSlowBurn')) fuse *= 2                 // 慢燃火藥：引信變長換傷害
   fuse = Math.max(fuseL >= 6 ? 0.15 : 0.25, fuse)
+  if (eff(p, 'kbFragile')) fuse = Math.min(fuse, 1.2) // 短命炸彈：等不了你慢慢鋪陣
 
   // ── 傷害。**無上限成長的主軸**：每個「超過紅階」的模組等級 → 全體炸彈傷害 +6%
   let damage = (BOMB.baseDamage + p.stats.flatDamage) * p.stats.damage * (1 + p.stats.engineerDamage)
   damage *= Math.pow(BOMB.overDmgMult, oTotal)
   if (eff(p, 'kbFusion')) damage *= 3
   if (eff(p, 'kbParadox')) damage *= 0.4
+  // ── 取捨型
+  if (eff(p, 'kbSolo')) damage *= 3
+  if (eff(p, 'kbLateral')) damage *= 1.4
+  if (eff(p, 'kbSlowBurn')) damage *= 1.8
+  if (eff(p, 'kbRush')) damage *= 1.3
+  if (eff(p, 'kbStarve') && tier === 2) damage *= 1.5
 
   // ── 火力（爆風格數）
   let power = BOMB.basePower
@@ -102,13 +113,18 @@ export function buildSpec(g: Game, p: SPlayer): BombSpec {
     + (tier === 2 ? BOMB.deepPower : 0)
     + (eff(p, 'kbFusion') ? 3 : 0)
     + (g.time < p.alarmUntil ? 2 : 0)
+    + (eff(p, 'kbSolo') ? 2 : 0)
+    + (eff(p, 'kbHeavy') ? 2 : 0)
   power = Math.max(1, Math.min(BOMB.powerCap, power))
   // 異常核超額等級加長爆風，但最多 +100%（不然一顆炸彈就蓋滿整張圖）
-  const arm = power * BOMB.cell * (coreL >= 3 ? 1.4 : 1) * (1 + Math.min(1, 0.04 * oCore)) * p.stats.area
+  let arm = power * BOMB.cell * (coreL >= 3 ? 1.4 : 1) * (1 + Math.min(1, 0.04 * oCore)) * p.stats.area
+  if (eff(p, 'kbLateral')) arm *= 2.2          // 橫掃爆風：少了上下兩臂，左右換來很長的射程
 
   // ── 庫存
   let stock = BOMB.baseStock + Math.min(4, crateL) + Math.floor(oCrate / 2) + eff(p, 'kbStock')
   if (eff(p, 'kbFusion')) stock -= 3
+  if (eff(p, 'kbHeavy')) stock += 1
+  if (eff(p, 'kbSolo')) stock = 1              // 獨行炸彈：場上永遠只有一顆
   stock = Math.max(1, Math.min(BOMB.hardStock, stock))
 
   return {
@@ -120,6 +136,9 @@ export function buildSpec(g: Game, p: SPlayer): BombSpec {
     subDiag: eff(p, 'kbSubDiag') > 0,
     subDmg: 1 + 0.5 * eff(p, 'kbSubDmg'),
     subFuse: BOMB.subFuse * (eff(p, 'kbSubFuse') ? 0.6 : 1),
+    lateral: eff(p, 'kbLateral') > 0,
+    selfPush: BOMB.selfPush * (eff(p, 'kbRush') ? 2 : 1),
+    selfIframe: eff(p, 'kbRush') ? 0 : BOMB.selfIframe,
     coreHit: eff(p, 'kbCoreHit') > 0,
     shrapnel: eff(p, 'kbShrapnel') > 0,
     pressure: eff(p, 'kbPressure') > 0,
@@ -139,8 +158,13 @@ export function buildSpec(g: Game, p: SPlayer): BombSpec {
   }
 }
 
-const chainCap = (p: SPlayer) => (eff(p, 'kbDomino') ? Infinity : BOMB.chainCap + 2 * eff(p, 'kbChainCap'))
-const chainStep = (p: SPlayer) => (eff(p, 'kbReactor') ? 0.20 : BOMB.chainStep)
+const chainCap = (p: SPlayer) => (eff(p, 'kbDomino') ? Infinity : Math.max(2, BOMB.chainCap + 2 * eff(p, 'kbChainCap') - (eff(p, 'kbOverdrive') ? 4 : 0)))
+const chainStep = (p: SPlayer) => {
+  let step = eff(p, 'kbReactor') ? 0.20 : BOMB.chainStep
+  if (eff(p, 'kbFragile')) step *= 1.6      // 短命炸彈：鋪不了陣，但串起來每段更痛
+  if (eff(p, 'kbOverdrive')) step *= 2      // 引爆過載：段數上限 −4，換每段翻倍
+  return step
+}
 
 /** 我的炸彈（依放置順序，[0] 最舊） */
 const myBombs = (g: Game, p: SPlayer) => g.bombs.filter(b => b.ownerId === p.id && !b.dead)
@@ -163,7 +187,7 @@ export function placeBomb(g: Game, p: SPlayer, spec: BombSpec, x: number, y: num
     damage: spec.damage * dmgMult,
     arm: gen > 0 ? Math.max(BOMB.cell, spec.arm - 2 * BOMB.cell) : spec.arm,
     ownerId: p.id, gen,
-    crossX: spec.crossX, xArm: spec.xArm,
+    crossX: spec.crossX && !spec.lateral, xArm: spec.xArm, lateral: spec.lateral,
     sub: spec.sub, bounce: false, free: false,
     contact: spec.contact, impatient: spec.impatient,
     overload: 0, flameDur: spec.flameDur,
@@ -331,6 +355,8 @@ function nearestEnemyDist2(g: Game, x: number, y: number): number {
 function inBlast(b: SBomb, x: number, y: number, pad: number): boolean {
   const dx = x - b.x, dy = y - b.y
   const half = BOMB.armWidth / 2 + pad, len = b.arm + pad
+  // 橫掃爆風：只有左右兩臂
+  if (b.lateral) return Math.abs(dx) <= len && Math.abs(dy) <= half
   if ((Math.abs(dx) <= len && Math.abs(dy) <= half) || (Math.abs(dy) <= len && Math.abs(dx) <= half)) return true
   if (!b.crossX) return false
   const s = Math.SQRT1_2
@@ -394,7 +420,8 @@ function blast(g: Game, owner: SPlayer, b: SBomb, mult: number, spec: BombSpec):
   if (spec.pressure) dmg *= 1 + 0.08 * Math.max(0, spec.stock - myBombs(g, owner).length)
   const ignoreDr = eff(owner, 'kbBurnThrough') > 0
 
-  g.ev({ t: 'aoe', x: Math.round(b.x), y: Math.round(b.y), r: Math.round(b.arm), kind: 'cross', w: b.crossX ? 'x' : undefined })
+  // w 告訴 client 這次爆風的形狀：'l'＝只有左右兩臂、'x'＝多了斜臂
+  g.ev({ t: 'aoe', x: Math.round(b.x), y: Math.round(b.y), r: Math.round(b.arm), kind: 'cross', w: b.lateral ? 'l' : b.crossX ? 'x' : undefined })
 
   for (const e of g.enemies) {
     if (e.hp <= 0 || !inBlast(b, e.x, e.y, e.radius)) continue
@@ -416,10 +443,10 @@ function blast(g: Game, owner: SPlayer, b: SBomb, mult: number, spec: BombSpec):
   if (owner.status === 'alive' && inBlast(b, owner.x, owner.y, 20)) {
     let [kx, ky] = norm(owner.x - b.x, owner.y - b.y)
     if (kx === 0 && ky === 0) { kx = 1; ky = 0 }
-    owner.kbVx = kx * BOMB.selfPush
-    owner.kbVy = ky * BOMB.selfPush
+    owner.kbVx = kx * spec.selfPush
+    owner.kbVy = ky * spec.selfPush
     owner.kbUntil = g.time + 0.22
-    owner.buffs.invulnUntil = Math.max(owner.buffs.invulnUntil, g.time + BOMB.selfIframe)
+    if (spec.selfIframe > 0) owner.buffs.invulnUntil = Math.max(owner.buffs.invulnUntil, g.time + spec.selfIframe)
     if (eff(owner, 'kbBombJump')) { owner.buffs.hasteUntil = g.time + 1.5; owner.buffs.hasteAmt = 0.5 }
   }
 
@@ -438,7 +465,7 @@ function blast(g: Game, owner: SPlayer, b: SBomb, mult: number, spec: BombSpec):
   // 異常核（紅）：爆風末端生子炸彈（Lv8「孫炸彈」/「無盡分裂」→ subMaxGen 2~3）
   // gen 必須是 b.gen + 1，不能寫死 1——否則子炸彈生出的還是「子」，會一直生下去。
   if (b.sub && b.gen < spec.subMaxGen) {
-    const axes = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const
+    const axes = (b.lateral ? [[1, 0], [-1, 0]] : [[1, 0], [-1, 0], [0, 1], [0, -1]]) as readonly (readonly [number, number])[]
     const spots: [number, number][] = []
     for (const [dx, dy] of axes) {
       spots.push([b.x + dx * b.arm, b.y + dy * b.arm])                    // 末端
@@ -510,7 +537,7 @@ export function drowsyTick(g: Game, p: SPlayer, dt: number, moved: boolean): voi
     p.drowsy = Math.min(100, p.drowsy + BOMB.drowsyGain * (1 + 0.3 * eff(p, 'kbDoze')) * dt)
   }
   if (drowsyTier(p.drowsy) === 2) {
-    healPlayer(g, p, p.stats.maxHp * BOMB.deepRegenPct * dt)
+    if (!eff(p, 'kbStarve')) healPlayer(g, p, p.stats.maxHp * BOMB.deepRegenPct * dt)   // 空腹：不回血，換傷害
     p.fx = 'doze'; p.fxUntil = g.time + 0.3
   }
 }

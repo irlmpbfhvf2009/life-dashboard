@@ -1338,6 +1338,7 @@ export class Game {
         r: Math.round(b.arm),
         x2: b.crossX ? 1 as const : undefined,
         s: b.gen > 0 ? 1 as const : undefined,
+        l: b.lateral ? 1 as const : undefined,
       })) : undefined,
       director: { pressure: Math.round(this.director.pressure), level: this.director.level },
       mission: this.mission ? {

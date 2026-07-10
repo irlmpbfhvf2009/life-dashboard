@@ -691,7 +691,7 @@ export class Engine {
       const bw = 46
       g.fillStyle = `rgba(255,${Math.round(180 - urgency * 120)},60,${0.06 + urgency * 0.14})`
       g.fillRect(-b.r, -bw / 2, b.r * 2, bw)
-      g.fillRect(-bw / 2, -b.r, bw, b.r * 2)
+      if (b.l !== 1) g.fillRect(-bw / 2, -b.r, bw, b.r * 2)   // 橫掃爆風沒有上下兩臂
       if (b.x2 === 1) {
         g.save(); g.rotate(Math.PI / 4)
         const xr = b.r * 0.6
@@ -965,7 +965,8 @@ export class Engine {
           }
           const reach = a.r * (1.05 - pct * 0.15)
           g.shadowColor = 'rgba(255,140,40,0.9)'; g.shadowBlur = 14
-          for (let k = 0; k < 4; k++) { g.save(); g.rotate(k * Math.PI / 2); arm(reach, pct); g.restore() }
+          const arms = a.w === 'l' ? [0, 2] : [0, 1, 2, 3]     // 'l'＝橫掃：只有左右兩臂
+          for (const k of arms) { g.save(); g.rotate(k * Math.PI / 2); arm(reach, pct); g.restore() }
           if (a.w === 'x') {
             for (let k = 0; k < 4; k++) { g.save(); g.rotate(k * Math.PI / 2 + Math.PI / 4); arm(reach * 0.6, pct * 0.85); g.restore() }
           }

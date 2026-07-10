@@ -208,6 +208,7 @@ export interface SBomb {
   impatient: number                       // 引信（紫）：沒人踩就把引信縮到這個秒數（0 = 無此能力）
   bounce: boolean                         // 踢靴 Lv6：撞牆可以反彈一次
   free: boolean                           // 彈藥箱 Lv6「快速裝填」：這顆不佔庫存
+  lateral: boolean                        // 「橫掃爆風」：只有左右兩臂（沒有上下、沒有 X）
   overload: number                        // 火藥（紫）：引信剩越久傷害越高（最高 +overload）
   flameDur: number                        // 火焰核（藍+）：爆風留下的火痕秒數
   born: number

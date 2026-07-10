@@ -139,7 +139,17 @@ export const UPGRADES: UpgradeData[] = [
   U('kb_scavenge', '拾荒者', '【睏寶】每次連鎖 3 段以上，回復 1 顆炸彈庫存（該波上限 5 次）', 'rare', 'character', { specialEffect: 'kbScavenge', maxStacks: 1, requirements: ['char:kunbao'] }),
   U('kb_pressure', '高壓填裝', '【睏寶】場上炸彈越少，炸彈傷害越高（每少一顆 +8%）', 'epic', 'character', { specialEffect: 'kbPressure', maxStacks: 1, requirements: ['char:kunbao'] }),
 
-  U('kb_domino', '骨牌宇宙', '【睏寶】連鎖段數不再有上限', 'legendary', 'character', { specialEffect: 'kbDomino', maxStacks: 1, requirements: ['char:kunbao'] }),
+  // ── 取捨型（增益＋代價都很明顯；互斥組見 conflicts）
+  U('kb_solo', '獨行炸彈', '【睏寶】同時只能放 1 顆炸彈，但炸彈傷害 ×3、火力 +2', 'epic', 'character', { specialEffect: 'kbSolo', maxStacks: 1, requirements: ['char:kunbao'], conflicts: ['kb_heavy'] }),
+  U('kb_lateral', '橫掃爆風', '【睏寶】爆風失去上下兩臂（只剩左右），但左右臂長 ×2.2、傷害 +40%', 'epic', 'character', { specialEffect: 'kbLateral', maxStacks: 1, requirements: ['char:kunbao'] }),
+  U('kb_slowburn', '慢燃火藥', '【睏寶】引信時間 ×2，但炸彈傷害 ×1.8', 'rare', 'character', { specialEffect: 'kbSlowBurn', maxStacks: 1, requirements: ['char:kunbao'], conflicts: ['kb_paradox', 'kb_fragile'] }),
+  U('kb_fragile', '短命炸彈', '【睏寶】引信最長 1.2 秒（來不及鋪陣），但連鎖每段加成 ×1.6', 'rare', 'character', { specialEffect: 'kbFragile', maxStacks: 1, requirements: ['char:kunbao'], conflicts: ['kb_slowburn'] }),
+  U('kb_rush', '爆風推進器', '【睏寶】被自己爆風炸飛的距離 ×2 且失去無敵幀，但炸彈傷害 +30%', 'rare', 'character', { specialEffect: 'kbRush', maxStacks: 1, requirements: ['char:kunbao'] }),
+  U('kb_heavy', '重裝填', '【睏寶】移動速度 −25%，但火力 +2、同時炸彈 +1', 'rare', 'character', { specialEffect: 'kbHeavy', statMods: { moveSpeed: -0.25 }, maxStacks: 1, requirements: ['char:kunbao'], conflicts: ['kb_solo'] }),
+  U('kb_starve', '空腹', '【睏寶】熟睡不再回血，但熟睡時炸彈傷害 +50%', 'rare', 'character', { specialEffect: 'kbStarve', maxStacks: 1, requirements: ['char:kunbao'] }),
+  U('kb_overdrive', '引爆過載', '【睏寶】連鎖段數上限 −4，但每段加成 ×2（短連鎖更痛，鋪滿場反而虧）', 'epic', 'character', { specialEffect: 'kbOverdrive', maxStacks: 1, requirements: ['char:kunbao'], conflicts: ['kb_domino'] }),
+
+  U('kb_domino', '骨牌宇宙', '【睏寶】連鎖段數不再有上限', 'legendary', 'character', { specialEffect: 'kbDomino', maxStacks: 1, requirements: ['char:kunbao'], conflicts: ['kb_overdrive'] }),
   U('kb_fusion', '核心融合', '【睏寶】同時炸彈上限 −3，但炸彈傷害 ×3、火力 +3', 'legendary', 'character', { specialEffect: 'kbFusion', maxStacks: 1, requirements: ['char:kunbao'] }),
   U('kb_night', '永夜', '【睏寶】睡意不再因移動下降，只在受擊時歸零', 'legendary', 'character', { specialEffect: 'kbEternalNight', maxStacks: 1, requirements: ['char:kunbao'] }),
   U('kb_breed', '夢魘增殖', '【睏寶】每次連鎖達 8 段以上，場上免費生成 1 顆炸彈', 'legendary', 'character', { specialEffect: 'kbBreed', maxStacks: 1, requirements: ['char:kunbao'] }),
