@@ -126,21 +126,44 @@ const give = (g: Game, id: string, level: number) => {
   console.log(`   → 場上 ${g.bombs.length} 顆（應 0＝全部被引爆）`)
 }
 
-// ---- ⑦ 踢靴
+// ---- ⑦ 踢靴（經典規則：站在剛放下的炸彈上不會踢；走離後才變實心；走進去才踢）
 {
   const g = mk(); const p = g.players.get('p1')!
-  give(g, 'k_kick', 1)
-  p.x = 900; p.y = 900; p.lastX = p.x; p.lastY = p.y
+  give(g, 'k_kick', 1); give(g, 'k_crate', 2)
+  p.x = 900; p.y = 500; p.lastX = p.x; p.lastY = p.y
   tick(g, 0.05)
-  kunbaoSkill(g, p)
+  kunbaoSkill(g, p)                       // 在腳下放一顆
   const b = g.bombs[0]
+  console.log(`
+⑦ 踢靴：剛放下 armed=${b.armed}（應 false＝可以站在上面）`)
+
+  // 邊走邊放：往右走 1 秒穿過它，炸彈不該被踢走（腳下的炸彈可以站、可以走出去）
+  p.lastX = p.x + 400
+  tick(g, 1.0)
+  console.log(`   放完馬上往右走穿過它：vx=${b.vx.toFixed(0)}（應 0＝不會自己踢到）、armed=${b.armed}（走離後變 true）`)
+
+  // 已離腳 → 走回去踢它
   const x0 = b.x
-  p.lastX = p.x + 400                 // 往右走 → 踢
-  tick(g, 0.2)
-  console.log(`\n⑦ 踢靴：炸彈 x ${x0} → ${b.x.toFixed(0)}（滑行 ${(b.x - x0).toFixed(0)}px、vx=${b.vx.toFixed(0)}）`)
-  spawnEnemy(g, 'slug', b.x + 150, b.y)!.hp = 1e9
-  tick(g, 0.5)
-  console.log(`   撞到怪後 vx=${b.vx.toFixed(0)}（應 0＝停下）`)
+  p.x = b.x - 36; p.y = b.y; p.lastX = p.x + 300; p.lastY = p.y
+  tick(g, 0.1)
+  console.log(`   走「進」它：vx=${b.vx.toFixed(0)}（應 ${BOMB.kickSpeed}＝往右踢）、x ${x0} → ${b.x.toFixed(0)}`)
+
+  // 方向鎖 4 向：斜著走也只會走主軸
+  const g2 = mk(); const p2 = g2.players.get('p1')!
+  give(g2, 'k_kick', 1)
+  p2.x = 900; p2.y = 500; p2.lastX = p2.x; p2.lastY = p2.y
+  tick(g2, 0.05); kunbaoSkill(g2, p2)
+  const b2 = g2.bombs[0]
+  b2.armed = true
+  p2.x = b2.x - 30; p2.y = b2.y - 12
+  p2.lastX = p2.x + 300; p2.lastY = p2.y + 120   // 斜右下
+  tick(g2, 0.1)
+  console.log(`   斜著走進去：vx=${b2.vx.toFixed(0)} vy=${b2.vy.toFixed(0)}（應只有一軸有值＝鎖 4 向）`)
+
+  // 撞到怪停下
+  spawnEnemy(g2, 'slug', b2.x + 150, b2.y)!.hp = 1e9
+  tick(g2, 0.6)
+  console.log(`   撞到怪後 vx=${b2.vx.toFixed(0)}（應 0＝停下）`)
 }
 
 // ---- ⑧ 子炸彈不遞迴

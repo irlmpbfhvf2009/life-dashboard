@@ -30,23 +30,15 @@ function ellipse(g: Ctx, x: number, y: number, rx: number, ry: number): void {
 // dy < −0.35 ＝ 往上走 → 畫背面（不畫臉，改畫後腦勺）；其餘做 3/4 側臉偏移。
 let FDX = 0, FDY = 1, FBACK = false
 
-/** 後腦勺：蓋掉臉的位置，加髮旋與陰影 */
+/** 後腦勺：蓋掉臉的位置。蔬菜水果沒有頭髮——只要一顆乾淨的光頭 + 一點陰影分出方向就夠了。 */
 function backHead(g: Ctx, s: number, body: string): void {
   g.save()
-  outlined(g, body, gg => ellipse(gg, 0, -s * 0.02, s * 0.33, s * 0.29), 2)
-  g.fillStyle = 'rgba(0,0,0,0.12)'
-  ellipse(g, 0, -s * 0.02, s * 0.33, s * 0.29); g.fill()
-  // 髮旋
-  g.strokeStyle = OUTLINE; g.lineWidth = s * 0.035; g.lineCap = 'round'
-  g.beginPath()
-  for (let i = 0; i <= 20; i++) {
-    const th = (i / 20) * Math.PI * 2.4
-    const rr = s * 0.02 + th * s * 0.028
-    const px = Math.cos(th) * rr, py = -s * 0.04 + Math.sin(th) * rr
-    i ? g.lineTo(px, py) : g.moveTo(px, py)
-  }
-  g.stroke()
-  g.lineCap = 'butt'
+  outlined(g, body, gg => ellipse(gg, 0, -s * 0.02, s * 0.34, s * 0.3), 2)
+  g.fillStyle = 'rgba(0,0,0,0.14)'
+  ellipse(g, 0, -s * 0.02, s * 0.34, s * 0.3); g.fill()
+  // 頭頂反光（讓「這是背面」一眼看得出來，而不是一團暗色）
+  g.fillStyle = 'rgba(255,255,255,0.16)'
+  ellipse(g, 0, -s * 0.16, s * 0.18, s * 0.08); g.fill()
   g.restore()
 }
 
@@ -442,9 +434,11 @@ export function drawCharacter(g: Ctx, charId: string, size: number, t: number, o
       g.beginPath(); g.moveTo(-s * 0.34, -s * 0.36); g.quadraticCurveTo(-s * 0.1, -s * 0.5, s * 0.2, -s * 0.36); g.stroke()
       outlined(g, '#ffffff', gg => { gg.beginPath(); gg.rect(-s * 0.44, -s * 0.31, s * 0.88, s * 0.1) }, 2)   // 帽緣
       outlined(g, '#ffffff', gg => ellipse(gg, tipX, tipY, s * 0.09, s * 0.09), 2)                            // 絨球
-      // 抱著的水球炸彈
-      outlined(g, '#5aa9e6', gg => ellipse(gg, 0, s * 0.36, s * 0.15, s * 0.14), 2.5)
-      g.fillStyle = 'rgba(255,255,255,0.6)'; ellipse(g, -s * 0.05, s * 0.32, s * 0.045, s * 0.035); g.fill()
+      // 抱著的水球炸彈（背對鏡頭時看不到）
+      if (!FBACK) {
+        outlined(g, '#5aa9e6', gg => ellipse(gg, 0, s * 0.36, s * 0.15, s * 0.14), 2.5)
+        g.fillStyle = 'rgba(255,255,255,0.6)'; ellipse(g, -s * 0.05, s * 0.32, s * 0.045, s * 0.035); g.fill()
+      }
       if (opts.downed) { face(g, s, 'ko') } else {
         faceShift(g, s)
         // 閉著的彎眼（睡臉）

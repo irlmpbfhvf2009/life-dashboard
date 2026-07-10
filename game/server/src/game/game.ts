@@ -11,8 +11,11 @@ import {
 } from '../../../shared/balance'
 import {
   CHARACTER_MAP, WEAPON_MAP, ZONES, ZONE_MAP, ZONE_ORDER, EVENTS,
-  ROUTES, BOSS_ROTATION, UPGRADE_MAP,
+  ROUTES, BOSS_ROTATION, UPGRADE_MAP, ENEMIES,
 } from '../../../shared/content/index'
+
+/** 怪種 id → ENEMIES 索引（快照用數字傳，省頻寬） */
+const ENEMY_INDEX = new Map(ENEMIES.map((e, i) => [e.id, i]))
 import type { EventData, Rarity } from '../../../shared/types'
 import { mulberry32, hashSeed, dailySeed, weightedR, shuffleR } from '../../../shared/rng'
 import type {
@@ -1309,6 +1312,10 @@ export class Game {
         i: e.i, x: Math.round(e.x), y: Math.round(e.y),
         h: Math.max(0, Math.round((e.hp / e.maxHp) * 100)),
         f: (e.shield > 0 ? 1 : 0) | (e.frozenUntil > now ? 2 : 0) | (e.slowUntil > now ? 4 : 0) | (e.fuse >= 0 ? 8 : 0) | (e.confusedUntil > now ? 16 : 0) | (e.cloaked ? 32 : 0),
+        // k/e/sz：讓 client 漏收 spawn 事件時也能補建這隻怪（否則變隱形怪）
+        k: ENEMY_INDEX.get(e.data.id) ?? 0,
+        e: e.elite ? 1 as const : undefined,
+        sz: e.sizeMult !== 1 ? Math.round(e.sizeMult * 100) / 100 : undefined,
       })),
       objectives: this.objectives.map(o => ({
         i: o.i, t: o.t, x: Math.round(o.x), y: Math.round(o.y),

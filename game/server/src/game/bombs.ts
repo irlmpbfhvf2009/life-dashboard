@@ -118,6 +118,7 @@ export function placeBomb(g: Game, p: SPlayer, spec: BombSpec, x: number, y: num
     crossX: spec.crossX, sub: spec.sub && gen === 0,         // 子炸彈不再生子炸彈
     contact: spec.contact, impatient: spec.impatient,
     overload: 0, flameDur: spec.flameDur,
+    armed: gen > 0,        // 主炸彈剛放在腳下：先不可踢，等主人走離這一格
     born: g.time, dead: false,
   }
   clampArena(b, 18)
@@ -163,8 +164,12 @@ export function bombsTick(g: Game, dt: number): void {
     p.skillMaxCharges = spec.stock
     p.skillCdLeft = 0
 
-    // 踢靴：走過去把自己的炸彈踢出去滑行
-    if (spec.kick >= 1) kickTick(g, p, spec, dt)
+    // 「站在剛放下的炸彈上」→ 走離這一格之後它才變成實心（可踢）。這是經典放置炸彈的規則。
+    for (const b of mine) {
+      if (!b.armed && dist2(b.x, b.y, p.x, p.y) > (BOMB.cell * 0.75) ** 2) b.armed = true
+    }
+    // 踢靴：走「進」一顆已經離腳的炸彈才會踢它
+    if (spec.kick >= 1) kickTick(g, p, spec)
 
     // 定時同步：所有炸彈引信對齊到最短的那顆
     if (eff(p, 'kbSync') && mine.length > 1) {
@@ -192,20 +197,30 @@ export function bombsTick(g: Game, dt: number): void {
   if (triggered.length) detonate(g, triggered)
 }
 
-/** 踢靴：玩家推到自己的炸彈 → 沿移動方向踢出去 */
-function kickTick(g: Game, p: SPlayer, spec: BombSpec, dt: number): void {
-  const dx = p.lastX - p.x, dy = p.lastY - p.y
-  const dd = Math.hypot(dx, dy)
-  if (dd < 4) return                       // 沒在移動就不踢
-  const [nx, ny] = norm(dx, dy)
+/**
+ * 踢靴（經典放置炸彈規則）：
+ *   * 剛放在腳下的炸彈不會被踢——你可以站在上面，走離那一格後它才「變實心」。
+ *   * 踢的條件是你**走進**一顆實心炸彈：要正在移動、而且移動方向朝著它。
+ *   * 踢出去的方向鎖在上下左右四個格線方向（不是任意角度），這樣才踢得準。
+ */
+function kickTick(g: Game, p: SPlayer, spec: BombSpec): void {
+  const mx = p.lastX - p.x, my = p.lastY - p.y
+  const dd = Math.hypot(mx, my)
+  if (dd < 6) return                                    // 沒在移動就不踢
+  const ux = mx / dd, uy = my / dd
   for (const b of g.bombs) {
-    if (b.dead || b.ownerId !== p.id || b.vx || b.vy) continue
-    if (dist2(b.x, b.y, p.x, p.y) > 36 ** 2) continue
-    b.vx = nx * BOMB.kickSpeed
-    b.vy = ny * BOMB.kickSpeed
-    if (spec.kick >= 3) b.fuse *= 0.5      // 紫：踢出的炸彈引信減半
+    if (b.dead || b.ownerId !== p.id || b.vx || b.vy || !b.armed) continue
+    const bx = b.x - p.x, by = b.y - p.y
+    const d = Math.hypot(bx, by)
+    if (d > 42) continue                                // 還沒碰到
+    if ((bx * ux + by * uy) / (d || 1) < 0.5) continue  // 不是「走進去」，是擦過或走開
+    // 方向鎖 4 向：取移動的主軸
+    const [kx, ky] = Math.abs(ux) >= Math.abs(uy) ? [Math.sign(ux), 0] : [0, Math.sign(uy)]
+    b.vx = kx * BOMB.kickSpeed
+    b.vy = ky * BOMB.kickSpeed
+    if (spec.kick >= 3) b.fuse *= 0.5                   // 紫：踢出的炸彈引信減半
     g.ev({ t: 'aoe', x: Math.round(b.x), y: Math.round(b.y), r: 20, kind: 'deploy' })
-    break                                   // 一次只踢一顆
+    break                                               // 一次只踢一顆
   }
 }
 
@@ -231,6 +246,7 @@ function slideTick(g: Game, b: SBomb, owner: SPlayer | undefined, dt: number): v
 
   if (stop) {
     b.vx = 0; b.vy = 0
+    b.armed = true
     // 停下時對齊格心；若那一格已被占走就退回上一格，避免兩顆疊在一起
     const cx = snapCell(b.x), cy = snapCell(b.y)
     if (!g.bombs.some(o => o !== b && !o.dead && Math.abs(o.x - cx) < 1 && Math.abs(o.y - cy) < 1)) { b.x = cx; b.y = cy }

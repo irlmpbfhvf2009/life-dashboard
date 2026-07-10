@@ -315,7 +315,8 @@ export function buyOffer(g: Game, p: SPlayer, offerId: string): string | null {
         syncWeaponOffers(g, p)
         g.toastTo(p, `🎁 福袋開出：${w.name}！`, 'good')
       } else if (r < 0.8) {
-        const it = weightedR(g.rng, ITEMS)
+        // 睏寶技能沒有冷卻 → 技能球對他是空獎
+        const it = weightedR(g.rng, ITEMS.filter(i => !(i.effect === 'skillCd' && isBombChar(p))))
         p.pendingItems.push(it.id)
         g.toastTo(p, `🎁 福袋開出：${it.name}！`, 'good')
       } else {
@@ -419,6 +420,7 @@ export function rollChestOptions(g: Game, p: SPlayer): ChestPending['options'] {
       if (b.effect === 'allWeaponUp' && !p.weapons.some(w => w.level < w.data.maxLevel)) continue
       if (b.effect === 'curse' && !UPGRADES.some(u => u.category === 'curse' && upgradeEligible(g, p, u))) continue
       if (b.effect === 'skillPower' && NO_SKILL_DMG_ACTIVES.has(p.char.active.id)) continue
+      if (b.effect === 'skillCd' && isBombChar(p)) continue      // 睏寶的技能沒有冷卻，抽了等於空獎
       if (used.has(b.id)) continue
       used.add(b.id)
       const detail = b.effect === 'gold' ? `金幣 +${goldReward(g)}` : b.detail
@@ -539,6 +541,7 @@ export function bossChestDraw(g: Game): void {
     if (!p.connected || p.status === 'dead') continue
     // 技傷大獎不發給「主動技不吃技傷」的角色（槍手/戰士）——抽了等於空獎
     const pool = BOSS_BOONS.filter(b => !(b.effect === 'skillBoost' && NO_SKILL_DMG_ACTIVES.has(p.char.active.id)))
+      .filter(b => !(b.effect === 'skillCd' && isBombChar(p)))
     const boon = weightedR(g.rng, pool)
     applyBoon(g, p, boon, '👑')
     g.broadcastToast(`👑 ${p.name} 抽中【${boon.name}】`, 'good')

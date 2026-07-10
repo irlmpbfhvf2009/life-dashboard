@@ -5,6 +5,7 @@ import { ZONE_MAP } from '@game/content/zones'
 import { DOWNED } from '@game/balance'
 import { mulberry32, hashSeed } from '@game/rng'
 import { CHARACTER_MAP } from '@game/content/characters'
+import { ENEMIES } from '@game/content/enemies'
 import { WEAPON_MAP, weaponStatsAt } from '@game/content/weapons'
 import { drawCharacter, drawEnemy, drawBoss, drawDrop, drawObjective, drawProjectile, drawOrbitWeapon, drawDroneCraft, drawTurret, drawMeleeHeld } from './art'
 import { sfx, playMusic } from './sound'
@@ -65,7 +66,7 @@ const SKILL_COLOR: Record<string, string> = {
 export class Engine {
   canvas: HTMLCanvasElement | null = null
   g: CanvasRenderingContext2D | null = null
-  arena = { w: 1800, h: 1800 }
+  arena = { w: 1260, h: 900 }
   zoneId = 'farm'
 
   enemies = new Map<number, CEnemy>()
@@ -224,8 +225,16 @@ export class Engine {
     const seen = new Set<number>()
     for (const es of s.enemies) {
       seen.add(es.i)
-      const e = this.enemies.get(es.i)
-      if (e) { e.tx = es.x; e.ty = es.y; e.hpPct = es.h; e.flags = es.f ?? 0 }
+      let e = this.enemies.get(es.i)
+      if (!e) {
+        // 漏收 spawn 事件（重連／換波競態／批次丟失）→ 從快照自帶的 k/e/sz 補建。
+        // 沒有這段的話，那隻怪會存在於 server 但永遠不被畫出來＝隱形怪。
+        const data = ENEMIES[es.k]
+        if (!data) continue
+        this.addEnemy({ i: es.i, k: data.id, x: es.x, y: es.y, mhp: 1, e: es.e, sz: es.sz })
+        e = this.enemies.get(es.i)!
+      }
+      e.tx = es.x; e.ty = es.y; e.hpPct = es.h; e.flags = es.f ?? 0
     }
     for (const i of [...this.enemies.keys()]) {
       if (!seen.has(i)) this.enemies.delete(i)   // 保險（正常由 kill/despawn 事件移除）

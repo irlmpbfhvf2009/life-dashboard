@@ -369,7 +369,12 @@ export interface PlayerSnap {
 }
 
 /** 生成時一次送 full spawn（game:ev），之後快照只送位置與血量 */
-export interface EnemySnap { i: number; x: number; y: number; h: number; f?: number }
+export interface EnemySnap {
+  i: number; x: number; y: number; h: number; f?: number
+  /** ENEMIES 索引 + 菁英/體型。快照必須自帶這些，client 才能在漏收 spawn 事件時自行補建，
+   *  否則那隻怪會「存在於 server、永遠不被畫出來」＝隱形怪（會咬人、也打得到）。 */
+  k: number; e?: 1; sz?: number
+}
 /** f bitflags: 1=shielded 2=frozen 4=slowed 8=enraged 16=confused 32=cloaked（隱形，client 畫微光殘影） */
 
 export interface EnemySpawnEv {

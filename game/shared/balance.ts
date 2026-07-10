@@ -3,7 +3,8 @@ import type { Mode } from './types'
 
 // ------------------------------------------------- 場地 / tick
 
-export const ARENA = { w: 1800, h: 1800 }
+// 場地：原本 1800×1800 太空曠（怪要跑很久才到你身上）。左右 −30%、上下 −50%。
+export const ARENA = { w: 1260, h: 900 }
 export const TICK_HZ = 20
 export const SNAP_HZ = 10
 export const MOVE_INPUT_HZ = 15

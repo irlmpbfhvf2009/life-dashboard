@@ -180,7 +180,7 @@ export const CHARACTERS: CharacterData[] = [
       params: {},
     },
     affinityTags: ['explosive', 'bomb', 'engineer'],
-    startWeapons: ['k_crate'],
+    startWeapons: ['k_crate', 'k_flame', 'k_fuse'],
     unlockCondition: '通關標準模式',
     rarity: 'epic',
     palette: ['#cfe8c9', '#5aa9e6', '#7bc043'],

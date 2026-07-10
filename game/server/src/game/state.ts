@@ -193,6 +193,7 @@ export interface SBomb {
   i: number
   x: number; y: number
   vx: number; vy: number                  // 被踢出去時的滑行速度（0 = 靜止在格心）
+  armed: boolean                          // 主人已經走離這一格（在那之前不可踢、可以站在上面）
   fuse: number                            // 剩餘引信（秒）
   fuseMax: number
   damage: number
