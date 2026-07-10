@@ -377,6 +377,48 @@ export function drawCharacter(g: Ctx, charId: string, size: number, t: number, o
       }
       break
     }
+    case 'sleepy_melon': {
+      // 睏寶冬瓜：淡綠圓身 + 藍白條紋睡帽 + 閉眼瞇笑 + 呼吸鼻涕泡；懷裡抱一顆水球炸彈
+      const breathe = (Math.sin(t * 1.6) + 1) / 2          // 0~1 呼吸節拍
+      outlined(g, body, gg => ellipse(gg, 0, s * 0.02, s * 0.46, s * 0.5))
+      // 冬瓜白霜直紋
+      g.strokeStyle = 'rgba(255,255,255,0.45)'; g.lineWidth = s * 0.03
+      for (const dx of [-0.24, 0, 0.24]) {
+        g.beginPath(); g.moveTo(s * dx, -s * 0.36); g.quadraticCurveTo(s * (dx * 1.35), s * 0.02, s * dx, s * 0.42); g.stroke()
+      }
+      // 睡帽（垂向一側，帽尖掛絨球，隨呼吸擺動）
+      const tipX = -s * 0.62, tipY = -s * 0.5 + breathe * s * 0.06
+      outlined(g, accent, gg => {
+        gg.beginPath(); gg.moveTo(-s * 0.42, -s * 0.28)
+        gg.quadraticCurveTo(-s * 0.5, -s * 0.66, tipX, tipY)
+        gg.quadraticCurveTo(-s * 0.16, -s * 0.62, s * 0.42, -s * 0.28)
+        gg.closePath()
+      }, 2.5)
+      g.strokeStyle = 'rgba(255,255,255,0.6)'; g.lineWidth = s * 0.035
+      g.beginPath(); g.moveTo(-s * 0.34, -s * 0.36); g.quadraticCurveTo(-s * 0.1, -s * 0.5, s * 0.2, -s * 0.36); g.stroke()
+      outlined(g, '#ffffff', gg => { gg.beginPath(); gg.rect(-s * 0.44, -s * 0.31, s * 0.88, s * 0.1) }, 2)   // 帽緣
+      outlined(g, '#ffffff', gg => ellipse(gg, tipX, tipY, s * 0.09, s * 0.09), 2)                            // 絨球
+      // 抱著的水球炸彈
+      outlined(g, '#5aa9e6', gg => ellipse(gg, 0, s * 0.36, s * 0.15, s * 0.14), 2.5)
+      g.fillStyle = 'rgba(255,255,255,0.6)'; ellipse(g, -s * 0.05, s * 0.32, s * 0.045, s * 0.035); g.fill()
+      if (opts.downed) { face(g, s, 'ko') } else {
+        // 閉著的彎眼（睡臉）
+        g.strokeStyle = OUTLINE; g.lineWidth = s * 0.04; g.lineCap = 'round'
+        g.beginPath(); g.arc(-s * 0.18, -s * 0.04, s * 0.08, Math.PI * 1.1, Math.PI * 1.9); g.stroke()
+        g.beginPath(); g.arc(s * 0.18, -s * 0.04, s * 0.08, Math.PI * 1.1, Math.PI * 1.9); g.stroke()
+        g.lineCap = 'butt'
+        g.fillStyle = 'rgba(255,120,120,0.45)'
+        ellipse(g, -s * 0.31, s * 0.07, s * 0.08, s * 0.05); g.fill()
+        ellipse(g, s * 0.31, s * 0.07, s * 0.08, s * 0.05); g.fill()
+        // 微張的睡嘴
+        outlined(g, '#8d5b5b', gg => ellipse(gg, 0, s * 0.15, s * 0.05, s * 0.04), 2)
+        // 鼻涕泡（隨呼吸脹縮）
+        g.globalAlpha = 0.55
+        outlined(g, '#e3f2fd', gg => ellipse(gg, s * 0.24, s * 0.1, s * 0.05 * breathe + s * 0.02, s * 0.05 * breathe + s * 0.02), 1.5)
+        g.globalAlpha = 1
+      }
+      break
+    }
     default:
       outlined(g, body, gg => ellipse(gg, 0, 0, s * 0.46, s * 0.48))
       face(g, s, opts.downed ? 'ko' : 'happy')
@@ -939,6 +981,7 @@ const ART_ALIAS: Record<string, string> = {
   w_excal: 'w_sword', g_magnum: 'pea_gun', m_sanctuary: 'heal_orb', e_bastion: 'turret_gun',
   y_avalanche: 'ice_shard', t_jackpot: 't_dice', a_phantom: 'knife', s_zantetsu: 's_iai',
   c_colossus: 'c_gauntlet', k_hundred: 'k_fist', d_storm: 'd_thornshot', h_dream: 'h_spore',
+  b_deluge: 'b_waterbomb',
 }
 
 /** 武器圖示（size = 直徑基準；t 供旋轉/閃爍動畫）。 */
@@ -1132,6 +1175,18 @@ export function drawWeaponIcon(g: Ctx, weaponId: string, size: number, t: number
     case 'h_smoke':
       g.fillStyle = col; g.globalAlpha = 0.7; for (const [x, y, r] of [[-0.14, 0.1, 0.2], [0.12, 0.06, 0.22], [0, -0.14, 0.18], [-0.02, 0.16, 0.16]] as const) { ellipse(g, x * s + Math.sin(t + x) * s * 0.02, y * s, r * s, r * s); g.fill() } g.globalAlpha = 1
       g.fillStyle = acc; ellipse(g, s * 0.1, -s * 0.05, s * 0.05, s * 0.05); g.fill(); break
+    // ---- 睏寶
+    case 'b_waterbomb': {
+      outlined(g, col, gg => ellipse(gg, 0, s * 0.06, s * 0.32, s * 0.32), 2.5)     // 水球
+      g.fillStyle = 'rgba(255,255,255,0.6)'; ellipse(g, -s * 0.11, -s * 0.05, s * 0.09, s * 0.07); g.fill()
+      outlined(g, acc, gg => { gg.beginPath(); gg.rect(-s * 0.05, -s * 0.34, s * 0.1, s * 0.1) }, 2)   // 綁口
+      g.strokeStyle = '#ffca28'; g.lineWidth = s * 0.045; g.lineCap = 'round'                          // 引信
+      g.beginPath(); g.moveTo(0, -s * 0.32); g.quadraticCurveTo(s * 0.16, -s * 0.44, s * 0.1, -s * 0.5); g.stroke()
+      g.lineCap = 'butt'
+      g.fillStyle = `rgba(255,120,40,${0.5 + Math.abs(Math.sin(t * 8)) * 0.5})`
+      ellipse(g, s * 0.1, -s * 0.5, s * 0.05, s * 0.05); g.fill()
+      break
+    }
     case 'h_haze':
       g.save(); g.rotate(-0.5)
       g.fillStyle = col; g.shadowColor = col; g.shadowBlur = 10

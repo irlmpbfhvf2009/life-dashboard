@@ -71,6 +71,8 @@ export interface SPlayer {
   buffs: Buffs
   dashUntil: number; dashVx: number; dashVy: number
   bulwarkUntil: number; bulwarkVx: number; bulwarkVy: number   // 戰士盾牌衝鋒（減傷+推進）
+  stillT: number                         // 連續靜止秒數（睏寶被動 sleepGuard）
+  sleeping: boolean                      // 沉睡中（額外減傷；受擊/移動即醒）
 
   downedCount: number
   reviveProgress: number                 // 0~1
@@ -179,6 +181,11 @@ export interface SZone {
 export interface SMine {
   x: number; y: number; radius: number; damage: number
   until: number; armAt: number; ownerId: string; weaponId: string
+  // 十字爆風（睏寶的水球炸彈 / 爆爆睡）：cross=臂長，crossW=爆風寬度
+  cross?: number; crossW?: number
+  slow?: number; slowDur?: number
+  fuse?: boolean                          // true = 定時引爆（不靠怪物觸發）
+  knockback?: number
 }
 
 export interface STurret {

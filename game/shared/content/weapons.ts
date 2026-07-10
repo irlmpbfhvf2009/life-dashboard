@@ -112,6 +112,15 @@ export const WEAPONS: WeaponData[] = [
     evolution: { requires: 'ch_hemp', into: 'h_dream' },
     maxLevel: 5, tags: ['spore', 'magic'], price: 12, tier: 1, palette: ['#9b7fd4', '#5a3f8f'],
   },
+  {
+    id: 'b_waterbomb', name: '水球炸彈', category: 'engineer', behavior: 'mine', charId: 'sleepy_melon',
+    description: '在腳邊放下水球炸彈；怪物碰到就爆——不是圓形爆炸，而是往四方轟出十字爆風，並把敵人潑濕減速。',
+    base: { damage: 22, cooldown: 3.0, range: 70, projectileCount: 1, pierce: 0, knockback: 200, radius: 90, duration: 10 },
+    perLevel: { damage: 9, radius: 8, cooldown: -0.25 },
+    mech: { id: 'crossBlast', params: { len: 230, w: 46, slow: 0.4, slowDur: 1.5 } },
+    evolution: { requires: 'ch_sleep', into: 'b_deluge' },
+    maxLevel: 5, tags: ['engineer', 'explosive'], price: 14, tier: 1, palette: ['#5aa9e6', '#2f6fa8'],
+  },
 
   // ============================================================ 共用池 — 近戰
   {
@@ -466,6 +475,14 @@ export const WEAPONS: WeaponData[] = [
     perLevel: {},
     mech: { id: 'sporeCloud', params: { chance: 0.5, radius: 110, dur: 2.5 } },
     maxLevel: 1, tags: ['spore', 'magic'], price: 45, tier: 3, palette: ['#ce93d8', '#4a148c'],
+  },
+  {
+    id: 'b_deluge', name: '大洪水炸彈', category: 'engineer', behavior: 'mine', charId: 'sleepy_melon', evolvedForm: true,
+    description: '水球炸彈的最終形態——十字爆風貫穿半個戰場，爆風更寬、濕滑更久。',
+    base: { damage: 72, cooldown: 2.4, range: 80, projectileCount: 1, pierce: 0, knockback: 280, radius: 120, duration: 12 },
+    perLevel: {},
+    mech: { id: 'crossBlast', params: { len: 460, w: 72, slow: 0.55, slowDur: 2.5 } },
+    maxLevel: 1, tags: ['engineer', 'explosive'], price: 45, tier: 3, palette: ['#b3e5fc', '#0277bd'],
   },
 ]
 

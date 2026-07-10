@@ -4,7 +4,7 @@
 import { weaponStatsAt } from '../../../shared/content/index'
 import { ARENA } from '../../../shared/balance'
 import type { WeaponStats } from '../../../shared/types'
-import type { SPlayer, OwnedWeapon, SProjectile, SEnemy } from './state'
+import type { SPlayer, OwnedWeapon, SProjectile, SEnemy, SMine } from './state'
 import type { Game } from './game'
 import { dist2, norm, clampArena } from './util'
 import { damageEnemyImpl } from './enemies'
@@ -435,11 +435,21 @@ function fireMine(g: Game, p: SPlayer, w: OwnedWeapon, st: WeaponStats): void {
   w.cdLeft = st.cooldown
   const ang = g.rng() * Math.PI * 2
   const d = 30 + g.rng() * (st.range ?? 90)
-  const m = {
+  const m: SMine = {
     x: p.x + Math.cos(ang) * d, y: p.y + Math.sin(ang) * d,
     radius: st.radius ?? 100, damage: st.damage,
     until: g.time + (st.duration ?? 12), armAt: g.time + 0.5,
     ownerId: p.id, weaponId: w.data.id,
+  }
+  // 水球炸彈：改成十字爆風（爆風長度吃範圍屬性）
+  const mech = w.data.mech
+  if (mech?.id === 'crossBlast') {
+    const mp = mech.params ?? {}
+    m.cross = (mp.len ?? 230) * p.stats.area
+    m.crossW = (mp.w ?? 46) * p.stats.area
+    m.slow = mp.slow ?? 0.4
+    m.slowDur = mp.slowDur ?? 1.5
+    m.knockback = st.knockback
   }
   clampArena(m, 20)
   g.mines.push(m)
@@ -640,27 +650,50 @@ function projectilesTick(g: Game, dt: number): void {
   g.projectiles = g.projectiles.filter(p => p.left > 0)
 }
 
+/** 十字爆風命中判定（睏寶）：以炸彈為中心，向四方各延伸 cross 長、crossW 寬的兩條長條 */
+function inCross(m: SMine, x: number, y: number, pad: number): boolean {
+  const dx = Math.abs(x - m.x), dy = Math.abs(y - m.y)
+  const len = (m.cross ?? 0) + pad, half = (m.crossW ?? 40) / 2 + pad
+  return (dx <= len && dy <= half) || (dy <= len && dx <= half)
+}
+
+/** 引爆一顆地雷／水球炸彈（圓形爆炸 or 十字爆風）。呼叫端負責把 m.until 設成 -1。 */
+function mineBlast(g: Game, m: SMine): void {
+  const p = g.players.get(m.ownerId)
+  const cross = (m.cross ?? 0) > 0
+  const kb = m.knockback ?? 120
+  g.ev({
+    t: 'aoe', x: Math.round(m.x), y: Math.round(m.y),
+    r: Math.round(cross ? m.cross! : m.radius), kind: cross ? 'cross' : 'explosion',
+  })
+  for (const e of g.enemies) {
+    if (e.hp <= 0) continue
+    if (cross ? !inCross(m, e.x, e.y, e.radius) : dist2(e.x, e.y, m.x, m.y) > (m.radius + e.radius) ** 2) continue
+    const { dmg, crit } = p ? rollDamage(g, p, m.damage) : { dmg: m.damage, crit: false }
+    const [kx, ky] = norm(e.x - m.x, e.y - m.y)
+    damageEnemyImpl(g, e, dmg, { ownerId: m.ownerId, crit, knockX: kx * kb, knockY: ky * kb, srcX: m.x, srcY: m.y, weaponId: m.weaponId })
+    // 潑濕：十字爆風掃到的敵人減速
+    if (m.slow) { e.slowUntil = g.time + (m.slowDur ?? 1.5); e.slowPct = Math.max(e.slowPct, m.slow) }
+  }
+  if (g.boss && (cross ? inCross(m, g.boss.x, g.boss.y, 30) : tryHitBoss(g, m.x, m.y, m.radius))) {
+    damageBoss(g, m.damage, m.ownerId, m.x, m.y)
+  }
+}
+
 function minesTick(g: Game, dt: number): void {
   for (const m of g.mines) {
     if (g.time < m.armAt) continue
-    if (g.time > m.until) { m.until = -1; continue }
-    // Boss 踩雷
-    if (tryHitBoss(g, m.x, m.y, 20)) {
-      g.ev({ t: 'aoe', x: Math.round(m.x), y: Math.round(m.y), r: m.radius, kind: 'explosion' })
-      damageBoss(g, m.damage, m.ownerId, m.x, m.y)
-      m.until = -1
+    // 定時炸彈（爆爆睡）：時間到就炸，不靠怪物觸發
+    if (m.fuse) {
+      if (g.time >= m.until) { mineBlast(g, m); m.until = -1 }
       continue
     }
+    if (g.time > m.until) { m.until = -1; continue }
+    // Boss 踩雷
+    if (tryHitBoss(g, m.x, m.y, 20)) { mineBlast(g, m); m.until = -1; continue }
     for (const e of g.enemies) {
       if (e.hp <= 0 || dist2(m.x, m.y, e.x, e.y) > (e.radius + 20) ** 2) continue
-      g.ev({ t: 'aoe', x: Math.round(m.x), y: Math.round(m.y), r: m.radius, kind: 'explosion' })
-      const p = g.players.get(m.ownerId)
-      for (const o of g.enemies) {
-        if (o.hp <= 0 || dist2(o.x, o.y, m.x, m.y) > (m.radius + o.radius) ** 2) continue
-        const { dmg, crit } = p ? rollDamage(g, p, m.damage) : { dmg: m.damage, crit: false }
-        const [kx, ky] = norm(o.x - m.x, o.y - m.y)
-        damageEnemyImpl(g, o, dmg, { ownerId: m.ownerId, crit, knockX: kx * 120, knockY: ky * 120, srcX: m.x, srcY: m.y, weaponId: m.weaponId })
-      }
+      mineBlast(g, m)
       m.until = -1
       break
     }

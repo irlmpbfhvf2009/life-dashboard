@@ -163,6 +163,20 @@ export const CHARACTERS: CharacterData[] = [
     rarity: 'epic',
     palette: ['#6d5aa8', '#e05fd0', '#7cc36a'],
   },
+  {
+    id: 'sleepy_melon',
+    name: '睏寶冬瓜',
+    description: '水球樂園倒閉後流落到菜園的睡神。放下水球炸彈、炸出十字爆風；站著不動就會打瞌睡——一睡就回血、還特別耐打，但一動或挨打就醒。',
+    role: 'control',
+    baseStats: { maxHp: 138, armor: 4, moveSpeed: 152, damage: 1.06, attackSpeed: 0.9, critChance: 0.04, critDamage: 1.5, pickupRange: 92, regen: 0.8 },
+    passive: { description: '沉睡回春：站著不動 1.2 秒進入沉睡——每秒回復 3% 最大生命與 4 點護盾（上限 50）、減傷 30%；移動或受擊立刻醒來', mods: { damageReduction: 0.05 }, effect: 'sleepGuard' },
+    active: { id: 'bombnap', name: '爆爆睡', description: '把水球炸彈放到腳邊，1.4 秒後炸出十字爆風——四方向長條範圍重擊、擊退並潑濕減速（爆風長度隨技能強化成長）', cooldown: 11, params: { fuse: 1.4, damage: 60, len: 280, width: 48, knockback: 260, slow: 0.45, slowDur: 2 } },
+    affinityTags: ['explosive', 'engineer', 'zone'],
+    startWeapons: ['b_waterbomb', 'mine', 'e_flame'],
+    unlockCondition: '通關標準模式',
+    rarity: 'epic',
+    palette: ['#cfe8c9', '#5aa9e6', '#7bc043'],
+  },
 ]
 
 export const CHARACTER_MAP = new Map(CHARACTERS.map(c => [c.id, c]))

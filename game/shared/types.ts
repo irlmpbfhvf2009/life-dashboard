@@ -410,7 +410,7 @@ export interface BossSnap {
 // 場上「部署物」——砲塔/地面圈/地雷（持續存在於 server，需每快照送位置才畫得出來）
 export interface TurretSnap { x: number; y: number; g?: 1 }   // g=守護型（優先護隊友）
 export interface ZoneSnap { x: number; y: number; r: number; k: 'poison' | 'heal' | 'fire' | 'frost' | 'spike' | 'haze'; h?: 1 }   // h=1 對玩家有害（危險，畫紅）
-export interface MineSnap { x: number; y: number; r: number; a?: 1 }   // a=已佈署完成（可觸發）
+export interface MineSnap { x: number; y: number; r: number; a?: 1; b?: 1 }   // a=已佈署完成（可觸發）；b=水球炸彈（十字爆風，r=爆風臂長）
 
 export interface Snapshot {
   t: number                      // server 時間（秒，本波起算）

@@ -103,6 +103,7 @@ export const UPGRADES: UpgradeData[] = [
   U('ch_monk', '拳意通神', '【武僧豆腐】攻速 +12%、傷害 +10%', 'rare', 'character', { statMods: { attackSpeed: 0.12, damage: 0.1 }, maxStacks: 3, requirements: ['char:monk_tofu'] }),
   U('ch_dur', '尖刺蓄能', '【暴刺榴槤】傷害 +12%、範圍 +10%', 'rare', 'character', { statMods: { damage: 0.12, area: 0.1 }, maxStacks: 3, requirements: ['char:durian_spike'] }),
   U('ch_hemp', '孢子共鳴', '【迷幻大麻】傷害 +12%、範圍 +12%', 'rare', 'character', { statMods: { damage: 0.12, area: 0.12 }, maxStacks: 3, requirements: ['char:hemp_mystic'] }),
+  U('ch_sleep', '安眠精髓', '【睏寶冬瓜】傷害 +12%、傷害減免 +5%', 'rare', 'character', { statMods: { damage: 0.12, damageReduction: 0.05 }, maxStacks: 3, requirements: ['char:sleepy_melon'] }),
 
   // ============================== 詛咒（強力但有代價）
   U('x_glass', '玻璃大砲', '傷害 +40%，但最大生命 -25%', 'cursed', 'curse', { specialEffect: 'curseGlass', statMods: { damage: 0.4 }, maxStacks: 1 }),

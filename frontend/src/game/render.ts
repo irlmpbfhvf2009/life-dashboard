@@ -46,7 +46,7 @@ interface Aoe { x: number; y: number; r: number; kind: string; life: number; max
 const AOE_LIFE: Record<string, number> = {
   explosion: 0.45, poison: 4, heal: 5, fire: 3, frost: 0.7, lightning: 0.35,
   telegraph: 1.4, swing: 0.28, pulse: 0.85, summon: 0.5, mine: 10, deploy: 0.55,
-  slash: 0.42, thorns: 0.6, spikes: 0.6, haze: 0.7,
+  slash: 0.42, thorns: 0.6, spikes: 0.6, haze: 0.7, cross: 0.5,
 }
 
 // 技能 id → 顯示名稱（施放時在頭上冒出，仙境傳說式喊招）。由角色資料自動建，改名不用改這裡。
@@ -57,6 +57,7 @@ const SKILL_COLOR: Record<string, string> = {
   bulwark: '#90caf9', rapidfire: '#ff8a65', healzone: '#69f0ae', turret: '#cfd8dc',
   frostnova: '#a8e0ff', fateflip: '#ffd54f', charge: '#eeeeee', whirlslash: '#ff5252',
   thornsNova: '#66bb6a', palmquake: '#ffca28', spikecharge: '#f0a83e', hallucinate: '#e05fd0',
+  bombnap: '#5aa9e6',
 }
 
 export class Engine {
@@ -346,6 +347,7 @@ export class Engine {
           this.aoes.push({ x: ev.x, y: ev.y, r: ev.r, kind: ev.kind, life, maxLife: life, w: ev.w })
           if (ev.kind === 'swing' && ev.id && ev.w) this.meleeSwing.set(`${ev.id}:${ev.w}`, this.time)   // 觸發握持武器揮動
           if (ev.kind === 'explosion') { sfx.explosion(); this.shake = Math.min(this.shake + 7, 14); this.burst(ev.x, ev.y, 18, '#ff9f43', 5); this.burst(ev.x, ev.y, 8, '#ffe66d', 3) }
+          if (ev.kind === 'cross') { sfx.explosion(); this.shake = Math.min(this.shake + 8, 14); this.burst(ev.x, ev.y, 20, '#5aa9e6', 5); this.burst(ev.x, ev.y, 10, '#e3f2fd', 3) }
           if (ev.kind === 'frost') sfx.frost()
           if (ev.kind === 'haze') { sfx.haze(); this.burst(ev.x, ev.y, 14, '#e05fd0', 3) }
           if (ev.kind === 'lightning') { sfx.lightning(); this.burst(ev.x, ev.y, 10, '#ffe66d', 4) }
@@ -665,9 +667,29 @@ export class Engine {
       }
       g.restore()
     }
-    // 地雷（已佈署＝亮黃閃爍；佈署中＝暗）
+    // 地雷（已佈署＝亮黃閃爍；佈署中＝暗）／水球炸彈（藍色水球＋十字爆風預警）
     for (const m of this.mines) {
       g.save(); g.translate(m.x, m.y)
+      if (m.b === 1) {
+        const blink = 0.5 + Math.abs(Math.sin(this.time * 9)) * 0.5
+        // 十字爆風預警
+        const w = Math.max(34, m.r * 0.2)
+        g.fillStyle = `rgba(90,169,230,${0.1 + blink * 0.08})`
+        g.fillRect(-m.r, -w / 2, m.r * 2, w)
+        g.fillRect(-w / 2, -m.r, w, m.r * 2)
+        // 水球本體
+        g.fillStyle = '#5aa9e6'
+        g.beginPath(); g.arc(0, 0, 10, 0, Math.PI * 2); g.fill()
+        g.strokeStyle = 'rgba(0,0,0,0.6)'; g.lineWidth = 2
+        g.beginPath(); g.arc(0, 0, 10, 0, Math.PI * 2); g.stroke()
+        g.fillStyle = 'rgba(255,255,255,0.65)'
+        g.beginPath(); g.arc(-3, -3, 3, 0, Math.PI * 2); g.fill()
+        // 引信火星
+        g.fillStyle = `rgba(255,140,40,${blink})`
+        g.beginPath(); g.arc(4, -12, 3, 0, Math.PI * 2); g.fill()
+        g.restore()
+        continue
+      }
       const armed = m.a === 1
       const blink = armed ? 0.6 + Math.sin(this.time * 6) * 0.35 : 0.3
       g.fillStyle = `rgba(255,207,92,${blink})`
@@ -901,6 +923,29 @@ export class Engine {
           g.beginPath(); g.arc(0, 0, rr * (0.5 + (1 - pct) * 0.5), 0, Math.PI * 2); g.stroke()
           break
         }
+        case 'cross': {
+          // 水球十字爆風（睏寶）：四方向水柱由中心炸開，末端浪頭 + 水花
+          const w = Math.max(34, a.r * 0.2)
+          const reach = a.r * (1.05 - pct * 0.15)
+          g.shadowColor = 'rgba(90,169,230,0.9)'; g.shadowBlur = 12
+          for (let k = 0; k < 4; k++) {
+            g.save(); g.rotate(k * Math.PI / 2)
+            const grad = g.createLinearGradient(0, 0, reach, 0)
+            grad.addColorStop(0, `rgba(227,242,253,${pct})`)
+            grad.addColorStop(1, `rgba(47,111,168,${pct * 0.15})`)
+            g.fillStyle = grad
+            g.beginPath(); g.roundRect(0, -w / 2, reach, w, w / 2); g.fill()
+            // 浪頭
+            g.fillStyle = `rgba(255,255,255,${pct * 0.8})`
+            g.beginPath(); g.arc(reach, 0, w * 0.34 * pct + 2, 0, Math.PI * 2); g.fill()
+            g.restore()
+          }
+          g.shadowBlur = 0
+          // 中心水花環
+          g.strokeStyle = `rgba(255,255,255,${pct * 0.8})`; g.lineWidth = 3 * pct + 1
+          g.beginPath(); g.arc(0, 0, w * (0.6 + (1 - pct) * 1.2), 0, Math.PI * 2); g.stroke()
+          break
+        }
         case 'haze': {
           // 迷幻孢子爆發：擴散的紫紅色霧圈 + 漩渦
           const rr = a.r * (1 - pct * 0.15)
@@ -1041,6 +1086,21 @@ export class Engine {
         moving: p.id === gs.playerId ? this.moveDir.active : undefined,
         flash: p.fx === 'dash' || p.fx === 'rage',
       })
+      // 睏寶沉睡中：頭上飄 Zzz + 柔和光暈（回血/減傷生效中）
+      if (p.fx === 'doze' && !downed) {
+        g.save()
+        g.strokeStyle = `rgba(180,220,255,${0.3 + Math.sin(this.time * 2) * 0.12})`
+        g.lineWidth = 3
+        g.beginPath(); g.arc(0, 0, 32, 0, Math.PI * 2); g.stroke()
+        g.font = 'bold 15px sans-serif'; g.textAlign = 'center'
+        for (let k = 0; k < 3; k++) {
+          const ph = (this.time * 0.55 + k / 3) % 1
+          g.globalAlpha = (1 - ph) * 0.9
+          g.fillStyle = '#dbeeff'
+          g.fillText('Z', 16 + ph * 16, -30 - ph * 26)
+        }
+        g.restore()
+      }
       // 榴槤蓄刺：蓄力中在自機外圍畫一圈往外顫動的尖刺，越蓄越大越密
       if (p.id === gs.playerId && this.myCharge > 0) {
         const c = this.myCharge

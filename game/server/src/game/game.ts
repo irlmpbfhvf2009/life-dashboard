@@ -2,7 +2,7 @@
 // 中場（結算/升級/商店/路線投票）、快照廣播、Debug 指令。
 import type {
   Mode, GameEv, Snapshot, IntermissionView, WaveSettlement,
-  GameOverSummary, DebugCmd, DebugState, RoomConfig,
+  GameOverSummary, DebugCmd, DebugState, RoomConfig, MineSnap,
 } from '../../../shared/types'
 import {
   ARENA, TICK_HZ, SNAP_HZ, PLAYER_SCALING, MODE_WAVES, spawnWindow,
@@ -143,6 +143,7 @@ export class Game {
         buffs: { hasteUntil: 0, hasteAmt: 0, rageUntil: 0, rageAmt: 0, critUntil: 0, critAmt: 0, invulnUntil: 0, shieldNextWave: 0 },
         dashUntil: 0, dashVx: 0, dashVy: 0,
         bulwarkUntil: 0, bulwarkVx: 0, bulwarkVy: 0,
+        stillT: 0, sleeping: false,
         downedCount: 0, reviveProgress: 0, bleedOutAt: 0, lastHitAt: -99, fogTick: 0,
         usedPhoenix: false, usedFirstDownRevive: false, eliteTrophyStacks: 0, pulseTimer: 10, regenTick: 0,
         reviveShards: 0, soloRevives: roster.length === 1 ? REVIVES_PER_MODE[this.mode] : 0,
@@ -563,6 +564,7 @@ export class Game {
         if (nearest > 400 * 400) far = 0.15
       }
       const maxSpd = p.stats.moveSpeed * (1 + haste + far)
+      let moved = true
       if (p.dashUntil > now) {
         p.x += p.dashVx * dt
         p.y += p.dashVy * dt
@@ -591,9 +593,20 @@ export class Game {
           const k = Math.min(1, step / dd)
           p.x += dx * k
           p.y += dy * k
-        }
+        } else moved = false
       }
       clampArena(p, 26)
+
+      // 睏寶被動「沉睡回春」：靜止 1.2 秒後入睡 → 回血 + 護盾 + 額外減傷（damagePlayer 讀 p.sleeping）
+      if (p.char.passive.effect === 'sleepGuard') {
+        p.stillT = moved ? 0 : p.stillT + dt
+        p.sleeping = p.stillT >= 1.2
+        if (p.sleeping) {
+          healPlayer(this, p, p.stats.maxHp * 0.03 * dt)
+          if (p.shield < 50) p.shield = Math.min(50, p.shield + 4 * dt)
+          p.fx = 'doze'; p.fxUntil = now + 0.3
+        }
+      }
 
       // 回血 / 光環 / 詛咒流失
       p.regenTick -= dt
@@ -727,6 +740,7 @@ export class Game {
     }
     let d = dmg * (1 - Math.min(0.6, armor * 0.06))
     if (p.stats.damageReduction > 0) d *= 1 - p.stats.damageReduction   // 傷害減免（護甲之外第二層，已於 stats 封頂 50%）
+    if (p.sleeping) { d *= 0.7; p.sleeping = false; p.stillT = 0 }       // 睏寶沉睡：這一擊減傷 30%，然後被打醒
     if (p.bulwarkUntil > now) d *= 1 - (p.char.active.params?.dr ?? 0.9)   // 盾牌衝鋒減傷
     d = Math.max(1, Math.round(d))
     if (p.shield > 0) {
@@ -1062,6 +1076,20 @@ export class Game {
         }
         break
       }
+      case 'bombnap': {
+        // 睏寶：爆爆睡 — 腳邊放下水球炸彈，引信燒完炸出十字爆風（引爆與傷害走 combat.minesTick）
+        const len = (prm.len ?? 280) * p.stats.area * this.skillRadiusScale(p)
+        this.mines.push({
+          x: p.x, y: p.y, radius: 40,
+          damage: (prm.damage ?? 60) * p.stats.damage * sp,
+          until: this.time + (prm.fuse ?? 1.4), armAt: this.time,
+          ownerId: p.id, weaponId: 'b_waterbomb',
+          cross: len, crossW: (prm.width ?? 48) * p.stats.area,
+          slow: prm.slow ?? 0.45, slowDur: prm.slowDur ?? 2,
+          knockback: prm.knockback ?? 260, fuse: true,
+        })
+        break
+      }
       case 'hallucinate': {
         // 迷幻大麻：迷幻孢子 — 灑出幻覺雲，範圍內敵人陷入混亂（亂走、不攻擊）並受傷，
         // 並留下持續數秒的孢子雲，讓踏入的怪物持續混亂。菁英混亂時間減半。
@@ -1292,7 +1320,13 @@ export class Game {
       eProj: this.enemyProjs.map(pr => ({ x: Math.round(pr.x), y: Math.round(pr.y) })),
       turrets: this.turrets.length ? this.turrets.map(t => (t.guard ? { x: Math.round(t.x), y: Math.round(t.y), g: 1 as const } : { x: Math.round(t.x), y: Math.round(t.y) })) : undefined,
       zones: this.zones.length ? this.zones.map(z => ({ x: Math.round(z.x), y: Math.round(z.y), r: Math.round(z.radius), k: z.kind, h: z.hostile ? 1 as const : undefined })) : undefined,
-      mines: this.mines.length ? this.mines.map(m => (now >= m.armAt ? { x: Math.round(m.x), y: Math.round(m.y), r: Math.round(m.radius), a: 1 as const } : { x: Math.round(m.x), y: Math.round(m.y), r: Math.round(m.radius) })) : undefined,
+      mines: this.mines.length ? this.mines.map(m => {
+        // 水球炸彈以爆風臂長回傳（client 畫十字預警），一般地雷回傳觸發半徑
+        const snap: MineSnap = { x: Math.round(m.x), y: Math.round(m.y), r: Math.round(m.cross ?? m.radius) }
+        if (now >= m.armAt) snap.a = 1
+        if (m.cross) snap.b = 1
+        return snap
+      }) : undefined,
       director: { pressure: Math.round(this.director.pressure), level: this.director.level },
       mission: this.mission ? {
         name: this.mission.data.name,
