@@ -66,7 +66,7 @@ const SKILL_COLOR: Record<string, string> = {
 export class Engine {
   canvas: HTMLCanvasElement | null = null
   g: CanvasRenderingContext2D | null = null
-  arena = { w: 1260, h: 900 }
+  arena = { w: 1512, h: 990 }
   zoneId = 'farm'
 
   enemies = new Map<number, CEnemy>()

@@ -3,8 +3,8 @@ import type { Mode } from './types'
 
 // ------------------------------------------------- 場地 / tick
 
-// 場地：原本 1800×1800 太空曠（怪要跑很久才到你身上）。左右 −30%、上下 −50%。
-export const ARENA = { w: 1260, h: 900 }
+// 場地：1800×1800 太空曠 → 先砍成 1260×900，再回加（左右 +20%、上下 +10%）。
+export const ARENA = { w: 1512, h: 990 }
 export const TICK_HZ = 20
 export const SNAP_HZ = 10
 export const MOVE_INPUT_HZ = 15
@@ -267,6 +267,16 @@ export const BOMB = {
   selfIframe: 0.25,
   subFuse: 0.6,             // 異常核（紅）子炸彈引信
   kickSpeed: 620,           // 踢靴：把炸彈踢出去的滑行速度
+  // ── 無上限武器等級（睏寶專屬）
+  // 他的武器只有六把、沒有進化，所以改成「等級沒有上限」：
+  //   Lv1~4 = 白/藍/紫/紅（解鎖玩法），Lv6 / Lv8 = 額外的特殊能力里程碑，
+  //   之後每一級都只給小幅數值 → 這是他無上限疊戰力的出口。
+  maxLevel: 99,
+  // 每一個「超過紅階」的模組等級 → 炸彈傷害 ×1.05（六把共同累乘）。
+  // 刻意用**乘算**：商店價格是指數（1.28^lv），加算傷害配指數價格會讓 Lv20 之後永遠不划算，
+  // 那就不叫無上限成長了。乘算之後「把六把一起 +1 級」的收益 ×1.34、成本 ×1.28 → 值得，但要花錢。
+  overDmgMult: 1.05,
+  powerCap: 10,             // 火力（爆風格數）硬上限：再高就是一發炸滿全場，沒有走位可言
   // 睡意
   drowsyGain: 30,           // 靜止 +/秒
   drowsyLoss: 45,           // 移動 −/秒
@@ -278,3 +288,6 @@ export const BOMB = {
 } as const
 
 export const drowsyTier = (d: number): 0 | 1 | 2 => (d >= BOMB.deepAt ? 2 : d >= BOMB.lightAt ? 1 : 0)
+
+/** 模組「超過紅階」的等級數（Lv5 起算）——無上限成長的計價單位 */
+export const overLevel = (lv: number): number => Math.max(0, lv - 4)

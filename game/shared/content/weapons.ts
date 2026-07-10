@@ -118,39 +118,39 @@ export const WEAPONS: WeaponData[] = [
   // 刻意沒有「純傷害」模組：傷害靠商店屬性與連鎖，六格全部改變玩法。
   {
     id: 'k_crate', name: '彈藥箱', category: 'engineer', behavior: 'bombModule', charId: 'kunbao',
-    description: '同時能放幾顆炸彈（＝技能的儲存次數）。白：+1｜藍：+2｜紫：+3｜紅：+4。炸彈越多，連鎖越長。',
+    description: '同時能放幾顆炸彈（＝技能的儲存次數）。白：+1｜藍：+2｜紫：+3｜紅：+4。★Lv6 快速裝填：15% 放彈不消耗庫存｜★Lv8 雙手投擲：庫存滿時一次放兩顆。Lv5 起每 2 級再 +1 顆。',
     base: { damage: 0, cooldown: 0, range: 0, projectileCount: 0, pierce: 0, knockback: 0 },
-    perLevel: {}, maxLevel: 4, tags: ['bomb'], price: 12, tier: 1, palette: ['#8a6d3b', '#5b4726'],
+    perLevel: {}, maxLevel: 99, tags: ['bomb'], price: 12, tier: 1, palette: ['#8a6d3b', '#5b4726'],
   },
   {
     id: 'k_flame', name: '火焰核', category: 'engineer', behavior: 'bombModule', charId: 'kunbao',
-    description: '爆風幾格（火力）。白：+1 格｜藍：+2 格、爆風留下火痕｜紫：火痕可被爆風再次引爆｜紅：+4 格、火痕內敵人受爆炸傷害 +25%。',
+    description: '爆風幾格（火力）。白：+1 格｜藍：+2 格、爆風留下火痕｜紫：火痕可被爆風再次引爆｜紅：+4 格、火痕內敵人受爆炸傷害 +25%。★Lv6 炙熱：火痕傷害 ×2。Lv5 起每 3 級再 +1 格。',
     base: { damage: 0, cooldown: 0, range: 0, projectileCount: 0, pierce: 0, knockback: 0 },
-    perLevel: {}, maxLevel: 4, tags: ['bomb', 'fire'], price: 14, tier: 1, palette: ['#ff6b35', '#b03a10'],
+    perLevel: {}, maxLevel: 99, tags: ['bomb', 'fire'], price: 14, tier: 1, palette: ['#ff6b35', '#b03a10'],
   },
   {
     id: 'k_fuse', name: '引信', category: 'engineer', behavior: 'bombModule', charId: 'kunbao',
-    description: '幾秒後爆。白：引信 −0.3 秒｜藍：−0.6 秒｜紫：沒人踩就自己燒完（不耐煩引信）｜紅：敵人碰到立即引爆。',
+    description: '幾秒後爆。白：引信 −0.3 秒｜藍：−0.6 秒｜紫：沒人踩就自己燒完（不耐煩引信）｜紅：敵人碰到立即引爆。★Lv6 急躁：不耐煩引信縮到 0.15 秒。Lv5 起每級引信再 −3%。',
     base: { damage: 0, cooldown: 0, range: 0, projectileCount: 0, pierce: 0, knockback: 0 },
-    perLevel: {}, maxLevel: 4, tags: ['bomb'], price: 14, tier: 1, palette: ['#ffca28', '#c97b1e'],
+    perLevel: {}, maxLevel: 99, tags: ['bomb'], price: 14, tier: 1, palette: ['#ffca28', '#c97b1e'],
   },
   {
     id: 'k_kick', name: '踢靴', category: 'engineer', behavior: 'bombModule', charId: 'kunbao',
-    description: '走過去就能把自己的炸彈踢出去滑行，撞到牆或敵人才停。藍：撞到的敵人受傷並被擊退｜紫：踢出的炸彈引信減半｜紅：撞到敵人立刻引爆。',
+    description: '走過去就能把自己的炸彈踢出去滑行，撞到牆或敵人才停。藍：撞到的敵人受傷並被擊退｜紫：踢出的炸彈引信減半｜紅：撞到敵人立刻引爆。★Lv6 回力：踢出的炸彈撞牆會反彈一次｜★Lv8 爆裂踢：踢出的瞬間該炸彈火力 +2。Lv5 起每級滑行速度 +6%。',
     base: { damage: 0, cooldown: 0, range: 0, projectileCount: 0, pierce: 0, knockback: 0 },
-    perLevel: {}, maxLevel: 4, tags: ['bomb'], price: 18, tier: 2, palette: ['#8d6e63', '#4e342e'],
+    perLevel: {}, maxLevel: 99, tags: ['bomb'], price: 18, tier: 2, palette: ['#8d6e63', '#4e342e'],
   },
   {
     id: 'k_remote', name: '遙控器', category: 'engineer', behavior: 'bombModule', charId: 'kunbao',
-    description: '決定何時爆。白：庫存用完時按技能＝引爆最舊的一顆｜藍：改成引爆全部｜紫：受致命傷時引爆身邊炸彈並無敵 1 秒｜紅：同步爆破——全部同時炸並互相分享 15% 傷害。',
+    description: '決定何時爆。白：庫存用完時按技能＝引爆最舊的一顆｜藍：改成引爆全部｜紫：受致命傷時引爆身邊炸彈並無敵 1 秒｜紅：同步爆破——全部同時炸並互相分享 15% 傷害。★Lv6 連環起爆：每次連鎖多算一段｜★Lv8 零延遲：保命同步冷卻 30→15 秒。Lv5 起每級分享 +1%。',
     base: { damage: 0, cooldown: 0, range: 0, projectileCount: 0, pierce: 0, knockback: 0 },
-    perLevel: {}, maxLevel: 4, tags: ['bomb'], price: 20, tier: 2, palette: ['#b0bec5', '#455a64'],
+    perLevel: {}, maxLevel: 99, tags: ['bomb'], price: 20, tier: 2, palette: ['#b0bec5', '#455a64'],
   },
   {
     id: 'k_core', name: '異常核', category: 'engineer', behavior: 'bombModule', charId: 'kunbao',
-    description: '改變爆炸的形狀。白：十字｜藍：追加 X 型斜臂｜紫：爆風加長 40% 且穿透敵人｜紅：爆風末端各生一顆子炸彈（自動擴散）。',
+    description: '改變爆炸的形狀。白：十字｜藍：追加 X 型斜臂｜紫：爆風加長 40% 且穿透敵人｜紅：爆風末端各生一顆子炸彈。★Lv6 雙十字：X 型斜臂加長到與十字同長｜★Lv8 孫炸彈：子炸彈還能再生一次子炸彈。Lv5 起每級爆風再長 4%。',
     base: { damage: 0, cooldown: 0, range: 0, projectileCount: 0, pierce: 0, knockback: 0 },
-    perLevel: {}, maxLevel: 4, tags: ['bomb', 'explosive'], price: 24, tier: 3, palette: ['#b06fe0', '#5a2f8f'],
+    perLevel: {}, maxLevel: 99, tags: ['bomb', 'explosive'], price: 24, tier: 3, palette: ['#b06fe0', '#5a2f8f'],
   },
 
   // ============================================================ 共用池 — 近戰

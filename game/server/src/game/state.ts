@@ -201,9 +201,12 @@ export interface SBomb {
   ownerId: string
   gen: number                             // 0=主炸彈 1=子炸彈（子炸彈不再生子炸彈）
   crossX: boolean                         // 異常核（藍）：追加 X 型斜臂
+  xArm: number                            // X 型斜臂長度比例（0.6；異常核 Lv6 → 1.0）
   sub: boolean                            // 異常核（紅）：爆風末端生子炸彈
   contact: boolean                        // 引信（紅）：敵人碰到立即引爆
-  impatient: boolean                      // 引信（紫）：落地後沒人踩就自己燒完
+  impatient: number                       // 引信（紫）：沒人踩就把引信縮到這個秒數（0 = 無此能力）
+  bounce: boolean                         // 踢靴 Lv6：撞牆可以反彈一次
+  free: boolean                           // 彈藥箱 Lv6「快速裝填」：這顆不佔庫存
   overload: number                        // 火藥（紫）：引信剩越久傷害越高（最高 +overload）
   flameDur: number                        // 火焰核（藍+）：爆風留下的火痕秒數
   born: number

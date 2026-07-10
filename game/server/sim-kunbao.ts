@@ -166,19 +166,36 @@ const give = (g: Game, id: string, level: number) => {
   console.log(`   撞到怪後 vx=${b2.vx.toFixed(0)}（應 0＝停下）`)
 }
 
-// ---- ⑧ 子炸彈不遞迴
+// ---- ⑧ 子炸彈：代數有界（紅 = 1 代；異常核 Lv8「孫炸彈」= 2 代，不會無限遞迴）
 {
   const g = mk(); const p = g.players.get('p1')!
   give(g, 'k_core', 4)
   const spec = buildSpec(g, p)
   g.bombs = []
-  placeBomb(g, p, spec, 900, 900)
+  placeBomb(g, p, spec, 700, 500)
   g.bombs[0].born = -1
   detonate(g, [g.bombs[0]])
   const subs = g.bombs.filter(b => b.gen > 0)
-  console.log(`\n⑧ 異常核（紅）：生出 ${subs.length} 顆子炸彈、sub 旗標 ${subs.map(b => b.sub).join(',') || '-'}（應全 false）`)
+  console.log(`
+⑧ 異常核 Lv4：主炸彈 → ${subs.length} 顆子炸彈（gen=${[...new Set(subs.map(b => b.gen))].join(',')}）、subMaxGen=${spec.subMaxGen}`)
+  for (const b of subs) b.born = -1
   detonate(g, subs)
-  console.log(`   引爆後剩 ${g.bombs.filter(b => b.gen > 0).length} 顆（應 0）`)
+  console.log(`   引爆子炸彈 → 場上剩 ${g.bombs.length} 顆（應 0＝子炸彈不生孫）`)
+
+  const g2 = mk(); const p2 = g2.players.get('p1')!
+  give(g2, 'k_core', 8)                     // Lv8「孫炸彈」
+  const s2 = buildSpec(g2, p2)
+  g2.bombs = []
+  placeBomb(g2, p2, s2, 700, 500)
+  g2.bombs[0].born = -1
+  detonate(g2, [g2.bombs[0]])
+  const gen1 = g2.bombs.filter(b => b.gen === 1)
+  for (const b of gen1) b.born = -1
+  detonate(g2, gen1)
+  const gen2 = g2.bombs.filter(b => b.gen === 2)
+  for (const b of gen2) b.born = -1
+  detonate(g2, gen2)
+  console.log(`   Lv8 孫炸彈（subMaxGen=${s2.subMaxGen}）：子 ${gen1.length} → 孫 ${gen2.length} → 引爆後剩 ${g2.bombs.length} 顆（應 0＝到孫為止）`)
 }
 
 // ---- ⑨ 睡意

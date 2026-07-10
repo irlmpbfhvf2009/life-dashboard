@@ -170,8 +170,13 @@ function priceMultOf(g: Game, p: SPlayer): number {
     * (eff(p, 'curseBag') ? 1.25 : 1)
 }
 
+/** 等級價格係數：一般武器線性；睏寶的無上限模組用指數，讓「一直升同一把」有真實成本、
+ *  不會後期用零錢把六把全部堆到 Lv30。 */
+const levelPriceMult = (w: WeaponData, level: number) =>
+  (w.maxLevel > 10 ? Math.pow(1.28, level - 1) : 1 + (level - 1) * 0.5)
+
 const weaponOfferPrice = (g: Game, p: SPlayer, w: WeaponData, level: number, special: boolean) =>
-  Math.max(1, Math.round(w.price * priceMultOf(g, p) * (special ? 0.85 : 1) * (1 + (level - 1) * 0.5)))
+  Math.max(1, Math.round(w.price * priceMultOf(g, p) * (special ? 0.85 : 1) * levelPriceMult(w, level)))
 
 /** 後期波數：新武器的起始等級（省得從 Lv1 慢慢養） */
 function weaponStartLevel(wave: number): number {
