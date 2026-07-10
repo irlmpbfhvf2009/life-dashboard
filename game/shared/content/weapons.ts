@@ -114,34 +114,35 @@ export const WEAPONS: WeaponData[] = [
   },
   // ---------------------------------------------------------- 睏寶：六個炸彈模組
   // 這六把不會自己開火（behavior='bombModule'）。它們合成「同一顆炸彈的規格」——
-  // 六個武器欄 = 你正在組裝的那顆炸彈。四個等級對應 白/藍/紫/紅（效果累積，見 bombs.ts buildSpec）。
+  // 六個武器欄 = 你正在組裝的那顆炸彈。四級對應 白/藍/紫/紅（效果累積，見 server bombs.ts buildSpec）。
+  // 刻意沒有「純傷害」模組：傷害靠商店屬性與連鎖，六格全部改變玩法。
   {
-    id: 'k_fuse', name: '引信', category: 'engineer', behavior: 'bombModule', charId: 'kunbao',
-    description: '控制多快放彈、多快爆。白：放彈間隔 −12%｜藍：引信 −0.25 秒｜紫：沒人踩就自己燒完（不耐煩引信）｜紅：敵人碰到立即引爆。',
+    id: 'k_crate', name: '彈藥箱', category: 'engineer', behavior: 'bombModule', charId: 'kunbao',
+    description: '同時能放幾顆炸彈（＝技能的儲存次數）。白：+1｜藍：+2｜紫：+3｜紅：+4。炸彈越多，連鎖越長。',
     base: { damage: 0, cooldown: 0, range: 0, projectileCount: 0, pierce: 0, knockback: 0 },
-    perLevel: {}, maxLevel: 4, tags: ['bomb', 'explosive'], price: 12, tier: 1, palette: ['#ffca28', '#c97b1e'],
-  },
-  {
-    id: 'k_powder', name: '火藥', category: 'engineer', behavior: 'bombModule', charId: 'kunbao',
-    description: '炸彈的傷害來源。白：+8｜藍：+24｜紫：過載——引信剩越久傷害越高（最高 +50%）｜紅：+64，暴擊只在爆心但暴傷 ×2。',
-    base: { damage: 0, cooldown: 0, range: 0, projectileCount: 0, pierce: 0, knockback: 0 },
-    perLevel: {}, maxLevel: 4, tags: ['bomb', 'explosive'], price: 12, tier: 1, palette: ['#e0512f', '#7a2414'],
+    perLevel: {}, maxLevel: 4, tags: ['bomb'], price: 12, tier: 1, palette: ['#8a6d3b', '#5b4726'],
   },
   {
     id: 'k_flame', name: '火焰核', category: 'engineer', behavior: 'bombModule', charId: 'kunbao',
-    description: '爆風長度（火力）與火痕。白：火力 +1｜藍：火力 +2、爆風留下火痕｜紫：火痕可被爆風再次引爆｜紅：火力 +4、火痕內敵人受爆炸傷害 +25%。',
+    description: '爆風幾格（火力）。白：+1 格｜藍：+2 格、爆風留下火痕｜紫：火痕可被爆風再次引爆｜紅：+4 格、火痕內敵人受爆炸傷害 +25%。',
     base: { damage: 0, cooldown: 0, range: 0, projectileCount: 0, pierce: 0, knockback: 0 },
-    perLevel: {}, maxLevel: 4, tags: ['bomb', 'fire'], price: 16, tier: 2, palette: ['#ff6b35', '#b03a10'],
+    perLevel: {}, maxLevel: 4, tags: ['bomb', 'fire'], price: 14, tier: 1, palette: ['#ff6b35', '#b03a10'],
   },
   {
-    id: 'k_crate', name: '彈藥箱', category: 'engineer', behavior: 'bombModule', charId: 'kunbao',
-    description: '同時存在的炸彈數——連鎖的地基。白：+1｜藍：+2、15% 放彈不消耗庫存｜紫：+4、每波開場鋪 3 顆｜紅：+6、庫存滿時一次放兩顆。',
+    id: 'k_fuse', name: '引信', category: 'engineer', behavior: 'bombModule', charId: 'kunbao',
+    description: '幾秒後爆。白：引信 −0.3 秒｜藍：−0.6 秒｜紫：沒人踩就自己燒完（不耐煩引信）｜紅：敵人碰到立即引爆。',
     base: { damage: 0, cooldown: 0, range: 0, projectileCount: 0, pierce: 0, knockback: 0 },
-    perLevel: {}, maxLevel: 4, tags: ['bomb'], price: 16, tier: 2, palette: ['#8a6d3b', '#5b4726'],
+    perLevel: {}, maxLevel: 4, tags: ['bomb'], price: 14, tier: 1, palette: ['#ffca28', '#c97b1e'],
+  },
+  {
+    id: 'k_kick', name: '踢靴', category: 'engineer', behavior: 'bombModule', charId: 'kunbao',
+    description: '走過去就能把自己的炸彈踢出去滑行，撞到牆或敵人才停。藍：撞到的敵人受傷並被擊退｜紫：踢出的炸彈引信減半｜紅：撞到敵人立刻引爆。',
+    base: { damage: 0, cooldown: 0, range: 0, projectileCount: 0, pierce: 0, knockback: 0 },
+    perLevel: {}, maxLevel: 4, tags: ['bomb'], price: 18, tier: 2, palette: ['#8d6e63', '#4e342e'],
   },
   {
     id: 'k_remote', name: '遙控器', category: 'engineer', behavior: 'bombModule', charId: 'kunbao',
-    description: '決定何時爆。白：每 6 秒自動引爆最舊的一顆｜藍：惡夢枕引爆全場（否則只引爆核心範圍內）｜紫：受致命傷時引爆身邊炸彈並無敵 1 秒｜紅：同步爆破——全部同時引爆並互相分享 15% 傷害。',
+    description: '決定何時爆。白：庫存用完時按技能＝引爆最舊的一顆｜藍：改成引爆全部｜紫：受致命傷時引爆身邊炸彈並無敵 1 秒｜紅：同步爆破——全部同時炸並互相分享 15% 傷害。',
     base: { damage: 0, cooldown: 0, range: 0, projectileCount: 0, pierce: 0, knockback: 0 },
     perLevel: {}, maxLevel: 4, tags: ['bomb'], price: 20, tier: 2, palette: ['#b0bec5', '#455a64'],
   },

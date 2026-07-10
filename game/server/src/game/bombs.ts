@@ -1,17 +1,24 @@
 // 睏寶（kunbao）的放置炸彈系統 —— 設計書見 game/DESIGN-kunbao.md
 //
-// 核心概念：他的六個武器欄不是六把武器，而是「同一顆炸彈的六個模組」。
-// buildSpec() 把 6 個模組（各 4 級＝白/藍/紫/紅）合成一份 BombSpec，
-// 放彈時把 spec 快照進 SBomb —— 之後升級不影響已在地上的炸彈。
+// 玩法＝經典放置炸彈：
+//   * 主動技能就是「在腳下的格子放一顆炸彈」，**沒有冷卻**。
+//   * 技能上的數字＝儲存次數＝「同時炸彈上限 − 場上已有的炸彈數」。
+//     放 2 顆 → 剩 3；其中一顆爆掉 → 回到 4。放滿 → 0，按不動。
+//   * 炸彈對齊格心，**一格只能放一顆**（不重疊）。
+//   * 引信燒完 → 十字爆風（火力＝往四方各炸幾格）。
+//   * 爆風掃到別的炸彈 → 立刻引爆它（連鎖），第 n 段傷害遞增。
 //
-// 唯一的指數來源是「連鎖」：爆風掃到另一顆炸彈就引爆它，第 n 段傷害 ×(1+step×(n-1))。
-// 段數上限（BOMB.chainCap）與同時炸彈硬上限（BOMB.hardStock）是效能與溢出護欄，不是平衡旋鈕。
-import { BOMB, drowsyTier } from '../../../shared/balance'
-import type { SPlayer, SBomb, SPillow } from './state'
+// 六個武器欄不是六把武器，是「同一顆炸彈的六個模組」：
+//   彈藥箱(數量) 火焰核(格數) 引信(時機) 踢靴(操作) 遙控器(引爆) 異常核(形狀)
+// buildSpec() 把它們合成一份 BombSpec；放彈時把 spec 快照進 SBomb。
+//
+// 護欄（不是平衡旋鈕，別拿掉）：連鎖段數上限、同時炸彈硬上限、子炸彈不再生子炸彈。
+import { BOMB, drowsyTier, ARENA } from '../../../shared/balance'
+import type { SPlayer, SBomb } from './state'
 import type { Game } from './game'
 import { dist2, norm, clampArena } from './util'
 import { damageEnemyImpl } from './enemies'
-import { damageBoss, tryHitBoss } from './boss'
+import { damageBoss } from './boss'
 import { eff } from './stats'
 import { healPlayer } from './drops'
 
@@ -20,149 +27,144 @@ export const isKunbao = (p: SPlayer) => p.char.passive.effect === 'dreamFuse'
 /** 模組等級（0 = 未持有；1~4 = 白/藍/紫/紅） */
 const mod = (p: SPlayer, id: string) => p.weapons.find(w => w.data.id === id)?.level ?? 0
 
+/** 座標 → 格心（炸彈一律對齊格心，才能「一格一顆、不重疊」） */
+export const snapCell = (v: number) => Math.floor(v / BOMB.cell) * BOMB.cell + BOMB.cell / 2
+
 export interface BombSpec {
-  interval: number        // 放彈間隔（秒）
   fuse: number
   damage: number
-  arm: number             // 爆風臂長（px）
-  stock: number           // 同時炸彈上限
+  power: number           // 火力＝往四方各炸幾格
+  arm: number             // 爆風臂長（px）＝ power × cell
+  stock: number           // 同時炸彈上限（＝技能儲存次數）
   crossX: boolean         // 異常核（藍）X 型斜臂
   sub: boolean            // 異常核（紅）子炸彈
   contact: boolean        // 引信（紅）碰到即爆
   impatient: boolean      // 引信（紫）沒人踩就自己燒完
-  overload: number        // 火藥（紫）引信剩越久傷害越高
   flameDur: number        // 火焰核（藍+）火痕秒數
   flameIgnite: boolean    // 火焰核（紫）火痕可被爆風再引爆
   flameAmp: boolean       // 火焰核（紅）火痕內敵人受爆炸傷害 +25%
-  autoDet: boolean        // 遙控器（白）每 6 秒引爆最舊的一顆
-  detAll: boolean         // 遙控器（藍）惡夢枕引爆全場
-  deathSync: boolean      // 遙控器（紫）致命傷時引爆身邊炸彈並無敵
-  syncBlast: boolean      // 遙控器（紅）全部同時引爆並互相分享傷害
-  freeChance: number      // 彈藥箱（藍）放彈不消耗庫存的機率
-  waveStart: number       // 彈藥箱（紫）每波開場鋪幾顆
-  doubleDrop: boolean     // 彈藥箱（紅）庫存滿時一次放兩顆
+  kick: number            // 踢靴等級 0~4
+  remote: number          // 遙控器等級 0~4
 }
 
 /** 六模組 → 一顆炸彈的規格。等級效果是累積的（紅階同時擁有白藍紫的效果）。 */
 export function buildSpec(g: Game, p: SPlayer): BombSpec {
-  const fuseL = mod(p, 'k_fuse'), powderL = mod(p, 'k_powder'), flameL = mod(p, 'k_flame')
-  const crateL = mod(p, 'k_crate'), remoteL = mod(p, 'k_remote'), coreL = mod(p, 'k_core')
+  const fuseL = mod(p, 'k_fuse'), flameL = mod(p, 'k_flame'), crateL = mod(p, 'k_crate')
+  const kickL = mod(p, 'k_kick'), remoteL = mod(p, 'k_remote'), coreL = mod(p, 'k_core')
   const tier = drowsyTier(p.drowsy)
 
-  // ── 放彈間隔：攻速＝放彈頻率；睡意越深放得越快
-  let interval = BOMB.baseInterval / Math.max(0.2, p.stats.attackSpeed)
-  if (fuseL >= 1) interval *= 0.88
-  if (tier === 1) interval *= BOMB.lightInterval
-  if (tier === 2) interval *= BOMB.deepInterval
-  if (p.buffs.rageUntil > g.time) interval /= 1 + p.buffs.rageAmt
-  if (g.time < p.alarmUntil) interval *= 0.5             // 貪睡鬧鐘
-
-  // ── 引信
+  // ── 引信（睡意越深燒越快；貪睡鬧鐘＝被打醒後的反擊窗口）
   let fuse: number = BOMB.baseFuse
-  if (fuseL >= 2) fuse -= 0.25
+  fuse -= 0.3 * Math.min(2, fuseL)                     // 白 −0.3、藍 −0.6（紫紅是行為，不再縮短）
   if (tier >= 1) fuse += BOMB.lightFuse
   fuse -= 0.2 * eff(p, 'kbShortFuse')
+  if (eff(p, 'kbSleepTalk') && tier === 2) fuse *= 0.6  // 夢話：熟睡時引信更短
   if (eff(p, 'kbParadox')) fuse *= 0.2
   fuse = Math.max(0.25, fuse)
 
-  // ── 傷害（火藥階梯 + 固定攻擊力 + 傷害倍率 + 工程分類傷害）
-  const powderAdd = [0, 8, 24, 24, 64][powderL] ?? 0
-  let damage = (BOMB.baseDamage + powderAdd + p.stats.flatDamage)
-    * p.stats.damage * (1 + p.stats.engineerDamage)
+  // ── 傷害（沒有「純傷害模組」：靠商店屬性、等級、連鎖）
+  let damage = (BOMB.baseDamage + p.stats.flatDamage) * p.stats.damage * (1 + p.stats.engineerDamage)
   if (eff(p, 'kbFusion')) damage *= 3
   if (eff(p, 'kbParadox')) damage *= 0.4
 
-  // ── 火力（爆風臂長）
+  // ── 火力（爆風格數）
   let power = BOMB.basePower
     + ([0, 1, 2, 2, 4][flameL] ?? 0)
     + eff(p, 'kbPower')
     + eff(p, 'kunMastery')
     + (tier === 2 ? BOMB.deepPower : 0)
     + (eff(p, 'kbFusion') ? 3 : 0)
+    + (g.time < p.alarmUntil ? 2 : 0)                  // 貪睡鬧鐘
   power = Math.max(1, power)
   const arm = power * BOMB.cell * (coreL >= 3 ? 1.4 : 1) * p.stats.area
 
-  // ── 庫存
-  let stock = BOMB.baseStock + ([0, 1, 2, 4, 6][crateL] ?? 0) + eff(p, 'kbStock')
+  // ── 庫存（＝技能儲存次數）
+  let stock = BOMB.baseStock + ([0, 1, 2, 3, 4][crateL] ?? 0) + eff(p, 'kbStock')
   if (eff(p, 'kbFusion')) stock -= 3
   stock = Math.max(1, Math.min(BOMB.hardStock, stock))
 
   return {
-    interval: Math.max(0.12, interval), fuse, damage, arm, stock,
+    fuse, damage, power, arm, stock,
     crossX: coreL >= 2, sub: coreL >= 4,
     contact: fuseL >= 4, impatient: fuseL >= 3,
-    overload: powderL >= 3 ? 0.5 : 0,
     flameDur: flameL >= 2 ? (flameL >= 4 ? 3 : 1.5) : 0,
     flameIgnite: flameL >= 3, flameAmp: flameL >= 4,
-    autoDet: remoteL >= 1, detAll: remoteL >= 2, deathSync: remoteL >= 3, syncBlast: remoteL >= 4,
-    freeChance: crateL >= 2 ? 0.15 : 0,
-    waveStart: crateL >= 3 ? 3 : 0,
-    doubleDrop: crateL >= 4,
+    kick: kickL, remote: remoteL,
   }
 }
 
 const chainCap = (p: SPlayer) => (eff(p, 'kbDomino') ? Infinity : BOMB.chainCap + 2 * eff(p, 'kbChainCap'))
 const chainStep = (p: SPlayer) => (eff(p, 'kbReactor') ? 0.20 : BOMB.chainStep)
 
+/** 我的炸彈（依放置順序，[0] 最舊） */
+const myBombs = (g: Game, p: SPlayer) => g.bombs.filter(b => b.ownerId === p.id && !b.dead)
+
+/** 這一格已經有炸彈了嗎（含正在滑行的） */
+const cellTaken = (g: Game, cx: number, cy: number) =>
+  g.bombs.some(b => !b.dead && Math.abs(b.x - cx) < 1 && Math.abs(b.y - cy) < 1)
+
 // ---------------------------------------------------------------- 放彈
 
-export function placeBomb(g: Game, p: SPlayer, spec: BombSpec, x: number, y: number, gen = 0, dmgMult = 1, fuseOverride?: number): void {
-  if (g.bombs.length >= BOMB.hardStock * 2) return          // 全場硬上限（多人）
+export function placeBomb(g: Game, p: SPlayer, spec: BombSpec, x: number, y: number, gen = 0, dmgMult = 1, fuseOverride?: number): SBomb | null {
+  if (g.bombs.length >= BOMB.hardStock * 2) return null      // 全場硬上限（多人）
+  const cx = snapCell(x), cy = snapCell(y)
+  if (cellTaken(g, cx, cy)) return null                      // 一格一顆
   const b: SBomb = {
-    i: g.bombSeq++, x, y,
+    i: g.bombSeq++, x: cx, y: cy, vx: 0, vy: 0,
     fuse: fuseOverride ?? spec.fuse, fuseMax: fuseOverride ?? spec.fuse,
     damage: spec.damage * dmgMult,
     arm: gen > 0 ? Math.max(BOMB.cell, spec.arm - 2 * BOMB.cell) : spec.arm,
     ownerId: p.id, gen,
-    crossX: spec.crossX, sub: spec.sub && gen === 0,       // 子炸彈不再生子炸彈
+    crossX: spec.crossX, sub: spec.sub && gen === 0,         // 子炸彈不再生子炸彈
     contact: spec.contact, impatient: spec.impatient,
-    overload: spec.overload, flameDur: spec.flameDur,
+    overload: 0, flameDur: spec.flameDur,
     born: g.time, dead: false,
   }
   clampArena(b, 18)
   g.bombs.push(b)
+  return b
 }
 
-/** 我的炸彈（依放置順序） */
-const myBombs = (g: Game, p: SPlayer) => g.bombs.filter(b => b.ownerId === p.id && !b.dead)
+/**
+ * 主動技能：在腳下放一顆炸彈（無冷卻）。
+ * 庫存用完時，若有遙控器則改為「引爆」（白＝最舊的一顆、藍以上＝全部）。
+ */
+export function kunbaoSkill(g: Game, p: SPlayer): void {
+  const spec = buildSpec(g, p)
+  const mine = myBombs(g, p)
+  if (mine.length < spec.stock) {
+    const b = placeBomb(g, p, spec, p.x, p.y)
+    if (!b) g.toastTo(p, '這一格已經有炸彈了', 'warn')
+    return
+  }
+  if (spec.remote >= 1) {
+    detonate(g, spec.remote >= 2 ? mine : [mine[0]])
+    return
+  }
+  g.toastTo(p, '炸彈用完了——等一顆爆掉', 'warn')
+}
+
+/** 技能儲存次數：場上每有一顆炸彈就少一發（快照送 sc/smc 給 HUD） */
+export function bombCharges(g: Game, p: SPlayer): { charges: number; max: number } {
+  const spec = buildSpec(g, p)
+  return { charges: Math.max(0, spec.stock - myBombs(g, p).length), max: spec.stock }
+}
 
 // ---------------------------------------------------------------- 每 tick
 
 export function bombsTick(g: Game, dt: number): void {
-  pillowsTick(g, dt)
-
   for (const p of g.players.values()) {
     if (!p.connected || p.status !== 'alive' || !isKunbao(p)) continue
     const spec = buildSpec(g, p)
     const mine = myBombs(g, p)
 
-    // 放彈
-    p.bombCd -= dt
-    if (p.bombCd <= 0 && mine.length < spec.stock) {
-      p.bombCd = spec.interval
-      const tier = drowsyTier(p.drowsy)
-      let count = 1
-      if (tier === 2) count = 2                                       // 熟睡：一次兩顆
-      if (spec.doubleDrop && mine.length + count >= spec.stock) count++ // 彈藥箱（紅）
-      dropAt(g, p, spec, count)
-      if (spec.freeChance && g.rng() < spec.freeChance) p.bombCd = 0   // 彈藥箱（藍）不消耗
-    }
+    // 技能儲存次數（HUD 直接讀 SPlayer.skillCharges）
+    p.skillCharges = Math.max(0, spec.stock - mine.length)
+    p.skillMaxCharges = spec.stock
+    p.skillCdLeft = 0
 
-    // 夢話：熟睡時額外節拍
-    if (eff(p, 'kbSleepTalk') && drowsyTier(p.drowsy) === 2) {
-      p.sleepTalkCd -= dt
-      if (p.sleepTalkCd <= 0) { p.sleepTalkCd = 2; if (mine.length < spec.stock) dropAt(g, p, spec, 1) }
-    }
-
-    // 遙控器（白）：每 6 秒自動引爆最舊的一顆
-    if (spec.autoDet) {
-      p.remoteCd -= dt
-      if (p.remoteCd <= 0) {
-        p.remoteCd = 6
-        const oldest = mine[0]
-        if (oldest) detonate(g, [oldest])
-      }
-    }
+    // 踢靴：走過去把自己的炸彈踢出去滑行
+    if (spec.kick >= 1) kickTick(g, p, spec, dt)
 
     // 定時同步：所有炸彈引信對齊到最短的那顆
     if (eff(p, 'kbSync') && mine.length > 1) {
@@ -171,21 +173,18 @@ export function bombsTick(g: Game, dt: number): void {
     }
   }
 
-  // 引信燃燒 + 觸發判定
+  // 滑行 + 引信燃燒 + 觸發判定
   const triggered: SBomb[] = []
   for (const b of g.bombs) {
     if (b.dead) continue
     const owner = g.players.get(b.ownerId)
-    // 惡夢枕：擁有者的核心在場時，引信燒 3 倍快
-    const haste = g.pillows.some(pl => pl.ownerId === b.ownerId) ? 3 : 1
-    b.fuse -= dt * haste
+    if (b.vx || b.vy) slideTick(g, b, owner, dt)
+    b.fuse -= dt
 
-    if (owner) {
+    if (owner && !b.vx && !b.vy) {
       const near = nearestEnemyDist2(g, b.x, b.y)
-      // 引信（紅）一觸即發 / 踩雷者
-      if (b.contact && near < 26 ** 2) b.fuse = 0
-      else if (eff(owner, 'kbStepOn') && near < 30 ** 2 && b.fuse > b.fuseMax * 0.5) b.fuse = b.fuseMax * 0.5
-      // 引信（紫）不耐煩：落地 1 秒後周圍沒人就自己燒完
+      if (b.contact && near < 30 ** 2) b.fuse = 0                                   // 一觸即發
+      else if (eff(owner, 'kbStepOn') && near < 34 ** 2 && b.fuse > b.fuseMax * 0.5) b.fuse = b.fuseMax * 0.5
       else if (b.impatient && g.time - b.born > 1 && near > 200 ** 2 && b.fuse > 0.4) b.fuse = 0.4
     }
     if (b.fuse <= 0) triggered.push(b)
@@ -193,10 +192,48 @@ export function bombsTick(g: Game, dt: number): void {
   if (triggered.length) detonate(g, triggered)
 }
 
-function dropAt(g: Game, p: SPlayer, spec: BombSpec, count: number): void {
-  for (let k = 0; k < count; k++) {
-    const off = k === 0 ? [0, 0] : [(g.rng() - 0.5) * 70, (g.rng() - 0.5) * 70]
-    placeBomb(g, p, spec, p.x + off[0], p.y + off[1])
+/** 踢靴：玩家推到自己的炸彈 → 沿移動方向踢出去 */
+function kickTick(g: Game, p: SPlayer, spec: BombSpec, dt: number): void {
+  const dx = p.lastX - p.x, dy = p.lastY - p.y
+  const dd = Math.hypot(dx, dy)
+  if (dd < 4) return                       // 沒在移動就不踢
+  const [nx, ny] = norm(dx, dy)
+  for (const b of g.bombs) {
+    if (b.dead || b.ownerId !== p.id || b.vx || b.vy) continue
+    if (dist2(b.x, b.y, p.x, p.y) > 36 ** 2) continue
+    b.vx = nx * BOMB.kickSpeed
+    b.vy = ny * BOMB.kickSpeed
+    if (spec.kick >= 3) b.fuse *= 0.5      // 紫：踢出的炸彈引信減半
+    g.ev({ t: 'aoe', x: Math.round(b.x), y: Math.round(b.y), r: 20, kind: 'deploy' })
+    break                                   // 一次只踢一顆
+  }
+}
+
+/** 滑行中的炸彈：撞牆停下、撞敵人停下（藍以上造成傷害、紅立刻引爆） */
+function slideTick(g: Game, b: SBomb, owner: SPlayer | undefined, dt: number): void {
+  const kick = owner ? mod(owner, 'k_kick') : 0
+  b.x += b.vx * dt
+  b.y += b.vy * dt
+  let stop = false
+
+  if (b.x < 20 || b.x > ARENA.w - 20 || b.y < 20 || b.y > ARENA.h - 20) { clampArena(b, 20); stop = true }
+
+  for (const e of g.enemies) {
+    if (e.hp <= 0 || dist2(e.x, e.y, b.x, b.y) > (e.radius + 16) ** 2) continue
+    if (owner && kick >= 2) {
+      const [kx, ky] = norm(e.x - b.x, e.y - b.y)
+      damageEnemyImpl(g, e, b.damage * 0.6, { ownerId: owner.id, knockX: kx * 300, knockY: ky * 300, srcX: b.x, srcY: b.y })
+    }
+    if (kick >= 4) b.fuse = 0              // 紅：撞到敵人立刻引爆
+    stop = true
+    break
+  }
+
+  if (stop) {
+    b.vx = 0; b.vy = 0
+    // 停下時對齊格心；若那一格已被占走就退回上一格，避免兩顆疊在一起
+    const cx = snapCell(b.x), cy = snapCell(b.y)
+    if (!g.bombs.some(o => o !== b && !o.dead && Math.abs(o.x - cx) < 1 && Math.abs(o.y - cy) < 1)) { b.x = cx; b.y = cy }
   }
 }
 
@@ -239,7 +276,7 @@ export function detonate(g: Game, seeds: SBomb[]): void {
   // 遙控器（紅）同步爆破：全部一起炸，並互相分享 15% 傷害
   let syncMult = 1
   const queue: SBomb[] = []
-  if (spec.syncBlast) {
+  if (spec.remote >= 4) {
     const all = myBombs(g, owner)
     syncMult = Math.min(2.5, 1 + 0.15 * Math.max(0, all.length - 1))
     for (const b of all) { b.dead = true; queue.push(b) }
@@ -258,29 +295,25 @@ export function detonate(g: Game, seeds: SBomb[]): void {
       nb.dead = true
       queue.push(nb)
     }
-    // 每 5 段回 3% 最大生命
     if (seg - healedAt >= BOMB.chainHealEvery) { healedAt = seg; healPlayer(g, owner, owner.stats.maxHp * BOMB.chainHealPct) }
   }
 
   g.bombs = g.bombs.filter(b => !b.dead)
 
   if (seg >= 5) {
-    if (eff(owner, 'kbCdBlast')) owner.skillCdLeft = Math.max(0, owner.skillCdLeft - 2)
-    if (seg >= 8 && eff(owner, 'kbBreed')) placeBomb(g, owner, spec, owner.x + (g.rng() - 0.5) * 90, owner.y + (g.rng() - 0.5) * 90)
+    if (eff(owner, 'kbSurf')) owner.buffs.invulnUntil = Math.max(owner.buffs.invulnUntil, g.time + 2)
+    if (seg >= 8 && eff(owner, 'kbBreed')) placeBomb(g, owner, spec, owner.x + BOMB.cell, owner.y)
     g.toastTo(owner, `💥 連鎖 ${seg} 段！`, 'good')
   }
 }
 
 /** 單顆炸彈的爆風：傷害、擊退、把主人炸飛、火痕、子炸彈；回傳被爆風掃到的其他炸彈 */
 function blast(g: Game, owner: SPlayer, b: SBomb, mult: number, spec: BombSpec): SBomb[] {
-  // 火藥（紫）過載：引信剩越久（＝提早被連鎖引爆）傷害越高
-  const overload = 1 + b.overload * Math.max(0, b.fuse) / Math.max(0.01, b.fuseMax)
-  const dmg = b.damage * mult * overload
+  const dmg = b.damage * mult
   const ignoreDr = eff(owner, 'kbBurnThrough') > 0
 
   g.ev({ t: 'aoe', x: Math.round(b.x), y: Math.round(b.y), r: Math.round(b.arm), kind: 'cross', w: b.crossX ? 'x' : undefined })
 
-  // 敵人
   for (const e of g.enemies) {
     if (e.hp <= 0 || !inBlast(b, e.x, e.y, e.radius)) continue
     let d = dmg
@@ -311,9 +344,7 @@ function blast(g: Game, owner: SPlayer, b: SBomb, mult: number, spec: BombSpec):
   }
 
   // 二段引信：0.5 秒後原地再炸一次（40%）
-  if (eff(owner, 'kbDoubleTap') && b.gen === 0) {
-    placeBomb(g, owner, spec, b.x, b.y, 1, 0.4 * mult, 0.5)
-  }
+  if (eff(owner, 'kbDoubleTap') && b.gen === 0) placeBomb(g, owner, spec, b.x, b.y, 1, 0.4 * mult, 0.5)
 
   // 異常核（紅）：爆風末端生子炸彈
   if (b.sub && b.gen === 0) {
@@ -341,91 +372,19 @@ function inOwnFlame(g: Game, p: SPlayer, x: number, y: number): boolean {
   return g.zones.some(z => z.kind === 'fire' && z.ownerId === p.id && dist2(x, y, z.x, z.y) < z.radius ** 2)
 }
 
-// ---------------------------------------------------------------- 惡夢枕
-
-export function throwPillow(g: Game, p: SPlayer, aimX: number, aimY: number, sp: number): void {
-  const prm = p.char.active.params ?? {}
-  const [nx, ny] = norm(aimX - p.x, aimY - p.y)
-  const spec = buildSpec(g, p)
-  const dist = prm.throw ?? 260
-  const pillow: SPillow = {
-    x: p.x + nx * dist, y: p.y + ny * dist,
-    until: g.time + (prm.dur ?? 2.5),
-    radius: (prm.radius ?? 260) * p.stats.area * g.skillRadiusScale(p),
-    pull: prm.pull ?? 130,
-    slow: prm.slow ?? 0.3,
-    damage: (prm.damage ?? 40) * p.stats.damage * sp,
-    arm: spec.arm + (prm.power ?? 3) * BOMB.cell,
-    ownerId: p.id,
-  }
-  clampArena(pillow, 40)
-  g.pillows.push(pillow)
-}
-
-function pillowsTick(g: Game, dt: number): void {
-  for (const pl of g.pillows) {
-    if (g.time >= pl.until) continue
-    // 吸引 + 減速
-    for (const e of g.enemies) {
-      if (e.hp <= 0 || dist2(e.x, e.y, pl.x, pl.y) > pl.radius ** 2) continue
-      const [dx, dy] = norm(pl.x - e.x, pl.y - e.y)
-      e.x += dx * pl.pull * dt
-      e.y += dy * pl.pull * dt
-      e.slowUntil = g.time + 0.3
-      e.slowPct = Math.max(e.slowPct, pl.slow)
-    }
-  }
-  const done = g.pillows.filter(pl => g.time >= pl.until)
-  g.pillows = g.pillows.filter(pl => g.time < pl.until)
-  for (const pl of done) explodePillow(g, pl)
-}
-
-/** 核心自爆：巨型十字 + 引爆全場（或半徑內）炸彈 → 一次總連鎖 */
-function explodePillow(g: Game, pl: SPillow): void {
-  const owner = g.players.get(pl.ownerId)
-  if (!owner) return
-  const spec = buildSpec(g, owner)
-
-  // 核心本身當成一顆「虛擬炸彈」，讓它走同一條連鎖流程
-  const core: SBomb = {
-    i: g.bombSeq++, x: pl.x, y: pl.y, fuse: 0, fuseMax: 1,
-    damage: pl.damage, arm: pl.arm, ownerId: owner.id, gen: 1,
-    crossX: spec.crossX, sub: false, contact: false, impatient: false, overload: 0,
-    flameDur: spec.flameDur, born: g.time, dead: false,
-  }
-  g.bombs.push(core)
-
-  const seeds = spec.detAll
-    ? myBombs(g, owner)
-    : [core, ...myBombs(g, owner).filter(b => dist2(b.x, b.y, pl.x, pl.y) < pl.radius ** 2)]
-
-  // 惡夢殘響：留下夢魘地帶
-  if (eff(owner, 'kbEcho')) {
-    g.zones.push({
-      x: pl.x, y: pl.y, radius: pl.radius * 0.8, dps: 0, hps: 0,
-      until: g.time + 5, ownerId: owner.id, kind: 'frost', hostile: false, tick: 0, slowPct: 0.4,
-    })
-  }
-  detonate(g, seeds)
-}
-
 // ---------------------------------------------------------------- 對外 hook
 
-/** 每波開場：彈藥箱（紫）鋪 3 顆 */
 export function bombsOnWaveStart(g: Game, p: SPlayer): void {
   if (!isKunbao(p)) return
-  p.bombCd = 0; p.drowsy = 0; p.remoteCd = 6; p.sleepTalkCd = 2
-  const spec = buildSpec(g, p)
-  for (let k = 0; k < spec.waveStart; k++) {
-    const a = (k / Math.max(1, spec.waveStart)) * Math.PI * 2
-    placeBomb(g, p, spec, p.x + Math.cos(a) * 80, p.y + Math.sin(a) * 80)
-  }
+  p.drowsy = 0
+  p.skillCdLeft = 0
+  p.skillCharges = buildSpec(g, p).stock
 }
 
 /** 遙控器（紫）保命同步：致命傷時引爆身邊炸彈並無敵 1 秒。回傳 true = 這次傷害被擋下 */
 export function bombsDeathSave(g: Game, p: SPlayer): boolean {
   if (!isKunbao(p) || g.time < p.deathSyncAt) return false
-  if (!buildSpec(g, p).deathSync) return false
+  if (buildSpec(g, p).remote < 3) return false
   const near = myBombs(g, p).filter(b => dist2(b.x, b.y, p.x, p.y) < 200 ** 2)
   if (!near.length) return false
   p.deathSyncAt = g.time + 30

@@ -48,7 +48,7 @@ export const gs = reactive({
   // HUD 低頻鏡射（由快照更新，10Hz 小物件 OK）
   hud: {
     wave: 0, left: 0, hp: 0, maxHp: 0, shield: 0, gold: 0, lv: 1, xp: 0, nxp: 10,
-    skillCd: 0, skillMaxCd: 10, pendingLevelups: 0, teamRevives: 0,
+    skillCd: 0, skillMaxCd: 10, skillCharges: -1, skillMaxCharges: 0, pendingLevelups: 0, teamRevives: 0,
     status: 'alive' as string, reviveProgress: 0, enemiesLeft: 0, spawning: false, dmg: 0,
     mission: null as null | { name: string; progress: number; target: number; done: boolean; failed?: boolean },
     boss: null as null | { name: string; hp: number; mhp: number; sh?: number },
@@ -214,6 +214,7 @@ function syncHud(s: Snapshot): void {
     h.hp = me.hp; h.maxHp = me.mhp; h.shield = me.sh; h.gold = me.gold
     h.lv = me.lv; h.xp = me.xp; h.nxp = me.nxp
     h.skillCd = me.cd; h.pendingLevelups = me.pu; h.dmg = me.dmg
+    h.skillCharges = me.sc ?? -1; h.skillMaxCharges = me.smc ?? 0   // 睏寶：技能顯示「還能放幾顆炸彈」
     h.status = me.st; h.reviveProgress = me.rp
   }
   h.mates = s.players.filter(p => p.id !== gs.playerId).map(p => ({

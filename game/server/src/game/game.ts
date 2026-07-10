@@ -18,10 +18,10 @@ import { mulberry32, hashSeed, dailySeed, weightedR, shuffleR } from '../../../s
 import type {
   SPlayer, SEnemy, SProjectile, SEnemyProj, SZone, SMine, STurret,
   SDrop, SObjective, SBoss, MissionRt, EventRt, RouteMods, TeamState, WaveStat,
-  SBomb, SPillow,
+  SBomb,
 } from './state'
 import { defaultRouteMods, newOwnedWeapon } from './state'
-import { bombsOnWaveStart, bombsDeathSave, drowsyTick, drowsyDr, wakeUp, throwPillow, isKunbao } from './bombs'
+import { bombsOnWaveStart, bombsDeathSave, drowsyTick, drowsyDr, wakeUp, kunbaoSkill, isKunbao } from './bombs'
 import { dist2, norm, clamp, clampArena } from './util'
 import { recomputeEffects, eff } from './stats'
 import { newDirector, directorTick, spawnMult, healDropMult, type DirectorState } from './director'
@@ -72,7 +72,6 @@ export class Game {
   zones: SZone[] = []
   mines: SMine[] = []
   bombs: SBomb[] = []          // 睏寶的放置炸彈
-  pillows: SPillow[] = []      // 惡夢枕核心
   bombSeq = 1
   turrets: STurret[] = []
   drops: SDrop[] = []
@@ -148,8 +147,7 @@ export class Game {
         buffs: { hasteUntil: 0, hasteAmt: 0, rageUntil: 0, rageAmt: 0, critUntil: 0, critAmt: 0, invulnUntil: 0, shieldNextWave: 0 },
         dashUntil: 0, dashVx: 0, dashVy: 0,
         bulwarkUntil: 0, bulwarkVx: 0, bulwarkVy: 0,
-        drowsy: 0, wakeLockUntil: 0, alarmUntil: 0,
-        bombCd: 0, sleepTalkCd: 2, remoteCd: 6, deathSyncAt: 0,
+        drowsy: 0, wakeLockUntil: 0, alarmUntil: 0, deathSyncAt: 0,
         kbVx: 0, kbVy: 0, kbUntil: 0,
         downedCount: 0, reviveProgress: 0, bleedOutAt: 0, lastHitAt: -99, fogTick: 0,
         usedPhoenix: false, usedFirstDownRevive: false, eliteTrophyStacks: 0, pulseTimer: 10, regenTick: 0,
@@ -222,7 +220,6 @@ export class Game {
     this.zones = []
     this.mines = []
     this.bombs = []
-    this.pillows = []
     this.turrets = []
     this.drops = []
     this.objectives = []
@@ -925,6 +922,8 @@ export class Game {
   onSkill(playerId: string, aim?: { x?: number; y?: number; charge?: number }): void {
     const p = this.players.get(playerId)
     if (!p || p.status !== 'alive' || this.phase !== 'combat') return
+    // 睏寶：技能＝在腳下放炸彈，沒有冷卻。儲存次數由「場上炸彈數」決定（bombs.ts 每 tick 更新）
+    if (isKunbao(p)) { this.ev({ t: 'skill', id: p.id, s: p.char.active.id, x: p.x, y: p.y }); kunbaoSkill(this, p); return }
     if (p.skillCharges <= 0) return
     p.skillCharges--
     const charge = Math.max(0, Math.min(1, aim?.charge ?? 1))
@@ -1090,11 +1089,6 @@ export class Game {
           damageEnemyImpl(this, e, (prm.damage ?? 26) * p.stats.damage * sp, { ownerId: p.id, knockX: kx * (prm.knockback ?? 240), knockY: ky * (prm.knockback ?? 240), srcX: p.x, srcY: p.y })
           if (!e.elite) e.stunUntil = this.time + (prm.stun ?? 1.5)
         }
-        break
-      }
-      case 'nightmarePillow': {
-        // 睏寶：惡夢枕 — 丟出核心（吸引 + 加速引信），到期自爆並引爆全場炸彈（見 bombs.ts）
-        throwPillow(this, p, aim?.x ?? p.lastX, aim?.y ?? p.lastY, sp)
         break
       }
       case 'hallucinate': {
@@ -1308,6 +1302,8 @@ export class Game {
         spd: Math.round(p.stats.moveSpeed * (p.buffs.hasteUntil > now ? 1 + p.buffs.hasteAmt : 1)),
         fx: p.fx || undefined,
         dz: isKunbao(p) ? Math.round(p.drowsy) : undefined,
+        sc: isKunbao(p) ? p.skillCharges : undefined,
+        smc: isKunbao(p) ? p.skillMaxCharges : undefined,
       })),
       enemies: this.enemies.map(e => ({
         i: e.i, x: Math.round(e.x), y: Math.round(e.y),
@@ -1336,7 +1332,6 @@ export class Game {
         x2: b.crossX ? 1 as const : undefined,
         s: b.gen > 0 ? 1 as const : undefined,
       })) : undefined,
-      pillows: this.pillows.length ? this.pillows.map(pl => ({ x: Math.round(pl.x), y: Math.round(pl.y), r: Math.round(pl.radius) })) : undefined,
       director: { pressure: Math.round(this.director.pressure), level: this.director.level },
       mission: this.mission ? {
         name: this.mission.data.name,

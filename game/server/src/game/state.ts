@@ -74,10 +74,7 @@ export interface SPlayer {
   // 睏寶（dreamFuse）：睡意量表 + 放彈節拍 + 被自己爆風炸飛的擊退
   drowsy: number                         // 睡意 0~100（靜止累積、移動流失、受擊歸零）
   wakeLockUntil: number                  // 受擊後不能累積睡意到此時間
-  alarmUntil: number                     // 貪睡鬧鐘：被打醒後的放彈加速窗口
-  bombCd: number                         // 距離下一次放彈的秒數
-  sleepTalkCd: number                    // 夢話：熟睡時的額外放彈節拍
-  remoteCd: number                       // 遙控器（白）：每 6 秒自動引爆最舊的一顆
+  alarmUntil: number                     // 貪睡鬧鐘：被打醒後的火力窗口
   deathSyncAt: number                    // 遙控器（紫）：保命同步的下次可用時間
   kbVx: number; kbVy: number; kbUntil: number   // 爆風把玩家炸飛（不造成傷害）
 
@@ -195,6 +192,7 @@ export interface SMine {
 export interface SBomb {
   i: number
   x: number; y: number
+  vx: number; vy: number                  // 被踢出去時的滑行速度（0 = 靜止在格心）
   fuse: number                            // 剩餘引信（秒）
   fuseMax: number
   damage: number
@@ -209,16 +207,6 @@ export interface SBomb {
   flameDur: number                        // 火焰核（藍+）：爆風留下的火痕秒數
   born: number
   dead: boolean                           // 已排入本次連鎖（避免重複引爆）
-}
-
-/** 惡夢枕核心 */
-export interface SPillow {
-  x: number; y: number
-  until: number
-  radius: number
-  pull: number; slow: number
-  damage: number; arm: number
-  ownerId: string
 }
 
 export interface STurret {

@@ -57,7 +57,7 @@ const SKILL_COLOR: Record<string, string> = {
   bulwark: '#90caf9', rapidfire: '#ff8a65', healzone: '#69f0ae', turret: '#cfd8dc',
   frostnova: '#a8e0ff', fateflip: '#ffd54f', charge: '#eeeeee', whirlslash: '#ff5252',
   thornsNova: '#66bb6a', palmquake: '#ffca28', spikecharge: '#f0a83e', hallucinate: '#e05fd0',
-  nightmarePillow: '#5aa9e6',
+  placeBomb: '#ffb74d',
 }
 
 export class Engine {
@@ -77,7 +77,6 @@ export class Engine {
   snapZones: NonNullable<Snapshot['zones']> = []
   mines: NonNullable<Snapshot['mines']> = []
   bombs: NonNullable<Snapshot['bombs']> = []
-  pillows: NonNullable<Snapshot['pillows']> = []
 
   projectiles: CProj[] = []
   particles: Particle[] = []
@@ -242,7 +241,6 @@ export class Engine {
     this.snapZones = s.zones ?? []
     this.mines = s.mines ?? []
     this.bombs = s.bombs ?? []
-    this.pillows = s.pillows ?? []
   }
 
   applyEvents(evs: GameEv[]): void {
@@ -334,6 +332,8 @@ export class Engine {
         case 'teamRevive': sfx.teamRevive(); this.shake = 10; break
         case 'skill': {
           sfx.skill()
+          // 睏寶放炸彈一局要按幾百次：不喊招、不震動、不噴粒子
+          if (ev.s === 'placeBomb') break
           const nm = SKILL_NAME[ev.s]
           const col = SKILL_COLOR[ev.s] ?? '#ffe066'
           if (nm) this.skillCasts.push({ pid: ev.id, name: nm, color: col, born: this.time })
@@ -351,7 +351,8 @@ export class Engine {
           this.aoes.push({ x: ev.x, y: ev.y, r: ev.r, kind: ev.kind, life, maxLife: life, w: ev.w })
           if (ev.kind === 'swing' && ev.id && ev.w) this.meleeSwing.set(`${ev.id}:${ev.w}`, this.time)   // 觸發握持武器揮動
           if (ev.kind === 'explosion') { sfx.explosion(); this.shake = Math.min(this.shake + 7, 14); this.burst(ev.x, ev.y, 18, '#ff9f43', 5); this.burst(ev.x, ev.y, 8, '#ffe66d', 3) }
-          if (ev.kind === 'cross') { sfx.explosion(); this.shake = Math.min(this.shake + 8, 14); this.burst(ev.x, ev.y, 20, '#5aa9e6', 5); this.burst(ev.x, ev.y, 10, '#e3f2fd', 3) }
+          // 炸彈爆炸刻意不震動螢幕：睏寶一局會炸幾百次，震到會暈
+          if (ev.kind === 'cross') { sfx.explosion(); this.burst(ev.x, ev.y, 20, '#ffb74d', 5); this.burst(ev.x, ev.y, 10, '#fff3e0', 3) }
           if (ev.kind === 'frost') sfx.frost()
           if (ev.kind === 'haze') { sfx.haze(); this.burst(ev.x, ev.y, 14, '#e05fd0', 3) }
           if (ev.kind === 'lightning') { sfx.lightning(); this.burst(ev.x, ev.y, 10, '#ffe66d', 4) }
@@ -699,29 +700,6 @@ export class Engine {
       g.beginPath(); g.arc(0, 0, rad + 5, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * b.f); g.stroke()
       g.fillStyle = `rgba(255,150,40,${blink})`
       g.beginPath(); g.arc(rad * 0.4, -rad - 5, 3, 0, Math.PI * 2); g.fill()
-      g.restore()
-    }
-
-    // 惡夢枕核心：吸引環 + 枕頭
-    for (const pl of this.pillows) {
-      g.save(); g.translate(pl.x, pl.y)
-      const pulse = 0.4 + Math.abs(Math.sin(this.time * 4)) * 0.4
-      g.strokeStyle = `rgba(140,120,230,${pulse})`; g.lineWidth = 3
-      g.setLineDash([10, 8]); g.lineDashOffset = -this.time * 40
-      g.beginPath(); g.arc(0, 0, pl.r, 0, Math.PI * 2); g.stroke()
-      g.setLineDash([])
-      g.fillStyle = 'rgba(140,120,230,0.12)'
-      g.beginPath(); g.arc(0, 0, pl.r, 0, Math.PI * 2); g.fill()
-      for (let k = 0; k < 6; k++) {                // 往內收的吸力粒子
-        const a = k / 6 * Math.PI * 2 + this.time * 0.6
-        const rr = pl.r * (0.9 - ((this.time * 0.5) % 1) * 0.5)
-        g.fillStyle = `rgba(200,190,255,${pulse * 0.7})`
-        g.beginPath(); g.arc(Math.cos(a) * rr, Math.sin(a) * rr, 3.5, 0, Math.PI * 2); g.fill()
-      }
-      g.fillStyle = '#e8eaf6'; g.strokeStyle = '#1a1208'; g.lineWidth = 2
-      g.beginPath(); g.roundRect(-17, -11, 34, 22, 7); g.fill(); g.stroke()
-      g.strokeStyle = '#9fa8da'
-      g.beginPath(); g.moveTo(-9, -6); g.lineTo(-9, 6); g.stroke()
       g.restore()
     }
 

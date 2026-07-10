@@ -365,6 +365,7 @@ export interface PlayerSnap {
   spd?: number            // 目前移動速度（含 buff）——client 自機預測用（升級移速才會真的變快）
   fx?: string             // 短暫狀態: 'dash'|'rage'|...
   dz?: number             // 睏寶睡意 0~100（client 畫睡意環／Zzz）
+  sc?: number; smc?: number   // 睏寶技能儲存次數 / 上限（＝還能放幾顆炸彈）
 }
 
 /** 生成時一次送 full spawn（game:ev），之後快照只送位置與血量 */
@@ -416,8 +417,7 @@ export interface ZoneSnap { x: number; y: number; r: number; k: 'poison' | 'heal
 export interface MineSnap { x: number; y: number; r: number; a?: 1 }   // a=已佈署完成（可觸發）
 /** 睏寶的放置炸彈：f=引信剩餘比例 0~1、r=爆風臂長、x=X型斜臂、s=子炸彈 */
 export interface BombSnap { x: number; y: number; f: number; r: number; x2?: 1; s?: 1 }
-/** 惡夢枕核心：吸引半徑 */
-export interface PillowSnap { x: number; y: number; r: number }
+
 
 export interface Snapshot {
   t: number                      // server 時間（秒，本波起算）
@@ -432,7 +432,6 @@ export interface Snapshot {
   zones?: ZoneSnap[]                   // 地面圈（治療/毒/火/冰）
   mines?: MineSnap[]                   // 地雷
   bombs?: BombSnap[]                   // 睏寶的放置炸彈
-  pillows?: PillowSnap[]               // 惡夢枕核心
   director: { pressure: number; level: number }
   mission?: { name: string; progress: number; target: number; done: boolean; failed?: boolean }
   event?: string                 // 事件 id

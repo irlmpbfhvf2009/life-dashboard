@@ -235,7 +235,7 @@ const WEAPON_EMOJI: Record<string, string> = {
 const SKILL_EMOJI: Record<string, string> = {
   charge: '💨', bulwark: '🛡️', thornsNova: '🌵', rapidfire: '🔥',
   healzone: '💚', turret: '🗼', frostnova: '❄️', fateflip: '🎲',
-  whirlslash: '🌀', palmquake: '💥', spikecharge: '🦔', hallucinate: '🍃',
+  whirlslash: '🌀', palmquake: '💥', spikecharge: '🦔', hallucinate: '🍃', placeBomb: '💣',
 }
 const ROLE_NAME: Record<string, string> = { tank: '坦克', dps: '輸出', support: '輔助', engineer: '工程', control: '控場', gambler: '賭運' }
 
@@ -269,7 +269,7 @@ function onPointerUp() {
   engine.moveDir.active = false
 }
 function useSkill(charge?: number) {
-  if (gs.hud.skillCd > 0) return
+  if (skillLocked.value) return
   const dir = engine.moveDir.active ? engine.moveDir : { x: 0, y: -1 }
   api.skill(engine.myX + dir.x * 300, engine.myY + dir.y * 300, charge)
   // 位移類技能：本地立即預測，避免橡皮筋瞬移/延遲
@@ -289,7 +289,7 @@ function tickCharge() {
 }
 function startSkill() {
   if (!isChargeSkill.value) { useSkill(); return }
-  if (gs.hud.skillCd > 0 || charging.value) return
+  if (skillLocked.value || charging.value) return
   charging.value = true
   chargeStart = performance.now()
   engine.myCharge = 0
@@ -315,7 +315,7 @@ onMounted(() => {
   autoTimer = setInterval(() => {
     if (!autoSkill.value) return
     if (gs.hud.status !== 'alive' || gs.inter || gs.over) return
-    if (gs.hud.skillCd > 0 || charging.value) return
+    if (skillLocked.value || charging.value) return
     useSkill(isChargeSkill.value ? 1 : undefined)   // 蓄力技自動以滿蓄施放
   }, 250)
 })
@@ -362,6 +362,9 @@ onBeforeUnmount(() => {
 watch(screen, (s) => { if (s !== 'game') { keys.clear(); engine.moveDir.active = false } })
 const myChar = computed(() => CHARACTER_MAP.get(gs.begin?.players.find(p => p.id === gs.playerId)?.charId ?? ''))
 const skillCdPct = computed(() => Math.min(1, gs.hud.skillCd / (myChar.value?.active.cooldown ?? 10)))
+// 睏寶：技能沒有冷卻，改用「儲存次數」（場上每有一顆炸彈就少一發）
+const isChargeStock = computed(() => gs.hud.skillCharges >= 0)
+const skillLocked = computed(() => (isChargeStock.value ? gs.hud.skillCharges <= 0 : skillCdPct.value > 0))
 const eventName = computed(() => gs.waveInfo?.event ? EVENT_MAP.get(gs.waveInfo.event)?.name : '')
 // 殺光制：非 Boss 波、戰鬥中 → 顯示剩餘怪物數（放怪完＝清光才進下一波）
 const clearing = computed(() => !gs.hud.boss && gs.hud.enemiesLeft > 0 && !gs.inter && !gs.over)
@@ -1114,17 +1117,23 @@ const bestWaves = computed(() => ({
         </button>
         <button
           class="relative grid h-20 w-20 touch-none place-items-center rounded-full border-4 text-3xl shadow-xl active:scale-90"
-          :class="skillCdPct > 0 ? 'border-white/20 bg-black/50 grayscale' : (isChargeSkill && charging ? 'border-lime-300 bg-gradient-to-br from-lime-500 to-emerald-600' : 'border-amber-300 bg-gradient-to-br from-amber-500 to-orange-600')"
+          :class="skillLocked ? 'border-white/20 bg-black/50 grayscale' : (isChargeSkill && charging ? 'border-lime-300 bg-gradient-to-br from-lime-500 to-emerald-600' : 'border-amber-300 bg-gradient-to-br from-amber-500 to-orange-600')"
           @pointerdown.stop.prevent="startSkill"
           @pointerup.stop.prevent="releaseSkill"
           @pointercancel="releaseSkill"
           @pointerleave="releaseSkill"
         >
           <span>{{ SKILL_EMOJI[myChar.active.id] ?? '✨' }}</span>
-          <svg v-if="skillCdPct > 0" class="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 40 40">
+          <svg v-if="!isChargeStock && skillCdPct > 0" class="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 40 40">
             <circle cx="20" cy="20" r="17" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="4" :stroke-dasharray="`${(1 - skillCdPct) * 107} 107`" />
           </svg>
-          <span v-if="skillCdPct > 0" class="absolute text-sm font-black text-white">{{ Math.ceil(gs.hud.skillCd) }}</span>
+          <span v-if="!isChargeStock && skillCdPct > 0" class="absolute text-sm font-black text-white">{{ Math.ceil(gs.hud.skillCd) }}</span>
+          <!-- 睏寶：儲存次數（還能放幾顆炸彈 / 上限） -->
+          <span
+            v-if="isChargeStock"
+            class="absolute -right-1 -top-1 grid h-7 w-7 place-items-center rounded-full border-2 border-black/40 text-sm font-black tabular-nums"
+            :class="gs.hud.skillCharges > 0 ? 'bg-amber-200 text-amber-950' : 'bg-zinc-700 text-zinc-400'"
+          >{{ gs.hud.skillCharges }}</span>
         </button>
       </div>
 

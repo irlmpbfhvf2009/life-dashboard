@@ -251,30 +251,29 @@ export const MISSION = {
 // HARD_STOCK / CHAIN_CAP 是伺服器效能與傷害溢出的護欄，不是平衡旋鈕——別為了爽拿掉。
 
 export const BOMB = {
-  cell: 62,                 // 「一格火力」＝爆風臂長 62px
-  // 放彈間隔必須明顯短於引信，否則炸彈永遠只有一顆在地上、連鎖流不可能成立。
-  baseInterval: 1.1,        // 基礎放彈間隔（秒），除以攻速
+  cell: 64,                 // 格。炸彈對齊格心、一格一顆不重疊；火力 1 = 上下左右各炸一格
   baseFuse: 2.4,            // 基礎引信（秒）
   baseDamage: 12,
-  basePower: 2,             // 基礎火力（格）
-  baseStock: 2,             // 基礎同時炸彈上限
+  basePower: 1,             // 基礎火力（格）
+  baseStock: 1,             // 基礎同時炸彈數（＝主動技能的儲存次數）
   hardStock: 12,            // 同時炸彈硬上限（實體數／手機渲染護欄）
   armWidth: 46,             // 爆風寬度
   chainCap: 8,              // 連鎖段數上限（每段 +chainStep 傷害）
   chainStep: 0.12,
   chainHealEvery: 5,        // 每 5 段回 3% 最大生命
   chainHealPct: 0.03,
-  selfPush: 850,            // 爆風把睏寶推開的力道（要夠強才是「位移工具」而不是被推一下）
-  selfIframe: 0.25,         // 被自己爆風推開時的無敵幀
+  selfPush: 850,            // 爆風把睏寶推開的力道（位移工具，不造成傷害）
+  selfIframe: 0.25,
   subFuse: 0.6,             // 異常核（紅）子炸彈引信
+  kickSpeed: 620,           // 踢靴：把炸彈踢出去的滑行速度
   // 睡意
   drowsyGain: 30,           // 靜止 +/秒
   drowsyLoss: 45,           // 移動 −/秒
   wakeLock: 0.8,            // 受擊後無法累積睡意的時間
   lightAt: 40, deepAt: 80,
-  lightInterval: 0.75, lightFuse: -0.3,
-  deepInterval: 0.55, deepPower: 1, deepRegenPct: 0.015,
+  lightFuse: -0.3,          // 淺眠：引信更短
+  deepPower: 1,             // 熟睡：火力 +1
+  deepRegenPct: 0.015,
 } as const
 
-/** 睡意 → 階段（0 清醒 / 1 淺眠 / 2 熟睡） */
 export const drowsyTier = (d: number): 0 | 1 | 2 => (d >= BOMB.deepAt ? 2 : d >= BOMB.lightAt ? 1 : 0)

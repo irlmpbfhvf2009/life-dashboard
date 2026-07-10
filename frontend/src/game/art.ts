@@ -1223,6 +1223,18 @@ export function drawWeaponIcon(g: Ctx, weaponId: string, size: number, t: number
       for (const r of [0.1, 0.17]) { g.beginPath(); g.arc(s * 0.24, -s * 0.34, s * r, -Math.PI * 0.85, -Math.PI * 0.15); g.stroke() }
       break
     }
+    case 'k_kick': {   // 踢靴：靴子 + 速度線
+      outlined(g, col, gg => {
+        gg.beginPath(); gg.moveTo(-s * 0.06, -s * 0.34)
+        gg.lineTo(s * 0.14, -s * 0.34); gg.lineTo(s * 0.14, s * 0.06)
+        gg.lineTo(s * 0.36, s * 0.14); gg.lineTo(s * 0.36, s * 0.3)
+        gg.lineTo(-s * 0.06, s * 0.3); gg.closePath()
+      }, 2.5)
+      outlined(g, acc, gg => { gg.beginPath(); gg.rect(-s * 0.08, s * 0.18, s * 0.46, s * 0.12) }, 2)   // 鞋底
+      g.strokeStyle = `rgba(255,255,255,${0.35 + Math.abs(Math.sin(t * 6)) * 0.4})`; g.lineWidth = s * 0.035
+      for (const dy of [-0.16, 0, 0.16]) { g.beginPath(); g.moveTo(-s * 0.42, s * dy); g.lineTo(-s * 0.18, s * dy); g.stroke() }
+      break
+    }
     case 'k_core': {   // 異常核：旋轉的十字能量核
       g.save(); g.rotate(t * 1.1)
       g.fillStyle = col; g.shadowColor = col; g.shadowBlur = 10
