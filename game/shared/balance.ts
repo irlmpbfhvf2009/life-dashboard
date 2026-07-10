@@ -122,7 +122,7 @@ export function endlessAffixCount(wave: number): number {
 
 /** 主動技能「不吃技能傷害加成」的角色（純 buff/防禦技）：
  *  技能傷害升級/寶箱選項不該出現在這些角色身上（槍手=火力全開純攻速、戰士=盾牌衝鋒）。 */
-export const NO_SKILL_DMG_ACTIVES = new Set(['rapidfire', 'bulwark'])
+export const NO_SKILL_DMG_ACTIVES = new Set(['rapidfire', 'bulwark', 'placeBomb'])
 
 // ------------------------------------------------- 玩家 / 經驗 / 復活
 

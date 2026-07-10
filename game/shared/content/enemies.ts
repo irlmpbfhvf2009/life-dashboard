@@ -91,7 +91,7 @@ export const ENEMIES: EnemyData[] = [
     // 刺球金龜：身邊環繞旋轉尖刺球——站進刺環帶就持續受傷，逼玩家保持距離或速殺
     id: 'orbiter', name: '刺球金龜', baseHp: 44, speed: 60, damage: 11, radius: 20,
     scoreValue: 34, coinChance: 0.3, xpSize: 2, behavior: 'orbiter',
-    params: { ringRadius: 64, ringWidth: 20, orbs: 3, spin: 2.4 },
+    params: { ringRadius: 64, ringWidth: 12, orbs: 3, spin: 2.4 },
     tags: ['tanky', 'orbit'], tier: 2, minWave: 7, palette: ['#ffca7a', '#8a5a1e'],
   },
 ]

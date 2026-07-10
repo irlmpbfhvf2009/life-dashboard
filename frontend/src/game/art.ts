@@ -26,8 +26,41 @@ function ellipse(g: Ctx, x: number, y: number, rx: number, ry: number): void {
   g.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2)
 }
 
-/** 臉：眼睛 + 腮紅（所有蔬菜勇者共用） */
+// ---- 面向（8 向感）：由 render 傳入單位向量，drawCharacter 開頭設定，face() 讀取。
+// dy < −0.35 ＝ 往上走 → 畫背面（不畫臉，改畫後腦勺）；其餘做 3/4 側臉偏移。
+let FDX = 0, FDY = 1, FBACK = false
+
+/** 後腦勺：蓋掉臉的位置，加髮旋與陰影 */
+function backHead(g: Ctx, s: number, body: string): void {
+  g.save()
+  outlined(g, body, gg => ellipse(gg, 0, -s * 0.02, s * 0.33, s * 0.29), 2)
+  g.fillStyle = 'rgba(0,0,0,0.12)'
+  ellipse(g, 0, -s * 0.02, s * 0.33, s * 0.29); g.fill()
+  // 髮旋
+  g.strokeStyle = OUTLINE; g.lineWidth = s * 0.035; g.lineCap = 'round'
+  g.beginPath()
+  for (let i = 0; i <= 20; i++) {
+    const th = (i / 20) * Math.PI * 2.4
+    const rr = s * 0.02 + th * s * 0.028
+    const px = Math.cos(th) * rr, py = -s * 0.04 + Math.sin(th) * rr
+    i ? g.lineTo(px, py) : g.moveTo(px, py)
+  }
+  g.stroke()
+  g.lineCap = 'butt'
+  g.restore()
+}
+
+/** 自畫五官的角色用：把接下來畫的五官往面向偏移（記得配 g.restore()） */
+function faceShift(g: Ctx, s: number): void {
+  g.save()
+  g.translate(FDX * s * 0.13, FDY * s * 0.05)
+}
+
+/** 臉：眼睛 + 腮紅（所有蔬菜勇者共用）。背對鏡頭時不畫；側身時整張臉往面向偏移。 */
 function face(g: Ctx, s: number, mood: 'happy' | 'hurt' | 'ko' = 'happy'): void {
+  if (FBACK && mood !== 'ko') return
+  g.save()
+  g.translate(FDX * s * 0.13, FDY * s * 0.05)
   const e = s * 0.09
   g.fillStyle = OUTLINE
   if (mood === 'ko') {
@@ -57,6 +90,7 @@ function face(g: Ctx, s: number, mood: 'happy' | 'hurt' | 'ko' = 'happy'): void 
   if (mood === 'hurt') g.arc(0, s * 0.16, s * 0.08, Math.PI * 1.15, Math.PI * 1.85)
   else g.arc(0, s * 0.08, s * 0.09, Math.PI * 0.15, Math.PI * 0.85)
   g.stroke()
+  g.restore()
 }
 
 function leaf(g: Ctx, x: number, y: number, s: number, color: string, ang = -0.4): void {
@@ -75,13 +109,19 @@ function leaf(g: Ctx, x: number, y: number, s: number, color: string, ang = -0.4
 /** 角色本體（size = 直徑基準；t 用於待機浮動動畫） */
 export function drawCharacter(g: Ctx, charId: string, size: number, t: number, opts: {
   downed?: boolean; flash?: boolean; moving?: boolean
+  /** 面向單位向量（render 由移動方向推出）。省略＝面對鏡頭。 */
+  dir?: { x: number; y: number }
 } = {}): void {
   const c = CHARACTER_MAP.get(charId)
   const [body, accent, leafC] = c?.palette ?? ['#c97b3d', '#a35426', '#7bc043']
   const s = size
   const bob = Math.sin(t * (opts.moving ? 11 : 3)) * s * (opts.moving ? 0.05 : 0.03)
+  FDX = opts.dir?.x ?? 0
+  FDY = opts.dir?.y ?? 1
+  FBACK = !opts.downed && FDY < -0.35
   g.save()
   g.translate(0, bob)
+  g.rotate(FDX * 0.07)          // 往行進方向微微側身
   if (opts.downed) g.globalAlpha = 0.75
   if (opts.flash) { g.globalAlpha = 0.5 + Math.sin(t * 30) * 0.3 }
 
@@ -298,6 +338,7 @@ export function drawCharacter(g: Ctx, charId: string, size: number, t: number, o
       g.fillStyle = 'rgba(255,255,255,0.3)'
       ellipse(g, -s * 0.17, -s * 0.22, s * 0.1, s * 0.06); g.fill()
       if (opts.downed) { face(g, s, 'ko') } else {
+        faceShift(g, s)
         // 壓低的眉 + 銳利眼
         g.strokeStyle = OUTLINE; g.lineWidth = s * 0.05; g.lineCap = 'round'
         g.beginPath(); g.moveTo(-s * 0.25, -s * 0.12); g.lineTo(-s * 0.07, -s * 0.04); g.stroke()
@@ -316,6 +357,7 @@ export function drawCharacter(g: Ctx, charId: string, size: number, t: number, o
         g.strokeStyle = accent; g.lineWidth = s * 0.028
         g.beginPath(); g.moveTo(s * 0.25, -s * 0.02); g.lineTo(s * 0.31, s * 0.13); g.stroke()
         g.beginPath(); g.moveTo(s * 0.23, s * 0.05); g.lineTo(s * 0.32, s * 0.03); g.stroke()
+        g.restore()
       }
       break
     }
@@ -354,6 +396,7 @@ export function drawCharacter(g: Ctx, charId: string, size: number, t: number, o
         g.restore()
       }
       if (opts.downed) { face(g, s, 'ko') } else {
+        faceShift(g, s)
         // 迷濛半瞇眼（上眼瞼壓低）+ 紅眼
         g.fillStyle = '#fff'
         ellipse(g, -s * 0.17, s * 0.02, s * 0.09, s * 0.07); g.fill()
@@ -374,6 +417,7 @@ export function drawCharacter(g: Ctx, charId: string, size: number, t: number, o
         // 慵懶微笑
         g.strokeStyle = OUTLINE; g.lineWidth = s * 0.035
         g.beginPath(); g.arc(0, s * 0.16, s * 0.11, Math.PI * 0.1, Math.PI * 0.9); g.stroke()
+        g.restore()
       }
       break
     }
@@ -402,6 +446,7 @@ export function drawCharacter(g: Ctx, charId: string, size: number, t: number, o
       outlined(g, '#5aa9e6', gg => ellipse(gg, 0, s * 0.36, s * 0.15, s * 0.14), 2.5)
       g.fillStyle = 'rgba(255,255,255,0.6)'; ellipse(g, -s * 0.05, s * 0.32, s * 0.045, s * 0.035); g.fill()
       if (opts.downed) { face(g, s, 'ko') } else {
+        faceShift(g, s)
         // 閉著的彎眼（睡臉）
         g.strokeStyle = OUTLINE; g.lineWidth = s * 0.04; g.lineCap = 'round'
         g.beginPath(); g.arc(-s * 0.18, -s * 0.04, s * 0.08, Math.PI * 1.1, Math.PI * 1.9); g.stroke()
@@ -416,6 +461,7 @@ export function drawCharacter(g: Ctx, charId: string, size: number, t: number, o
         g.globalAlpha = 0.55
         outlined(g, '#e3f2fd', gg => ellipse(gg, s * 0.24, s * 0.1, s * 0.05 * breathe + s * 0.02, s * 0.05 * breathe + s * 0.02), 1.5)
         g.globalAlpha = 1
+        g.restore()
       }
       break
     }
@@ -423,7 +469,10 @@ export function drawCharacter(g: Ctx, charId: string, size: number, t: number, o
       outlined(g, body, gg => ellipse(gg, 0, 0, s * 0.46, s * 0.48))
       face(g, s, opts.downed ? 'ko' : 'happy')
   }
+  // 背面：蓋掉自己畫的臉（榴槤/大麻/睏寶等有客製五官的角色也一併蓋掉）
+  if (FBACK) backHead(g, s, body)
   g.restore()
+  FDX = 0; FDY = 1; FBACK = false
 }
 
 /** 怪物（農場害蟲）；flags: 1=盾 2=凍 4=緩 8=引爆中 */
@@ -644,11 +693,20 @@ export function drawEnemy(g: Ctx, kindId: string, size: number, t: number, opts:
       break
     }
     case 'orbiter': {
-      // 刺球金龜：圓滾硬殼 + 身邊三顆旋轉刺球（實際傷害判定＝整個環帶，畫淡環提示危險區）
-      const ringR = s * 1.85
-      g.strokeStyle = 'rgba(255,120,80,0.3)'
-      g.lineWidth = s * 0.5
-      g.beginPath(); g.arc(0, 0, ringR, 0, Math.PI * 2); g.stroke()
+      // 刺球金龜：圓滾硬殼 + 身邊三顆旋轉刺球。
+      // **畫出來的環帶必須等於 server 的傷害判定**（enemies.ts orbiter：|dist − ringRadius×sizeMult| < ringWidth + 13），
+      // 否則玩家會在「看起來安全」的地方被扣血。ringRadius=64、ringWidth=12 → band 25（band 不隨 sizeMult 縮放）。
+      const ringR = (s / 34) * 64          // render 傳進來的 size = 34 × sizeMult
+      const band = 12 + 13
+      g.fillStyle = 'rgba(255,90,60,0.2)'
+      g.beginPath()
+      g.arc(0, 0, ringR + band, 0, Math.PI * 2)
+      g.arc(0, 0, Math.max(0, ringR - band), 0, Math.PI * 2, true)
+      g.fill()
+      g.strokeStyle = `rgba(255,140,90,${0.45 + Math.abs(Math.sin(t * 5)) * 0.35})`
+      g.lineWidth = 2
+      g.beginPath(); g.arc(0, 0, ringR + band, 0, Math.PI * 2); g.stroke()
+      g.beginPath(); g.arc(0, 0, Math.max(1, ringR - band), 0, Math.PI * 2); g.stroke()
       // 刺球
       for (let k = 0; k < 3; k++) {
         const a = t * 2.4 + (k / 3) * Math.PI * 2

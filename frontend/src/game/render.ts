@@ -35,6 +35,8 @@ interface CPlayer {
   id: string; name: string; charId: string
   x: number; y: number; tx: number; ty: number
   status: string; hp: number; mhp: number; sh: number; rp: number; fx?: string; lv: number; dz?: number
+  // 面向（由畫面上的實際位移推出，平滑過渡）；px/py = 上一幀畫的位置
+  dx: number; dy: number; px: number; py: number
 }
 interface CDrop { i: number; t: string; x: number; y: number; v: number; item?: string; x2?: boolean }
 interface CProj { x: number; y: number; vx: number; vy: number; left: number; weapon: string; born: number }
@@ -203,7 +205,7 @@ export class Engine {
       let p = this.players.get(ps.id)
       if (!p) {
         const meta = gs.begin?.players.find(b => b.id === ps.id)
-        p = { id: ps.id, name: meta?.name ?? '', charId: meta?.charId ?? '', x: ps.x, y: ps.y, tx: ps.x, ty: ps.y, status: ps.st, hp: ps.hp, mhp: ps.mhp, sh: ps.sh, rp: ps.rp, lv: ps.lv }
+        p = { id: ps.id, name: meta?.name ?? '', charId: meta?.charId ?? '', x: ps.x, y: ps.y, tx: ps.x, ty: ps.y, status: ps.st, hp: ps.hp, mhp: ps.mhp, sh: ps.sh, rp: ps.rp, lv: ps.lv, dx: 0, dy: 1, px: ps.x, py: ps.y }
         this.players.set(ps.id, p)
       }
       p.tx = ps.x; p.ty = ps.y
@@ -1098,10 +1100,22 @@ export class Engine {
         g.beginPath(); g.arc(0, 0, 34, 0, Math.PI * 2); g.fill()
         g.restore()
       }
+      // 面向：用「畫面上真的走了多遠」推出方向（含被炸飛/衝刺），停下時保留最後方向
+      const vx = p.x - p.px, vy = p.y - p.py
+      p.px = p.x; p.py = p.y
+      const sp = Math.hypot(vx, vy)
+      if (sp > 0.25) {
+        const k = 0.22
+        p.dx += (vx / sp - p.dx) * k
+        p.dy += (vy / sp - p.dy) * k
+        const n = Math.hypot(p.dx, p.dy) || 1
+        p.dx /= n; p.dy /= n
+      }
       drawCharacter(g, p.charId, 46, this.time, {
         downed,
         moving: p.id === gs.playerId ? this.moveDir.active : undefined,
         flash: p.fx === 'dash' || p.fx === 'rage',
+        dir: { x: p.dx, y: p.dy },
       })
       // 睏寶的睡意環：0~100 繞一圈，淺眠(40)轉藍、熟睡(80)轉紫並飄 Zzz
       if (p.dz !== undefined && !downed) {

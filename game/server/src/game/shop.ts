@@ -34,15 +34,26 @@ const hasCategoryWeapon = (p: SPlayer, cat: string) => p.weapons.some(w => w.dat
 // -------------------------------------------------------- 武器池（共用池 + 簽名武器 + 親和權重）
 
 /** 此玩家可取得的武器池：共用池 + 自己的簽名武器（排除進化型/已滿級）。
- *  武器欄已滿 → 只出「已持有」的武器（買了＝升級），不再出新武器。 */
+ *  武器欄已滿 → 只出「已持有」的武器（買了＝升級），不再出新武器。
+ *  例外：睏寶是特製角色，不吃自動攻擊武器 → 他只拿得到六個炸彈模組，
+ *  其他角色也永遠拿不到炸彈模組（那六把對他們沒有任何行為）。 */
 function weaponPool(p: SPlayer): WeaponData[] {
   const full = p.weapons.length >= maxWeapons(p)
-  return WEAPONS.filter(w => !w.evolvedForm && (!w.charId || w.charId === p.char.id)).filter(w => {
-    const owned = p.weapons.find(x => x.data.id === w.id)
-    if (full && !owned) return false
-    return !owned || owned.level < w.maxLevel
-  })
+  const bombOnly = isBombChar(p)
+  return WEAPONS.filter(w => !w.evolvedForm && (!w.charId || w.charId === p.char.id))
+    .filter(w => (bombOnly ? w.behavior === 'bombModule' : w.behavior !== 'bombModule'))
+    .filter(w => {
+      const owned = p.weapons.find(x => x.data.id === w.id)
+      if (full && !owned) return false
+      return !owned || owned.level < w.maxLevel
+    })
 }
+
+/** 睏寶（放置炸彈特製角色） */
+const isBombChar = (p: SPlayer) => p.char.passive.effect === 'dreamFuse'
+
+/** 對睏寶完全沒有作用的升級（他不用武器開火、技能沒有冷卻） */
+const DEAD_FOR_BOMB = new Set(['atk1', 'atk2', 'atk3', 'cdr1', 'cdr2', 'wspeed', 'wmine', 'wknock', 'l_charge'])
 
 /** 依角色親和 tag 加權抽武器：簽名武器與親和 tag 權重高，但任何武器都抽得到 */
 function pickWeaponWeighted(g: Game, p: SPlayer, pool: WeaponData[]): WeaponData | null {
@@ -74,6 +85,8 @@ function upgradeEligible(g: Game, p: SPlayer, u: UpgradeData): boolean {
   if (CAT_UP[u.id] && !hasCategoryWeapon(p, CAT_UP[u.id])) return false
   // 單人遊戲：完全不出合作/團隊類升級（救援護盾、並肩作戰、共享資源…都沒意義）
   if (u.category === 'coop' && g.playerCount === 1) return false
+  // 睏寶不用武器開火、技能也沒有冷卻 → 攻速/技能冷卻/投射物類升級對他完全沒作用，不上架
+  if (isBombChar(p) && DEAD_FOR_BOMB.has(u.id)) return false
   for (const req of u.requirements ?? []) {
     if (req.startsWith('char:') && p.char.id !== req.slice(5)) return false
     if (req.startsWith('weaponTag:') && !p.weapons.some(w => w.data.tags.includes(req.slice(10)))) return false
