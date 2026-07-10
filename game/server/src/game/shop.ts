@@ -37,7 +37,7 @@ const hasCategoryWeapon = (p: SPlayer, cat: string) => p.weapons.some(w => w.dat
  *  武器欄已滿 → 只出「已持有」的武器（買了＝升級），不再出新武器。
  *  例外：睏寶是特製角色，不吃自動攻擊武器 → 他只拿得到六個炸彈模組，
  *  其他角色也永遠拿不到炸彈模組（那六把對他們沒有任何行為）。 */
-function weaponPool(p: SPlayer): WeaponData[] {
+export function weaponPool(p: SPlayer): WeaponData[] {
   const full = p.weapons.length >= maxWeapons(p)
   const bombOnly = isBombChar(p)
   return WEAPONS.filter(w => !w.evolvedForm && (!w.charId || w.charId === p.char.id))
@@ -45,12 +45,17 @@ function weaponPool(p: SPlayer): WeaponData[] {
     .filter(w => {
       const owned = p.weapons.find(x => x.data.id === w.id)
       if (full && !owned) return false
-      return !owned || owned.level < w.maxLevel
+      return !owned || !atLevelCap(w, owned.level)
     })
 }
 
 /** 睏寶（放置炸彈特製角色） */
 const isBombChar = (p: SPlayer) => p.char.passive.effect === 'dreamFuse'
+
+// 武器等級沒有上限：maxLevel 只是「階級上限」（perLevel 表與進化門檻），超過之後照樣能升。
+// 只有設了 levelCap 的武器才真的升不動（例：睏寶的彈藥箱，炸彈數本來就有硬天花板）。
+const atLevelCap = (w: WeaponData, level: number) => w.levelCap !== undefined && level >= w.levelCap
+const canLevelUp = (w: { data: WeaponData; level: number }) => !atLevelCap(w.data, w.level)
 
 /** 對睏寶完全沒有作用的升級（他不用武器開火、技能沒有冷卻） */
 const DEAD_FOR_BOMB = new Set(['atk1', 'atk2', 'atk3', 'cdr1', 'cdr2', 'wspeed', 'wmine', 'wknock', 'l_charge'])
@@ -74,7 +79,7 @@ function upgradeEligible(g: Game, p: SPlayer, u: UpgradeData): boolean {
   if ((p.upgrades.get(u.id) ?? 0) >= u.maxStacks) return false
   if (u.conflicts?.some(c => p.upgrades.has(c))) return false
   // 武器精研：有可升級的武器才上架
-  if (u.specialEffect === 'weaponLevelUp' && !p.weapons.some(w => w.level < w.data.maxLevel)) return false
+  if (u.specialEffect === 'weaponLevelUp' && !p.weapons.some(canLevelUp)) return false
   // 技能傷害升級：主動技不吃技傷的角色（槍手火力全開/戰士盾牌衝鋒）不上架
   if (u.specialEffect === 'skillPower' && NO_SKILL_DMG_ACTIVES.has(p.char.active.id)) return false
   if (PIERCE_UPGRADES.has(u.id) && !p.weapons.some(w => w.data.behavior === 'projectile' || w.data.behavior === 'drone')) return false
@@ -144,7 +149,7 @@ export function applyUpgrade(g: Game, p: SPlayer, upgradeId: string): void {
   if (!u) return
   // 武器精研：即時效果，不佔升級欄——最低等級武器 +1 級（同級時職業專屬優先）
   if (u.specialEffect === 'weaponLevelUp') {
-    const ws = p.weapons.filter(w => w.level < w.data.maxLevel)
+    const ws = p.weapons.filter(canLevelUp)
     if (!ws.length) return
     ws.sort((a, b) => (a.level - b.level)
       || (b.data.charId === p.char.id ? 1 : 0) - (a.data.charId === p.char.id ? 1 : 0))
@@ -170,10 +175,13 @@ function priceMultOf(g: Game, p: SPlayer): number {
     * (eff(p, 'curseBag') ? 1.25 : 1)
 }
 
-/** 等級價格係數：一般武器線性；睏寶的無上限模組用指數，讓「一直升同一把」有真實成本、
- *  不會後期用零錢把六把全部堆到 Lv30。 */
-const levelPriceMult = (w: WeaponData, level: number) =>
-  (w.maxLevel > 10 ? Math.pow(1.28, level - 1) : 1 + (level - 1) * 0.5)
+/** 等級價格係數：階級內（≤ maxLevel）線性；超階之後轉指數。
+ *  超階傷害是乘算（WEAPON_OVER_DMG），價格也必須是指數，否則後期用零錢就能把武器堆到天上。 */
+const levelPriceMult = (w: WeaponData, level: number) => {
+  const inTier = Math.min(level, w.maxLevel)
+  const over = Math.max(0, level - w.maxLevel)
+  return (1 + (inTier - 1) * 0.5) * Math.pow(1.22, over)
+}
 
 const weaponOfferPrice = (g: Game, p: SPlayer, w: WeaponData, level: number, special: boolean) =>
   Math.max(1, Math.round(w.price * priceMultOf(g, p) * (special ? 0.85 : 1) * levelPriceMult(w, level)))
@@ -200,7 +208,7 @@ export function syncWeaponOffers(g: Game, p: SPlayer): void {
     const data = WEAPON_MAP.get(o.refId)
     if (!data) continue
     const owned = p.weapons.find(x => x.data.id === o.refId)
-    if (owned && owned.level >= data.maxLevel) { o.sold = true; continue }   // 滿級 → 這格作廢
+    if (owned && atLevelCap(data, owned.level)) { o.sold = true; continue }   // 真的到頂 → 這格作廢
     const nextLevel = owned ? owned.level + 1 : (o.startLevel ?? 1)   // 未持有＝維持起始等級（後期可能 >1）
     if (o.weaponLevel !== nextLevel) {
       o.weaponLevel = nextLevel
@@ -372,18 +380,18 @@ export function addWeapon(g: Game, p: SPlayer, weaponId: string, startLevel = 1)
   if (data.charId && data.charId !== p.char.id) return '這不是你的專屬武器'
   const owned = p.weapons.find(w => w.data.id === weaponId)
   if (owned) {
-    if (owned.level >= data.maxLevel) return '已達最高等級'
+    if (atLevelCap(data, owned.level)) return '已達最高等級'
     owned.level++
     return null
   }
   if (p.weapons.length >= maxWeapons(p)) return '武器欄已滿（可先賣掉一把）'
   const w = newOwnedWeapon(data, g.rng() * Math.PI * 2)
-  w.level = Math.min(Math.max(1, startLevel), data.maxLevel)
+  w.level = Math.min(Math.max(1, startLevel), data.levelCap ?? data.maxLevel)
   p.weapons.push(w)
   return null
 }
 
-/** 武器進化：滿級 + 擁有指定升級（id 或 tag）→ 自動變成進化型。中場每次刷新都檢查一次。 */
+/** 武器進化：達到階級上限 + 擁有指定升級（id 或 tag）→ 自動變成進化型。中場每次刷新都檢查一次。 */
 export function checkEvolutions(g: Game, p: SPlayer): boolean {
   let changed = false
   for (const w of p.weapons) {
@@ -394,8 +402,11 @@ export function checkEvolutions(g: Game, p: SPlayer): boolean {
     if (!met) continue
     const into = WEAPON_MAP.get(evo.into)
     if (!into) continue
+    // 等級沒有上限之後，玩家可能在拿到精通升級前就把基底武器升過階級上限。
+    // 進化時要把「超階的等級」帶過去，否則那些投資會直接蒸發。
+    const carried = Math.max(0, w.level - w.data.maxLevel)
     w.data = into
-    w.level = 1
+    w.level = 1 + carried
     w.cdLeft = 0
     w.hitMemo = new Map()
     w.counter = 0; w.heat = 0; w.frenzyUntil = 0
@@ -421,8 +432,8 @@ export function rollChestOptions(g: Game, p: SPlayer): ChestPending['options'] {
       const b = weightedR(g.rng, pool)
       if (used.has(b.id) && tries < 7) continue
       // 情境過濾
-      if (b.effect === 'weaponUp' && !p.weapons.some(w => w.level < w.data.maxLevel)) continue
-      if (b.effect === 'allWeaponUp' && !p.weapons.some(w => w.level < w.data.maxLevel)) continue
+      if (b.effect === 'weaponUp' && !p.weapons.some(canLevelUp)) continue
+      if (b.effect === 'allWeaponUp' && !p.weapons.some(canLevelUp)) continue
       if (b.effect === 'curse' && !UPGRADES.some(u => u.category === 'curse' && upgradeEligible(g, p, u))) continue
       if (b.effect === 'skillPower' && NO_SKILL_DMG_ACTIVES.has(p.char.active.id)) continue
       if (b.effect === 'skillCd' && isBombChar(p)) continue      // 睏寶的技能沒有冷卻，抽了等於空獎
@@ -587,7 +598,7 @@ export function applyTeamReward(g: Game, id: string): void {
       const ps = [...g.players.values()].filter(p => p.weapons.some(w => w.level < w.data.maxLevel))
       if (ps.length) {
         const p = ps[Math.floor(g.rng() * ps.length)]
-        const ws = p.weapons.filter(w => w.level < w.data.maxLevel)
+        const ws = p.weapons.filter(canLevelUp)
         const w = ws[Math.floor(g.rng() * ws.length)]
         w.level++
         syncWeaponOffers(g, p)

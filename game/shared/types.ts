@@ -107,7 +107,11 @@ export interface WeaponData {
   base: WeaponStats
   /** 每升 1 級的加法增量（未列 = 不變） */
   perLevel: Partial<WeaponStats>
+  /** 「階級上限」：perLevel 表與進化的門檻（不是等級上限——等級沒有上限） */
   maxLevel: number
+  /** 真正的等級上限（未設 = 無上限）。只有數值本身有硬天花板的武器才需要，例如睏寶的彈藥箱：
+   *  炸彈數受 hardStock 與引信長度限制，升再高也放不出更多顆。 */
+  levelCap?: number
   critModifier?: number
   specialEffect?: string
   /** 武器專屬機制（每把武器的「特色」）：id 對應 server combat.ts / enemies.ts 的 hook，params 為數值參數。

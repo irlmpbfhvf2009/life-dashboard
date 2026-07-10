@@ -5,6 +5,10 @@ import type { Mode } from './types'
 
 // 場地：1800×1800 太空曠 → 先砍成 1260×900，再回加（左右 +20%、上下 +10%）。
 export const ARENA = { w: 1512, h: 990 }
+/** 武器等級沒有上限：超過「階級上限（maxLevel）」之後，每一級讓武器傷害 ×1.06（乘算）。
+ *  商店價格在超階後改走指數（shop.levelPriceMult），兩邊都是指數才有真正的無上限成長曲線。 */
+export const WEAPON_OVER_DMG = 1.08
+
 export const TICK_HZ = 20
 export const SNAP_HZ = 10
 export const MOVE_INPUT_HZ = 15
