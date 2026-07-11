@@ -931,6 +931,52 @@ export class Engine {
             }
             break
           }
+          // 浪人番茄·木刀：乾淨單道木色斬（居合再補一道水平拔刀白閃）
+          if (a.w === 's_iai' || a.w === 'st_sweep' || a.w === 'st_flurry') {
+            g.save(); g.lineCap = 'round'; g.globalAlpha = pct * 0.88
+            const a0 = this.time * 3
+            g.strokeStyle = '#d9b38c'; g.lineWidth = 10 * pct
+            g.beginPath(); g.arc(0, 0, a.r * 0.88, a0, a0 + Math.PI * 1.1); g.stroke()
+            g.strokeStyle = 'rgba(255,255,255,0.95)'; g.lineWidth = 3 * pct
+            g.beginPath(); g.arc(0, 0, a.r * 0.88, a0, a0 + Math.PI * 0.85); g.stroke()
+            if (a.w === 's_iai') { g.strokeStyle = `rgba(255,255,255,${pct})`; g.lineWidth = 4 * pct + 1; g.beginPath(); g.moveTo(-a.r, 0); g.lineTo(a.r, 0); g.stroke() }
+            g.restore(); break
+          }
+          // 金剛毛豆·鬥氣連拳：金色拳勁衝擊星
+          if (a.w === 'be_rush') {
+            const rr = a.r * (0.5 + (1 - pct) * 0.6)
+            g.strokeStyle = `rgba(255,202,40,${pct})`; g.lineWidth = 3.5; g.lineCap = 'round'
+            for (let k = 0; k < 5; k++) { const ang = k / 5 * Math.PI * 2 + this.time * 4; g.beginPath(); g.moveTo(Math.cos(ang) * rr * 0.3, Math.sin(ang) * rr * 0.3); g.lineTo(Math.cos(ang) * rr, Math.sin(ang) * rr); g.stroke() }
+            g.fillStyle = `rgba(255,241,180,${pct * 0.9})`; g.beginPath(); g.arc(0, 0, rr * 0.3, 0, Math.PI * 2); g.fill()
+            break
+          }
+          // 金剛毛豆·鬥氣爆震：金色能量衝擊環
+          if (a.w === 'be_aura') {
+            const inv = 1 - pct
+            g.strokeStyle = `rgba(255,213,79,${pct * 0.9})`; g.lineWidth = 6 * pct + 2
+            g.beginPath(); g.arc(0, 0, a.r * inv * 1.05, 0, Math.PI * 2); g.stroke()
+            g.fillStyle = `rgba(255,236,150,${pct * 0.4})`; g.beginPath(); g.arc(0, 0, a.r * inv * 0.7, 0, Math.PI * 2); g.fill()
+            break
+          }
+          // 拳王辣椒·掃堂腿：貼地橫掃火弧
+          if (a.w === 'cf_sweep') {
+            g.save(); g.globalAlpha = pct * 0.85; g.lineCap = 'round'
+            const a0 = this.time * 4
+            g.strokeStyle = '#ff7043'; g.lineWidth = 9 * pct
+            g.beginPath(); g.arc(0, 0, a.r * 0.9, a0, a0 + Math.PI * 1.4); g.stroke()
+            g.strokeStyle = 'rgba(255,224,130,0.9)'; g.lineWidth = 3 * pct
+            g.beginPath(); g.arc(0, 0, a.r * 0.9, a0, a0 + Math.PI * 1.1); g.stroke()
+            g.restore(); break
+          }
+          // 拳王辣椒·崩山重擊：大拳勁衝擊核
+          if (a.w === 'cf_bodyblow') {
+            const inv = 1 - pct
+            g.strokeStyle = `rgba(255,112,67,${pct * 0.9})`; g.lineWidth = 5 * pct + 2
+            g.beginPath(); g.arc(0, 0, a.r * inv * 1.05, 0, Math.PI * 2); g.stroke()
+            g.fillStyle = `rgba(255,138,80,${pct * 0.45})`; g.beginPath(); g.arc(0, 0, a.r * 0.5, 0, Math.PI * 2); g.fill()
+            g.fillStyle = `rgba(255,245,200,${pct * 0.85})`; g.beginPath(); g.arc(0, 0, a.r * 0.2, 0, Math.PI * 2); g.fill()
+            break
+          }
           // 依武器色盤上色的刀光（近戰武器各自不同顏色）
           const col = (a.w && WEAPON_MAP.get(a.w)?.palette[0]) || '#ffffff'
           g.save()
