@@ -896,6 +896,41 @@ export class Engine {
           break
         }
         case 'swing': {
+          // 影忍豆芽·螺旋丸：高速旋轉的藍色查克拉球（螺旋紋＋白核），不是刀光
+          if (a.w === 'nj_rasen') {
+            const rr = a.r * 0.6
+            g.save(); g.globalAlpha = pct; g.lineCap = 'round'
+            g.strokeStyle = 'rgba(79,195,247,0.9)'; g.lineWidth = 4
+            for (let s = 0; s < 3; s++) { g.beginPath(); for (let i = 0; i <= 22; i++) { const rad = rr * (0.35 + 0.65 * i / 22); const a2 = (i / 22) * Math.PI * 3 + this.time * 9 + s * 2.1; const px = Math.cos(a2) * rad, py = Math.sin(a2) * rad; i === 0 ? g.moveTo(px, py) : g.lineTo(px, py) } g.stroke() }
+            g.strokeStyle = 'rgba(255,255,255,0.9)'; g.lineWidth = 2; g.beginPath(); g.arc(0, 0, rr, 0, Math.PI * 2); g.stroke()
+            g.fillStyle = `rgba(225,245,254,${pct})`; g.beginPath(); g.arc(0, 0, rr * 0.4, 0, Math.PI * 2); g.fill()
+            g.restore()
+            break
+          }
+          // 盾之勇者的盾技：畫成「盾牌衝擊」而非刀光（盾面＋衝擊波環；反擊盾加尖刺反光）
+          if (a.w === 'sw_bash' || a.w === 'sw_thornguard' || a.w === 'w_sword') {
+            const inv = 1 - pct
+            const sh = a.r * 0.5
+            // 金屬盾面（圓角盾）閃現在中心
+            g.save(); g.globalAlpha = pct
+            g.fillStyle = 'rgba(201,123,61,0.92)'; g.strokeStyle = 'rgba(255,255,255,0.9)'; g.lineWidth = 3
+            g.beginPath(); g.moveTo(0, -sh); g.lineTo(sh * 0.82, -sh * 0.5); g.lineTo(sh * 0.82, sh * 0.32); g.lineTo(0, sh); g.lineTo(-sh * 0.82, sh * 0.32); g.lineTo(-sh * 0.82, -sh * 0.5); g.closePath(); g.fill(); g.stroke()
+            // 盾面浮雕十字
+            g.strokeStyle = 'rgba(255,236,179,0.85)'; g.lineWidth = 2
+            g.beginPath(); g.moveTo(0, -sh * 0.62); g.lineTo(0, sh * 0.62); g.moveTo(-sh * 0.52, -sh * 0.05); g.lineTo(sh * 0.52, -sh * 0.05); g.stroke()
+            g.restore()
+            // 盾牆推開的衝擊波環
+            g.strokeStyle = `rgba(255,241,200,${pct * 0.9})`; g.lineWidth = 5 * pct + 2
+            g.beginPath(); g.arc(0, 0, a.r * inv * 1.05, 0, Math.PI * 2); g.stroke()
+            g.strokeStyle = `rgba(201,123,61,${pct * 0.7})`; g.lineWidth = 3 * pct + 1
+            g.beginPath(); g.arc(0, 0, a.r * inv * 0.78, 0, Math.PI * 2); g.stroke()
+            // 反擊盾：外圈尖刺反光
+            if (a.w === 'sw_thornguard') {
+              g.strokeStyle = `rgba(255,255,255,${pct * 0.85})`; g.lineWidth = 2; g.lineCap = 'round'
+              for (let k = 0; k < 8; k++) { const ang = k / 8 * Math.PI * 2; g.beginPath(); g.moveTo(Math.cos(ang) * a.r * 0.5, Math.sin(ang) * a.r * 0.5); g.lineTo(Math.cos(ang) * a.r * 0.72, Math.sin(ang) * a.r * 0.72); g.stroke() }
+            }
+            break
+          }
           // 依武器色盤上色的刀光（近戰武器各自不同顏色）
           const col = (a.w && WEAPON_MAP.get(a.w)?.palette[0]) || '#ffffff'
           g.save()
