@@ -459,6 +459,300 @@ export function drawCharacter(g: Ctx, charId: string, size: number, t: number, o
       }
       break
     }
+    case 'bean_saiyan': {
+      // 金剛毛豆：直立豆莢身 + 三顆鼓豆 + 往上炸開的金色鬥氣尖髮 + 兇臉
+      outlined(g, body, gg => {
+        gg.beginPath()
+        gg.moveTo(-s * 0.26, s * 0.5)
+        gg.quadraticCurveTo(-s * 0.4, -s * 0.1, -s * 0.2, -s * 0.42)
+        gg.quadraticCurveTo(0, -s * 0.54, s * 0.2, -s * 0.42)
+        gg.quadraticCurveTo(s * 0.4, -s * 0.1, s * 0.26, s * 0.5)
+        gg.closePath()
+      })
+      g.fillStyle = 'rgba(255,255,255,0.16)'
+      for (const yy of [-0.12, 0.14, 0.38]) { ellipse(g, 0, s * yy, s * 0.19, s * 0.12); g.fill() }
+      // 金色鬥氣尖髮（從頭頂放射的三角火焰）
+      g.fillStyle = accent
+      g.shadowColor = accent; g.shadowBlur = 10 + Math.sin(t * 8) * 4
+      const hy = -s * 0.4
+      for (let k = 0; k < 7; k++) {
+        const a = -Math.PI / 2 + (k - 3) * 0.36
+        const perpx = Math.cos(a + Math.PI / 2), perpy = Math.sin(a + Math.PI / 2)
+        const bw = s * 0.075
+        g.beginPath()
+        g.moveTo(perpx * bw, hy + perpy * bw)
+        g.lineTo(Math.cos(a) * s * 0.52, hy + Math.sin(a) * s * 0.52)
+        g.lineTo(-perpx * bw, hy - perpy * bw)
+        g.closePath(); g.fill()
+      }
+      g.shadowBlur = 0
+      if (opts.downed) { face(g, s, 'ko') } else {
+        faceShift(g, s)
+        g.strokeStyle = OUTLINE; g.lineWidth = s * 0.05; g.lineCap = 'round'
+        g.beginPath(); g.moveTo(-s * 0.24, -s * 0.12); g.lineTo(-s * 0.06, -s * 0.05); g.stroke()
+        g.beginPath(); g.moveTo(s * 0.24, -s * 0.12); g.lineTo(s * 0.06, -s * 0.05); g.stroke()
+        g.lineCap = 'butt'
+        g.fillStyle = '#fff'; ellipse(g, -s * 0.14, s * 0.02, s * 0.075, s * 0.055); g.fill(); ellipse(g, s * 0.14, s * 0.02, s * 0.075, s * 0.055); g.fill()
+        g.fillStyle = OUTLINE; ellipse(g, -s * 0.12, s * 0.03, s * 0.035, s * 0.035); g.fill(); ellipse(g, s * 0.16, s * 0.03, s * 0.035, s * 0.035); g.fill()
+        g.strokeStyle = OUTLINE; g.lineWidth = s * 0.035
+        g.beginPath(); g.arc(0, s * 0.14, s * 0.09, Math.PI * 1.15, Math.PI * 1.85); g.stroke()
+        g.restore()
+      }
+      break
+    }
+    case 'cabbage_striker': {
+      // 鐵腿高麗菜：層葉圓身 + 功夫頭帶 + 抬起的鐵腿與足球
+      outlined(g, body, gg => ellipse(gg, 0, s * 0.04, s * 0.46, s * 0.46))
+      g.strokeStyle = leafC; g.lineWidth = s * 0.045
+      g.beginPath(); g.arc(0, s * 0.04, s * 0.36, Math.PI * 0.15, Math.PI * 0.85); g.stroke()
+      g.beginPath(); g.arc(0, s * 0.06, s * 0.3, Math.PI * 1.15, Math.PI * 1.85); g.stroke()
+      g.strokeStyle = 'rgba(255,255,255,0.4)'; g.lineWidth = s * 0.02
+      for (const dx of [-0.2, 0, 0.2]) { g.beginPath(); g.moveTo(s * dx, -s * 0.28); g.quadraticCurveTo(s * dx * 1.4, s * 0.1, s * dx, s * 0.4); g.stroke() }
+      // 功夫頭帶 + 飄尾
+      outlined(g, accent, gg => { gg.beginPath(); gg.rect(-s * 0.44, -s * 0.28, s * 0.88, s * 0.11) }, 2)
+      g.fillStyle = '#e53935'; ellipse(g, 0, -s * 0.225, s * 0.05, s * 0.05); g.fill()
+      g.strokeStyle = accent; g.lineWidth = s * 0.05
+      g.beginPath(); g.moveTo(s * 0.4, -s * 0.22); g.quadraticCurveTo(s * 0.66, -s * 0.12 + Math.sin(t * 6) * s * 0.06, s * 0.58, s * 0.06); g.stroke()
+      if (!FBACK) {
+        outlined(g, body, gg => { gg.beginPath(); gg.roundRect(s * 0.08, s * 0.32, s * 0.17, s * 0.22, s * 0.06) }, 2.5)
+        outlined(g, '#fafafa', gg => ellipse(gg, s * 0.42, s * 0.4, s * 0.13, s * 0.13), 2)
+        g.fillStyle = '#212121'; g.beginPath(); g.moveTo(s * 0.42, s * 0.33); g.lineTo(s * 0.49, s * 0.4); g.lineTo(s * 0.42, s * 0.47); g.lineTo(s * 0.35, s * 0.4); g.closePath(); g.fill()
+      }
+      face(g, s, opts.downed ? 'ko' : 'happy')
+      break
+    }
+    case 'chili_boxer': {
+      // 拳王辣椒：彎曲長身 + 綠蒂帽 + 拳擊手套 + 兇臉咧嘴
+      outlined(g, body, gg => {
+        gg.beginPath()
+        gg.moveTo(-s * 0.22, -s * 0.34)
+        gg.quadraticCurveTo(s * 0.32, -s * 0.42, s * 0.32, s * 0.06)
+        gg.quadraticCurveTo(s * 0.3, s * 0.5, 0, s * 0.52)
+        gg.quadraticCurveTo(-s * 0.32, s * 0.5, -s * 0.28, s * 0.06)
+        gg.quadraticCurveTo(-s * 0.28, -s * 0.2, -s * 0.22, -s * 0.34)
+        gg.closePath()
+      })
+      g.fillStyle = 'rgba(255,255,255,0.28)'; ellipse(g, -s * 0.12, -s * 0.02, s * 0.06, s * 0.2); g.fill()
+      // 綠蒂帽
+      outlined(g, leafC, gg => { gg.beginPath(); gg.moveTo(-s * 0.13, -s * 0.32); gg.quadraticCurveTo(0, -s * 0.42, s * 0.13, -s * 0.32); gg.lineTo(s * 0.03, -s * 0.36); gg.lineTo(0, -s * 0.58); gg.lineTo(-s * 0.04, -s * 0.36); gg.closePath() }, 2)
+      if (!FBACK) {
+        outlined(g, accent, gg => ellipse(gg, -s * 0.34, s * 0.22, s * 0.13, s * 0.11), 2.5)
+        outlined(g, accent, gg => ellipse(gg, s * 0.36, s * 0.04, s * 0.13, s * 0.11), 2.5)
+      }
+      if (opts.downed) { face(g, s, 'ko') } else {
+        faceShift(g, s)
+        g.strokeStyle = OUTLINE; g.lineWidth = s * 0.05; g.lineCap = 'round'
+        g.beginPath(); g.moveTo(-s * 0.23, -s * 0.14); g.lineTo(-s * 0.05, -s * 0.06); g.stroke()
+        g.beginPath(); g.moveTo(s * 0.22, -s * 0.14); g.lineTo(s * 0.05, -s * 0.06); g.stroke()
+        g.lineCap = 'butt'
+        g.fillStyle = '#fff'; ellipse(g, -s * 0.13, s * 0.0, s * 0.07, s * 0.05); g.fill(); ellipse(g, s * 0.14, s * 0.0, s * 0.07, s * 0.05); g.fill()
+        g.fillStyle = OUTLINE; ellipse(g, -s * 0.11, s * 0.01, s * 0.033, s * 0.033); g.fill(); ellipse(g, s * 0.16, s * 0.01, s * 0.033, s * 0.033); g.fill()
+        g.fillStyle = OUTLINE; g.beginPath(); g.arc(0, s * 0.15, s * 0.1, 0.08 * Math.PI, 0.92 * Math.PI); g.closePath(); g.fill()
+        g.fillStyle = '#fff'; g.fillRect(-s * 0.08, s * 0.15, s * 0.16, s * 0.028)
+        g.restore()
+      }
+      break
+    }
+    case 'ghost_shroom': {
+      // 幽靈菇：半透明、菇傘帽 + 波浪飄尾身 + 空洞幽眼
+      g.globalAlpha *= 0.82
+      outlined(g, body, gg => {
+        gg.beginPath()
+        gg.moveTo(-s * 0.34, s * 0.0)
+        gg.quadraticCurveTo(-s * 0.36, s * 0.44, -s * 0.22, s * 0.44)
+        gg.quadraticCurveTo(-s * 0.11, s * 0.34, 0, s * 0.46)
+        gg.quadraticCurveTo(s * 0.11, s * 0.34, s * 0.22, s * 0.44)
+        gg.quadraticCurveTo(s * 0.36, s * 0.44, s * 0.34, s * 0.0)
+        gg.closePath()
+      })
+      outlined(g, leafC, gg => { gg.beginPath(); gg.moveTo(-s * 0.46, s * 0.04); gg.quadraticCurveTo(0, -s * 0.56, s * 0.46, s * 0.04); gg.closePath() }, 2.5)
+      g.fillStyle = accent
+      for (const [dx, dy] of [[-0.2, -0.14], [0.16, -0.2], [0, -0.3], [0.28, -0.04], [-0.3, -0.02]]) { ellipse(g, s * dx, s * dy, s * 0.06, s * 0.05); g.fill() }
+      if (!FBACK) {
+        faceShift(g, s)
+        g.fillStyle = OUTLINE
+        ellipse(g, -s * 0.15, s * 0.08, s * 0.07, s * 0.1); g.fill()
+        ellipse(g, s * 0.15, s * 0.08, s * 0.07, s * 0.1); g.fill()
+        g.fillStyle = 'rgba(237,231,246,0.9)'
+        ellipse(g, -s * 0.15, s * 0.05, s * 0.03, s * 0.04); g.fill(); ellipse(g, s * 0.15, s * 0.05, s * 0.03, s * 0.04); g.fill()
+        g.fillStyle = OUTLINE; ellipse(g, 0, s * 0.24, s * 0.05, s * 0.06); g.fill()
+        g.restore()
+      }
+      break
+    }
+    case 'leek_bolt': {
+      // 疾雷蔥：白蔥柄 + 三片蔥綠葉 + 電光殘影速度線
+      g.strokeStyle = 'rgba(205,220,57,0.5)'; g.lineWidth = s * 0.03
+      for (const yy of [-0.08, 0.08, 0.24]) { g.beginPath(); g.moveTo(-s * 0.28, s * yy); g.lineTo(-s * 0.5, s * yy); g.stroke() }
+      outlined(g, '#f4f4e6', gg => { gg.beginPath(); gg.roundRect(-s * 0.19, -s * 0.08, s * 0.38, s * 0.58, s * 0.14) }, 2.5)
+      for (const [ang, ln] of [[-0.5, 0.58], [0, 0.68], [0.5, 0.58]] as [number, number][]) {
+        g.save(); g.translate(0, -s * 0.08); g.rotate(ang)
+        outlined(g, body, gg => { gg.beginPath(); gg.moveTo(-s * 0.07, 0); gg.quadraticCurveTo(-s * 0.02, -s * ln, 0, -s * ln * 1.04); gg.quadraticCurveTo(s * 0.02, -s * ln, s * 0.07, 0); gg.closePath() }, 2)
+        g.restore()
+      }
+      // 頭頂小電光
+      g.fillStyle = accent; g.shadowColor = accent; g.shadowBlur = 8 * ((Math.sin(t * 12) + 1) / 2 + 0.3)
+      g.beginPath(); g.moveTo(s * 0.28, -s * 0.34); g.lineTo(s * 0.16, -s * 0.16); g.lineTo(s * 0.26, -s * 0.16); g.lineTo(s * 0.16, s * 0.0); g.lineTo(s * 0.4, -s * 0.24); g.lineTo(s * 0.28, -s * 0.24); g.closePath(); g.fill()
+      g.shadowBlur = 0
+      face(g, s, opts.downed ? 'ko' : 'happy')
+      break
+    }
+    case 'eggplant_vampire': {
+      // 血蝠茄：蝙蝠翼 + 彎曲紫茄身 + 綠蒂萼 + 紅眼獠牙
+      const flap = Math.sin(t * 6) * 0.15
+      for (const side of [-1, 1]) {
+        g.save(); g.translate(side * s * 0.28, -s * 0.02); g.rotate(side * (0.3 + flap))
+        outlined(g, accent, gg => {
+          gg.beginPath(); gg.moveTo(0, 0)
+          gg.quadraticCurveTo(side * s * 0.4, -s * 0.2, side * s * 0.5, s * 0.05)
+          gg.lineTo(side * s * 0.34, s * 0.02); gg.lineTo(side * s * 0.4, s * 0.16); gg.lineTo(side * s * 0.2, s * 0.06); gg.lineTo(side * s * 0.24, s * 0.2)
+          gg.lineTo(0, s * 0.1); gg.closePath()
+        }, 2)
+        g.restore()
+      }
+      outlined(g, body, gg => {
+        gg.beginPath()
+        gg.moveTo(-s * 0.2, -s * 0.3)
+        gg.quadraticCurveTo(s * 0.28, -s * 0.36, s * 0.3, s * 0.1)
+        gg.quadraticCurveTo(s * 0.28, s * 0.5, 0, s * 0.52)
+        gg.quadraticCurveTo(-s * 0.3, s * 0.5, -s * 0.28, s * 0.08)
+        gg.quadraticCurveTo(-s * 0.28, -s * 0.12, -s * 0.2, -s * 0.3)
+        gg.closePath()
+      })
+      g.fillStyle = 'rgba(255,255,255,0.2)'; ellipse(g, -s * 0.12, -s * 0.02, s * 0.06, s * 0.2); g.fill()
+      outlined(g, leafC, gg => { gg.beginPath(); gg.moveTo(-s * 0.16, -s * 0.28); gg.quadraticCurveTo(0, -s * 0.4, s * 0.16, -s * 0.28); gg.lineTo(s * 0.03, -s * 0.34); gg.lineTo(0, -s * 0.5); gg.lineTo(-s * 0.03, -s * 0.34); gg.closePath() }, 2)
+      if (opts.downed) { face(g, s, 'ko') } else {
+        faceShift(g, s)
+        g.fillStyle = '#ff5252'; g.shadowColor = '#ff1744'; g.shadowBlur = 6
+        ellipse(g, -s * 0.14, -s * 0.02, s * 0.06, s * 0.07); g.fill(); ellipse(g, s * 0.14, -s * 0.02, s * 0.06, s * 0.07); g.fill()
+        g.shadowBlur = 0
+        g.strokeStyle = OUTLINE; g.lineWidth = s * 0.035
+        g.beginPath(); g.arc(0, s * 0.13, s * 0.1, Math.PI * 0.1, Math.PI * 0.9); g.stroke()
+        g.fillStyle = '#fff'
+        g.beginPath(); g.moveTo(-s * 0.06, s * 0.15); g.lineTo(-s * 0.02, s * 0.15); g.lineTo(-s * 0.04, s * 0.24); g.closePath(); g.fill()
+        g.beginPath(); g.moveTo(s * 0.06, s * 0.15); g.lineTo(s * 0.02, s * 0.15); g.lineTo(s * 0.04, s * 0.24); g.closePath(); g.fill()
+        g.restore()
+      }
+      break
+    }
+    case 'avocado_esper': {
+      // 念力酪梨：洋梨綠身 + 發光念力核（籽）+ 環繞念力球 + 平靜閉眼 + 第三眼
+      outlined(g, body, gg => {
+        gg.beginPath()
+        gg.moveTo(0, -s * 0.44)
+        gg.quadraticCurveTo(s * 0.34, -s * 0.34, s * 0.36, s * 0.06)
+        gg.quadraticCurveTo(s * 0.36, s * 0.5, 0, s * 0.52)
+        gg.quadraticCurveTo(-s * 0.36, s * 0.5, -s * 0.36, s * 0.06)
+        gg.quadraticCurveTo(-s * 0.34, -s * 0.34, 0, -s * 0.44)
+        gg.closePath()
+      })
+      g.strokeStyle = leafC; g.lineWidth = s * 0.03; g.beginPath(); g.arc(0, s * 0.14, s * 0.26, 0, Math.PI * 2); g.stroke()
+      const pit = 0.16 + Math.sin(t * 4) * 0.01
+      g.fillStyle = '#6d4c2b'; g.shadowColor = '#ce93d8'; g.shadowBlur = 10 + Math.sin(t * 4) * 5
+      ellipse(g, 0, s * 0.16, s * pit, s * pit); g.fill()
+      g.shadowBlur = 0
+      g.fillStyle = 'rgba(206,147,216,0.85)'; ellipse(g, 0, s * 0.14, s * 0.05, s * 0.05); g.fill()
+      for (let k = 0; k < 3; k++) { const a = t * 1.6 + (k / 3) * Math.PI * 2; g.fillStyle = 'rgba(186,104,200,0.7)'; ellipse(g, Math.cos(a) * s * 0.42, s * 0.1 + Math.sin(a) * s * 0.14, s * 0.04, s * 0.04); g.fill() }
+      if (opts.downed) { face(g, s, 'ko') } else {
+        faceShift(g, s)
+        g.strokeStyle = OUTLINE; g.lineWidth = s * 0.04; g.lineCap = 'round'
+        g.beginPath(); g.arc(-s * 0.14, -s * 0.12, s * 0.07, Math.PI * 0.15, Math.PI * 0.85); g.stroke()
+        g.beginPath(); g.arc(s * 0.14, -s * 0.12, s * 0.07, Math.PI * 0.15, Math.PI * 0.85); g.stroke()
+        g.lineCap = 'butt'
+        g.fillStyle = accent; g.shadowColor = '#ba68c8'; g.shadowBlur = 5
+        ellipse(g, 0, -s * 0.26, s * 0.03, s * 0.05); g.fill(); g.shadowBlur = 0
+        g.restore()
+      }
+      break
+    }
+    case 'asparagus_blademaster': {
+      // 千刃蘆筍：細長筍身 + 筍尖鱗片 + 紅頭帶 + 背後刀
+      outlined(g, body, gg => { gg.beginPath(); gg.moveTo(-s * 0.16, s * 0.5); gg.quadraticCurveTo(-s * 0.22, -s * 0.2, -s * 0.1, -s * 0.44); gg.quadraticCurveTo(0, -s * 0.52, s * 0.1, -s * 0.44); gg.quadraticCurveTo(s * 0.22, -s * 0.2, s * 0.16, s * 0.5); gg.closePath() })
+      g.fillStyle = leafC
+      for (const yy of [-0.42, -0.32, -0.22]) { g.beginPath(); g.moveTo(-s * 0.12, s * yy); g.lineTo(0, s * yy - s * 0.1); g.lineTo(s * 0.12, s * yy); g.closePath(); g.fill() }
+      outlined(g, '#e2402f', gg => { gg.beginPath(); gg.rect(-s * 0.18, -s * 0.16, s * 0.36, s * 0.07) }, 1.5)
+      g.strokeStyle = '#e2402f'; g.lineWidth = s * 0.04
+      g.beginPath(); g.moveTo(s * 0.16, -s * 0.12); g.quadraticCurveTo(s * 0.42, -s * 0.04 + Math.sin(t * 6) * s * 0.05, s * 0.36, s * 0.12); g.stroke()
+      if (!FBACK) { g.save(); g.rotate(-0.5); outlined(g, accent, gg => { gg.beginPath(); gg.rect(-s * 0.02, -s * 0.6, s * 0.045, s * 0.66) }, 1.5); g.strokeStyle = '#5d4037'; g.lineWidth = s * 0.05; g.beginPath(); g.moveTo(0, s * 0.02); g.lineTo(0, s * 0.14); g.stroke(); g.restore() }
+      if (opts.downed) { face(g, s, 'ko') } else {
+        faceShift(g, s)
+        g.strokeStyle = OUTLINE; g.lineWidth = s * 0.04; g.lineCap = 'round'
+        g.beginPath(); g.moveTo(-s * 0.16, -s * 0.05); g.lineTo(-s * 0.04, -s * 0.02); g.stroke()
+        g.beginPath(); g.moveTo(s * 0.16, -s * 0.05); g.lineTo(s * 0.04, -s * 0.02); g.stroke()
+        g.lineCap = 'butt'; g.fillStyle = OUTLINE
+        ellipse(g, -s * 0.1, s * 0.03, s * 0.035, s * 0.04); g.fill(); ellipse(g, s * 0.1, s * 0.03, s * 0.035, s * 0.04); g.fill()
+        g.restore()
+      }
+      break
+    }
+    case 'corn_gunslinger': {
+      // 快槍手玉米：玉米粒身 + 外葉 + 牛仔帽 + 左輪
+      outlined(g, body, gg => ellipse(gg, 0, s * 0.08, s * 0.32, s * 0.46))
+      g.fillStyle = 'rgba(0,0,0,0.1)'
+      for (let r = 0; r < 5; r++) for (let c = 0; c < 4; c++) { const x = (c - 1.5) * s * 0.14, y = -s * 0.22 + r * s * 0.15; ellipse(g, x, y, s * 0.045, s * 0.055); g.fill() }
+      outlined(g, leafC, gg => { gg.beginPath(); gg.moveTo(-s * 0.28, s * 0.12); gg.quadraticCurveTo(-s * 0.5, s * 0.3, -s * 0.34, s * 0.52); gg.quadraticCurveTo(-s * 0.22, s * 0.3, -s * 0.22, s * 0.12); gg.closePath() }, 2)
+      outlined(g, accent, gg => { gg.beginPath(); gg.ellipse(0, -s * 0.26, s * 0.44, s * 0.1, 0, 0, Math.PI * 2) }, 2)
+      outlined(g, accent, gg => { gg.beginPath(); gg.roundRect(-s * 0.22, -s * 0.5, s * 0.44, s * 0.24, s * 0.06) }, 2)
+      if (!FBACK) { outlined(g, '#455a64', gg => { gg.beginPath(); gg.rect(s * 0.22, s * 0.18, s * 0.22, s * 0.07) }, 1.5); outlined(g, '#455a64', gg => ellipse(gg, s * 0.24, s * 0.22, s * 0.05, s * 0.05), 1.5) }
+      face(g, s, opts.downed ? 'ko' : 'happy')
+      break
+    }
+    case 'mushroom_summoner': {
+      // 孢子召喚菇：菌柄身 + 紫菌傘 + 白斑 + 環繞孢子
+      outlined(g, '#efe0d0', gg => { gg.beginPath(); gg.roundRect(-s * 0.2, -s * 0.02, s * 0.4, s * 0.52, s * 0.12) }, 2.5)
+      outlined(g, accent, gg => { gg.beginPath(); gg.moveTo(-s * 0.48, s * 0.02); gg.quadraticCurveTo(0, -s * 0.6, s * 0.48, s * 0.02); gg.closePath() }, 2.5)
+      g.fillStyle = '#fff'
+      for (const [dx, dy] of [[-0.24, -0.14], [0.18, -0.22], [0, -0.34], [0.3, -0.04], [-0.32, 0.0]]) { ellipse(g, s * dx, s * dy, s * 0.06, s * 0.05); g.fill() }
+      for (let k = 0; k < 4; k++) { const a = t * 1.4 + (k / 4) * Math.PI * 2; g.fillStyle = 'rgba(186,104,200,0.6)'; ellipse(g, Math.cos(a) * s * 0.44, s * 0.12 + Math.sin(a) * s * 0.16, s * 0.035, s * 0.035); g.fill() }
+      face(g, s, opts.downed ? 'ko' : 'happy')
+      break
+    }
+    case 'pitaya_chronos': {
+      // 凝時火龍果：粉紅果身 + 綠鱗刺 + 旋轉時鐘符號
+      outlined(g, body, gg => ellipse(gg, 0, s * 0.04, s * 0.42, s * 0.46))
+      g.fillStyle = accent
+      for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2; g.save(); g.rotate(a); g.beginPath(); g.moveTo(-s * 0.06, -s * 0.32); g.lineTo(s * 0.06, -s * 0.32); g.lineTo(0, -s * 0.52); g.closePath(); g.fill(); g.restore() }
+      g.strokeStyle = 'rgba(255,255,255,0.85)'; g.lineWidth = s * 0.03
+      g.beginPath(); g.arc(0, -s * 0.04, s * 0.16, 0, Math.PI * 2); g.stroke()
+      g.beginPath(); g.moveTo(0, -s * 0.04); g.lineTo(Math.cos(t * 2 - Math.PI / 2) * s * 0.12, -s * 0.04 + Math.sin(t * 2 - Math.PI / 2) * s * 0.12); g.stroke()
+      g.beginPath(); g.moveTo(0, -s * 0.04); g.lineTo(Math.cos(t * 0.5 - Math.PI / 2) * s * 0.09, -s * 0.04 + Math.sin(t * 0.5 - Math.PI / 2) * s * 0.09); g.stroke()
+      if (opts.downed) { face(g, s, 'ko') } else {
+        g.fillStyle = OUTLINE
+        ellipse(g, -s * 0.16, s * 0.22, s * 0.05, s * 0.06); g.fill(); ellipse(g, s * 0.16, s * 0.22, s * 0.05, s * 0.06); g.fill()
+        g.fillStyle = '#fff'; ellipse(g, -s * 0.14, s * 0.2, s * 0.02, s * 0.02); g.fill(); ellipse(g, s * 0.18, s * 0.2, s * 0.02, s * 0.02); g.fill()
+      }
+      break
+    }
+    case 'pea_archer': {
+      // 神射手豌豆：豆莢身 + 豆粒 + 兜帽 + 弓
+      outlined(g, body, gg => { gg.beginPath(); gg.moveTo(-s * 0.2, s * 0.48); gg.quadraticCurveTo(-s * 0.34, 0, -s * 0.16, -s * 0.4); gg.quadraticCurveTo(0, -s * 0.5, s * 0.16, -s * 0.4); gg.quadraticCurveTo(s * 0.34, 0, s * 0.2, s * 0.48); gg.closePath() })
+      g.fillStyle = accent
+      for (const yy of [-0.12, 0.1, 0.32]) { ellipse(g, 0, s * yy, s * 0.1, s * 0.1); g.fill() }
+      outlined(g, leafC, gg => { gg.beginPath(); gg.moveTo(-s * 0.28, -s * 0.14); gg.quadraticCurveTo(0, -s * 0.56, s * 0.28, -s * 0.14); gg.quadraticCurveTo(s * 0.1, -s * 0.26, 0, -s * 0.24); gg.quadraticCurveTo(-s * 0.1, -s * 0.26, -s * 0.28, -s * 0.14); gg.closePath() }, 2)
+      if (!FBACK) {
+        g.strokeStyle = '#8d6e63'; g.lineWidth = s * 0.045; g.beginPath(); g.arc(s * 0.34, s * 0.06, s * 0.3, -Math.PI * 0.5, Math.PI * 0.5); g.stroke()
+        g.strokeStyle = 'rgba(255,255,255,0.6)'; g.lineWidth = s * 0.015; g.beginPath(); g.moveTo(s * 0.34, s * 0.06 - s * 0.3); g.lineTo(s * 0.34, s * 0.06 + s * 0.3); g.stroke()
+      }
+      if (opts.downed) { face(g, s, 'ko') } else {
+        faceShift(g, s)
+        g.fillStyle = OUTLINE
+        ellipse(g, -s * 0.1, -s * 0.04, s * 0.04, s * 0.05); g.fill(); ellipse(g, s * 0.1, -s * 0.04, s * 0.04, s * 0.05); g.fill()
+        g.restore()
+      }
+      break
+    }
+    case 'garlic_paladin': {
+      // 聖光大蒜：白蒜球身 + 蒜瓣直紋 + 金色光環 + 聖槌
+      outlined(g, body, gg => { gg.beginPath(); gg.moveTo(0, -s * 0.5); gg.quadraticCurveTo(s * 0.44, -s * 0.2, s * 0.4, s * 0.2); gg.quadraticCurveTo(s * 0.3, s * 0.5, 0, s * 0.52); gg.quadraticCurveTo(-s * 0.3, s * 0.5, -s * 0.4, s * 0.2); gg.quadraticCurveTo(-s * 0.44, -s * 0.2, 0, -s * 0.5); gg.closePath() })
+      g.strokeStyle = 'rgba(0,0,0,0.1)'; g.lineWidth = s * 0.025
+      for (const dx of [-0.2, 0, 0.2]) { g.beginPath(); g.moveTo(s * dx, -s * 0.42); g.quadraticCurveTo(s * dx * 1.4, s * 0.1, s * dx, s * 0.48); g.stroke() }
+      outlined(g, leafC, gg => { gg.beginPath(); gg.rect(-s * 0.04, -s * 0.62, s * 0.08, s * 0.16) }, 2)
+      g.strokeStyle = accent; g.lineWidth = s * 0.04; g.shadowColor = accent; g.shadowBlur = 8
+      g.beginPath(); g.ellipse(0, -s * 0.52, s * 0.24, s * 0.08, 0, 0, Math.PI * 2); g.stroke(); g.shadowBlur = 0
+      if (!FBACK) { outlined(g, '#bcaaa4', gg => { gg.beginPath(); gg.rect(s * 0.3, -s * 0.05, s * 0.06, s * 0.4) }, 2); outlined(g, accent, gg => { gg.beginPath(); gg.roundRect(s * 0.22, -s * 0.2, s * 0.24, s * 0.18, s * 0.04) }, 2) }
+      face(g, s, opts.downed ? 'ko' : 'happy')
+      break
+    }
     default:
       outlined(g, body, gg => ellipse(gg, 0, 0, s * 0.46, s * 0.48))
       face(g, s, opts.downed ? 'ko' : 'happy')
@@ -722,6 +1016,43 @@ export function drawEnemy(g: Ctx, kindId: string, size: number, t: number, opts:
       g.beginPath(); g.moveTo(0, -s * 0.36); g.lineTo(0, s * 0.36); g.stroke()
       g.beginPath(); g.arc(0, 0, s * 0.3, Math.PI * 0.15, Math.PI * 0.85); g.stroke()
       angryEyes(g, s * 0.85, -s * 0.08)
+      break
+    }
+    case 'tomato_grunt': {
+      // 番茄兵：紅圓身 + 蒂葉 + 鐵盔
+      outlined(g, body, gg => ellipse(gg, 0, s * 0.04, s * 0.4, s * 0.4))
+      g.fillStyle = '#4c9a52'
+      for (let k = 0; k < 4; k++) { g.save(); g.translate(0, -s * 0.32); g.rotate((k - 1.5) * 0.5); g.beginPath(); g.moveTo(-s * 0.05, 0); g.quadraticCurveTo(0, -s * 0.2, s * 0.05, 0); g.closePath(); g.fill(); g.restore() }
+      outlined(g, '#90a4ae', gg => { gg.beginPath(); gg.arc(0, -s * 0.1, s * 0.34, Math.PI, 0) }, 2)
+      outlined(g, '#607d8b', gg => { gg.beginPath(); gg.rect(-s * 0.36, -s * 0.14, s * 0.72, s * 0.07) }, 1.5)
+      angryEyes(g, s * 0.9, s * 0.08)
+      break
+    }
+    case 'wasp_gunner': {
+      // 毒針蜂：振翅 + 黃黑條紋身 + 尾刺
+      g.fillStyle = 'rgba(255,255,255,0.55)'
+      ellipse(g, -s * 0.24, -s * 0.26 + Math.sin(t * 45) * s * 0.06, s * 0.24, s * 0.1); g.fill()
+      ellipse(g, s * 0.24, -s * 0.26 - Math.sin(t * 45) * s * 0.06, s * 0.24, s * 0.1); g.fill()
+      outlined(g, body, gg => ellipse(gg, 0, s * 0.04, s * 0.3, s * 0.36))
+      g.fillStyle = accent
+      for (const yy of [-0.06, 0.1, 0.24]) { g.beginPath(); g.ellipse(0, s * yy, s * 0.29, s * 0.045, 0, 0, Math.PI * 2); g.fill() }
+      outlined(g, accent, gg => { gg.beginPath(); gg.moveTo(-s * 0.06, s * 0.38); gg.lineTo(s * 0.06, s * 0.38); gg.lineTo(0, s * 0.56); gg.closePath() }, 1.5)
+      angryEyes(g, s * 0.8, -s * 0.12)
+      break
+    }
+    case 'pumpkin_golem': {
+      // 南瓜巨像：厚實南瓜 + 稜線 + 刻出的發光眼嘴
+      outlined(g, body, gg => ellipse(gg, 0, s * 0.05, s * 0.48, s * 0.44))
+      g.strokeStyle = 'rgba(0,0,0,0.22)'; g.lineWidth = s * 0.03
+      for (const dx of [-0.26, -0.09, 0.09, 0.26]) { g.beginPath(); g.moveTo(s * dx, -s * 0.34); g.quadraticCurveTo(s * dx * 1.5, s * 0.05, s * dx, s * 0.45); g.stroke() }
+      outlined(g, accent, gg => { gg.beginPath(); gg.rect(-s * 0.05, -s * 0.5, s * 0.1, s * 0.16) }, 2)
+      g.fillStyle = '#ffca28'; g.shadowColor = '#ff9800'; g.shadowBlur = 9
+      g.beginPath(); g.moveTo(-s * 0.26, -s * 0.08); g.lineTo(-s * 0.06, -s * 0.08); g.lineTo(-s * 0.16, s * 0.08); g.closePath(); g.fill()
+      g.beginPath(); g.moveTo(s * 0.26, -s * 0.08); g.lineTo(s * 0.06, -s * 0.08); g.lineTo(s * 0.16, s * 0.08); g.closePath(); g.fill()
+      g.beginPath()
+      for (let k = 0; k < 5; k++) { const x = -s * 0.26 + k * s * 0.13; g.moveTo(x, s * 0.24); g.lineTo(x + s * 0.065, s * 0.24 - s * 0.1); g.lineTo(x + s * 0.13, s * 0.24) }
+      g.fill()
+      g.shadowBlur = 0
       break
     }
     default:
@@ -1033,7 +1364,13 @@ const ART_ALIAS: Record<string, string> = {
   w_excal: 'w_sword', g_magnum: 'pea_gun', m_sanctuary: 'heal_orb', e_bastion: 'turret_gun',
   y_avalanche: 'ice_shard', t_jackpot: 't_dice', a_phantom: 'knife', s_zantetsu: 's_iai',
   c_colossus: 'c_gauntlet', k_hundred: 'k_fist', d_storm: 'd_thornshot', h_dream: 'h_spore',
-
+  // 致敬型技能英雄的招牌武器沿用既有形狀（色盤仍取自各武器）
+  be_kiwave: 'k_qi', ca_football: 'fireball', cf_jab: 'c_gauntlet', gh_wisp: 'fireball', lk_arc: 'lightning',
+  be_nova: 'k_qi', ca_meteor: 'fireball', cf_dragon: 'c_gauntlet', gh_reaper: 'fireball', lk_storm: 'lightning',
+  vm_fang: 's_kunai', av_orb: 'fireball', vm_nightwing: 's_kunai', av_collapse: 'fireball',
+  as_blade: 's_iai', cg_revolver: 'pea_gun', ms_spawner: 'turret_gun', pc_hourglass: 'ice_shard', pa_bow: 'w_spear',
+  as_tempest: 's_iai', cg_peacemaker: 'pea_gun', ms_myconet: 'turret_gun', pc_eon: 'ice_shard', pa_stormvolley: 'w_spear',
+  gp_hammer: 'hammer', gp_dawnbringer: 'hammer',
 }
 
 /** 武器圖示（size = 直徑基準；t 供旋轉/閃爍動畫）。 */

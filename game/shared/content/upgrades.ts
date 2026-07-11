@@ -104,6 +104,19 @@ export const UPGRADES: UpgradeData[] = [
   U('ch_dur', '尖刺蓄能', '【暴刺榴槤】傷害 +12%、範圍 +10%', 'rare', 'character', { statMods: { damage: 0.12, area: 0.1 }, maxStacks: 3, requirements: ['char:durian_spike'] }),
   U('ch_hemp', '孢子共鳴', '【迷幻大麻】傷害 +12%、範圍 +12%', 'rare', 'character', { statMods: { damage: 0.12, area: 0.12 }, maxStacks: 3, requirements: ['char:hemp_mystic'] }),
   U('ch_kun', '安眠精髓', '【睏寶】炸彈傷害 +14%、火力 +1', 'rare', 'character', { specialEffect: 'kunMastery', statMods: { damage: 0.14 }, maxStacks: 3, requirements: ['char:kunbao'] }),
+  U('ch_bean', '鬥氣共鳴', '【金剛毛豆】傷害 +15%、暴傷 +20%', 'rare', 'character', { statMods: { damage: 0.15, critDamage: 0.2 }, maxStacks: 3, requirements: ['char:bean_saiyan'] }),
+  U('ch_cab', '鐵腿精通', '【鐵腿高麗菜】傷害 +14%、範圍 +10%', 'rare', 'character', { statMods: { damage: 0.14, area: 0.1 }, maxStacks: 3, requirements: ['char:cabbage_striker'] }),
+  U('ch_chili', '拳道精髓', '【拳王辣椒】攻速 +14%、傷害 +8%', 'rare', 'character', { statMods: { attackSpeed: 0.14, damage: 0.08 }, maxStacks: 3, requirements: ['char:chili_boxer'] }),
+  U('ch_ghost', '亡靈共鳴', '【幽靈菇】暴擊率 +10%、吸血 +8%', 'rare', 'character', { statMods: { critChance: 0.1, lifesteal: 0.08 }, maxStacks: 3, requirements: ['char:ghost_shroom'] }),
+  U('ch_leek', '雷道精通', '【疾雷蔥】傷害 +14%、移速 +6%', 'rare', 'character', { statMods: { damage: 0.14, moveSpeed: 0.06 }, maxStacks: 3, requirements: ['char:leek_bolt'] }),
+  U('ch_vamp', '嗜血精通', '【血蝠茄】吸血 +10%、暴擊率 +8%', 'rare', 'character', { statMods: { lifesteal: 0.1, critChance: 0.08 }, maxStacks: 3, requirements: ['char:eggplant_vampire'] }),
+  U('ch_esper', '念力精通', '【念力酪梨】傷害 +14%、範圍 +12%', 'rare', 'character', { statMods: { damage: 0.14, area: 0.12 }, maxStacks: 3, requirements: ['char:avocado_esper'] }),
+  U('ch_blade', '劍心精通', '【千刃蘆筍】暴傷 +30%、攻速 +8%', 'rare', 'character', { statMods: { critDamage: 0.3, attackSpeed: 0.08 }, maxStacks: 3, requirements: ['char:asparagus_blademaster'] }),
+  U('ch_corn', '神槍精通', '【快槍手玉米】暴擊率 +10%、傷害 +10%', 'rare', 'character', { statMods: { critChance: 0.1, damage: 0.1 }, maxStacks: 3, requirements: ['char:corn_gunslinger'] }),
+  U('ch_summon', '菌絲精通', '【孢子召喚菇】召喚物傷害 +20%、工程傷害 +10%', 'rare', 'character', { statMods: { minionDamage: 0.2, engineerDamage: 0.1 }, maxStacks: 3, requirements: ['char:mushroom_summoner'] }),
+  U('ch_chrono', '時之精通', '【凝時火龍果】傷害 +14%、範圍 +12%', 'rare', 'character', { statMods: { damage: 0.14, area: 0.12 }, maxStacks: 3, requirements: ['char:pitaya_chronos'] }),
+  U('ch_arch', '連珠精通', '【神射手豌豆】遠程傷害 +15%、攻速 +8%', 'rare', 'character', { statMods: { rangedDamage: 0.15, attackSpeed: 0.08 }, maxStacks: 3, requirements: ['char:pea_archer'] }),
+  U('ch_pala', '聖光精通', '【聖光大蒜】傷害 +12%、護甲 +2', 'rare', 'character', { statMods: { damage: 0.12, armor: 2 }, maxStacks: 3, requirements: ['char:garlic_paladin'] }),
 
   // ============================== 睏寶專屬（放置炸彈；只在 char:kunbao 上架）
   // 全部走 specialEffect，由 server bombs.ts 讀取——刻意沒有純數值選項。

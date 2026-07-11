@@ -129,6 +129,30 @@ export function endlessAffixCount(wave: number): number {
  *  技能傷害升級/寶箱選項不該出現在這些角色身上（槍手=火力全開純攻速、戰士=盾牌衝鋒）。 */
 export const NO_SKILL_DMG_ACTIVES = new Set(['rapidfire', 'bulwark', 'placeBomb'])
 
+/** 修羅武僧「真氣」資源：擊殺凝聚，氣爆拳一次消耗全部（氣越多越痛）。 */
+export const CHI = {
+  max: 100,           // 真氣上限
+  perKill: 6,         // 每擊殺 +6
+  eliteBonus: 10,     // 菁英額外 +10
+  bossBonus: 40,      // Boss 額外 +40
+} as const
+
+/** 金剛毛豆「超覺醒」：越接近死亡越強（狂戰士被動 superSurge）＋變身型爆發傷害 buff。 */
+export const SURGE = {
+  lowHpBonusMax: 0.6,   // 生命歸零時的最大傷害加成（+60%）
+  lowHpFrom: 0.6,       // 生命低於此比例才開始加成（滿血→0，60% 血→開始長）
+} as const
+
+/** 拳王辣椒「連段」量表（comboMeter）：命中累積、閒置衰減，傷害隨連段成長；滿檔奧義變超必殺。 */
+export const COMBO = {
+  max: 100,
+  perHit: 4,            // 每次命中 +4
+  killBonus: 8,         // 擊殺額外 +8
+  idleGrace: 1.4,       // 停手多久後開始衰減（秒）
+  decayPerSec: 22,      // 衰減速度（/秒）
+  dmgPerMeter: 0.005,   // 每點連段 +0.5% 傷害（滿檔 +50%）
+} as const
+
 // ------------------------------------------------- 玩家 / 經驗 / 復活
 
 // 怪物密度 ×2 → 每波擊殺數約 ×2。升級曲線同步上調（約 ×1.5），讓每波升的等級數

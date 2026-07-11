@@ -94,6 +94,26 @@ export const ENEMIES: EnemyData[] = [
     params: { ringRadius: 64, ringWidth: 12, orbs: 3, spin: 2.4 },
     tags: ['tanky', 'orbit'], tier: 2, minWave: 7, palette: ['#ffca7a', '#8a5a1e'],
   },
+  // ── 新增怪物（2026-07-11；沿用既有 AI behavior，新增美術）
+  {
+    // 番茄兵：成群衝鋒的紅番茄步兵，戴著鐵盔——早期充數的雜兵海
+    id: 'tomato_grunt', name: '番茄兵', baseHp: 15, speed: 96, damage: 7, radius: 17,
+    scoreValue: 12, coinChance: 0.15, xpSize: 1, behavior: 'chase',
+    tags: ['basic'], tier: 1, minWave: 3, palette: ['#e53935', '#8e2420'],
+  },
+  {
+    // 毒針蜂：與玩家保持距離、連射毒針的黃黑胡蜂，被貼近就後退
+    id: 'wasp_gunner', name: '毒針蜂', baseHp: 18, speed: 132, damage: 8, radius: 15,
+    scoreValue: 26, coinChance: 0.22, xpSize: 2, behavior: 'kiter',
+    params: { shootCd: 1.7, shootRange: 380, projSpeed: 300, fleeRange: 220 },
+    tags: ['ranged', 'fast'], tier: 2, minWave: 6, palette: ['#fbc02d', '#4e342e'],
+  },
+  {
+    // 南瓜巨像：龜速但血厚力大的南瓜石像，一拳砸死人——後期的移動路障
+    id: 'pumpkin_golem', name: '南瓜巨像', baseHp: 120, speed: 40, damage: 22, radius: 30,
+    scoreValue: 48, coinChance: 0.4, xpSize: 3, behavior: 'tank',
+    tags: ['tanky', 'heavy'], tier: 3, minWave: 8, palette: ['#ef6c00', '#4e342e'],
+  },
 ]
 
 export const ENEMY_MAP = new Map(ENEMIES.map(e => [e.id, e]))

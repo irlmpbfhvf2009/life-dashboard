@@ -2,7 +2,7 @@
 // 加機制 = 在這裡（或 enemies.ts 的擊殺類）寫一次 hook。
 // 命中結果全部在 server 判定；client 只畫視覺投射物。
 import { weaponStatsAt } from '../../../shared/content/index'
-import { ARENA } from '../../../shared/balance'
+import { ARENA, SURGE, COMBO } from '../../../shared/balance'
 import type { WeaponStats } from '../../../shared/types'
 import type { SPlayer, OwnedWeapon, SProjectile, SEnemy, SMine } from './state'
 import type { Game } from './game'
@@ -113,6 +113,19 @@ export function rollDamage(g: Game, p: SPlayer, base: number, critMod = 1, force
   // 力場護盾：目前護盾越滿，傷害越高（最多 +50%）
   if (eff(p, 'shieldToDamage') && p.shield > 0) {
     mult *= 1 + Math.min(0.5, p.shield / Math.max(1, p.stats.maxHp) * 0.5)
+  }
+  // 金剛毛豆：超覺醒鬥氣——生命越低傷害越高（60% 血以下開始長，力竭時 +60%）
+  if (p.char.passive.effect === 'superSurge') {
+    const hpPct = p.hp / Math.max(1, p.stats.maxHp)
+    if (hpPct < SURGE.lowHpFrom) mult *= 1 + SURGE.lowHpBonusMax * (1 - hpPct / SURGE.lowHpFrom)
+  }
+  // 變身類傷害 buff（金剛毛豆超覺醒 / 拳王辣椒爆氣）
+  if (p.buffs.surgeUntil > g.time) mult *= 1 + p.buffs.surgeAmt
+  // 拳王辣椒：連段量表——攻擊累積、閒置衰減，連段越高傷害越高（最高 +50%）
+  if (p.char.passive.effect === 'comboMeter') {
+    mult *= 1 + p.chi * COMBO.dmgPerMeter
+    p.chi = Math.min(COMBO.max, p.chi + COMBO.perHit)
+    p.chiDecayAt = g.time + COMBO.idleGrace
   }
   // 暴擊率 = 屬性 + 暫時 buff（賭徒幸運爆發等）
   const critCh = p.stats.critChance + (p.buffs.critUntil > g.time ? p.buffs.critAmt : 0)

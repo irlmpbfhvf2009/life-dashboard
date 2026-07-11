@@ -2,7 +2,7 @@
 import { ENEMY_MAP, TIER_COST, AFFIXES, AFFIX_MAP, weaponStatsAt } from '../../../shared/content/index'
 import {
   PLAYER_SCALING, DIFFICULTIES, enemyHpScale, enemyDmgScale, enemySpeedScale,
-  eliteChance, endlessAffixCount, ARENA, caps, ENEMY_SPEED_MULT, coinWaveMult,
+  eliteChance, endlessAffixCount, ARENA, caps, ENEMY_SPEED_MULT, coinWaveMult, CHI,
 } from '../../../shared/balance'
 import { weightedR } from '../../../shared/rng'
 import type { EnemyData } from '../../../shared/types'
@@ -561,6 +561,9 @@ export function killEnemy(g: Game, e: SEnemy, byPlayerId: string | null, byWeapo
 
   if (p) {
     p.wave.kills++; p.total.kills++
+    // 修羅武僧：擊殺凝聚真氣（菁英/Boss 更多）——氣爆拳的燃料。
+    // 注意：角色被動走 p.char.passive.effect，不在 p.effects（那是買來的升級）。
+    if (p.char.passive.effect === 'chiBuild') p.chi = Math.min(CHI.max, p.chi + CHI.perKill + (e.data.tier >= 3 ? CHI.eliteBonus : 0) + (e.elite ? CHI.eliteBonus : 0))
     if (p.stats.lifeOnKill) g.healEv(p, p.stats.lifeOnKill)
     // 擊殺回盾（力場護盾流）
     if (eff(p, 'shieldOnKill')) p.shield += 2 * eff(p, 'shieldOnKill')

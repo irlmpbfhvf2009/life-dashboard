@@ -7,7 +7,7 @@ import type {
 import {
   ARENA, TICK_HZ, SNAP_HZ, PLAYER_SCALING, MODE_WAVES, spawnWindow,
   isBossWave, spawnBudget, REVIVES_PER_MODE, TEAM_REVIVE, DOWNED,
-  caps as capsOf, EVENT_RULES, xpForLevel,
+  caps as capsOf, EVENT_RULES, xpForLevel, COMBO,
 } from '../../../shared/balance'
 import {
   CHARACTER_MAP, WEAPON_MAP, ZONES, ZONE_MAP, ZONE_ORDER, EVENTS,
@@ -147,9 +147,10 @@ export class Game {
         status: 'alive', hp: 1, shield: 0, gold: 8, xp: 0, level: 1, pendingLevelups: 0,
         stats: null as never,
         skillCdLeft: 0, skillCharges: 1, skillMaxCharges: 1,
-        buffs: { hasteUntil: 0, hasteAmt: 0, rageUntil: 0, rageAmt: 0, critUntil: 0, critAmt: 0, invulnUntil: 0, shieldNextWave: 0 },
+        buffs: { hasteUntil: 0, hasteAmt: 0, rageUntil: 0, rageAmt: 0, critUntil: 0, critAmt: 0, surgeUntil: 0, surgeAmt: 0, invulnUntil: 0, shieldNextWave: 0 },
         dashUntil: 0, dashVx: 0, dashVy: 0,
         bulwarkUntil: 0, bulwarkVx: 0, bulwarkVy: 0,
+        chi: 0, chiDecayAt: 0,
         drowsy: 0, wakeLockUntil: 0, alarmUntil: 0, deathSyncAt: 0, freeBombs: 0,
         kbVx: 0, kbVy: 0, kbUntil: 0,
         downedCount: 0, reviveProgress: 0, bleedOutAt: 0, lastHitAt: -99, fogTick: 0,
@@ -274,7 +275,7 @@ export class Game {
       // （例如殘留的盾牌衝鋒/衝刺會讓角色自己往施放方向走，直到重新施放技能才好）
       p.dashUntil = 0; p.dashVx = 0; p.dashVy = 0
       p.bulwarkUntil = 0; p.bulwarkVx = 0; p.bulwarkVy = 0
-      p.buffs.hasteUntil = 0; p.buffs.rageUntil = 0; p.buffs.critUntil = 0; p.buffs.invulnUntil = 0
+      p.buffs.hasteUntil = 0; p.buffs.rageUntil = 0; p.buffs.critUntil = 0; p.buffs.invulnUntil = 0; p.buffs.surgeUntil = 0
       p.kbUntil = 0; p.wakeLockUntil = 0; p.alarmUntil = 0; p.deathSyncAt = 0
       p.fx = ''; p.fxUntil = 0
       p.lastHitAt = -99
@@ -618,6 +619,21 @@ export class Game {
 
       // 睏寶「夢囈引信」：靜止累積睡意、移動流失、受擊歸零（放彈/火力由 bombs.buildSpec 讀）
       drowsyTick(this, p, dt, moved)
+
+      // 拳王辣椒「連段」：停手 idleGrace 秒後開始衰減
+      if (p.char.passive.effect === 'comboMeter' && this.time > p.chiDecayAt && p.chi > 0) {
+        p.chi = Math.max(0, p.chi - COMBO.decayPerSec * dt)
+      }
+      // 幽靈菇「虛體漂移」：期間內周身怨氣持續灼傷並吸取貼身敵人的生命（跟著幽靈移動）
+      if (p.fx === 'phase' && p.fxUntil > now) {
+        const prm = p.char.active.params ?? {}
+        const r = (prm.radius ?? 130) * p.stats.area
+        for (const e of this.enemies) {
+          if (e.hp <= 0 || dist2(e.x, e.y, p.x, p.y) > r * r) continue
+          const dealt = damageEnemyImpl(this, e, (prm.dps ?? 16) * p.stats.damage * dt, { ownerId: p.id, srcX: p.x, srcY: p.y })
+          if (dealt > 0) healPlayer(this, p, dealt * (prm.leech ?? 0.4))
+        }
+      }
 
       // 回血 / 光環 / 詛咒流失
       p.regenTick -= dt
@@ -1112,6 +1128,276 @@ export class Game {
         })
         break
       }
+      case 'chiBurst': {
+        // 修羅武僧：氣爆拳 — 灌注全部真氣轟出一擊，對最近的敵人(及近旁)造成 base + 氣×perChi 的巨傷。
+        // 氣越多越痛；施放後真氣歸零。這是他的「攢氣→一發入魂」爆發時刻。
+        const power = ((prm.base ?? 40) + p.chi * (prm.perChi ?? 2.2)) * p.stats.damage * sp
+        p.chi = 0
+        const radius = (prm.radius ?? 90) * p.stats.area * this.skillRadiusScale(p)
+        let tx = aim?.x ?? p.lastX, ty = aim?.y ?? p.lastY
+        let nearest: SEnemy | null = null, best = Infinity
+        for (const e of this.enemies) {
+          if (e.hp <= 0) continue
+          const d = dist2(e.x, e.y, tx, ty)
+          if (d < best) { best = d; nearest = e }
+        }
+        if (nearest) { tx = nearest.x; ty = nearest.y }
+        this.ev({ t: 'aoe', x: Math.round(tx), y: Math.round(ty), r: Math.round(radius), kind: 'pulse' })
+        for (const e of this.enemies) {
+          if (e.hp <= 0) continue
+          const center = e === nearest
+          if (!center && dist2(e.x, e.y, tx, ty) > radius * radius) continue
+          const [kx, ky] = norm(e.x - tx, e.y - ty)
+          damageEnemyImpl(this, e, power * (center ? 1 : 0.5), { ownerId: p.id, crit: this.rng() < p.stats.critChance, knockX: kx * (prm.knockback ?? 200), knockY: ky * (prm.knockback ?? 200), srcX: tx, srcY: ty })
+        }
+        if (this.boss && dist2(this.boss.x, this.boss.y, tx, ty) < radius * radius) damageBoss(this, power, p.id, tx, ty)
+        break
+      }
+      case 'surge': {
+        // 金剛毛豆：超覺醒 — 金光爆發變身，短時間全能力狂飆、震開四周並回血
+        const dur = prm.duration ?? 7
+        p.buffs.surgeUntil = this.time + dur
+        p.buffs.surgeAmt = prm.dmg ?? 0.6
+        p.buffs.rageUntil = this.time + dur
+        p.buffs.rageAmt = prm.atk ?? 0.4
+        p.buffs.hasteUntil = this.time + dur
+        p.buffs.hasteAmt = prm.move ?? 0.2
+        healPlayer(this, p, p.stats.maxHp * (prm.heal ?? 0.15))
+        p.fx = 'surge'; p.fxUntil = this.time + dur
+        const radius = (prm.radius ?? 190) * p.stats.area * this.skillRadiusScale(p)
+        this.ev({ t: 'aoe', x: Math.round(p.x), y: Math.round(p.y), r: Math.round(radius), kind: 'surge' })
+        for (const e of this.enemies) {
+          if (e.hp <= 0 || dist2(e.x, e.y, p.x, p.y) > radius * radius) continue
+          const [kx, ky] = norm(e.x - p.x, e.y - p.y)
+          damageEnemyImpl(this, e, 22 * p.stats.damage * sp, { ownerId: p.id, knockX: kx * (prm.knockback ?? 260), knockY: ky * (prm.knockback ?? 260), srcX: p.x, srcY: p.y })
+        }
+        break
+      }
+      case 'megaKick': {
+        // 鐵腿高麗菜：大力金剛腿 — 沿瞄準方向犁出一條火路（膠囊判定），末端大爆炸
+        const [nx, ny] = norm((aim?.x ?? p.lastX) - p.x, (aim?.y ?? p.lastY) - p.y)
+        const range = (prm.range ?? 640) * (0.7 + 0.3 * p.stats.area)
+        const width = (prm.width ?? 92) * p.stats.area
+        const endX = clamp(p.x + nx * range, 26, ARENA.w - 26), endY = clamp(p.y + ny * range, 26, ARENA.h - 26)
+        const dmg = (prm.damage ?? 40) * p.stats.damage * sp
+        // 火路上的火焰拖尾（沿線多個閃光，末端爆炸）
+        for (let k = 1; k <= 6; k++) {
+          this.ev({ t: 'aoe', x: Math.round(p.x + nx * range * (k / 6)), y: Math.round(p.y + ny * range * (k / 6)), r: 26, kind: 'flash' })
+        }
+        const hitLine = (ex: number, ey: number, er: number): boolean => {
+          const proj = Math.max(0, Math.min(range, (ex - p.x) * nx + (ey - p.y) * ny))
+          const cx = p.x + nx * proj, cy = p.y + ny * proj
+          return dist2(ex, ey, cx, cy) <= (width + er) ** 2
+        }
+        for (const e of this.enemies) {
+          if (e.hp <= 0 || !hitLine(e.x, e.y, e.radius)) continue
+          damageEnemyImpl(this, e, dmg, { ownerId: p.id, crit: this.rng() < p.stats.critChance, knockX: nx * (prm.knockback ?? 340), knockY: ny * (prm.knockback ?? 340), srcX: p.x, srcY: p.y })
+        }
+        const radius = (prm.radius ?? 150) * p.stats.area * this.skillRadiusScale(p)
+        this.ev({ t: 'aoe', x: Math.round(endX), y: Math.round(endY), r: Math.round(radius), kind: 'explosion' })
+        for (const e of this.enemies) {
+          if (e.hp <= 0 || dist2(e.x, e.y, endX, endY) > radius * radius) continue
+          const [kx, ky] = norm(e.x - endX, e.y - endY)
+          damageEnemyImpl(this, e, dmg, { ownerId: p.id, knockX: kx * 220, knockY: ky * 220, srcX: endX, srcY: endY })
+        }
+        if (this.boss) {
+          if (hitLine(this.boss.x, this.boss.y, this.boss.data.radius) || dist2(this.boss.x, this.boss.y, endX, endY) < radius * radius) {
+            damageBoss(this, dmg, p.id, p.x, p.y)
+          }
+        }
+        break
+      }
+      case 'risingFist': {
+        // 拳王辣椒：焰昇拳 — 連段滿檔時橫掃全場的超必殺，否則猛竄一記挑飛上鉤拳
+        if (p.chi >= COMBO.max) {
+          p.chi = 0
+          const radius = (prm.superRadius ?? 520) * p.stats.area * this.skillRadiusScale(p)
+          this.ev({ t: 'aoe', x: Math.round(p.x), y: Math.round(p.y), r: Math.round(radius), kind: 'pulse' })
+          for (const e of this.enemies) {
+            if (e.hp <= 0 || dist2(e.x, e.y, p.x, p.y) > radius * radius) continue
+            const [kx, ky] = norm(e.x - p.x, e.y - p.y)
+            damageEnemyImpl(this, e, (prm.superDmg ?? 90) * p.stats.damage * sp, { ownerId: p.id, crit: this.rng() < p.stats.critChance, knockX: kx * 320, knockY: ky * 320 - 200, srcX: p.x, srcY: p.y })
+          }
+          if (this.boss && dist2(this.boss.x, this.boss.y, p.x, p.y) < radius * radius) damageBoss(this, (prm.superDmg ?? 90) * p.stats.damage * sp, p.id, p.x, p.y)
+          this.toastTo(p, '🔥 連段爆發：焰昇拳超必殺！', 'good')
+        } else {
+          const [nx, ny] = norm((aim?.x ?? p.lastX) - p.x, (aim?.y ?? p.lastY) - p.y)
+          const dur = 0.25
+          p.dashUntil = this.time + dur
+          p.dashVx = nx * (prm.dist ?? 300) / dur
+          p.dashVy = ny * (prm.dist ?? 300) / dur
+          p.fx = 'dash'; p.fxUntil = this.time + dur
+          const radius = (prm.radius ?? 120) * p.stats.area * this.skillRadiusScale(p)
+          this.ev({ t: 'aoe', x: Math.round(p.x + nx * 70), y: Math.round(p.y + ny * 70), r: Math.round(radius), kind: 'slash' })
+          for (const e of this.enemies) {
+            if (e.hp <= 0 || dist2(e.x, e.y, p.x, p.y) > radius * radius) continue
+            const [kx, ky] = norm(e.x - p.x, e.y - p.y)
+            damageEnemyImpl(this, e, (prm.damage ?? 34) * p.stats.damage * sp, { ownerId: p.id, crit: this.rng() < p.stats.critChance, knockX: kx * (prm.knockback ?? 340), knockY: ky * (prm.knockback ?? 340) - 220, srcX: p.x, srcY: p.y })
+          }
+        }
+        break
+      }
+      case 'phaseShift': {
+        // 幽靈菇：虛體漂移 — 無敵 + 加速穿行；周身怨氣的持續灼傷/吸血在 tick 處理
+        const dur = prm.duration ?? 3
+        p.buffs.invulnUntil = this.time + dur
+        p.buffs.hasteUntil = this.time + dur
+        p.buffs.hasteAmt = prm.move ?? 0.4
+        p.fx = 'phase'; p.fxUntil = this.time + dur
+        const radius = (prm.radius ?? 130) * p.stats.area * this.skillRadiusScale(p)
+        this.ev({ t: 'aoe', x: Math.round(p.x), y: Math.round(p.y), r: Math.round(radius), kind: 'haze' })
+        break
+      }
+      case 'blink': {
+        // 疾雷蔥：雷閃步 — 瞬移到瞄準點，沿途落雷連鎖電擊
+        const [nx, ny] = norm((aim?.x ?? p.lastX) - p.x, (aim?.y ?? p.lastY) - p.y)
+        const d = prm.dist ?? 340
+        const sx = p.x, sy = p.y
+        p.x = clamp(p.x + nx * d, 26, ARENA.w - 26)
+        p.y = clamp(p.y + ny * d, 26, ARENA.h - 26)
+        p.lastX = p.x; p.lastY = p.y
+        p.fx = 'dash'; p.fxUntil = this.time + 0.2
+        const dmg = (prm.damage ?? 30) * p.stats.damage * sp
+        const zr = (prm.radius ?? 90)
+        const zapped = new Set<number>()
+        const steps = 5
+        for (let k = 0; k <= steps; k++) {
+          const px = sx + (p.x - sx) * (k / steps), py = sy + (p.y - sy) * (k / steps)
+          this.ev({ t: 'aoe', x: Math.round(px), y: Math.round(py), r: 60, kind: 'lightning' })
+          for (const e of this.enemies) {
+            if (e.hp <= 0 || zapped.has(e.i) || dist2(e.x, e.y, px, py) > zr * zr) continue
+            zapped.add(e.i)
+            damageEnemyImpl(this, e, dmg, { ownerId: p.id, crit: this.rng() < p.stats.critChance, srcX: px, srcY: py })
+          }
+        }
+        this.ev({ t: 'aoe', x: Math.round(p.x), y: Math.round(p.y), r: Math.round(zr * p.stats.area * this.skillRadiusScale(p)), kind: 'lightning' })
+        if (this.boss && dist2(this.boss.x, this.boss.y, p.x, p.y) < 210 * 210) damageBoss(this, dmg, p.id, p.x, p.y)
+        break
+      }
+      case 'bloodNova': {
+        // 血蝠茄：血祭爆發 — 猩紅血浪重擊四周，依命中數大量吸血
+        const radius = (prm.radius ?? 200) * p.stats.area * this.skillRadiusScale(p)
+        this.ev({ t: 'aoe', x: Math.round(p.x), y: Math.round(p.y), r: Math.round(radius), kind: 'explosion' })
+        const leech = prm.leech ?? 0.6
+        for (const e of this.enemies) {
+          if (e.hp <= 0 || dist2(e.x, e.y, p.x, p.y) > radius * radius) continue
+          const [kx, ky] = norm(e.x - p.x, e.y - p.y)
+          const dealt = damageEnemyImpl(this, e, (prm.damage ?? 34) * p.stats.damage * sp, { ownerId: p.id, crit: this.rng() < p.stats.critChance, knockX: kx * (prm.knockback ?? 200), knockY: ky * (prm.knockback ?? 200), srcX: p.x, srcY: p.y })
+          if (dealt > 0) healPlayer(this, p, dealt * leech)
+        }
+        if (this.boss && dist2(this.boss.x, this.boss.y, p.x, p.y) < radius * radius) {
+          const d = (prm.damage ?? 34) * p.stats.damage * sp
+          damageBoss(this, d, p.id, p.x, p.y); healPlayer(this, p, d * leech)
+        }
+        break
+      }
+      case 'singularity': {
+        // 念力酪梨：奇點 — 在瞄準點造念力奇點，把周圍敵人強力吸向中心並壓縮傷害
+        const cx = aim?.x ?? p.lastX, cy = aim?.y ?? p.lastY
+        const radius = (prm.radius ?? 260) * p.stats.area * this.skillRadiusScale(p)
+        this.ev({ t: 'aoe', x: Math.round(cx), y: Math.round(cy), r: Math.round(radius), kind: 'haze' })
+        for (const e of this.enemies) {
+          if (e.hp <= 0 || dist2(e.x, e.y, cx, cy) > radius * radius) continue
+          const [kx, ky] = norm(cx - e.x, cy - e.y)   // 朝中心吸
+          const resist = e.data.tier === 3 ? 0.4 : e.data.tier === 2 ? 0.7 : 1
+          e.kbVx += kx * (prm.pull ?? 520) * resist
+          e.kbVy += ky * (prm.pull ?? 520) * resist
+          damageEnemyImpl(this, e, (prm.damage ?? 26) * p.stats.damage * sp, { ownerId: p.id, srcX: cx, srcY: cy })
+        }
+        if (this.boss && dist2(this.boss.x, this.boss.y, cx, cy) < radius * radius) damageBoss(this, (prm.damage ?? 26) * p.stats.damage * sp, p.id, cx, cy)
+        break
+      }
+      case 'bladeDance': {
+        // 千刃蘆筍：萬刃亂舞 — 瞬間爆發多段連環斬（合計傷害）
+        const radius = (prm.radius ?? 175) * p.stats.area * this.skillRadiusScale(p)
+        const total = (prm.damage ?? 16) * (prm.hits ?? 6) * p.stats.damage * sp
+        this.ev({ t: 'aoe', x: Math.round(p.x), y: Math.round(p.y), r: Math.round(radius), kind: 'slash' })
+        this.ev({ t: 'aoe', x: Math.round(p.x), y: Math.round(p.y), r: Math.round(radius * 0.8), kind: 'slash' })
+        for (const e of this.enemies) {
+          if (e.hp <= 0 || dist2(e.x, e.y, p.x, p.y) > radius * radius) continue
+          const [kx, ky] = norm(e.x - p.x, e.y - p.y)
+          damageEnemyImpl(this, e, total, { ownerId: p.id, crit: this.rng() < p.stats.critChance, knockX: kx * (prm.knockback ?? 140), knockY: ky * (prm.knockback ?? 140), srcX: p.x, srcY: p.y })
+        }
+        if (this.boss && dist2(this.boss.x, this.boss.y, p.x, p.y) < radius * radius) damageBoss(this, total, p.id, p.x, p.y)
+        break
+      }
+      case 'deadeye': {
+        // 快槍手玉米：神準連射 — 自動鎖定最近敵人，連開必中必暴的子彈
+        const shots = prm.shots ?? 8
+        const range = prm.range ?? 520
+        const base = (prm.damage ?? 14) * p.stats.damage * p.stats.critDamage * sp
+        for (let k = 0; k < shots; k++) {
+          let tgt: SEnemy | null = null, best = range * range
+          for (const e of this.enemies) { if (e.hp <= 0) continue; const d = dist2(e.x, e.y, p.x, p.y); if (d < best) { best = d; tgt = e } }
+          if (tgt) {
+            this.ev({ t: 'shoot', id: p.id, w: 'cg_revolver', x: Math.round(p.x), y: Math.round(p.y), tx: Math.round(tgt.x), ty: Math.round(tgt.y), n: 1 })
+            this.ev({ t: 'aoe', x: Math.round(tgt.x), y: Math.round(tgt.y), r: 18, kind: 'flash' })
+            damageEnemyImpl(this, tgt, base, { ownerId: p.id, crit: true, srcX: p.x, srcY: p.y })
+          } else if (this.boss && dist2(this.boss.x, this.boss.y, p.x, p.y) < range * range) {
+            this.ev({ t: 'shoot', id: p.id, w: 'cg_revolver', x: Math.round(p.x), y: Math.round(p.y), tx: Math.round(this.boss.x), ty: Math.round(this.boss.y), n: 1 })
+            damageBoss(this, base, p.id, p.x, p.y)
+          }
+        }
+        break
+      }
+      case 'sporeLegion': {
+        // 孢子召喚菇：孢子軍團 — 一次布下多座孢子砲塔
+        const count = prm.count ?? 3
+        for (let k = 0; k < count; k++) {
+          const a = (k / count) * Math.PI * 2
+          this.turrets.push({
+            x: clamp(p.x + Math.cos(a) * 90, 26, ARENA.w - 26), y: clamp(p.y + Math.sin(a) * 90, 26, ARENA.h - 26),
+            damage: (prm.damage ?? 7) * p.stats.damage * sp * (1 + p.stats.minionDamage), range: prm.range ?? 320,
+            fireCd: 0.5, cdLeft: 0, until: this.time + (prm.duration ?? 12), ownerId: p.id, guard: eff(p, 'turretGuard') > 0,
+          })
+        }
+        this.ev({ t: 'aoe', x: Math.round(p.x), y: Math.round(p.y), r: 80, kind: 'deploy' })
+        break
+      }
+      case 'timeStop': {
+        // 凝時火龍果：凝時領域 — 在瞄準點展開極重減速領域並持續傷害
+        const cx = aim?.x ?? p.lastX, cy = aim?.y ?? p.lastY
+        const radius = (prm.radius ?? 240) * p.stats.area * this.skillRadiusScale(p)
+        const dur = prm.duration ?? 4
+        const slow = prm.slow ?? 0.85
+        this.ev({ t: 'aoe', x: Math.round(cx), y: Math.round(cy), r: Math.round(radius), kind: 'frost' })
+        for (const e of this.enemies) {
+          if (e.hp <= 0 || dist2(e.x, e.y, cx, cy) > radius * radius) continue
+          e.slowUntil = this.time + dur; e.slowPct = Math.max(e.slowPct, slow)
+          damageEnemyImpl(this, e, (prm.damage ?? 14) * p.stats.damage * sp, { ownerId: p.id, srcX: cx, srcY: cy })
+        }
+        this.zones.push({ x: cx, y: cy, radius, dps: (prm.damage ?? 14) * 0.2 * p.stats.damage * sp, hps: 0, until: this.time + dur, ownerId: p.id, kind: 'frost', hostile: false, tick: 0, slowPct: slow, freeze: 0, born: this.time })
+        break
+      }
+      case 'arrowRain': {
+        // 神射手豌豆：箭雨 — 朝瞄準區域降下密集箭雨並留下插箭區
+        const cx = aim?.x ?? p.lastX, cy = aim?.y ?? p.lastY
+        const radius = (prm.radius ?? 220) * p.stats.area * this.skillRadiusScale(p)
+        this.ev({ t: 'aoe', x: Math.round(cx), y: Math.round(cy), r: Math.round(radius), kind: 'spikes' })
+        for (const e of this.enemies) {
+          if (e.hp <= 0 || dist2(e.x, e.y, cx, cy) > radius * radius) continue
+          damageEnemyImpl(this, e, (prm.damage ?? 30) * p.stats.damage * sp, { ownerId: p.id, crit: this.rng() < p.stats.critChance, srcX: cx, srcY: cy })
+        }
+        if (this.boss && dist2(this.boss.x, this.boss.y, cx, cy) < radius * radius) damageBoss(this, (prm.damage ?? 30) * p.stats.damage * sp, p.id, cx, cy)
+        this.zones.push({ x: cx, y: cy, radius, dps: (prm.dps ?? 8) * p.stats.damage * sp, hps: 0, until: this.time + (prm.duration ?? 2), ownerId: p.id, kind: 'spike', hostile: false, tick: 0, born: this.time })
+        break
+      }
+      case 'holyNova': {
+        // 聖光大蒜：聖光爆裂 — 重傷四周敵人並治療範圍內所有存活隊友
+        const radius = (prm.radius ?? 220) * p.stats.area * this.skillRadiusScale(p)
+        this.ev({ t: 'aoe', x: Math.round(p.x), y: Math.round(p.y), r: Math.round(radius), kind: 'frost' })
+        this.ev({ t: 'aoe', x: Math.round(p.x), y: Math.round(p.y), r: Math.round(radius), kind: 'heal' })
+        for (const e of this.enemies) {
+          if (e.hp <= 0 || dist2(e.x, e.y, p.x, p.y) > radius * radius) continue
+          const [kx, ky] = norm(e.x - p.x, e.y - p.y)
+          damageEnemyImpl(this, e, (prm.damage ?? 30) * p.stats.damage * sp, { ownerId: p.id, knockX: kx * (prm.knockback ?? 180), knockY: ky * (prm.knockback ?? 180), srcX: p.x, srcY: p.y })
+        }
+        for (const q of this.players.values()) {
+          if (q.status === 'alive' && dist2(q.x, q.y, p.x, p.y) < radius * radius) healPlayer(this, q, (prm.heal ?? 25) * sp)
+        }
+        if (this.boss && dist2(this.boss.x, this.boss.y, p.x, p.y) < radius * radius) damageBoss(this, (prm.damage ?? 30) * p.stats.damage * sp, p.id, p.x, p.y)
+        break
+      }
     }
   }
 
@@ -1307,6 +1593,7 @@ export class Game {
         dz: isKunbao(p) ? Math.round(p.drowsy) : undefined,
         sc: isKunbao(p) ? p.skillCharges : undefined,
         smc: isKunbao(p) ? p.skillMaxCharges : undefined,
+        chi: (p.char.active.id === 'chiBurst' || p.char.passive.effect === 'comboMeter') ? Math.round(p.chi) : undefined,
       })),
       enemies: this.enemies.map(e => ({
         i: e.i, x: Math.round(e.x), y: Math.round(e.y),

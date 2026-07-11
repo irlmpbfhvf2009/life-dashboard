@@ -238,6 +238,8 @@ const SKILL_EMOJI: Record<string, string> = {
   whirlslash: '🌀', palmquake: '💥', spikecharge: '🦔', hallucinate: '🍃', placeBomb: '💣',
 }
 const ROLE_NAME: Record<string, string> = { tank: '坦克', dps: '輸出', support: '輔助', engineer: '工程', control: '控場', gambler: '賭運' }
+// 隱藏「還沒改完」的角色（重構期一批一批上線）；?debug=1 仍可看到全部方便測試
+const visibleChars = computed(() => CHARACTERS.filter(c => !c.hidden || showDebugBtn.value))
 
 // ---------------------------------------------------------------- 戰鬥
 const gameCanvas = ref<HTMLCanvasElement | null>(null)
@@ -364,6 +366,9 @@ const myChar = computed(() => CHARACTER_MAP.get(gs.begin?.players.find(p => p.id
 const skillCdPct = computed(() => Math.min(1, gs.hud.skillCd / (myChar.value?.active.cooldown ?? 10)))
 // 睏寶：技能沒有冷卻，改用「儲存次數」（場上每有一顆炸彈就少一發）
 const isChargeStock = computed(() => gs.hud.skillCharges >= 0)
+// 資源量表角色（武僧真氣氣爆拳／拳王辣椒連段焰昇拳）——技能鈕外圈畫量環（滿＝最強）
+const isChiSkill = computed(() => (myChar.value?.active.id === 'chiBurst' || myChar.value?.passive.effect === 'comboMeter') && gs.hud.chi >= 0)
+const chiPct = computed(() => Math.min(1, gs.hud.chi / 100))
 const skillLocked = computed(() => (isChargeStock.value ? gs.hud.skillCharges <= 0 : skillCdPct.value > 0))
 const eventName = computed(() => gs.waveInfo?.event ? EVENT_MAP.get(gs.waveInfo.event)?.name : '')
 // 殺光制：非 Boss 波、戰鬥中 → 顯示剩餘怪物數（放怪完＝清光才進下一波）
@@ -887,7 +892,7 @@ const bestWaves = computed(() => ({
       <h2 class="text-center text-xl font-black text-lime-300">選擇你的勇者</h2>
       <div class="mx-auto mt-3 grid w-full max-w-md grid-cols-5 gap-1.5">
         <button
-          v-for="c in CHARACTERS" :key="c.id"
+          v-for="c in visibleChars" :key="c.id"
           class="flex flex-col items-center rounded-lg border p-1 text-center transition active:scale-95"
           :class="pickedChar === c.id ? 'border-lime-400 bg-lime-400/15 shadow-[0_0_16px_rgba(163,230,53,0.25)]' : 'border-white/10 bg-white/5'"
           @click="pickChar(c.id)"
@@ -900,9 +905,13 @@ const bestWaves = computed(() => ({
 
       <template v-if="pickedChar">
         <p class="mx-auto mt-4 max-w-md text-center text-xs leading-snug text-white/60">{{ CHARACTER_MAP.get(pickedChar)?.description }}</p>
-        <h3 v-if="CHARACTER_MAP.get(pickedChar)?.active.id !== 'none'" class="mt-3 text-center text-sm font-black text-amber-300">
-          技能：{{ CHARACTER_MAP.get(pickedChar)?.active.name }} — {{ CHARACTER_MAP.get(pickedChar)?.active.description }}
-        </h3>
+        <div v-if="CHARACTER_MAP.get(pickedChar)?.active.id !== 'none'" class="mx-auto mt-3 max-w-md rounded-xl border border-amber-400/50 bg-amber-500/10 px-3 py-2">
+          <div class="flex items-center gap-1.5">
+            <span class="text-base">{{ SKILL_EMOJI[CHARACTER_MAP.get(pickedChar)?.active.id ?? ''] ?? '✨' }}</span>
+            <span class="text-sm font-black text-amber-300">主動技能・{{ CHARACTER_MAP.get(pickedChar)?.active.name }}</span>
+          </div>
+          <p class="mt-1 text-xs leading-snug text-amber-100/90">{{ CHARACTER_MAP.get(pickedChar)?.active.description }}</p>
+        </div>
         <div class="h-3" />
         <!-- 角色數值 -->
         <div class="mx-auto mt-2 grid w-full max-w-md grid-cols-3 gap-1.5">
@@ -914,7 +923,7 @@ const bestWaves = computed(() => ({
           </div>
         </div>
         <p v-if="CHARACTER_MAP.get(pickedChar)?.weaponClass === 'melee'" class="mt-1.5 text-center text-[11px] font-bold text-emerald-300">🗡️ 只能裝備近戰武器</p>
-        <p class="mt-3 text-center text-xs font-bold text-white/50">選擇初始武器</p>
+        <p class="mt-3 text-center text-xs font-bold text-white/50">選擇初始{{ CHARACTER_MAP.get(pickedChar)?.slotLabel ?? '武器' }}</p>
         <div class="mx-auto mt-2 grid w-full max-w-md grid-cols-3 gap-2">
           <button
             v-for="wid in CHARACTER_MAP.get(pickedChar)?.startWeapons ?? []" :key="wid"
@@ -1128,6 +1137,16 @@ const bestWaves = computed(() => ({
             <circle cx="20" cy="20" r="17" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="4" :stroke-dasharray="`${(1 - skillCdPct) * 107} 107`" />
           </svg>
           <span v-if="!isChargeStock && skillCdPct > 0" class="absolute text-sm font-black text-white">{{ Math.ceil(gs.hud.skillCd) }}</span>
+          <!-- 修羅武僧：真氣量環（金色，滿＝氣爆拳最痛）＋數字 -->
+          <svg v-if="isChiSkill" class="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 40 40">
+            <circle cx="20" cy="20" r="19" fill="none" stroke="rgba(0,0,0,0.35)" stroke-width="2.5" />
+            <circle cx="20" cy="20" r="19" fill="none" stroke="rgb(251,191,36)" stroke-width="2.5" stroke-linecap="round" :stroke-dasharray="`${chiPct * 119} 119`" :class="{ 'veg-chi-full': chiPct >= 1 }" />
+          </svg>
+          <span
+            v-if="isChiSkill"
+            class="absolute -right-1 -top-1 grid h-7 w-7 place-items-center rounded-full border-2 border-black/40 text-[11px] font-black tabular-nums"
+            :class="chiPct >= 0.8 ? 'bg-amber-300 text-amber-950 shadow-[0_0_10px_rgba(251,191,36,0.9)]' : 'bg-amber-900/80 text-amber-100'"
+          >{{ Math.round(gs.hud.chi) }}</span>
           <!-- 睏寶：儲存次數（還能放幾顆炸彈 / 上限） -->
           <span
             v-if="isChargeStock"
@@ -1232,16 +1251,16 @@ const bestWaves = computed(() => ({
               <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">💥暴傷</span> <b>×{{ gs.inter.me.stats.critDamage.toFixed(2) }}</b></div>
               <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">⭕範圍</span> <b>×{{ gs.inter.me.stats.area.toFixed(2) }}</b></div>
               <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">💚回復</span> <b>{{ gs.inter.me.stats.regen.toFixed(1) }}</b></div>
-              <!-- build 擴充軸：只顯示有值的 -->
-              <div v-if="(gs.inter.me.stats.flatDamage ?? 0) > 0" class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">➕固攻</span> <b>{{ gs.inter.me.stats.flatDamage }}</b></div>
-              <div v-if="(gs.inter.me.stats.lifesteal ?? 0) > 0" class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">🩸吸血</span> <b>{{ Math.round(gs.inter.me.stats.lifesteal * 100) }}%</b></div>
-              <div v-if="(gs.inter.me.stats.damageReduction ?? 0) > 0" class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">🧱減免</span> <b>{{ Math.round(gs.inter.me.stats.damageReduction * 100) }}%</b></div>
-              <div v-if="(gs.inter.me.stats.dotDamage ?? 0) > 0" class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">☠️毒傷</span> <b>+{{ Math.round(gs.inter.me.stats.dotDamage * 100) }}%</b></div>
-              <div v-if="(gs.inter.me.stats.minionDamage ?? 0) > 0" class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">🤖召喚</span> <b>+{{ Math.round(gs.inter.me.stats.minionDamage * 100) }}%</b></div>
-              <div v-if="(gs.inter.me.stats.meleeDamage ?? 0) > 0" class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">🗡️近戰</span> <b>+{{ Math.round(gs.inter.me.stats.meleeDamage * 100) }}%</b></div>
-              <div v-if="(gs.inter.me.stats.rangedDamage ?? 0) > 0" class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">🔫遠程</span> <b>+{{ Math.round(gs.inter.me.stats.rangedDamage * 100) }}%</b></div>
-              <div v-if="(gs.inter.me.stats.magicDamage ?? 0) > 0" class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">✨法術</span> <b>+{{ Math.round(gs.inter.me.stats.magicDamage * 100) }}%</b></div>
-              <div v-if="(gs.inter.me.stats.engineerDamage ?? 0) > 0" class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">⚙️工程</span> <b>+{{ Math.round(gs.inter.me.stats.engineerDamage * 100) }}%</b></div>
+              <!-- build 擴充軸：固定全部顯示（含 0），不再「買了才多出來」 -->
+              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">➕固攻</span> <b>{{ gs.inter.me.stats.flatDamage ?? 0 }}</b></div>
+              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">🩸吸血</span> <b>{{ Math.round((gs.inter.me.stats.lifesteal ?? 0) * 100) }}%</b></div>
+              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">🧱減免</span> <b>{{ Math.round((gs.inter.me.stats.damageReduction ?? 0) * 100) }}%</b></div>
+              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">☠️毒傷</span> <b>+{{ Math.round((gs.inter.me.stats.dotDamage ?? 0) * 100) }}%</b></div>
+              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">🤖召喚</span> <b>+{{ Math.round((gs.inter.me.stats.minionDamage ?? 0) * 100) }}%</b></div>
+              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">🗡️近戰</span> <b>+{{ Math.round((gs.inter.me.stats.meleeDamage ?? 0) * 100) }}%</b></div>
+              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">🔫遠程</span> <b>+{{ Math.round((gs.inter.me.stats.rangedDamage ?? 0) * 100) }}%</b></div>
+              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">✨法術</span> <b>+{{ Math.round((gs.inter.me.stats.magicDamage ?? 0) * 100) }}%</b></div>
+              <div class="rounded bg-white/5 px-2 py-1"><span class="text-white/75">⚙️工程</span> <b>+{{ Math.round((gs.inter.me.stats.engineerDamage ?? 0) * 100) }}%</b></div>
             </div>
 
             <!-- 特殊戰力（點一下開關、預設收起）：每項一行不換行；詳細說明用 hover title 帶出 -->
@@ -1333,7 +1352,7 @@ const bestWaves = computed(() => ({
               @click="api.refresh(); sfx.click()"
             >🔄 刷新商店（💰{{ gs.inter.shop.refreshCost }}）</button>
             <!-- 我的武器：點一下選取→下方「售出」鈕再點才賣；🔒＝專屬不可賣 -->
-            <p class="mt-3 text-xs font-bold text-white/40">我的武器（{{ gs.inter.me.weapons.length }}/6，點武器可售出 {{ SELL_PCT_LABEL }}%）</p>
+            <p class="mt-3 text-xs font-bold text-white/40">我的{{ myChar?.slotLabel ?? '武器' }}（{{ gs.inter.me.weapons.length }}/{{ myChar?.slots ?? 6 }}，點一下可售出 {{ SELL_PCT_LABEL }}%）</p>
             <div class="mt-1 flex flex-wrap items-start gap-1.5">
               <div v-for="(w, i) in gs.inter.me.weapons" :key="i" class="flex flex-col items-center gap-0.5">
                 <button
@@ -1473,8 +1492,12 @@ const bestWaves = computed(() => ({
 @keyframes veg-auto-spin { to { transform: rotate(360deg); } }
 .veg-auto-spin { animation: veg-auto-spin 2.4s linear infinite; }
 
+/* 修羅武僧真氣滿：金色氣環脈動 */
+@keyframes veg-chi-full { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+.veg-chi-full { animation: veg-chi-full 0.9s ease-in-out infinite; }
+
 @media (prefers-reduced-motion: reduce) {
   .rar-shine::before { display: none; }
-  .rar-legendary, .grade-pop, .veg-auto-spin { animation: none; }
+  .rar-legendary, .grade-pop, .veg-auto-spin, .veg-chi-full { animation: none; }
 }
 </style>

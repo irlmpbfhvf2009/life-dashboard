@@ -67,6 +67,16 @@ export interface CharacterData {
   affinityTags?: string[]
   /** 初始武器三選一（簽名武器＋親和推薦） */
   startWeapons: string[]
+  /** 配裝格數（gear 欄位上限）。省略＝6（舊行為）。主動型角色未來砍成 3，睏寶炸彈模組維持 6。
+   *  資料驅動：改格數＝改這個數字，不影響其他角色。同一 gear 家族內須一致，跨家族不可比。 */
+  slots?: number
+  /** 隱藏：選角畫面不顯示（重構期用來藏「還沒改完」的角色，一批一批上線）。 */
+  hidden?: boolean
+  /** 專屬 gear 制：商店只出「自己的 gear（charId 綁本人）＋共通被動」，不出共用池武器。
+   *  已重構到新配裝制的角色設 true（睏寶靠 dreamFuse 判定、不需此旗標）。 */
+  exclusiveGear?: boolean
+  /** 配裝格的顯示名（每角色可不同）：武僧＝技能、睏寶＝模組、未來汽車人＝零件。省略＝武器。 */
+  slotLabel?: string
   unlockCondition?: string
   rarity: 'common' | 'rare' | 'epic'
   /** 程式化美術主色盤 [body, accent, leaf] */
@@ -370,6 +380,7 @@ export interface PlayerSnap {
   fx?: string             // 短暫狀態: 'dash'|'rage'|...
   dz?: number             // 睏寶睡意 0~100（client 畫睡意環／Zzz）
   sc?: number; smc?: number   // 睏寶技能儲存次數 / 上限（＝還能放幾顆炸彈）
+  chi?: number            // 修羅武僧真氣 0~100（client 畫氣量表；氣爆拳消耗）
 }
 
 /** 生成時一次送 full spawn（game:ev），之後快照只送位置與血量 */

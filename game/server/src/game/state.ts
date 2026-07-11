@@ -26,6 +26,7 @@ export interface Buffs {
   hasteUntil: number; hasteAmt: number
   rageUntil: number; rageAmt: number
   critUntil: number; critAmt: number   // 暴擊率 buff（賭徒幸運爆發等）
+  surgeUntil: number; surgeAmt: number  // 傷害倍率 buff（金剛毛豆超覺醒／拳王辣椒爆氣等變身類技能）
   invulnUntil: number
   shieldNextWave: number
 }
@@ -72,6 +73,8 @@ export interface SPlayer {
   dashUntil: number; dashVx: number; dashVy: number
   bulwarkUntil: number; bulwarkVx: number; bulwarkVy: number   // 戰士盾牌衝鋒（減傷+推進）
   // 睏寶（dreamFuse）：睡意量表 + 放彈節拍 + 被自己爆風炸飛的擊退
+  chi: number                            // 真氣/連段量表 0~100（武僧擊殺累積；拳王辣椒命中累積、閒置衰減）
+  chiDecayAt: number                     // 拳王辣椒（comboMeter）：此時間後連段量表開始衰減
   drowsy: number                         // 睡意 0~100（靜止累積、移動流失、受擊歸零）
   wakeLockUntil: number                  // 受擊後不能累積睡意到此時間
   alarmUntil: number                     // 貪睡鬧鐘：被打醒後的火力窗口

@@ -35,7 +35,7 @@ interface CEnemy {
 interface CPlayer {
   id: string; name: string; charId: string
   x: number; y: number; tx: number; ty: number
-  status: string; hp: number; mhp: number; sh: number; rp: number; fx?: string; lv: number; dz?: number
+  status: string; hp: number; mhp: number; sh: number; rp: number; fx?: string; lv: number; dz?: number; chi?: number
   // 面向（由畫面上的實際位移推出，平滑過渡）；px/py = 上一幀畫的位置
   dx: number; dy: number; px: number; py: number
 }
@@ -61,6 +61,10 @@ const SKILL_COLOR: Record<string, string> = {
   frostnova: '#a8e0ff', fateflip: '#ffd54f', charge: '#eeeeee', whirlslash: '#ff5252',
   thornsNova: '#66bb6a', palmquake: '#ffca28', spikecharge: '#f0a83e', hallucinate: '#e05fd0',
   placeBomb: '#ffb74d',
+  surge: '#ffd740', megaKick: '#ff7043', risingFist: '#ff5252', phaseShift: '#b39ddb', blink: '#fff176',
+  bloodNova: '#e53935', singularity: '#ba68c8',
+  bladeDance: '#e0f7fa', deadeye: '#ffd54f', sporeLegion: '#ba68c8', timeStop: '#f48fb1', arrowRain: '#a5d6a7',
+  holyNova: '#fff59d',
 }
 
 export class Engine {
@@ -210,7 +214,7 @@ export class Engine {
         this.players.set(ps.id, p)
       }
       p.tx = ps.x; p.ty = ps.y
-      p.status = ps.st; p.hp = ps.hp; p.mhp = ps.mhp; p.sh = ps.sh; p.rp = ps.rp; p.fx = ps.fx; p.lv = ps.lv; p.dz = ps.dz
+      p.status = ps.st; p.hp = ps.hp; p.mhp = ps.mhp; p.sh = ps.sh; p.rp = ps.rp; p.fx = ps.fx; p.lv = ps.lv; p.dz = ps.dz; p.chi = ps.chi
       if (ps.id === gs.playerId) {
         this.serverMyX = ps.x; this.serverMyY = ps.y
         // server 送來的實際移速（含升級/寶箱/加速 buff）——移速加成才會真的變快
@@ -879,6 +883,24 @@ export class Engine {
           g.beginPath(); g.arc(0, 0, rr * 0.35, 0, Math.PI * 2); g.fill()
           break
         }
+        case 'surge': {
+          // 超覺醒：金色擴張衝擊環 + 向上噴發的鬥氣火舌 + 白熱核（爆氣變身）
+          const rr = a.r * (1 - pct * 0.2)
+          g.strokeStyle = `rgba(255,215,64,${pct * 0.9})`; g.lineWidth = 6 * pct + 1
+          g.beginPath(); g.arc(0, 0, rr, 0, Math.PI * 2); g.stroke()
+          g.shadowColor = '#ffd740'; g.shadowBlur = 16
+          const flames = 11
+          for (let k = 0; k < flames; k++) {
+            const ax = (k / (flames - 1) - 0.5) * rr * 1.25
+            const h = rr * (0.5 + Math.random() * 0.7) * pct
+            g.fillStyle = `rgba(255,${200 + Math.floor(Math.random() * 55)},64,${pct * 0.8})`
+            g.beginPath(); g.moveTo(ax - 6, rr * 0.3); g.quadraticCurveTo(ax, rr * 0.3 - h, ax + 6, rr * 0.3); g.closePath(); g.fill()
+          }
+          g.shadowBlur = 0
+          g.fillStyle = `rgba(255,255,255,${pct * 0.85})`
+          g.beginPath(); g.arc(0, 0, 8 + (1 - pct) * 14, 0, Math.PI * 2); g.fill()
+          break
+        }
         case 'mine':
           g.fillStyle = `rgba(255,207,92,${0.6 + Math.sin(this.time * 6) * 0.3})`
           g.beginPath(); g.arc(0, 0, 7, 0, Math.PI * 2); g.fill()
@@ -1121,6 +1143,30 @@ export class Engine {
         const n = Math.hypot(p.dx, p.dy) || 1
         p.dx /= n; p.dy /= n
       }
+      // 金剛毛豆超覺醒：金色鬥氣光環 + 向上竄的火舌（變身期間持續）
+      if (p.fx === 'surge') {
+        g.save()
+        const puls = 0.5 + Math.sin(this.time * 10) * 0.2
+        g.shadowColor = '#ffd740'; g.shadowBlur = 22
+        g.fillStyle = `rgba(255,215,64,${0.12 + puls * 0.1})`
+        g.beginPath(); g.arc(0, -4, 40, 0, Math.PI * 2); g.fill()
+        g.strokeStyle = `rgba(255,235,120,${0.45 + puls * 0.3})`; g.lineWidth = 3; g.lineCap = 'round'
+        for (let k = 0; k < 6; k++) {
+          const ax = (k / 5 - 0.5) * 52
+          g.beginPath(); g.moveTo(ax, 22); g.lineTo(ax + (Math.random() - 0.5) * 8, 22 - 44 - Math.random() * 22); g.stroke()
+        }
+        g.lineCap = 'butt'
+        g.restore()
+      }
+      // 幽靈菇虛體漂移：半透明化 + 淡紫怨氣光環
+      if (p.fx === 'phase') {
+        g.globalAlpha *= 0.5
+        g.save()
+        g.shadowColor = '#b39ddb'; g.shadowBlur = 18
+        g.fillStyle = `rgba(179,157,219,${0.14 + Math.sin(this.time * 8) * 0.06})`
+        g.beginPath(); g.arc(0, 0, 36, 0, Math.PI * 2); g.fill()
+        g.restore()
+      }
       drawCharacter(g, p.charId, 46, this.time, {
         downed,
         moving: p.id === gs.playerId ? this.moveDir.active : undefined,
@@ -1146,6 +1192,26 @@ export class Engine {
             g.fillStyle = '#e6dbff'
             g.fillText('Z', 16 + ph * 16, -30 - ph * 26)
           }
+        }
+        g.restore()
+      }
+      // 修羅武僧真氣：藍色氣功球環繞（每 20 點一顆，最多 5 顆），越滿轉越快、滿時發亮脈動
+      if (p.chi !== undefined && p.chi > 0 && !downed) {
+        const orbs = Math.min(5, Math.round(p.chi / 20))
+        const rr = 33
+        const full = p.chi >= 100
+        const rot = this.time * (full ? 2.6 : 1.6)
+        const pulse = full ? 0.85 + Math.sin(this.time * 8) * 0.15 : 1
+        g.save()
+        for (let k = 0; k < orbs; k++) {
+          const a = rot + (k / orbs) * Math.PI * 2
+          const ox = Math.cos(a) * rr, oy = Math.sin(a) * rr
+          g.beginPath()
+          g.fillStyle = '#7cc4ff'
+          g.shadowColor = '#4a9fe0'; g.shadowBlur = (full ? 12 : 7) * pulse
+          g.arc(ox, oy, 4.6, 0, Math.PI * 2); g.fill()
+          g.beginPath(); g.fillStyle = '#e6f4ff'; g.shadowBlur = 0
+          g.arc(ox - 1.2, oy - 1.2, 1.7, 0, Math.PI * 2); g.fill()
         }
         g.restore()
       }

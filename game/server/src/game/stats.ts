@@ -87,4 +87,4 @@ export function recomputeEffects(p: SPlayer): void {
 }
 
 export const eff = (p: SPlayer, id: string) => p.effects.get(id) ?? 0
-export const maxWeapons = (p: SPlayer) => 6 + (p.effects.has('curseBag') ? 1 : 0)
+export const maxWeapons = (p: SPlayer) => (p.char.slots ?? 6) + (p.effects.has('curseBag') ? 1 : 0)

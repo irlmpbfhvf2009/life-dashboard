@@ -40,7 +40,9 @@ const hasCategoryWeapon = (p: SPlayer, cat: string) => p.weapons.some(w => w.dat
 export function weaponPool(p: SPlayer): WeaponData[] {
   const full = p.weapons.length >= maxWeapons(p)
   const bombOnly = isBombChar(p)
-  return WEAPONS.filter(w => !w.evolvedForm && (!w.charId || w.charId === p.char.id))
+  // 專屬 gear 制（睏寶 / exclusiveGear 角色）：商店只出「自己的 gear」，不出共用池武器。
+  const ownOnly = bombOnly || p.char.exclusiveGear
+  return WEAPONS.filter(w => !w.evolvedForm && (ownOnly ? w.charId === p.char.id : (!w.charId || w.charId === p.char.id)))
     .filter(w => (bombOnly ? w.behavior === 'bombModule' : w.behavior !== 'bombModule'))
     .filter(w => {
       const owned = p.weapons.find(x => x.data.id === w.id)
