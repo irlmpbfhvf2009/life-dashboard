@@ -1495,12 +1495,12 @@ export function drawWeaponIcon(g: Ctx, weaponId: string, size: number, t: number
       outlined(g, acc, gg => { gg.beginPath(); gg.rect(-s * 0.06, s * 0.06, s * 0.12, s * 0.28) }, 2); break
     case 'a_fan':
       for (let k = 0; k < 3; k++) { g.save(); g.rotate((k - 1) * 0.45); outlined(g, col, gg => { gg.beginPath(); gg.moveTo(0, -s * 0.4); gg.lineTo(s * 0.06, s * 0.02); gg.lineTo(-s * 0.06, s * 0.02); gg.closePath() }, 1.5); g.restore() } break
-    case 'a_shuriken': case 'd_spikeorbit': case 's_katana': case 'k_kick': case 'c_whip': case 'h_mirage': {
+    case 'a_shuriken': case 'd_spikeorbit': case 's_katana': case 'c_whip': case 'h_mirage': {
       // 環繞類：主體 + 旋轉外環
       g.save(); g.rotate(t * (weaponId === 'a_shuriken' ? 2 : 1))
       if (weaponId === 'a_shuriken') { g.fillStyle = col; for (let k = 0; k < 4; k++) { const a = k / 4 * Math.PI * 2; g.save(); g.rotate(a); outlined(g, col, gg => { gg.beginPath(); gg.moveTo(0, -s * 0.12); gg.lineTo(s * 0.4, 0); gg.lineTo(0, s * 0.12); gg.closePath() }, 2); g.restore() } g.fillStyle = OUTLINE; ellipse(g, 0, 0, s * 0.08, s * 0.08); g.fill() }
       else if (weaponId === 'c_whip') { g.strokeStyle = col; g.lineWidth = s * 0.06; g.beginPath(); g.arc(0, 0, s * 0.32, 0, Math.PI * 1.4); g.stroke(); for (let k = 0; k < 5; k++) { const a = k / 5 * Math.PI * 1.4; spike(g, acc, Math.cos(a) * s * 0.32, Math.sin(a) * s * 0.32, s * 0.03, s * 0.1, a + Math.PI / 2) } }
-      else { for (let k = 0; k < 3; k++) { const a = k / 3 * Math.PI * 2; g.fillStyle = col; g.save(); g.translate(Math.cos(a) * s * 0.3, Math.sin(a) * s * 0.3); if (weaponId === 'd_spikeorbit') spike(g, col, 0, s * 0.1, s * 0.06, s * 0.22, a + Math.PI / 2); else if (weaponId === 's_katana') { outlined(g, col, gg => { gg.beginPath(); gg.roundRect(-s * 0.03, -s * 0.12, s * 0.06, s * 0.24, s * 0.02) }, 1.5) } else if (weaponId === 'k_kick') { outlined(g, col, gg => ellipse(gg, 0, 0, s * 0.1, s * 0.13), 2) } else { leaf(g, 0, s * 0.06, s * 0.22, col, a) } g.restore() } }
+      else { for (let k = 0; k < 3; k++) { const a = k / 3 * Math.PI * 2; g.fillStyle = col; g.save(); g.translate(Math.cos(a) * s * 0.3, Math.sin(a) * s * 0.3); if (weaponId === 'd_spikeorbit') spike(g, col, 0, s * 0.1, s * 0.06, s * 0.22, a + Math.PI / 2); else if (weaponId === 's_katana') { outlined(g, col, gg => { gg.beginPath(); gg.roundRect(-s * 0.03, -s * 0.12, s * 0.06, s * 0.24, s * 0.02) }, 1.5) } else { leaf(g, 0, s * 0.06, s * 0.22, col, a) } g.restore() } }
       g.restore()
       g.strokeStyle = acc; g.lineWidth = s * 0.02; g.setLineDash([s * 0.06, s * 0.05]); g.beginPath(); g.arc(0, 0, s * 0.34, 0, Math.PI * 2); g.stroke(); g.setLineDash([]); break
     }
