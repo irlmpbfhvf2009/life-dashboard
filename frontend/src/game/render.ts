@@ -50,6 +50,7 @@ const AOE_LIFE: Record<string, number> = {
   explosion: 0.45, poison: 4, heal: 5, fire: 3, frost: 0.7, lightning: 0.35,
   telegraph: 1.4, swing: 0.28, pulse: 0.85, summon: 0.5, mine: 10, deploy: 0.55,
   slash: 0.42, thorns: 0.6, spikes: 0.6, haze: 0.7, cross: 0.5,
+  spiritbomb: 0.9, punch: 0.16, smash: 0.42,
 }
 
 // 技能 id → 顯示名稱（施放時在頭上冒出，仙境傳說式喊招）。由角色資料自動建，改名不用改這裡。
@@ -364,13 +365,18 @@ export class Engine {
         case 'aoe': {
           const life = AOE_LIFE[ev.kind] ?? 0.5
           this.aoes.push({ x: ev.x, y: ev.y, r: ev.r, kind: ev.kind, life, maxLife: life, w: ev.w })
-          if (ev.kind === 'swing' && ev.id && ev.w) this.meleeSwing.set(`${ev.id}:${ev.w}`, this.time)   // 觸發握持武器揮動
+          if ((ev.kind === 'swing' || ev.kind === 'punch' || ev.kind === 'smash') && ev.id && ev.w) this.meleeSwing.set(`${ev.id}:${ev.w}`, this.time)   // 觸發握持武器揮動
           if (ev.kind === 'explosion') { sfx.explosion(); this.shake = Math.min(this.shake + 7, 14); this.burst(ev.x, ev.y, 18, '#ff9f43', 5); this.burst(ev.x, ev.y, 8, '#ffe66d', 3) }
           // 炸彈爆炸刻意不震動螢幕：睏寶一局會炸幾百次，震到會暈
           if (ev.kind === 'cross') { sfx.explosion(); this.burst(ev.x, ev.y, 20, '#ffb74d', 5); this.burst(ev.x, ev.y, 10, '#fff3e0', 3) }
           if (ev.kind === 'frost') sfx.frost()
           if (ev.kind === 'haze') { sfx.haze(); this.burst(ev.x, ev.y, 14, '#e05fd0', 3) }
           if (ev.kind === 'lightning') { sfx.lightning(); this.burst(ev.x, ev.y, 10, '#ffe66d', 4) }
+          // 拳王辣椒連段：輕拳小火花、重拳擊飛＋震屏
+          if (ev.kind === 'punch') { sfx.hit(); this.burst(ev.x, ev.y, 4, '#ffca28', 3.4) }
+          if (ev.kind === 'smash') { sfx.explosion(); this.shake = Math.min(this.shake + 5, 12); this.burst(ev.x, ev.y, 16, '#ff7043', 5.5); this.burst(ev.x, ev.y, 8, '#ffe082', 3.4) }
+          // 金剛毛豆元氣彈：藍白光華大爆炸＋強震屏
+          if (ev.kind === 'spiritbomb') { sfx.explosion(); this.shake = Math.min(this.shake + 12, 20); this.burst(ev.x, ev.y, 30, '#4fc3f7', 7); this.burst(ev.x, ev.y, 16, '#e1f5fe', 4.5); this.burst(ev.x, ev.y, 10, '#ffffff', 2.6) }
           break
         }
         case 'bossSpawn': this.shake = 8; haptics.boss(); break
@@ -787,6 +793,45 @@ export class Engine {
           g.strokeStyle = `rgba(255,255,255,${pct * 0.8})`
           g.lineWidth = 3 * pct + 1
           g.beginPath(); g.arc(0, 0, sw, 0, Math.PI * 2); g.stroke()
+          break
+        }
+        case 'spiritbomb': {
+          // 元氣彈落地：藍白光球 + 白熱核 + 放射光束 + 多重衝擊波環
+          const inv = 1 - pct
+          const rr = a.r * (0.3 + inv * 0.85)
+          g.fillStyle = `rgba(79,195,247,${pct * 0.5})`
+          g.beginPath(); g.arc(0, 0, rr, 0, Math.PI * 2); g.fill()
+          g.fillStyle = `rgba(179,229,252,${pct * 0.7})`
+          g.beginPath(); g.arc(0, 0, rr * 0.6, 0, Math.PI * 2); g.fill()
+          g.fillStyle = `rgba(255,255,255,${pct})`
+          g.beginPath(); g.arc(0, 0, rr * 0.24, 0, Math.PI * 2); g.fill()
+          // 放射光束（緩慢旋轉）
+          g.save(); g.rotate(this.time * 0.6)
+          g.strokeStyle = `rgba(179,229,252,${pct * 0.85})`; g.lineWidth = 3 * pct + 1; g.lineCap = 'round'
+          for (let k = 0; k < 12; k++) { const ang = k / 12 * Math.PI * 2; const len = a.r * (0.55 + inv * 0.95); g.beginPath(); g.moveTo(0, 0); g.lineTo(Math.cos(ang) * len, Math.sin(ang) * len); g.stroke() }
+          g.restore()
+          // 多重衝擊波環
+          for (let i = 0; i < 3; i++) { const p2 = Math.max(0, inv - i * 0.18); const rw = a.r * p2 * 1.35; g.strokeStyle = `rgba(255,255,255,${(1 - p2) * pct * 0.9})`; g.lineWidth = 3; g.beginPath(); g.arc(0, 0, rw, 0, Math.PI * 2); g.stroke() }
+          break
+        }
+        case 'punch': {
+          // 連段輕拳：小型四角衝擊星 + 白核
+          const rr = a.r * (0.5 + (1 - pct) * 0.6)
+          g.strokeStyle = `rgba(255,202,40,${pct})`; g.lineWidth = 3; g.lineCap = 'round'
+          for (let k = 0; k < 4; k++) { const ang = k / 4 * Math.PI * 2 + Math.PI / 4; g.beginPath(); g.moveTo(Math.cos(ang) * rr * 0.3, Math.sin(ang) * rr * 0.3); g.lineTo(Math.cos(ang) * rr, Math.sin(ang) * rr); g.stroke() }
+          g.fillStyle = `rgba(255,245,200,${pct * 0.9})`; g.beginPath(); g.arc(0, 0, rr * 0.28, 0, Math.PI * 2); g.fill()
+          break
+        }
+        case 'smash': {
+          // 連段重勾拳：大衝擊環 + 火橙核 + 放射拳影
+          const inv = 1 - pct
+          const rr = a.r * (0.6 + inv * 0.6)
+          g.strokeStyle = `rgba(255,112,67,${pct * 0.9})`; g.lineWidth = 5 * pct + 2
+          g.beginPath(); g.arc(0, 0, a.r * inv * 1.1, 0, Math.PI * 2); g.stroke()
+          g.fillStyle = `rgba(255,138,80,${pct * 0.5})`; g.beginPath(); g.arc(0, 0, rr * 0.6, 0, Math.PI * 2); g.fill()
+          g.fillStyle = `rgba(255,245,200,${pct * 0.9})`; g.beginPath(); g.arc(0, 0, rr * 0.25, 0, Math.PI * 2); g.fill()
+          g.strokeStyle = `rgba(255,224,130,${pct * 0.85})`; g.lineWidth = 3; g.lineCap = 'round'
+          for (let k = 0; k < 6; k++) { const ang = k / 6 * Math.PI * 2 + this.time; g.beginPath(); g.moveTo(0, 0); g.lineTo(Math.cos(ang) * rr, Math.sin(ang) * rr); g.stroke() }
           break
         }
         case 'flash': {

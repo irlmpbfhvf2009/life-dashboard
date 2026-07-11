@@ -376,23 +376,40 @@ function fireMelee(g: Game, p: SPlayer, w: OwnedWeapon, st: WeaponStats): void {
   const mech = w.data.mech
   const prm = mech?.params ?? {}
   let swingMult = 1
+  let knockMult = 1
+  let aoeKind = 'swing'
   // comboNova：每第 N 擊蓄力橫掃（範圍/傷害放大）
   if (mech?.id === 'comboNova') {
     w.counter++
     if (w.counter % (prm.every ?? 3) === 0) { r *= prm.radiusMult ?? 1.6; swingMult *= prm.dmgMult ?? 1.5 }
+  }
+  // comboChain：街機式三段搓招連段（輕拳→輕拳→重勾拳）。前兩段快而小、第三段重擊放大＋擊飛。
+  if (mech?.id === 'comboChain') {
+    const step = w.counter % 3
+    w.counter++
+    if (step < 2) {
+      r *= 0.9; swingMult *= prm.jab ?? 0.9
+      w.cdLeft = st.cooldown * (prm.jabCd ?? 0.42)   // 輕拳出手快
+      aoeKind = 'punch'
+    } else {
+      r *= prm.heavyR ?? 1.5; swingMult *= prm.heavy ?? 2.6
+      knockMult = prm.heavyKb ?? 4
+      w.cdLeft = st.cooldown * (prm.heavyCd ?? 1.5)   // 重拳收招慢
+      aoeKind = 'smash'
+    }
   }
   const hits = g.enemies.filter(e => e.hp > 0 && dist2(p.x, p.y, e.x, e.y) <= (r + e.radius) ** 2)
   // crowdBonus：掃到越多越痛
   if (mech?.id === 'crowdBonus' && hits.length > 1) {
     swingMult *= 1 + Math.min(prm.cap ?? 0.8, (prm.per ?? 0.08) * (hits.length - 1))
   }
-  g.ev({ t: 'aoe', x: Math.round(p.x), y: Math.round(p.y), r, kind: 'swing', w: w.data.id, id: p.id })
+  g.ev({ t: 'aoe', x: Math.round(p.x), y: Math.round(p.y), r, kind: aoeKind, w: w.data.id, id: p.id })
   for (const e of hits) {
     if (e.hp <= 0) continue
     const { dmg, crit } = rollDamage(g, p, st.damage * swingMult)
     const [kx, ky] = norm(e.x - p.x, e.y - p.y)
     const dealt = damageEnemyImpl(g, e, dmg * meleeMult(p) * enemyMechMult(mech?.id, prm, e), {
-      ownerId: p.id, crit, knockX: kx * st.knockback, knockY: ky * st.knockback, srcX: p.x, srcY: p.y, weaponId: w.data.id,
+      ownerId: p.id, crit, knockX: kx * st.knockback * knockMult, knockY: ky * st.knockback * knockMult, srcX: p.x, srcY: p.y, weaponId: w.data.id,
     })
     onHitMech(g, p.id, w.data.id, mech?.id, prm, e, dealt, crit)
   }
@@ -564,7 +581,7 @@ function projectilesTick(g: Game, dt: number): void {
       pr.hitSet.add(e.i)
       const [kx, ky] = norm(pr.vx, pr.vy)
       if (pr.explodeRadius > 0) {
-        g.ev({ t: 'aoe', x: Math.round(pr.x), y: Math.round(pr.y), r: pr.explodeRadius, kind: 'explosion' })
+        g.ev({ t: 'aoe', x: Math.round(pr.x), y: Math.round(pr.y), r: pr.explodeRadius, kind: pr.weaponId === 'be_spirit' ? 'spiritbomb' : 'explosion' })
         for (const o of g.enemies) {
           if (o.hp <= 0 || dist2(o.x, o.y, pr.x, pr.y) > (pr.explodeRadius + o.radius) ** 2) continue
           damageEnemyImpl(g, o, pr.damage, { ownerId: pr.ownerId, crit: pr.crit, knockX: kx * pr.knockback, knockY: ky * pr.knockback, srcX: pr.x, srcY: pr.y, weaponId: pr.weaponId })
@@ -626,7 +643,7 @@ function projectilesTick(g: Game, dt: number): void {
     }
     // 打 Boss
     if (pr.left > 0 && tryHitBoss(g, pr.x, pr.y, 10)) {
-      if (pr.explodeRadius > 0) g.ev({ t: 'aoe', x: Math.round(pr.x), y: Math.round(pr.y), r: pr.explodeRadius, kind: 'explosion' })
+      if (pr.explodeRadius > 0) g.ev({ t: 'aoe', x: Math.round(pr.x), y: Math.round(pr.y), r: pr.explodeRadius, kind: pr.weaponId === 'be_spirit' ? 'spiritbomb' : 'explosion' })
       let bossDmg = pr.damage
       const mp = pr.mechP ?? {}
       if (pr.mechId === 'bossKiller') bossDmg *= mp.mult ?? 1.5

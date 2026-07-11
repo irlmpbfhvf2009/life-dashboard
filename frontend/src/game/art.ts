@@ -30,15 +30,17 @@ function ellipse(g: Ctx, x: number, y: number, rx: number, ry: number): void {
 // dy < −0.35 ＝ 往上走 → 畫背面（不畫臉，改畫後腦勺）；其餘做 3/4 側臉偏移。
 let FDX = 0, FDY = 1, FBACK = false
 
-/** 後腦勺：蓋掉臉的位置。蔬菜水果沒有頭髮——只要一顆乾淨的光頭 + 一點陰影分出方向就夠了。 */
+/** 後腦勺：往上走時蓋掉臉的位置＝單純的背面。用身體色蓋住五官區，只加低調的後腦陰影，
+ *  不要亮白反光（那會在頭上變成一顆出戲的怪圓圈）。 */
 function backHead(g: Ctx, s: number, body: string): void {
   g.save()
+  // 身體色頭罩：蓋掉臉（含榴槤/大麻/睏寶等自畫五官的角色）
   outlined(g, body, gg => ellipse(gg, 0, -s * 0.02, s * 0.34, s * 0.3), 2)
-  g.fillStyle = 'rgba(0,0,0,0.14)'
-  ellipse(g, 0, -s * 0.02, s * 0.34, s * 0.3); g.fill()
-  // 頭頂反光（讓「這是背面」一眼看得出來，而不是一團暗色）
-  g.fillStyle = 'rgba(255,255,255,0.16)'
-  ellipse(g, 0, -s * 0.16, s * 0.18, s * 0.08); g.fill()
+  // 後腦量感：下緣一抹柔和暗影（後腦勺/髮際），不加高光
+  g.fillStyle = 'rgba(0,0,0,0.13)'
+  ellipse(g, 0, s * 0.08, s * 0.28, s * 0.17); g.fill()
+  g.fillStyle = 'rgba(0,0,0,0.07)'
+  ellipse(g, 0, -s * 0.04, s * 0.32, s * 0.26); g.fill()
   g.restore()
 }
 
@@ -110,9 +112,8 @@ export function drawCharacter(g: Ctx, charId: string, size: number, t: number, o
   const bob = Math.sin(t * (opts.moving ? 11 : 3)) * s * (opts.moving ? 0.05 : 0.03)
   FDX = opts.dir?.x ?? 0
   FDY = opts.dir?.y ?? 1
-  // 往上走不再把整顆頭換成通用光頭（那顆「怪圓圈」所有角色都一樣、很出戲）；
-  // 保留角色本來的臉，只靠 face() 的 3/4 側身偏移表現方向。
-  FBACK = false
+  // 往上走＝單純背面：不畫臉、不畫正面拿的道具，只畫乾淨的後腦勺（backHead，無高光怪圓圈）。
+  FBACK = !opts.downed && FDY < -0.35
   g.save()
   g.translate(0, bob)
   g.rotate(FDX * 0.07)          // 往行進方向微微側身
