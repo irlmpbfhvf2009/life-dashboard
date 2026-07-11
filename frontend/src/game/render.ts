@@ -665,8 +665,22 @@ export class Engine {
         g.restore()
         continue
       }
-      const col = z.k === 'heal' ? '105,240,174' : z.k === 'poison' ? '156,204,101' : z.k === 'fire' ? '255,107,53' : z.k === 'spike' ? '240,168,62' : z.k === 'haze' ? '176,111,224' : '168,224,255'
+      const col = z.k === 'heal' ? '105,240,174' : z.k === 'poison' ? '156,204,101' : z.k === 'fire' ? '255,107,53' : z.k === 'spike' ? '240,168,62' : z.k === 'haze' ? '176,111,224' : z.k === 'shield' ? '33,150,243' : '168,224,255'
       g.save(); g.translate(z.x, z.y)
+      if (z.k === 'shield') {
+        // 護盾結界：藍色力場盾牆（六角力場邊框 + 柔光 + 內層脈動環）
+        g.fillStyle = 'rgba(33,150,243,0.10)'
+        g.beginPath(); g.arc(0, 0, z.r, 0, Math.PI * 2); g.fill()
+        g.strokeStyle = 'rgba(144,202,249,0.7)'; g.lineWidth = 3; g.lineJoin = 'round'
+        g.save(); g.rotate(this.time * 0.3)
+        g.beginPath(); for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2; const px = Math.cos(a) * z.r, py = Math.sin(a) * z.r; k === 0 ? g.moveTo(px, py) : g.lineTo(px, py) } g.closePath(); g.stroke()
+        g.restore()
+        const pulse = 0.72 + Math.sin(this.time * 3) * 0.14
+        g.strokeStyle = 'rgba(225,245,254,0.5)'; g.lineWidth = 2
+        g.beginPath(); g.arc(0, 0, z.r * pulse, 0, Math.PI * 2); g.stroke()
+        g.restore()
+        continue
+      }
       if (z.k === 'haze') {
         // 迷幻孢子雲：翻騰的紫紅色霧氣（三層漩渦）
         for (let ring = 0; ring < 3; ring++) {

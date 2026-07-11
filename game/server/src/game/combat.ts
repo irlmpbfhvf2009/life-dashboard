@@ -531,7 +531,7 @@ function fireZone(g: Game, p: SPlayer, w: OwnedWeapon, st: WeaponStats): void {
   // zone 四把四種玩法：疊毒 / 冰霜凍結 / 雷射遞增 / 地刺脈衝
   const kind = mech?.id === 'frostZone' ? 'frost' as const
     : mech?.id === 'rampZone' ? 'fire' as const
-    : mech?.id === 'pulseZone' ? 'spike' as const
+    : mech?.id === 'pulseZone' ? (w.data.id === 'sw_barrier' ? 'shield' as const : 'spike' as const)
     : 'poison' as const
   g.zones.push({
     x: tgt.e.x, y: tgt.e.y, radius: st.radius ?? 110,

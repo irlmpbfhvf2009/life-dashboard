@@ -175,7 +175,7 @@ export interface SZone {
   dps: number; hps: number
   until: number
   ownerId: string | null
-  kind: 'poison' | 'heal' | 'fire' | 'frost' | 'spike' | 'haze'
+  kind: 'poison' | 'heal' | 'fire' | 'frost' | 'spike' | 'haze' | 'shield'
   hostile: boolean                        // 對玩家有害
   tick: number
   // 武器 mech 分化（zone 四把四種玩法）

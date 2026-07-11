@@ -433,7 +433,7 @@ export interface BossSnap {
 
 // 場上「部署物」——砲塔/地面圈/地雷（持續存在於 server，需每快照送位置才畫得出來）
 export interface TurretSnap { x: number; y: number; g?: 1 }   // g=守護型（優先護隊友）
-export interface ZoneSnap { x: number; y: number; r: number; k: 'poison' | 'heal' | 'fire' | 'frost' | 'spike' | 'haze'; h?: 1 }   // h=1 對玩家有害（危險，畫紅）
+export interface ZoneSnap { x: number; y: number; r: number; k: 'poison' | 'heal' | 'fire' | 'frost' | 'spike' | 'haze' | 'shield'; h?: 1 }   // h=1 對玩家有害（危險，畫紅）
 export interface MineSnap { x: number; y: number; r: number; a?: 1 }   // a=已佈署完成（可觸發）
 /** 睏寶的放置炸彈：f=引信剩餘比例 0~1、r=爆風臂長、x=X型斜臂、s=子炸彈 */
 export interface BombSnap { x: number; y: number; f: number; r: number; x2?: 1; s?: 1; l?: 1 }   // l=橫掃（只有左右兩臂）
