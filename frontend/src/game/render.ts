@@ -1392,7 +1392,7 @@ export class Engine {
             const st = weaponStatsAt(data, w.level)
             drawOrbitWeapon(g, w.id, st.radius ?? 90, Math.max(1, st.projectileCount), this.time)
           } else if (data.behavior === 'drone') {
-            drawDroneCraft(g, droneIdx++, this.time)
+            drawDroneCraft(g, droneIdx++, this.time, w.id)
           } else if (data.behavior === 'melee') {
             // 握持在角色身邊，多把時往下側分散、刀尖朝外
             const spread = meleeCount > 1 ? (meleeIdx / (meleeCount - 1) - 0.5) : 0

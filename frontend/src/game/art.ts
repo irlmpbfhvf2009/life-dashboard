@@ -1960,12 +1960,22 @@ export function drawMeleeHeld(g: Ctx, weaponId: string, t: number): void {
 }
 
 /** 貼身武器視覺：無人機 — 跟著玩家飛的小飛機 */
-export function drawDroneCraft(g: Ctx, idx: number, t: number): void {
+export function drawDroneCraft(g: Ctx, idx: number, t: number, weaponId?: string): void {
   const ang = t * 2.2 + idx * 2.3
   const x = Math.cos(ang) * 52
   const y = Math.sin(ang) * 52 - 30
   g.save()
   g.translate(x, y)
+  // 影忍豆芽的「影分身」：半透明迷你忍者，而非機械無人機
+  if (weaponId === 'nj_clone') {
+    g.globalAlpha = 0.8
+    outlined(g, '#33691e', gg => ellipse(gg, 0, 2, 6, 7), 1.5)          // 身體
+    outlined(g, '#c5e1a5', gg => ellipse(gg, 0, -6, 5, 5), 1.5)         // 頭
+    g.fillStyle = '#455a64'; g.beginPath(); g.roundRect(-5, -8, 10, 2.6, 1); g.fill()  // 護額頭巾
+    g.fillStyle = '#ffca28'; ellipse(g, 0, -6.8, 1.3, 1.3); g.fill()    // 護額金屬片
+    g.strokeStyle = '#212121'; g.lineWidth = 1; g.beginPath(); g.moveTo(-3, -5), g.lineTo(3, -5); g.stroke() // 眼罩縫
+    g.restore(); return
+  }
   // 螺旋槳閃爍
   g.fillStyle = 'rgba(180,230,255,0.4)'
   ellipse(g, 0, -8, 14 * (0.6 + Math.abs(Math.sin(t * 30)) * 0.4), 3); g.fill()
@@ -2005,6 +2015,33 @@ export function drawTurret(g: Ctx, t: number, guard = false): void {
 /** 武器投射物（客戶端純視覺） */
 export function drawProjectile(g: Ctx, weaponId: string, t: number): void {
   // 投射物已被 render 旋轉成「朝上(-y)＝前進方向」
+  // 客製投射物：在 alias 之前攔截（招牌投射物專屬視覺）
+  switch (weaponId) {
+    case 'nj_rasenshuri': {
+      // 螺旋手裏劍：高速旋轉四刃 + 藍白螺旋核
+      g.save(); g.rotate(t * 24)
+      g.fillStyle = '#4fc3f7'
+      for (let k = 0; k < 4; k++) { g.save(); g.rotate(k * Math.PI / 2); g.beginPath(); g.moveTo(0, -10); g.lineTo(2.6, -2); g.lineTo(0, 0); g.lineTo(-2.6, -2); g.closePath(); g.fill(); g.restore() }
+      g.fillStyle = '#e1f5fe'; ellipse(g, 0, 0, 3, 3); g.fill()
+      g.strokeStyle = 'rgba(255,255,255,0.85)'; g.lineWidth = 1.5; g.beginPath(); g.arc(0, 0, 4.6, t * 10, t * 10 + Math.PI * 1.4); g.stroke()
+      g.restore(); return
+    }
+    case 'cf_wave': {
+      // 波動氣浪：藍色新月氣浪（格鬥波動）
+      g.strokeStyle = '#4fc3f7'; g.lineWidth = 5; g.lineCap = 'round'
+      g.beginPath(); g.arc(0, 5, 8, Math.PI * 1.15, Math.PI * 1.85); g.stroke()
+      g.strokeStyle = 'rgba(225,245,254,0.9)'; g.lineWidth = 2
+      g.beginPath(); g.arc(0, 5, 8, Math.PI * 1.2, Math.PI * 1.8); g.stroke()
+      return
+    }
+    case 'be_barrage': {
+      // 連珠氣彈：金色能量彈 + 尾光
+      g.fillStyle = 'rgba(255,224,130,0.5)'; ellipse(g, 0, 4, 2.4, 5); g.fill()
+      g.shadowColor = '#ffe082'; g.shadowBlur = 6
+      g.fillStyle = '#fff59d'; ellipse(g, 0, -2, 3.2, 3.2); g.fill()
+      g.shadowBlur = 0; return
+    }
+  }
   weaponId = ART_ALIAS[weaponId] ?? weaponId
   switch (weaponId) {
     // ---- 槍械子彈 ----
