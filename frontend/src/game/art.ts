@@ -1371,6 +1371,13 @@ const ART_ALIAS: Record<string, string> = {
   as_blade: 's_iai', cg_revolver: 'pea_gun', ms_spawner: 'turret_gun', pc_hourglass: 'ice_shard', pa_bow: 'w_spear',
   as_tempest: 's_iai', cg_peacemaker: 'pea_gun', ms_myconet: 'turret_gun', pc_eon: 'ice_shard', pa_stormvolley: 'w_spear',
   gp_hammer: 'hammer', gp_dawnbringer: 'hammer',
+  // 專屬 gear（exclusiveGear 角色）沿用既有形狀（色盤仍取自各 gear 自己的 palette）
+  mk_chi: 'k_qi', mk_quake: 'k_staff', mk_guard: 'heal_orb',                                  // 武僧豆腐
+  be_barrage: 'k_qi', be_rush: 'k_fist', be_spirit: 'fireball', be_aura: 'k_palm',            // 金剛毛豆
+  cf_wave: 'k_qi', cf_hurricane: 'spin_axe', cf_sweep: 'k_staff', cf_bodyblow: 'k_fist',      // 拳王辣椒
+  st_sweep: 's_odachi', st_thrust: 'w_spear', st_flurry: 's_katana', st_toss: 's_kunai',      // 浪人番茄
+  nj_shuriken: 'a_shuriken', nj_kunai: 's_kunai', nj_clone: 'drone', nj_rasen: 'k_palm', nj_rasenshuri: 'k_qi', // 影忍豆芽
+  sw_bash: 'c_shield', sw_thornguard: 'c_gauntlet', sw_aegis: 'heal_orb', sw_barrier: 'c_spikes', // 盾衛地瓜
 }
 
 /** 武器圖示（size = 直徑基準；t 供旋轉/閃爍動畫）。 */
