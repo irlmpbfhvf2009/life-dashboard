@@ -110,7 +110,9 @@ export function drawCharacter(g: Ctx, charId: string, size: number, t: number, o
   const bob = Math.sin(t * (opts.moving ? 11 : 3)) * s * (opts.moving ? 0.05 : 0.03)
   FDX = opts.dir?.x ?? 0
   FDY = opts.dir?.y ?? 1
-  FBACK = !opts.downed && FDY < -0.35
+  // 往上走不再把整顆頭換成通用光頭（那顆「怪圓圈」所有角色都一樣、很出戲）；
+  // 保留角色本來的臉，只靠 face() 的 3/4 側身偏移表現方向。
+  FBACK = false
   g.save()
   g.translate(0, bob)
   g.rotate(FDX * 0.07)          // 往行進方向微微側身
