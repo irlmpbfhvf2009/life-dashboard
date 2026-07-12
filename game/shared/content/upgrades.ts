@@ -49,7 +49,6 @@ export const UPGRADES: UpgradeData[] = [
   U('luck1', '幸運草', '幸運 +10%（稀有度/掉落判定）', 'rare', 'stat', { statMods: { luck: 0.1 }, maxStacks: 3 }),
 
   // ============================== 武器特化
-  U('wpierce', '穿甲彈頭', '子彈穿透 +1（僅射彈武器）', 'rare', 'weapon', { statMods: { pierce: 1 }, maxStacks: 3, tags: ['bullet'] }),
   U('wproj', '多管改造', '投射物 +1（所有投射武器）', 'epic', 'weapon', { statMods: { projectiles: 1 }, maxStacks: 2 }),
   U('warea', '大爆炸理論', '爆炸/區域範圍 +18%', 'rare', 'weapon', { statMods: { area: 0.18 }, maxStacks: 3, tags: ['explosive', 'zone'] }),
   U('wmelee', '長柄改裝', '近戰範圍 +20%', 'rare', 'weapon', { specialEffect: 'meleeRange', maxStacks: 3, tags: ['melee'] }),

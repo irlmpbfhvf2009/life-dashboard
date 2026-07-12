@@ -30,17 +30,12 @@ function ellipse(g: Ctx, x: number, y: number, rx: number, ry: number): void {
 // dy < −0.35 ＝ 往上走 → 畫背面（不畫臉，改畫後腦勺）；其餘做 3/4 側臉偏移。
 let FDX = 0, FDY = 1, FBACK = false
 
-/** 後腦勺：往上走時蓋掉臉的位置＝單純的背面。用身體色蓋住五官區，只加低調的後腦陰影，
- *  不要亮白反光（那會在頭上變成一顆出戲的怪圓圈）。 */
+/** 後腦勺：往上走時把臉「擦掉」＝單純的背面。純身體色填色蓋住五官，
+ *  不描邊、不高光、不陰影 → 融進頭型、不會有那顆出戲的怪圓圈。 */
 function backHead(g: Ctx, s: number, body: string): void {
   g.save()
-  // 身體色頭罩：蓋掉臉（含榴槤/大麻/睏寶等自畫五官的角色）
-  outlined(g, body, gg => ellipse(gg, 0, -s * 0.02, s * 0.34, s * 0.3), 2)
-  // 後腦量感：下緣一抹柔和暗影（後腦勺/髮際），不加高光
-  g.fillStyle = 'rgba(0,0,0,0.13)'
-  ellipse(g, 0, s * 0.08, s * 0.28, s * 0.17); g.fill()
-  g.fillStyle = 'rgba(0,0,0,0.07)'
-  ellipse(g, 0, -s * 0.04, s * 0.32, s * 0.26); g.fill()
+  g.fillStyle = body
+  ellipse(g, 0, -s * 0.04, s * 0.3, s * 0.27); g.fill()
   g.restore()
 }
 
@@ -2025,6 +2020,14 @@ export function drawProjectile(g: Ctx, weaponId: string, t: number): void {
       g.fillStyle = '#e1f5fe'; ellipse(g, 0, 0, 3, 3); g.fill()
       g.strokeStyle = 'rgba(255,255,255,0.85)'; g.lineWidth = 1.5; g.beginPath(); g.arc(0, 0, 4.6, t * 10, t * 10 + Math.PI * 1.4); g.stroke()
       g.restore(); return
+    }
+    case 'be_spirit': {
+      // 元氣彈：藍白能量球（旋轉光紋）——飛行中由 render 放大
+      g.fillStyle = '#4fc3f7'; ellipse(g, 0, 0, 7, 7); g.fill()
+      g.fillStyle = '#e1f5fe'; ellipse(g, 0, 0, 4.5, 4.5); g.fill()
+      g.fillStyle = '#ffffff'; ellipse(g, -1, -1, 2, 2); g.fill()
+      g.strokeStyle = 'rgba(255,255,255,0.7)'; g.lineWidth = 1; g.beginPath(); g.arc(0, 0, 9, t * 6, t * 6 + Math.PI * 1.3); g.stroke()
+      return
     }
     case 'be_barrage': {
       // 連珠氣彈：金色能量彈 + 尾光

@@ -258,6 +258,7 @@ export interface SBoss {
   skillQueue: string[]
   casting: { skill: string; until: number; x?: number; y?: number; ang?: number } | null
   shield: number
+  shieldUntil: number                     // 護盾逾時自動破的時間（避免玩家不踩符文時 boss 無限呆站）
   stunUntil: number
   chargeVx: number; chargeVy: number; chargeUntil: number
   runeIdxs: number[]                      // 啟動中的符文 objective idx

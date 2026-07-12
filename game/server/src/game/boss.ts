@@ -19,7 +19,7 @@ export function spawnBoss(g: Game, bossId: string): void {
   g.boss = {
     data, x: ARENA.w / 2, y: ARENA.h * 0.28,
     hp, maxHp: hp, phaseIdx: 0, skillTimer: 3, skillQueue: [],
-    casting: null, shield: 0, stunUntil: 0,
+    casting: null, shield: 0, shieldUntil: 0, stunUntil: 0,
     chargeVx: 0, chargeVy: 0, chargeUntil: 0,
     runeIdxs: [], frontAng: Math.PI / 2, touchCd: 0,
   }
@@ -78,10 +78,18 @@ export function bossTick(g: Game, dt: number): void {
     return
   }
 
-  // 符文破盾狀態：不移動，等玩家踩符文
+  // 符文破盾狀態：等玩家踩符文；但逾時自動破盾（不讓玩家不理符文時 boss 無限呆站）
   if (b.shield > 0 && b.runeIdxs.length) {
-    tickRunes(g, b, dt)
-    return
+    if (now > b.shieldUntil) {
+      b.shield = 0
+      for (const o of g.objectives.filter(o => o.t === 'rune')) removeObjective(g, o)
+      b.runeIdxs = []
+      g.ev({ t: 'bossSkill', s: 'shieldBreak' })
+      g.ev({ t: 'toast', msg: '護盾自行潰散！', kind: 'good' })
+    } else {
+      tickRunes(g, b, dt)
+      return
+    }
   }
 
   // 一般移動：慢慢貼近最近玩家 + 接觸傷害
@@ -171,6 +179,7 @@ function executeSkill(g: Game, b: SBoss, skill: string): void {
     case 'shieldRunes': {
       if (b.shield > 0) break
       b.shield = Math.round(b.maxHp * (prm.shieldPct ?? 0.25))
+      b.shieldUntil = g.time + 14   // 逾時自動破盾，避免玩家不踩符文時 boss 無限呆站
       const n = OBJECT_COUNT[players]
       b.runeIdxs = []
       for (let k = 0; k < n; k++) {
@@ -243,6 +252,7 @@ function tickRunes(g: Game, b: SBoss, dt: number): void {
   if (!runes.length) { b.shield = 0; return }
   let allCharged = true
   for (const o of runes) {
+    if (o.pg >= 1) { o.s = 2; continue }   // 已充滿的符文鎖定，不再衰減 → 可逐個踩（單人/走位友善）
     const occupied = [...g.players.values()].some(p => p.status === 'alive' && dist2(p.x, p.y, o.x, o.y) < o.r * o.r)
     if (occupied) o.pg = Math.min(1, o.pg + dt / (prm.channelTime ?? 3))
     else o.pg = Math.max(0, o.pg - dt * 0.35)

@@ -299,15 +299,21 @@ export function enemiesTick(g: Game, dt: number): void {
         break
       }
       case 'kiter': {
-        // 風箏流：太近就後退、太遠就靠近一點，保持在射程內狂丟彈幕
+        // 風箏流：太近就後退、太遠就靠近一點，保持射程內。開火前先亮 0.5 秒紅點預警（原地瞄準）
         const prm = e.data.params!
         if (dd < prm.fleeRange) { e.x -= nx * spd * dt; e.y -= ny * spd * dt }
         else if (dd > prm.shootRange) { e.x += nx * spd * 0.6 * dt; e.y += ny * spd * 0.6 * dt }
-        if (dd <= prm.shootRange && e.actCd <= 0 && tgt.player) {
-          e.actCd = prm.shootCd
-          if (g.enemyProjs.length < caps(g.playerCount).enemyProjectiles) {
+        if (e.windupUntil > now) {
+          // 蓄力瞄準中：原地不動，紅點預警顯示中（玩家可躲）
+        } else if (e.windupUntil > 0) {
+          e.windupUntil = 0
+          if (tgt.player && g.enemyProjs.length < caps(g.playerCount).enemyProjectiles) {
             g.enemyProjs.push({ x: e.x, y: e.y, vx: nx * prm.projSpeed, vy: ny * prm.projSpeed, damage: e.damage, left: 700 })
           }
+        } else if (dd <= prm.shootRange && e.actCd <= 0 && tgt.player) {
+          e.actCd = prm.shootCd
+          e.windupUntil = now + 0.5
+          g.ev({ t: 'aoe', x: Math.round(e.x), y: Math.round(e.y), r: 64, kind: 'telegraph' })
         }
         break
       }

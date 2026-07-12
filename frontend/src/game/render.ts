@@ -787,11 +787,17 @@ export class Engine {
           break
         case 'telegraph': {
           const warn = 1 - pct
-          g.strokeStyle = `rgba(239,83,80,${0.5 + Math.sin(this.time * 14) * 0.3})`
-          g.lineWidth = 3
+          // 外圈粗亮脈動警示環（明顯很多）
+          g.strokeStyle = `rgba(255,60,60,${0.78 + Math.sin(this.time * 16) * 0.22})`
+          g.lineWidth = 4
           g.beginPath(); g.arc(0, 0, a.r, 0, Math.PI * 2); g.stroke()
-          g.fillStyle = `rgba(239,83,80,${0.14 + warn * 0.12})`
+          // 內縮實心：越縮越接近開火
+          g.fillStyle = `rgba(255,40,40,${0.2 + warn * 0.32})`
           g.beginPath(); g.arc(0, 0, a.r * warn, 0, Math.PI * 2); g.fill()
+          // 中央驚嘆號
+          g.fillStyle = `rgba(255,235,120,${0.7 + Math.sin(this.time * 16) * 0.3})`
+          g.font = `bold ${Math.round(a.r * 0.55)}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'
+          g.fillText('!', 0, 0)
           break
         }
         case 'explosion': {
@@ -1251,6 +1257,12 @@ export class Engine {
       g.save()
       g.translate(pr.x, pr.y)
       g.rotate(Math.atan2(pr.vy, pr.vx) + Math.PI / 2)
+      // 元氣彈：邊飛邊蓄能變大（最多約 3.6x）＋藍白光暈，最後命中才爆一個大的
+      if (pr.weapon === 'be_spirit') {
+        const sc = 1 + Math.min((this.time - pr.born) * 1.4, 2.6)
+        g.shadowColor = '#4fc3f7'; g.shadowBlur = 20
+        g.scale(sc, sc)
+      }
       drawProjectile(g, pr.weapon, this.time)
       g.restore()
     }

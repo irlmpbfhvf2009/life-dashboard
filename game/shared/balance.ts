@@ -127,7 +127,8 @@ export function endlessAffixCount(wave: number): number {
 
 /** 主動技能「不吃技能傷害加成」的角色（純 buff/防禦技）：
  *  技能傷害升級/寶箱選項不該出現在這些角色身上（槍手=火力全開純攻速、戰士=盾牌衝鋒）。 */
-export const NO_SKILL_DMG_ACTIVES = new Set(['rapidfire', 'bulwark', 'placeBomb'])
+// 這些主動技是 buff／位移／召喚類，本身不造成技能傷害 → 不出現「技能傷害/技能強化」的升級與寶箱獎
+export const NO_SKILL_DMG_ACTIVES = new Set(['rapidfire', 'bulwark', 'placeBomb', 'surge'])
 
 /** 修羅武僧「真氣」資源：擊殺凝聚，氣爆拳一次消耗全部（氣越多越痛）。 */
 export const CHI = {

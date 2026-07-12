@@ -231,9 +231,10 @@ export function generateShopOffers(g: Game, p: SPlayer): void {
   const special = g.routeMods.specialShop
   const priceMult = priceMultOf(g, p)
 
+  let wUpgradeOffers = 0   // 本次刷新已上架幾格「升級已持有武器」——上限 1，避免商店變成純武器升等
   while (p.shopOffers.length < SHOP.offers) {
     const roll = g.rng()
-    if (roll < 0.5) {   // 武器是 build 核心，出現率高（道具類已不上架）
+    if (roll < 0.38) {   // 武器是 build 核心但別淹沒商店；新武器優先、升等格受限（見 wUpgradeOffers）
       // 後期偶爾直接販售本角色的進化武器（wave≥12，非特價店 12% 機率）
       const evo = g.wave >= 12 && !special && g.rng() < 0.12 ? evolvedForChar(p) : null
       if (evo && !p.shopOffers.some(o => o.kind === 'weapon' && o.refId === evo.id && !o.sold)) {
@@ -251,16 +252,19 @@ export function generateShopOffers(g: Game, p: SPlayer): void {
       const w = pickWeaponWeighted(g, p, pool)
       if (w) {
         const owned = p.weapons.find(x => x.data.id === w.id)
-        // 後期新武器直接以較高等級入手（已持有則照升級路徑）
-        const startLv = owned ? 1 : Math.min(weaponStartLevel(g.wave), w.maxLevel)
-        const level = owned ? owned.level + 1 : startLv
-        p.shopOffers.push({
-          offerId: oid(), kind: 'weapon', refId: w.id,
-          price: weaponOfferPrice(g, p, w, level, special),
-          locked: false, sold: false,
-          weaponLevel: level, startLevel: startLv,
-        })
-        continue
+        // 「升級已持有武器」每次刷新最多 1 格；超過就落到升級區（讓屬性/build 選項填滿商店）
+        if (!(owned && wUpgradeOffers >= 1)) {
+          const startLv = owned ? 1 : Math.min(weaponStartLevel(g.wave), w.maxLevel)
+          const level = owned ? owned.level + 1 : startLv
+          if (owned) wUpgradeOffers++
+          p.shopOffers.push({
+            offerId: oid(), kind: 'weapon', refId: w.id,
+            price: weaponOfferPrice(g, p, w, level, special),
+            locked: false, sold: false,
+            weaponLevel: level, startLevel: startLv,
+          })
+          continue
+        }
       }
     }
     // 升級：試抽 8 次（避開已上架的同名）；抽不到＝池子乾了 → 補福袋，保證商店永遠 4 格滿
@@ -315,12 +319,16 @@ export function buyOffer(g: Game, p: SPlayer, offerId: string): string | null {
     const rareBox = o.refId === 'rare'
     const pool = weaponPool(p)
     if (rareBox) {
-      // ✨ 稀有福袋：必開好料 — 優先武器，否則稀有升級，否則大筆金幣
+      // ✨ 稀有福袋：必開好料 — 優先武器（已持有的直接 +2 級），否則稀有升級，否則大筆金幣
       const w = pickWeaponWeighted(g, p, pool)
       if (w) {
+        const hadBefore = p.weapons.find(x => x.data.id === w.id)
         addWeapon(g, p, w.id)
+        // 已持有＝addWeapon 只 +1 → 再補一級湊成 +2（尊重等級上限）
+        const ow = p.weapons.find(x => x.data.id === w.id)
+        if (hadBefore && ow && canLevelUp(ow)) ow.level++
         syncWeaponOffers(g, p)
-        g.toastTo(p, `✨ 稀有福袋開出：${w.name}！`, 'good')
+        g.toastTo(p, hadBefore ? `✨ 稀有福袋：${w.name} → Lv.${ow!.level}（+2）！` : `✨ 稀有福袋開出：${w.name}！`, 'good')
       } else {
         const u = pickUpgradeByRarity(g, p, g.rng() < 0.4 ? 'epic' : 'rare')
         if (u) { applyUpgrade(g, p, u.id); g.toastTo(p, `✨ 稀有福袋開出：${u.name}！`, 'good') }
