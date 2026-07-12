@@ -253,7 +253,7 @@ export const CHARACTERS: CharacterData[] = [
     exclusiveGear: true,
     slotLabel: '招式',
     affinityTags: ['melee', 'fist', 'chi'],
-    startWeapons: ['cf_jab', 'cf_wave', 'cf_hurricane'],
+    startWeapons: ['cf_jab', 'cf_kick', 'cf_hurricane'],
     unlockCondition: '通關快速模式',
     rarity: 'rare',
     palette: ['#e53935', '#ffca28', '#2e7d32'],

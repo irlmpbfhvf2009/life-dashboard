@@ -1377,7 +1377,7 @@ const ART_ALIAS: Record<string, string> = {
   // 專屬 gear（exclusiveGear 角色）沿用既有形狀（色盤仍取自各 gear 自己的 palette）
   mk_chi: 'k_qi', mk_quake: 'k_staff', mk_guard: 'heal_orb',                                  // 武僧豆腐
   be_barrage: 'k_qi', be_rush: 'k_fist', be_spirit: 'fireball', be_aura: 'k_palm',            // 金剛毛豆
-  cf_wave: 'k_qi', cf_hurricane: 'spin_axe', cf_sweep: 'k_staff', cf_bodyblow: 'k_fist',      // 拳王辣椒
+  cf_kick: 'k_palm', cf_hurricane: 'spin_axe', cf_sweep: 'k_staff', cf_bodyblow: 'k_fist',     // 拳王辣椒（純近身連段派）
   st_sweep: 's_odachi', st_thrust: 'w_spear', st_flurry: 's_katana', st_toss: 's_kunai',      // 浪人番茄
   nj_shuriken: 'a_shuriken', nj_kunai: 's_kunai', nj_clone: 'drone', nj_rasen: 'k_palm', nj_rasenshuri: 'k_qi', // 影忍豆芽
   sw_bash: 'c_shield', sw_thornguard: 'c_gauntlet', sw_aegis: 'heal_orb', sw_barrier: 'c_spikes', // 盾衛地瓜
@@ -2025,14 +2025,6 @@ export function drawProjectile(g: Ctx, weaponId: string, t: number): void {
       g.fillStyle = '#e1f5fe'; ellipse(g, 0, 0, 3, 3); g.fill()
       g.strokeStyle = 'rgba(255,255,255,0.85)'; g.lineWidth = 1.5; g.beginPath(); g.arc(0, 0, 4.6, t * 10, t * 10 + Math.PI * 1.4); g.stroke()
       g.restore(); return
-    }
-    case 'cf_wave': {
-      // 波動氣浪：藍色新月氣浪（格鬥波動）
-      g.strokeStyle = '#4fc3f7'; g.lineWidth = 5; g.lineCap = 'round'
-      g.beginPath(); g.arc(0, 5, 8, Math.PI * 1.15, Math.PI * 1.85); g.stroke()
-      g.strokeStyle = 'rgba(225,245,254,0.9)'; g.lineWidth = 2
-      g.beginPath(); g.arc(0, 5, 8, Math.PI * 1.2, Math.PI * 1.8); g.stroke()
-      return
     }
     case 'be_barrage': {
       // 連珠氣彈：金色能量彈 + 尾光

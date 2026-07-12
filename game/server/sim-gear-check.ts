@@ -26,7 +26,7 @@ function run(label: string, fn: () => string) {
 
 const KITS: Record<string, string[]> = {
   bean_saiyan: ['be_kiwave', 'be_barrage', 'be_rush', 'be_spirit', 'be_aura'],
-  chili_boxer: ['cf_jab', 'cf_wave', 'cf_hurricane', 'cf_sweep', 'cf_bodyblow'],
+  chili_boxer: ['cf_jab', 'cf_kick', 'cf_hurricane', 'cf_sweep', 'cf_bodyblow'],
   samurai_tomato: ['s_iai', 'st_sweep', 'st_thrust', 'st_flurry', 'st_toss'],
   assassin_sprout: ['knife', 'nj_shuriken', 'nj_kunai', 'nj_clone', 'nj_rasen', 'nj_rasenshuri'],
   warrior_sweetpotato: ['w_sword', 'sw_bash', 'sw_thornguard', 'sw_aegis', 'sw_barrier'],

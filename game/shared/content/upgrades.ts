@@ -59,7 +59,7 @@ export const UPGRADES: UpgradeData[] = [
   U('wturret', '加固底座', '砲塔持續時間 +40%', 'rare', 'weapon', { specialEffect: 'turretDuration', maxStacks: 3, tags: ['engineer'], requirements: ['weaponTag:summon'] }),
   U('wknock', '衝擊配重', '擊退 +40%', 'common', 'weapon', { specialEffect: 'knockbackUp', maxStacks: 3 }),
   // 武器精研：唯一「免費升武器」管道（升級三選一常駐）——修掉「簽名武器 30 波還是 Lv1」
-  U('w_up', '武器精研', '最低等級的一把武器 +1 級（優先職業專屬武器）', 'common', 'weapon', { specialEffect: 'weaponLevelUp', maxStacks: 99, weight: 65, price: 14 }),
+  U('w_up', '武器精研', '最低等級的一把武器 +1 級', 'common', 'weapon', { specialEffect: 'weaponLevelUp', maxStacks: 99, weight: 65, price: 14 }),
   U('wpoison', '濃縮毒素', '持續傷害 +30%', 'rare', 'weapon', { specialEffect: 'dotUp', maxStacks: 3, tags: ['poison'], requirements: ['weaponTag:poison'] }),
   U('wheal', '強效藥劑', '治療效果 +30%', 'rare', 'weapon', { specialEffect: 'healPower', maxStacks: 3, tags: ['heal'] }),
   U('wspeed', '流線彈道', '投射物速度 +25%、射程 +10%', 'common', 'weapon', { specialEffect: 'projSpeed', maxStacks: 3 }),

@@ -10,7 +10,7 @@
 使用者決定「先做 1~2 角當範本、其餘暫時隱藏、確認手感對再照抄推其餘」。已完成範本批：
 - **金剛毛豆 `bean_saiyan`**（爆氣戰鬥種族）＝`exclusiveGear:true`＋`slots:4`＋`slotLabel:'招式'`。
   專屬 gear 池 5 件：`be_kiwave`(貫穿元氣波，既有)／`be_barrage`(追蹤連射氣彈)／`be_rush`(衝身連段拳,comboNova)／`be_spirit`(蓄力元氣彈,explode+bossKiller)／`be_aura`(爆氣震盪,crowdBonus)。起手＝be_kiwave/be_barrage/be_rush。主動技 `surge`＋被動 `superSurge` 沿用（已實作）。
-- **拳王辣椒 `chili_boxer`**（街機格鬥機）＝同結構 `slots:4`。gear 5 件：`cf_jab`(連段刺拳,既有)／`cf_wave`(波動氣浪,explode)／`cf_hurricane`(龍捲旋風腿,orbit)／`cf_sweep`(掃堂腿,stunHit 大範圍)／`cf_bodyblow`(崩山重擊,execute)。起手＝cf_jab/cf_wave/cf_hurricane。主動 `risingFist`＋被動 `comboMeter` 沿用。
+- **拳王辣椒 `chili_boxer`**（街機格鬥機，**純近身連段派**——使用者兩度要求「不要抄武僧的飄浮氣功球」）＝`slots:4`。gear 5 件**全近戰**：`cf_jab`(搓招連段,comboChain 三段輕輕重)／`cf_kick`(迴旋連踢,comboNova)／`cf_hurricane`(龍捲旋風腿,orbit)／`cf_sweep`(掃堂腿,stunHit)／`cf_bodyblow`(崩山重擊,execute)。**原 `cf_wave`(波動氣浪能量彈) 已移除**（最像武僧 mk_chi 的元素）。起手＝cf_jab/cf_kick/cf_hurricane。主動 `risingFist`(昇龍→滿連段超必殺)＋被動 `comboMeter`。
 
 **做法（下一批照抄）**：純內容編輯即可，不動 server/art——(1) 角色加 `exclusiveGear:true`＋`slots:N`＋`slotLabel`；(2) startWeapons 全改成本人 gear（不可再放共用池武器如 k_qi/g_sniper）；(3) 在 weapons.ts 補一整套 charId 綁本人的 gear（用現有 behavior＋mech 組出招式手感，投射物/近戰/環繞美術泛用、免加 art）；(4) shop 的 `ownOnly` 自動生效。
 

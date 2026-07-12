@@ -972,8 +972,8 @@ export class Engine {
             g.fillStyle = `rgba(255,236,150,${pct * 0.4})`; g.beginPath(); g.arc(0, 0, a.r * inv * 0.7, 0, Math.PI * 2); g.fill()
             break
           }
-          // 拳王辣椒·掃堂腿：貼地橫掃火弧
-          if (a.w === 'cf_sweep') {
+          // 拳王辣椒·掃堂腿／迴旋連踢：橫掃火弧
+          if (a.w === 'cf_sweep' || a.w === 'cf_kick') {
             g.save(); g.globalAlpha = pct * 0.85; g.lineCap = 'round'
             const a0 = this.time * 4
             g.strokeStyle = '#ff7043'; g.lineWidth = 9 * pct

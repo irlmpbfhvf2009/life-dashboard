@@ -198,11 +198,12 @@ export const WEAPONS: WeaponData[] = [
   },
   // ── 拳王辣椒專屬 gear（exclusiveGear：街機格鬥機的整套搓招，只有他能取得）
   {
-    id: 'cf_wave', name: '波動氣浪', category: 'magic', behavior: 'projectile', charId: 'chili_boxer',
-    description: '搓招轟出的掌心氣浪，命中炸開並大力擊退；可貫穿一名敵人。',
-    base: { damage: 14, cooldown: 1.0, range: 400, projectileCount: 1, pierce: 1, knockback: 100, speed: 480, radius: 70 },
-    perLevel: { damage: 5, radius: 6, knockback: 8 },
-    maxLevel: 5, specialEffect: 'explode', tags: ['chi', 'magic', 'explosive'], price: 16, tier: 2, palette: ['#4fc3f7', '#0277bd'],
+    id: 'cf_kick', name: '迴旋連踢', category: 'melee', behavior: 'melee', charId: 'chili_boxer',
+    description: '快速的迴旋連環腿；每第 3 踢使出一記大迴旋掃踢，範圍與傷害大增並擊退。',
+    base: { damage: 11, cooldown: 0.55, range: 120, projectileCount: 1, pierce: 99, knockback: 90, radius: 100 },
+    perLevel: { damage: 4, radius: 5, knockback: 8 },
+    mech: { id: 'comboNova', params: { every: 3, radiusMult: 1.7, dmgMult: 1.8 } },
+    maxLevel: 5, critModifier: 1.5, tags: ['melee', 'fist'], price: 14, tier: 1, palette: ['#ff7043', '#e53935'],
   },
   {
     id: 'cf_hurricane', name: '龍捲旋風腿', category: 'melee', behavior: 'orbit', charId: 'chili_boxer',
