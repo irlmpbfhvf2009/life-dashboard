@@ -11,8 +11,13 @@ import java.util.List;
  * @param burned              total calories burned via logged exercise
  * @param protein             total grams of protein today
  * @param fiber               total grams of dietary fibre today
+ * @param starch              total grams of starch today
+ * @param sugar               total grams of total sugars today
  * @param carbs               total grams of carbohydrate today
  * @param fat                 total grams of fat today
+ * @param saturatedFat        total grams of saturated fat today
+ * @param addedSugar          total grams of added sugar today
+ * @param sodium              total milligrams of sodium today
  * @param items               short labels of what was eaten today
  */
 public record NutritionReviewRequest(
@@ -22,7 +27,12 @@ public record NutritionReviewRequest(
         int burned,
         double protein,
         double fiber,
+        double starch,
+        double sugar,
         double carbs,
         double fat,
+        double saturatedFat,
+        double addedSugar,
+        double sodium,
         List<String> items) {
 }

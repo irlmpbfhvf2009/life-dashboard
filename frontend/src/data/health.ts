@@ -39,9 +39,14 @@ export interface FoodEntry {
   label: string
   calories: number // food = eaten; exercise = burned
   protein: number
-  fiber: number
-  carbs: number
+  fiber: number // part of carbs
+  starch: number // part of carbs
+  sugar: number // total sugars, part of carbs
+  carbs: number // total ≈ fiber + starch + sugar
   fat: number
+  saturatedFat: number // part of fat
+  addedSugar: number // processed/added sugar, a subset of sugar
+  sodium: number // mg
   keyNutrients: string[]
   note: string
 }
@@ -51,6 +56,7 @@ export interface NutritionReview {
   balanceScore: number
   verdict: string
   lacking: { nutrient: string; note: string }[]
+  excess: { nutrient: string; note: string }[] // things exceeded today (sodium/added sugar/saturated fat…)
   suggestions: string[]
   calorieNote: string
 }

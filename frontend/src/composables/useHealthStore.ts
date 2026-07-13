@@ -29,6 +29,16 @@ function normalize(raw: Persisted | null | undefined): Persisted | null {
   }
   if (!Array.isArray(l.entries)) l.entries = []
   if (l.review === undefined) l.review = null
+  // Back-compat: entries/reviews saved before the sodium/sugar/sat-fat fields
+  // were added just lack them at runtime — default so sums/lists never see undefined.
+  for (const e of l.entries as (typeof l.entries[number] & Record<string, unknown>)[]) {
+    for (const k of ['starch', 'sugar', 'saturatedFat', 'addedSugar', 'sodium']) {
+      if (typeof e[k] !== 'number') e[k] = 0
+    }
+  }
+  if (l.review && !Array.isArray((l.review as unknown as Record<string, unknown>).excess)) {
+    (l.review as unknown as Record<string, unknown>).excess = []
+  }
   if (!Array.isArray(l.history)) l.history = []
   return { profile: raw.profile, log: raw.log }
 }

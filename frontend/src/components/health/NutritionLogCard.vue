@@ -49,22 +49,30 @@ async function analyze(body: { text?: string; image?: string; mimeType?: string 
   error.value = ''
   startSlowTimer()
   try {
-    const r = await aiApi.nutrition({ ...body, weightKg: props.profile.weightKg })
-    const entry: FoodEntry = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    // One submission may describe several things at once (breakfast + workout +
+    // lunch in one message) — the backend splits it into one item per entry.
+    const results = await aiApi.nutrition({ ...body, weightKg: props.profile.weightKg })
+    const now = Date.now()
+    const newEntries: FoodEntry[] = results.map((r, i) => ({
+      id: `${now}-${i}-${Math.random().toString(36).slice(2, 7)}`,
       time: nowHm(),
       kind: r.kind,
       label: r.label,
       calories: Math.round(r.calories),
       protein: Math.round(r.protein),
       fiber: Math.round(r.fiber),
+      starch: Math.round(r.starch ?? 0),
+      sugar: Math.round(r.sugar ?? 0),
       carbs: Math.round(r.carbs),
       fat: Math.round(r.fat),
+      saturatedFat: Math.round(r.saturatedFat ?? 0),
+      addedSugar: Math.round(r.addedSugar ?? 0),
+      sodium: Math.round(r.sodium ?? 0),
       keyNutrients: r.keyNutrients ?? [],
       note: r.note ?? '',
-    }
+    }))
     store.update((d) => {
-      d.log.entries.push(entry)
+      d.log.entries.push(...newEntries)
       d.log.review = null // totals changed → old verdict is stale
     })
     draft.value = ''
@@ -99,7 +107,7 @@ function describeAiError(err: unknown, fallback: string): string {
       <span class="chip-cute h-8 w-8 bg-lime-500/10 text-lime-600"><Salad class="h-4 w-4" :stroke-width="2" /></span>
       <div>
         <h3 class="section-title">今日營養</h3>
-        <p class="text-2xs text-ink-400">打字或拍照記錄每一餐 / 運動，AI 幫你算營養</p>
+        <p class="text-2xs text-ink-400">打字或拍照記錄每一餐 / 運動，AI 幫你算營養；一次打好幾件事也可以，AI 會自動拆成好幾筆</p>
       </div>
     </header>
 
@@ -112,7 +120,7 @@ function describeAiError(err: unknown, fallback: string): string {
       v-model="draft"
       rows="2"
       :disabled="analyzing"
-      placeholder="例如：午餐一碗牛肉麵加燙青菜、或 健身房重訓 90 分鐘（扣掉休息）"
+      placeholder="例如：早上吃雞肉蛋三明治 重訓90分鐘 午餐雞胸肉配豆奶一顆芭樂"
       class="input resize-none"
       @keydown.enter.exact.prevent="submitText"
     />

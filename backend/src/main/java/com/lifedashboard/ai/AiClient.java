@@ -29,7 +29,7 @@ import java.util.List;
 public class AiClient {
 
     private static final String NOT_CONFIGURED = "AI 尚未啟用（請到「設定」頁選擇 AI 並填入你的金鑰）";
-    private static final String JSON_ONLY = "\n\nReturn ONLY a single valid JSON object. No markdown, no code fences, no commentary.";
+    private static final String JSON_ONLY = "\n\nReturn ONLY valid JSON matching the exact shape requested above (object or array, whichever was asked for). No markdown, no code fences, no commentary.";
 
     private final ObjectMapper mapper = new ObjectMapper();
     // Explicit timeouts matter here: Cloud Run kills the whole request at its own

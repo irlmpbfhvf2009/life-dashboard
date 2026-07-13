@@ -227,9 +227,9 @@ export const aiApi = {
     request<{ dishes: FoodSuggestion[] }>(() => http.post('/api/ai/food', body)),
   dataLabAnalyze: (body: { profile: string }) =>
     request<DataInsight>(() => http.post('/api/ai/datalab/analyze', body)),
-  /** Estimate the nutrition of one logged meal/exercise (text and/or base64 photo). */
+  /** Estimate the nutrition of a logged submission — may return several items (e.g. breakfast + workout + lunch in one message). */
   nutrition: (body: { text?: string; image?: string; mimeType?: string; weightKg?: number }) =>
-    request<NutritionFacts>(() => http.post('/api/ai/nutrition', body)),
+    request<NutritionFacts[]>(() => http.post('/api/ai/nutrition', body)),
   /** Daily balanced-nutrition verdict from the day's totals. */
   nutritionReview: (body: NutritionReviewInput) =>
     request<NutritionReviewResult>(() => http.post('/api/ai/nutrition/review', body)),
@@ -240,8 +240,13 @@ export interface NutritionFacts {
   calories: number
   protein: number
   fiber: number
+  starch: number
+  sugar: number
   carbs: number
   fat: number
+  saturatedFat: number
+  addedSugar: number
+  sodium: number
   keyNutrients: string[]
   note: string
 }
@@ -252,14 +257,20 @@ export interface NutritionReviewInput {
   burned: number
   protein: number
   fiber: number
+  starch: number
+  sugar: number
   carbs: number
   fat: number
+  saturatedFat: number
+  addedSugar: number
+  sodium: number
   items: string[]
 }
 export interface NutritionReviewResult {
   balanceScore: number
   verdict: string
   lacking: { nutrient: string; note: string }[]
+  excess: { nutrient: string; note: string }[]
   suggestions: string[]
   calorieNote: string
 }

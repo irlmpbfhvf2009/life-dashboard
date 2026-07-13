@@ -118,9 +118,9 @@ public class AiController {
         return ApiResponse.ok(foodSuggest.suggest(request.place()));
     }
 
-    /** Estimate the nutrition of one logged meal/exercise (text and/or photo) — health module. */
+    /** Estimate the nutrition of a logged submission (one or more items, text and/or photo) — health module. */
     @PostMapping("/nutrition")
-    public ApiResponse<NutritionEntryReply> nutrition(@RequestBody NutritionRequest request) {
+    public ApiResponse<java.util.List<NutritionEntryReply>> nutrition(@RequestBody NutritionRequest request) {
         return ApiResponse.ok(nutritionService.analyze(request));
     }
 
