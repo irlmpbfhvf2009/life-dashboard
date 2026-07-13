@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Suggests must-see sightseeing spots for a destination via {@link GeminiClient},
+ * Suggests must-see sightseeing spots for a destination via {@link AiClient},
  * each tagged with a suggested day so the frontend can drop them into the
  * itinerary. Degrades gracefully (503) when no key is configured.
  */
@@ -22,11 +22,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SpotSuggestService {
 
-    private final GeminiClient gemini;
+    private final AiClient ai;
     private final ObjectMapper mapper = new ObjectMapper();
 
     public boolean isEnabled() {
-        return gemini.isEnabled();
+        return ai.isEnabled();
     }
 
     public SpotReply suggest(String place, int days) {
@@ -60,7 +60,7 @@ public class SpotSuggestService {
                 - Iconic, realistic, well-known spots only; no duplicates.
                 """.formatted(place, d, d, d);
 
-        String json = gemini.generateJson(system,
+        String json = ai.generateJson(system,
                 List.of(new ChatTurn("user", "請推薦景點並安排天數。")), schema);
         try {
             JsonNode n = mapper.readTree(json);

@@ -1,8 +1,7 @@
 // Derives body metrics from an onboarding HealthProfile (Mifflin-St Jeor BMR ×
-// activity − a pace-sized deficit) and seeds the initial daily log for a new
-// user. The dated training/diet schedule is generated separately in fatLossPlan.ts.
+// activity − a pace-sized deficit) and seeds the initial daily log for a new user.
 
-import type { HealthProfile, HealthLog, PaceKey } from '@/data/health'
+import type { HealthProfile, HealthLog, PaceKey, FoodEntry, DailySummary, NutritionReview } from '@/data/health'
 
 const KCAL_PER_KG = 7700 // ~kcal per kg of body fat
 const DEFAULT_ACTIVITY_FACTOR = 1.375 // assume light activity
@@ -32,6 +31,7 @@ export interface HealthMetrics {
   bmi: number
   bmiLabel: 'under' | 'normal' | 'over' | 'obese'
   bmr: number
+  tdee: number // maintenance calories (BMR × activity) — basis for the daily deficit
   dailyTarget: number
   dailyDeficit: number
   recommendWaterMl: number
@@ -47,10 +47,10 @@ export function computeMetrics(p: HealthProfile): HealthMetrics {
   const floor = p.gender === 'male' ? 1500 : 1200
   const dailyTarget = Math.max(floor, Math.round((tdee - dailyDeficit) / 10) * 10)
   const recommendWaterMl = Math.min(3500, Math.max(1500, Math.round((p.weightKg * 33) / 50) * 50))
-  return { bmi: Math.round(bmi * 10) / 10, bmiLabel, bmr: Math.round(bmr(p)), dailyTarget, dailyDeficit: Math.round(dailyDeficit), recommendWaterMl }
+  return { bmi: Math.round(bmi * 10) / 10, bmiLabel, bmr: Math.round(bmr(p)), tdee: Math.round(tdee), dailyTarget, dailyDeficit: Math.round(dailyDeficit), recommendWaterMl }
 }
 
-/** Fresh daily log for a just-onboarded user — weight + water only. */
+/** Fresh daily log for a just-onboarded user — weight + an empty nutrition log. */
 export function initialLog(p: HealthProfile): HealthLog {
   const today = new Date().toISOString().slice(0, 10)
   return {
@@ -60,5 +60,26 @@ export function initialLog(p: HealthProfile): HealthLog {
     water: 0,
     waterGoal: computeMetrics(p).recommendWaterMl,
     weightHistory: [{ date: today, kg: p.weightKg }],
+    entries: [],
+    review: null,
+    history: [],
+  }
+}
+
+/** Roll a day's food/exercise entries into a compact summary for history + stats. */
+export function summarizeDay(date: string, entries: FoodEntry[], review: NutritionReview | null): DailySummary {
+  let intake = 0, burned = 0, protein = 0, fiber = 0, carbs = 0, fat = 0
+  for (const e of entries) {
+    if (e.kind === 'exercise') { burned += e.calories } else {
+      intake += e.calories; protein += e.protein; fiber += e.fiber; carbs += e.carbs; fat += e.fat
+    }
+  }
+  return {
+    date,
+    entryCount: entries.length,
+    intake: Math.round(intake), burned: Math.round(burned),
+    protein: Math.round(protein), fiber: Math.round(fiber),
+    carbs: Math.round(carbs), fat: Math.round(fat),
+    balanceScore: review?.balanceScore ?? null,
   }
 }

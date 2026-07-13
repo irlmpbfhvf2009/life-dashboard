@@ -9,8 +9,6 @@ import type {
   FoodRecord,
   FriendProfile,
   FriendRequest,
-  FastingSession,
-  FastingStats,
   GifPage,
   Goal,
   Habit,
@@ -229,6 +227,41 @@ export const aiApi = {
     request<{ dishes: FoodSuggestion[] }>(() => http.post('/api/ai/food', body)),
   dataLabAnalyze: (body: { profile: string }) =>
     request<DataInsight>(() => http.post('/api/ai/datalab/analyze', body)),
+  /** Estimate the nutrition of one logged meal/exercise (text and/or base64 photo). */
+  nutrition: (body: { text?: string; image?: string; mimeType?: string; weightKg?: number }) =>
+    request<NutritionFacts>(() => http.post('/api/ai/nutrition', body)),
+  /** Daily balanced-nutrition verdict from the day's totals. */
+  nutritionReview: (body: NutritionReviewInput) =>
+    request<NutritionReviewResult>(() => http.post('/api/ai/nutrition/review', body)),
+}
+export interface NutritionFacts {
+  kind: 'food' | 'exercise'
+  label: string
+  calories: number
+  protein: number
+  fiber: number
+  carbs: number
+  fat: number
+  keyNutrients: string[]
+  note: string
+}
+export interface NutritionReviewInput {
+  maintenanceCalories: number
+  weightKg: number
+  intake: number
+  burned: number
+  protein: number
+  fiber: number
+  carbs: number
+  fat: number
+  items: string[]
+}
+export interface NutritionReviewResult {
+  balanceScore: number
+  verdict: string
+  lacking: { nutrient: string; note: string }[]
+  suggestions: string[]
+  calorieNote: string
 }
 export interface ReceiptScan {
   amount: number
@@ -251,6 +284,26 @@ export interface FoodSuggestion {
   reason: string
 }
 
+// ---- Per-member AI key (own provider + model + key → own billing) ----
+export interface AiKeyStatus {
+  hasPersonalKey: boolean
+  provider: string
+  model: string | null
+  masked: string | null
+  aiAvailable: boolean
+  usingSharedKey: boolean
+  vision: boolean
+}
+export interface AiModelInfo { id: string; label: string; vision: boolean }
+export interface AiProviderInfo { id: string; label: string; freeTier: boolean; models: AiModelInfo[] }
+export const aiKeyApi = {
+  status: () => request<AiKeyStatus>(() => http.get('/api/ai/key')),
+  providers: () => request<AiProviderInfo[]>(() => http.get('/api/ai/providers')),
+  save: (body: { provider: string; model: string; apiKey: string }) =>
+    request<void>(() => http.put('/api/ai/key', body)),
+  remove: () => request<void>(() => http.delete('/api/ai/key')),
+}
+
 // ---- Text-to-speech (server proxy → speaks any language without an OS voice) ----
 export const ttsApi = {
   /** Fetch spoken audio as an object URL; the caller revokes it when finished. */
@@ -264,12 +317,6 @@ export const ttsApi = {
 export const englishStateApi = {
   get: <T = unknown>() => request<T | null>(() => http.get('/api/english/state')),
   put: (state: unknown) => request<void>(() => http.put('/api/english/state', state)),
-}
-
-// ---- Fat-loss plan (per-user training/diet 課表, cross-device sync) ----
-export const planStateApi = {
-  get: <T = unknown>() => request<T | null>(() => http.get('/api/plan/state')),
-  put: (state: unknown) => request<void>(() => http.put('/api/plan/state', state)),
 }
 
 // ---- Health doc (per-user profile + daily log, cross-device sync) ----
@@ -419,18 +466,6 @@ export const goalApi = {
   addProgress: (id: number, delta: number) =>
     request<Goal>(() => http.post(`/api/goals/${id}/progress`, { delta })),
   remove: (id: number) => request<void>(() => http.delete(`/api/goals/${id}`)),
-}
-
-// ---- Fasting ----
-export const fastingApi = {
-  current: () => request<FastingSession | null>(() => http.get('/api/fasting/current')),
-  recent: (limit = 20) =>
-    request<FastingSession[]>(() => http.get('/api/fasting/sessions', { params: { limit } })),
-  stats: () => request<FastingStats>(() => http.get('/api/fasting/stats')),
-  start: (targetHours: number) =>
-    request<FastingSession>(() => http.post('/api/fasting/start', { targetHours })),
-  stop: () => request<FastingSession>(() => http.post('/api/fasting/stop')),
-  remove: (id: number) => request<void>(() => http.delete(`/api/fasting/sessions/${id}`)),
 }
 
 // ---- Weights ----

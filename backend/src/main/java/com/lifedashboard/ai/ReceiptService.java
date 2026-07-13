@@ -10,7 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 /**
- * Reads a receipt photo via {@link GeminiClient}'s vision call and returns
+ * Reads a receipt photo via {@link AiClient}'s vision call and returns
  * structured expense fields the travel wallet can pre-fill. Degrades gracefully
  * (503) when no key is configured.
  */
@@ -19,11 +19,11 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class ReceiptService {
 
-    private final GeminiClient gemini;
+    private final AiClient ai;
     private final ObjectMapper mapper = new ObjectMapper();
 
     public boolean isEnabled() {
-        return gemini.isEnabled();
+        return ai.isEnabled();
     }
 
     public ReceiptReply scan(ReceiptRequest req) {
@@ -53,7 +53,7 @@ public class ReceiptService {
                 If you cannot read a total, set amount to 0.
                 """.formatted(fallbackCcy, cats);
 
-        String json = gemini.generateJsonWithImage(system, "請辨識這張收據並擷取金額、幣別、分類。",
+        String json = ai.generateJsonWithImage(system, "請辨識這張收據並擷取金額、幣別、分類。",
                 req.image(), req.mimeType(), schema);
         try {
             JsonNode n = mapper.readTree(json);

@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Drives a friendly English-conversation tutor on top of {@link GeminiClient}.
+ * Drives a friendly English-conversation tutor on top of {@link AiClient}.
  * The model is asked to return structured JSON ({@code reply} + optional
  * {@code correction}) so the frontend can show gentle corrections separately.
  */
@@ -24,7 +24,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class EnglishCoachService {
 
-    private final GeminiClient gemini;
+    private final AiClient ai;
     private final ObjectMapper mapper = new ObjectMapper();
 
     private static final String SYSTEM = """
@@ -38,7 +38,7 @@ public class EnglishCoachService {
             """;
 
     public boolean isEnabled() {
-        return gemini.isEnabled();
+        return ai.isEnabled();
     }
 
     public ChatReply chat(ChatRequest request) {
@@ -54,10 +54,10 @@ public class EnglishCoachService {
         }
         turns.add(new ChatTurn("user", request.message()));
 
-        ObjectNode schema = gemini.stringObjectSchema("reply", "correction");
+        ObjectNode schema = ai.stringObjectSchema("reply", "correction");
         schema.putArray("required").add("reply");
 
-        String json = gemini.generateJson(SYSTEM, turns, schema);
+        String json = ai.generateJson(SYSTEM, turns, schema);
         try {
             JsonNode node = mapper.readTree(json);
             String reply = node.path("reply").asText("").trim();
@@ -95,7 +95,7 @@ public class EnglishCoachService {
         schema.putArray("required").add("corrected");
 
         List<ChatTurn> turns = List.of(new ChatTurn("user", sentence));
-        String json = gemini.generateJson(SYSTEM_CORRECT, turns, schema);
+        String json = ai.generateJson(SYSTEM_CORRECT, turns, schema);
         try {
             JsonNode n = mapper.readTree(json);
             return new CorrectionReply(

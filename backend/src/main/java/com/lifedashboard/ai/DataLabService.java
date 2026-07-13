@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Turns a dataset profile into plain-language insights via {@link GeminiClient}.
+ * Turns a dataset profile into plain-language insights via {@link AiClient}.
  * Reuses the same JSON-structured-output approach as the English coach.
  */
 @Slf4j
@@ -21,7 +21,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DataLabService {
 
-    private final GeminiClient gemini;
+    private final AiClient ai;
     private final ObjectMapper mapper = new ObjectMapper();
 
     private static final String SYSTEM = """
@@ -37,7 +37,7 @@ public class DataLabService {
             """;
 
     public boolean isEnabled() {
-        return gemini.isEnabled();
+        return ai.isEnabled();
     }
 
     public DataInsightReply analyze(String profile) {
@@ -50,7 +50,7 @@ public class DataLabService {
         schema.putArray("required").add("summary");
 
         List<ChatTurn> turns = List.of(new ChatTurn("user", profile));
-        String json = gemini.generateJson(SYSTEM, turns, schema);
+        String json = ai.generateJson(SYSTEM, turns, schema);
         try {
             JsonNode n = mapper.readTree(json);
             return new DataInsightReply(

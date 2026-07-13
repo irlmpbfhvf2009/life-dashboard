@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Suggests must-try local dishes for a destination via {@link GeminiClient}. Each
+ * Suggests must-try local dishes for a destination via {@link AiClient}. Each
  * dish carries a local-language name so the frontend can speak it to a vendor with
  * the same TTS used elsewhere in the travel module. Degrades gracefully (503) when
  * no key is configured.
@@ -23,11 +23,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FoodSuggestService {
 
-    private final GeminiClient gemini;
+    private final AiClient ai;
     private final ObjectMapper mapper = new ObjectMapper();
 
     public boolean isEnabled() {
-        return gemini.isEnabled();
+        return ai.isEnabled();
     }
 
     public FoodReply suggest(String place) {
@@ -60,7 +60,7 @@ public class FoodSuggestService {
                 Rules: iconic and genuinely local dishes only; no duplicates; cover a mix of categories.
                 """.formatted(place);
 
-        String json = gemini.generateJson(system,
+        String json = ai.generateJson(system,
                 List.of(new ChatTurn("user", "請推薦在地必吃美食。")), schema);
         try {
             JsonNode n = mapper.readTree(json);

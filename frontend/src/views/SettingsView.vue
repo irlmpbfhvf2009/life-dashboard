@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { reactive, ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { LogOut, ShieldCheck, Settings, Upload, Loader2 } from 'lucide-vue-next'
+import { LogOut, ShieldCheck, Settings, Upload, Loader2, Sparkles, ExternalLink, Trash2 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import { uploadAvatar } from '@/utils/storage'
-import { usageApi } from '@/api'
+import { usageApi, aiKeyApi, type AiKeyStatus, type AiProviderInfo } from '@/api'
 import type { UsageData } from '@/types'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import SectionCard from '@/components/ui/SectionCard.vue'
@@ -32,6 +32,83 @@ const usagePercent = computed(() =>
     : 0,
 )
 
+// ---- AI provider / model / key ----
+const aiKey = ref<AiKeyStatus | null>(null)
+const providers = ref<AiProviderInfo[]>([])
+const selProvider = ref('GEMINI')
+const selModel = ref('')
+const customModel = ref('')
+const useCustom = ref(false)
+const keyInput = ref('')
+const keySaving = ref(false)
+const keyMsg = ref<string | null>(null)
+const keyErr = ref<string | null>(null)
+
+const KEY_URLS: Record<string, string> = {
+  GEMINI: 'https://aistudio.google.com/apikey',
+  OPENAI: 'https://platform.openai.com/api-keys',
+  ANTHROPIC: 'https://console.anthropic.com/settings/keys',
+  DEEPSEEK: 'https://platform.deepseek.com/api_keys',
+  GROQ: 'https://console.groq.com/keys',
+  MISTRAL: 'https://console.mistral.ai/api-keys',
+}
+const currentProvider = computed(() => providers.value.find((p) => p.id === selProvider.value) ?? null)
+const selectedModelInfo = computed(() => currentProvider.value?.models.find((m) => m.id === selModel.value) ?? null)
+const modelVision = computed(() => (useCustom.value ? false : selectedModelInfo.value?.vision ?? false))
+const effectiveModel = computed(() => (useCustom.value ? customModel.value.trim() : selModel.value))
+const keyUrl = computed(() => KEY_URLS[selProvider.value] ?? KEY_URLS.GEMINI)
+
+function onProviderChange() {
+  useCustom.value = false
+  selModel.value = currentProvider.value?.models[0]?.id ?? ''
+}
+
+async function loadAiKey() {
+  try {
+    aiKey.value = await aiKeyApi.status()
+    if (aiKey.value?.hasPersonalKey) {
+      selProvider.value = aiKey.value.provider || 'GEMINI'
+      const known = currentProvider.value?.models.find((m) => m.id === aiKey.value?.model)
+      if (known) { selModel.value = known.id; useCustom.value = false }
+      else if (aiKey.value.model) { useCustom.value = true; customModel.value = aiKey.value.model }
+    }
+  } catch {
+    aiKey.value = null
+  }
+}
+async function saveAiKey() {
+  const model = effectiveModel.value
+  if (!keyInput.value.trim() || !model) return
+  keySaving.value = true
+  keyMsg.value = null
+  keyErr.value = null
+  try {
+    await aiKeyApi.save({ provider: selProvider.value, model, apiKey: keyInput.value.trim() })
+    keyInput.value = ''
+    keyMsg.value = '金鑰已儲存並驗證成功，AI 功能已啟用。'
+    await loadAiKey()
+  } catch (e) {
+    keyErr.value = friendlyError(e, '儲存失敗，請確認 provider / 模型 / 金鑰後再試')
+  } finally {
+    keySaving.value = false
+  }
+}
+async function removeAiKey() {
+  if (!window.confirm('確定要移除你的 Gemini 金鑰嗎？移除後將無法使用 AI 功能。')) return
+  keySaving.value = true
+  keyMsg.value = null
+  keyErr.value = null
+  try {
+    await aiKeyApi.remove()
+    keyMsg.value = '金鑰已移除。'
+    await loadAiKey()
+  } catch (e) {
+    keyErr.value = friendlyError(e)
+  } finally {
+    keySaving.value = false
+  }
+}
+
 onMounted(async () => {
   form.displayName = auth.profile?.displayName ?? ''
   form.photoUrl = auth.profile?.photoUrl ?? ''
@@ -40,6 +117,13 @@ onMounted(async () => {
   } catch {
     usage.value = null
   }
+  try {
+    providers.value = await aiKeyApi.providers()
+  } catch {
+    providers.value = []
+  }
+  onProviderChange()
+  await loadAiKey()
 })
 
 async function save() {
@@ -117,6 +201,76 @@ async function logout() {
             <dd class="mt-0.5 truncate font-mono text-xs text-ink-500">{{ auth.profile?.firebaseUid }}</dd>
           </div>
         </dl>
+      </SectionCard>
+
+      <SectionCard title="AI 模型與金鑰">
+        <template #action>
+          <span
+            v-if="aiKey"
+            class="text-2xs font-semibold"
+            :class="aiKey.aiAvailable ? 'text-emerald-600' : 'text-amber-600'"
+          >{{ aiKey.aiAvailable ? '● AI 已啟用' : '● AI 未啟用' }}</span>
+        </template>
+
+        <p class="mb-3 flex items-start gap-2 text-xs text-ink-500">
+          <Sparkles class="mt-0.5 h-4 w-4 shrink-0 text-brand-500" />
+          <span>全站 AI 功能（健康營養師、英文家教、旅遊翻譯、股票摘要…）會用<b>你自己選的 AI 與金鑰</b>，費用算在你自己的帳號、不影響其他人。<b>Gemini 有免費額度且能拍照</b>，是最省的選擇；GPT / Claude 品質好但需付費。</span>
+        </p>
+
+        <!-- Current state -->
+        <div v-if="aiKey?.hasPersonalKey" class="mb-3 flex items-center justify-between rounded-xl bg-emerald-50 px-3 py-2 text-sm dark:bg-emerald-500/10">
+          <span class="text-emerald-700 dark:text-emerald-300">
+            使用中：<b>{{ aiKey.provider }}</b> · <span class="font-mono text-xs">{{ aiKey.model }}</span> · 金鑰 <span class="font-mono text-xs">{{ aiKey.masked }}</span>
+          </span>
+          <button class="btn-ghost btn-sm gap-1 text-rose-600" :disabled="keySaving" @click="removeAiKey">
+            <Trash2 class="h-3.5 w-3.5" /> 移除
+          </button>
+        </div>
+        <div v-else-if="aiKey?.usingSharedKey" class="mb-3 rounded-xl bg-brand-50 px-3 py-2 text-xs text-brand-700 dark:bg-brand-500/10 dark:text-brand-300">
+          你目前使用網站共用金鑰（管理員）。一般會員需自行選擇 AI 並填入金鑰才能使用。
+        </div>
+
+        <!-- Provider + model pickers -->
+        <div class="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label class="label">AI 服務商</label>
+            <select v-model="selProvider" class="input" @change="onProviderChange">
+              <option v-for="p in providers" :key="p.id" :value="p.id">
+                {{ p.label }}{{ p.freeTier ? '（有免費層）' : '（付費）' }}
+              </option>
+            </select>
+          </div>
+          <div>
+            <label class="label">模型</label>
+            <select v-if="!useCustom" v-model="selModel" class="input">
+              <option v-for="m in currentProvider?.models ?? []" :key="m.id" :value="m.id">{{ m.label }}</option>
+            </select>
+            <input v-else v-model="customModel" class="input font-mono" placeholder="輸入模型 id，例如 gpt-4o" />
+          </div>
+        </div>
+        <div class="mt-1.5 flex items-center justify-between text-2xs">
+          <span :class="modelVision ? 'text-emerald-600' : 'text-ink-400'">
+            {{ useCustom ? '自訂模型：拍照功能將關閉（除非確定支援讀圖）' : (modelVision ? '📷 此模型支援拍照' : '此模型不支援拍照，營養師/收據只能打字') }}
+          </span>
+          <button v-if="useCustom" class="text-brand-600 hover:underline" @click="useCustom = false; onProviderChange()">用清單選</button>
+          <button v-else class="text-brand-600 hover:underline" @click="useCustom = true; customModel = selModel">自訂模型…</button>
+        </div>
+
+        <!-- Key input -->
+        <label class="label mt-3">{{ aiKey?.hasPersonalKey ? '更換金鑰' : '貼上金鑰' }}</label>
+        <div class="flex gap-2">
+          <input v-model="keyInput" type="password" autocomplete="off" class="input font-mono" placeholder="貼上 API 金鑰…" @keydown.enter.prevent="saveAiKey" />
+          <button class="btn-primary shrink-0 gap-1.5" :disabled="keySaving || !keyInput.trim() || !effectiveModel" @click="saveAiKey">
+            <Loader2 v-if="keySaving" class="h-4 w-4 animate-spin" />
+            {{ keySaving ? '驗證中…' : '儲存' }}
+          </button>
+        </div>
+        <p v-if="keyMsg" class="mt-2 text-sm text-emerald-600">{{ keyMsg }}</p>
+        <p v-if="keyErr" class="mt-2 text-sm text-rose-600">{{ keyErr }}</p>
+
+        <a :href="keyUrl" target="_blank" rel="noopener noreferrer" class="mt-3 inline-flex items-center gap-1 text-xs text-brand-600 hover:underline">
+          <ExternalLink class="h-3.5 w-3.5" /> 前往 {{ currentProvider?.label ?? '服務商' }} 申請金鑰
+        </a>
       </SectionCard>
 
       <SectionCard v-if="usage" title="免費額度用量">

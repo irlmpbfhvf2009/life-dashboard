@@ -5,6 +5,11 @@ import { auth } from '@/firebase'
 const http = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
+  // AI endpoints can legitimately take a while (vision, cold start); this must
+  // stay comfortably above the backend's own AI-call timeout (90s) so the
+  // backend's clean, CORS-ed error wins the race instead of the browser giving
+  // up first.
+  timeout: 110_000,
 })
 
 /**

@@ -62,25 +62,6 @@ export interface Journal {
   updatedAt: string
 }
 
-export interface FastingSession {
-  id: number
-  startAt: string
-  endAt: string | null
-  targetHours: number
-  elapsedMinutes: number
-  active: boolean
-  completed: boolean
-}
-
-export interface FastingStats {
-  totalSessions: number
-  completedSessions: number
-  currentStreakDays: number
-  longestMinutes: number
-  avgMinutes: number
-  thisWeekCount: number
-}
-
 export type GoalStatus = 'ACTIVE' | 'DONE' | 'ARCHIVED'
 
 export interface Goal {

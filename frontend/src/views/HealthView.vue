@@ -1,28 +1,38 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RotateCcw, HeartPulse } from 'lucide-vue-next'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import ProfileSetup from '@/components/health/ProfileSetup.vue'
 import MetricsCard from '@/components/health/MetricsCard.vue'
 import WeightPlanCard from '@/components/health/WeightPlanCard.vue'
-import WaterTracker from '@/components/health/WaterTracker.vue'
-import TodayPlanCard from '@/components/health/TodayPlanCard.vue'
-import FastingTrackerPanel from '@/components/health/FastingTrackerPanel.vue'
-import PlanPanel from '@/components/health/PlanPanel.vue'
+import NutritionLogCard from '@/components/health/NutritionLogCard.vue'
+import NutritionSummaryCard from '@/components/health/NutritionSummaryCard.vue'
+import HistoryCalendarPanel from '@/components/health/HistoryCalendarPanel.vue'
 import { useHealthStore } from '@/composables/useHealthStore'
 import { type HealthProfile } from '@/data/health'
-import { weightApi } from '@/api'
+import { weightApi, aiKeyApi } from '@/api'
 
 const { t } = useI18n()
 const store = useHealthStore()
 
-const tabs = ['today', 'plan', 'fast'] as const
-type Tab = (typeof tabs)[number]
-const activeTab = ref<Tab>('today')
+const view = ref<'today' | 'calendar'>('today')
+
+// AI availability, shared by the log card and the summary card.
+const aiEnabled = ref(true)
+const visionOk = ref(true)
+onMounted(async () => {
+  try {
+    const s = await aiKeyApi.status()
+    aiEnabled.value = s.aiAvailable
+    visionOk.value = s.vision
+  } catch {
+    aiEnabled.value = false
+  }
+})
 
 // A short profile form (生日/性別/身高/體重) gates the dashboard and drives the
-// BMI / BMR / water metrics.
+// BMI / BMR / calorie-deficit metrics.
 const editing = ref(false)
 function onSetupComplete(p: HealthProfile) {
   if (store.isOnboarded.value) store.updateProfile(p)
@@ -36,16 +46,12 @@ function resetAll() {
 const log = computed(() => store.log.value)
 const profile = computed(() => store.profile.value)
 
-// ---- Handlers ----
-function addWater(ml: number) {
-  store.update((d) => { d.log.water += ml })
-}
+// ---- Weight logging ----
 function logWeight(payload: { date: string; kg: number }) {
   store.update((d) => {
     const idx = d.log.weightHistory.findIndex((p) => p.date === payload.date)
     if (idx >= 0) d.log.weightHistory[idx].kg = payload.kg
     else d.log.weightHistory.push({ date: payload.date, kg: payload.kg })
-    // "current" tracks the most recent date logged.
     const latest = [...d.log.weightHistory].sort((a, b) => a.date.localeCompare(b.date)).at(-1)
     if (latest) d.log.weightKg = latest.kg
   })
@@ -81,37 +87,31 @@ function removeWeight(date: string) {
       </template>
     </PageHeader>
 
-    <!-- Tabs -->
+    <!-- 今日營養 / 記錄月曆 -->
     <div class="mb-5 inline-flex rounded-2xl bg-ink-100 p-1">
-      <button v-for="tab in tabs" :key="tab"
+      <button
+        v-for="opt in (['today', 'calendar'] as const)" :key="opt"
         class="rounded-xl px-4 py-1.5 text-sm font-medium transition-colors"
-        :class="activeTab === tab ? 'bg-surface text-brand-700 shadow-card' : 'text-ink-500 hover:text-ink-700'"
-        @click="activeTab = tab">
-        {{ t('health.tabs.' + tab) }}
+        :class="view === opt ? 'bg-surface text-brand-700 shadow-card' : 'text-ink-500 hover:text-ink-700'"
+        @click="view = opt"
+      >
+        {{ opt === 'today' ? '今日營養' : '記錄月曆' }}
       </button>
     </div>
 
-    <!-- 今日 -->
-    <template v-if="activeTab === 'today'">
-      <div class="mb-6 grid gap-4 lg:grid-cols-2">
-        <WeightPlanCard
-          :current="log.weightKg" :start="log.startWeightKg" :target="profile.targetWeightKg"
-          :created-at="profile.createdAt" :history="log.weightHistory" @log="logWeight" @remove="removeWeight"
-        />
-        <MetricsCard :profile="profile" @edit="editing = true" />
-      </div>
+    <NutritionLogCard v-if="view === 'today'" :profile="profile" :ai-enabled="aiEnabled" :vision-ok="visionOk" />
+    <HistoryCalendarPanel v-else :profile="profile" />
 
-      <h2 class="mb-3 text-base font-bold text-ink-800">{{ t('health.sections.dailyActions') }}</h2>
-      <div class="grid gap-4 sm:grid-cols-2">
-        <TodayPlanCard @go-plan="activeTab = 'plan'" />
-        <WaterTracker :done="log.water" :goal="log.waterGoal" @add="addWater" />
-      </div>
-    </template>
+    <!-- Body metrics + weight -->
+    <div class="mt-6 grid gap-4 lg:grid-cols-2">
+      <WeightPlanCard
+        :current="log.weightKg" :start="log.startWeightKg" :target="profile.targetWeightKg"
+        :created-at="profile.createdAt" :history="log.weightHistory" @log="logWeight" @remove="removeWeight"
+      />
+      <MetricsCard :profile="profile" @edit="editing = true" />
+    </div>
 
-    <!-- 減脂課表 -->
-    <PlanPanel v-else-if="activeTab === 'plan'" />
-
-    <!-- 斷食 -->
-    <FastingTrackerPanel v-else />
+    <!-- 今日總結 + 今日紀錄 -->
+    <NutritionSummaryCard v-if="view === 'today'" class="mt-6" :profile="profile" :ai-enabled="aiEnabled" />
   </div>
 </template>

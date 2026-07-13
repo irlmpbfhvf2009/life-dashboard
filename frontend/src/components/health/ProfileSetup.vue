@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { reactive, ref, computed, watch } from 'vue'
+import { reactive, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Check } from 'lucide-vue-next'
-import Creature from './Creature.vue'
-import { ANIMALS, animalDef, type AnimalKey } from '@/data/animals'
+import { Check, Info } from 'lucide-vue-next'
 import { computeMetrics } from '@/utils/healthPlan'
 import type { HealthProfile, Gender } from '@/data/health'
 
@@ -12,8 +10,6 @@ const emit = defineEmits<{ complete: [profile: HealthProfile] }>()
 const { t } = useI18n()
 
 const form = reactive({
-  animal: (props.initial?.animal ?? 'otter') as AnimalKey,
-  companionName: props.initial?.companionName ?? animalDef('otter').defaultName,
   gender: (props.initial?.gender ?? 'male') as Gender,
   birthday: props.initial?.birthday ?? '1995-01-01',
   heightCm: props.initial?.heightCm ?? 170,
@@ -21,56 +17,48 @@ const form = reactive({
   targetWeightKg: props.initial?.targetWeightKg ?? 65,
 })
 
-const nameEdited = ref(!!props.initial)
-watch(() => form.animal, (a) => { if (!nameEdited.value) form.companionName = animalDef(a).defaultName })
-
 const profile = computed<HealthProfile>(() => ({
   ...form,
   fasting: props.initial?.fasting ?? '16:8',
   pace: props.initial?.pace ?? 'moderate',
   focusAreas: props.initial?.focusAreas ?? ['full'],
   injuries: props.initial?.injuries ?? '',
-  accessory: props.initial?.accessory ?? 'none',
   createdAt: props.initial?.createdAt ?? new Date().toISOString(),
 }))
 const metrics = computed(() => computeMetrics(profile.value))
 
 const valid = computed(() =>
-  form.companionName.trim().length > 0 && form.heightCm > 0 && form.weightKg > 0 && form.targetWeightKg > 0 && !!form.birthday,
+  form.heightCm > 0 && form.weightKg > 0 && form.targetWeightKg > 0 && !!form.birthday,
 )
-const sel = (active: boolean) =>
-  active ? 'border-violet-500 bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-300' : 'border-ink-200 text-ink-700 hover:border-ink-300'
 </script>
 
 <template>
   <div class="mx-auto max-w-2xl space-y-4">
     <div class="card-cute p-6">
-      <div class="mb-4 flex items-center gap-3">
-        <div class="h-16 w-14 shrink-0"><Creature :animal="form.animal" mood="good" /></div>
-        <div>
-          <h2 class="text-lg font-bold text-ink-900">{{ t('health.setup.title') }}</h2>
-          <p class="text-sm text-ink-500">{{ t('health.setup.subtitle') }}</p>
-        </div>
+      <div class="mb-4">
+        <h2 class="text-lg font-bold text-ink-900">{{ t('health.setup.title') }}</h2>
+        <p class="text-sm text-ink-500">{{ t('health.setup.subtitle') }}</p>
       </div>
 
-      <!-- animal + name -->
-      <div class="mb-4 grid grid-cols-5 gap-2">
-        <button v-for="a in ANIMALS" :key="a.key" class="flex flex-col items-center gap-1 rounded-2xl border p-2" :class="sel(form.animal === a.key)" @click="form.animal = a.key">
-          <div class="h-12 w-10"><Creature :animal="a.key" :bob="false" /></div>
-          <span class="text-2xs">{{ t('health.onboarding.animal.' + a.key) }}</span>
-        </button>
-      </div>
-      <div class="mb-4">
-        <label class="label">{{ t('health.onboarding.animal.name') }}</label>
-        <input v-model="form.companionName" class="input" maxlength="12" @input="nameEdited = true" />
-      </div>
+      <p class="mb-4 flex items-start gap-2 rounded-2xl bg-brand-50 px-3 py-2.5 text-xs text-brand-700 dark:bg-brand-500/10 dark:text-brand-300">
+        <Info class="mt-0.5 h-4 w-4 shrink-0" />
+        <span>性別、生日、身高、體重是計算 BMR、每日消耗與蛋白質建議的依據，填寫越準確，AI 的營養與熱量赤字建議就越貼近你的實際狀況；先隨便填也沒關係，系統會先用這些值抓一個大概，之後可以隨時回來修改。</span>
+      </p>
 
       <!-- gender -->
       <div class="mb-4">
         <label class="label">{{ t('health.onboarding.basic.gender') }}</label>
         <div class="grid grid-cols-2 gap-2.5">
-          <button class="rounded-2xl border px-4 py-2.5 text-sm" :class="sel(form.gender === 'male')" @click="form.gender = 'male'">♂ {{ t('health.onboarding.basic.male') }}</button>
-          <button class="rounded-2xl border px-4 py-2.5 text-sm" :class="sel(form.gender === 'female')" @click="form.gender = 'female'">♀ {{ t('health.onboarding.basic.female') }}</button>
+          <button
+            class="rounded-2xl border px-4 py-2.5 text-sm"
+            :class="form.gender === 'male' ? 'border-violet-500 bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-300' : 'border-ink-200 text-ink-700 hover:border-ink-300'"
+            @click="form.gender = 'male'"
+          >♂ {{ t('health.onboarding.basic.male') }}</button>
+          <button
+            class="rounded-2xl border px-4 py-2.5 text-sm"
+            :class="form.gender === 'female' ? 'border-violet-500 bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-300' : 'border-ink-200 text-ink-700 hover:border-ink-300'"
+            @click="form.gender = 'female'"
+          >♀ {{ t('health.onboarding.basic.female') }}</button>
         </div>
       </div>
 

@@ -18,7 +18,7 @@ import java.util.List;
 
 /**
  * Generates a natural-language daily brief for the home command center from the
- * user's real dashboard numbers, via {@link GeminiClient}. Degrades the same way
+ * user's real dashboard numbers, via {@link AiClient}. Degrades the same way
  * as the other AI features: a missing key throws {@link
  * com.lifedashboard.common.exception.ServiceUnavailableException} (503) and the
  * frontend falls back to its rule-based brief.
@@ -28,7 +28,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BriefService {
 
-    private final GeminiClient gemini;
+    private final AiClient ai;
     private final DashboardService dashboardService;
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -45,7 +45,7 @@ public class BriefService {
             """;
 
     public boolean isEnabled() {
-        return gemini.isEnabled();
+        return ai.isEnabled();
     }
 
     public BriefReply generate() {
@@ -66,7 +66,7 @@ public class BriefService {
         iprops.putObject("text").put("type", "STRING");
         schema.putArray("required").add("brief").add("suggestion");
 
-        String json = gemini.generateJson(SYSTEM, List.of(new ChatTurn("user", snapshot)), schema);
+        String json = ai.generateJson(SYSTEM, List.of(new ChatTurn("user", snapshot)), schema);
         try {
             JsonNode n = mapper.readTree(json);
             List<BriefReply.BriefInsight> list = new ArrayList<>();

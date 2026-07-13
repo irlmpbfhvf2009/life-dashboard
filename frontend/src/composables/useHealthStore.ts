@@ -5,7 +5,7 @@
 import { computed } from 'vue'
 import { healthStateApi } from '@/api'
 import type { HealthProfile, HealthLog } from '@/data/health'
-import { initialLog, computeMetrics } from '@/utils/healthPlan'
+import { initialLog, computeMetrics, summarizeDay } from '@/utils/healthPlan'
 import { useCloudSyncStore } from './useCloudSyncStore'
 
 interface Persisted {
@@ -27,19 +27,37 @@ function normalize(raw: Persisted | null | undefined): Persisted | null {
     l.water = (l.water || 0) * 250
     l.waterGoal = 2000
   }
-  if (raw.profile.accessory == null) raw.profile.accessory = 'none'
+  if (!Array.isArray(l.entries)) l.entries = []
+  if (l.review === undefined) l.review = null
+  if (!Array.isArray(l.history)) l.history = []
   return { profile: raw.profile, log: raw.log }
 }
 
+/** Freeze the day we're leaving into history (upsert by date) so the calendar keeps it. */
+function archiveDay(d: Persisted): void {
+  if (!d.log.entries?.length) return
+  const s = summarizeDay(d.log.date, d.log.entries, d.log.review)
+  const hist = d.log.history ?? (d.log.history = [])
+  const i = hist.findIndex((x) => x.date === s.date)
+  if (i >= 0) hist[i] = s
+  else hist.push(s)
+  // Cap to ~13 months so the synced doc never grows unbounded.
+  if (hist.length > 400) d.log.history = hist.slice(-400)
+}
+
 /**
- * Roll the daily log over to today: water is per-day and resets at midnight.
- * Weight, weight history and goals are cumulative and carried forward.
+ * Roll the daily log over to today: the AI food log and water are per-day and
+ * reset at midnight (yesterday's log is frozen into history first). Weight,
+ * weight history, history and goals are cumulative.
  */
 function rollDaily(d: Persisted): boolean {
   const today = todayKey()
   if (d.log.date === today) return false
+  archiveDay(d)
   d.log.date = today
   d.log.water = 0
+  d.log.entries = []
+  d.log.review = null
   return true
 }
 

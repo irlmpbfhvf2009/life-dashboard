@@ -15,7 +15,7 @@ import java.util.Set;
 /**
  * Turns a Traditional-Chinese phrase into traveler-friendly spoken phrases in a
  * chosen target language (Thai / Japanese / Korean / Vietnamese …) on top of
- * {@link GeminiClient}. The model returns structured JSON so the UI can show the
+ * {@link AiClient}. The model returns structured JSON so the UI can show the
  * native script, romanization, a literal back-translation and a usage tip
  * separately. Degrades gracefully (503) when no key is configured.
  */
@@ -24,14 +24,14 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class PhraseCoachService {
 
-    private final GeminiClient gemini;
+    private final AiClient ai;
     private final ObjectMapper mapper = new ObjectMapper();
 
     /** Allow-list of target languages we support, to keep the prompt sane. */
     private static final Set<String> ALLOWED = Set.of("Thai", "Japanese", "Korean", "Vietnamese");
 
     public boolean isEnabled() {
-        return gemini.isEnabled();
+        return ai.isEnabled();
     }
 
     public PhraseReply translate(String message, String langName) {
@@ -50,11 +50,11 @@ public class PhraseCoachService {
                 Keep everything concise and practical for real on-the-street use.
                 """.formatted(target, target);
 
-        ObjectNode schema = gemini.stringObjectSchema("native", "pronunciation", "literal", "polite", "tip");
+        ObjectNode schema = ai.stringObjectSchema("native", "pronunciation", "literal", "polite", "tip");
         schema.putArray("required").add("native");
 
         List<ChatTurn> turns = List.of(new ChatTurn("user", message));
-        String json = gemini.generateJson(system, turns, schema);
+        String json = ai.generateJson(system, turns, schema);
         try {
             JsonNode n = mapper.readTree(json);
             return new PhraseReply(
