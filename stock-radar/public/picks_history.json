@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-07-10 18:38",
+  "updated_at": "2026-07-13 18:42",
   "picks": [
     {
       "date": "2026-06-16",
@@ -9993,6 +9993,626 @@
         "inst20d": null,
         "industry": "隨大盤",
         "margin_chg": 1.1,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-07-13",
+      "code": "3711",
+      "name": "日月光投控",
+      "entry_price": 670.0,
+      "score": 51.4,
+      "signals": {
+        "composite": 51.4,
+        "breakdown": {
+          "chips": 53.0,
+          "tech": 52.1,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 56.1,
+        "change_pct": -1.03,
+        "foreign_lots": -700,
+        "trust_lots": 4324,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "弱勢族群",
+        "margin_chg": 1.8,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-07-13",
+      "code": "2409",
+      "name": "友達",
+      "entry_price": 29.25,
+      "score": 48.3,
+      "signals": {
+        "composite": 48.3,
+        "breakdown": {
+          "chips": 50.0,
+          "tech": 43.4,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 52.8,
+        "change_pct": -7.0,
+        "foreign_lots": 188929,
+        "trust_lots": -8,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "弱勢族群",
+        "margin_chg": -7.5,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-07-13",
+      "code": "6834",
+      "name": "天二科技",
+      "entry_price": 129.0,
+      "score": 47.7,
+      "signals": {
+        "composite": 47.7,
+        "breakdown": {
+          "chips": 3.3,
+          "tech": 96.7,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 65.3,
+        "change_pct": -0.77,
+        "foreign_lots": 90,
+        "trust_lots": 0,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "弱勢族群",
+        "margin_chg": -0.2,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-07-13",
+      "code": "3033",
+      "name": "威健",
+      "entry_price": 50.9,
+      "score": 42.1,
+      "signals": {
+        "composite": 42.1,
+        "breakdown": {
+          "chips": 3.4,
+          "tech": 74.5,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 59.6,
+        "change_pct": 2.62,
+        "foreign_lots": 665,
+        "trust_lots": -6,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "強勢族群",
+        "margin_chg": 1.3,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-07-13",
+      "code": "4916",
+      "name": "事欣科",
+      "entry_price": 118.0,
+      "score": 40.5,
+      "signals": {
+        "composite": 40.5,
+        "breakdown": {
+          "chips": 3.2,
+          "tech": 68.3,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 62.3,
+        "change_pct": 9.26,
+        "foreign_lots": -119,
+        "trust_lots": 0,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "隨大盤",
+        "margin_chg": -1.7,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-07-13",
+      "code": "2382",
+      "name": "廣達",
+      "entry_price": 378.0,
+      "score": 39.9,
+      "signals": {
+        "composite": 39.9,
+        "breakdown": {
+          "chips": 16.8,
+          "tech": 49.5,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 57.1,
+        "change_pct": 1.2,
+        "foreign_lots": -4506,
+        "trust_lots": 1271,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "隨大盤",
+        "margin_chg": -0.5,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-07-13",
+      "code": "5876",
+      "name": "上海商銀",
+      "entry_price": 44.15,
+      "score": 39.0,
+      "signals": {
+        "composite": 39.0,
+        "breakdown": {
+          "chips": 9.2,
+          "tech": 54.9,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 68.7,
+        "change_pct": 3.15,
+        "foreign_lots": 2460,
+        "trust_lots": 467,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "強勢族群",
+        "margin_chg": -5.4,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-07-13",
+      "code": "8150",
+      "name": "南茂",
+      "entry_price": 115.0,
+      "score": 38.8,
+      "signals": {
+        "composite": 38.8,
+        "breakdown": {
+          "chips": 5.6,
+          "tech": 58.5,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 58.9,
+        "change_pct": -1.71,
+        "foreign_lots": 9365,
+        "trust_lots": -1,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "弱勢族群",
+        "margin_chg": 12.4,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-07-13",
+      "code": "2377",
+      "name": "微星",
+      "entry_price": 149.5,
+      "score": 38.3,
+      "signals": {
+        "composite": 38.3,
+        "breakdown": {
+          "chips": 4.7,
+          "tech": 57.6,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 64.5,
+        "change_pct": 3.1,
+        "foreign_lots": 5299,
+        "trust_lots": 15,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "隨大盤",
+        "margin_chg": -1.6,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-07-13",
+      "code": "2637",
+      "name": "慧洋-KY",
+      "entry_price": 84.7,
+      "score": 38.0,
+      "signals": {
+        "composite": 38.0,
+        "breakdown": {
+          "chips": 13.3,
+          "tech": 46.1,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 69.6,
+        "change_pct": 2.05,
+        "foreign_lots": 3612,
+        "trust_lots": 796,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "強勢族群",
+        "margin_chg": -1.3,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-07-13",
+      "code": "5471",
+      "name": "松翰",
+      "entry_price": 65.0,
+      "score": 37.9,
+      "signals": {
+        "composite": 37.9,
+        "breakdown": {
+          "chips": 3.8,
+          "tech": 57.2,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 59.9,
+        "change_pct": -3.85,
+        "foreign_lots": 2320,
+        "trust_lots": 0,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "弱勢族群",
+        "margin_chg": 28.0,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-07-13",
+      "code": "6505",
+      "name": "台塑化",
+      "entry_price": 63.1,
+      "score": 37.5,
+      "signals": {
+        "composite": 37.5,
+        "breakdown": {
+          "chips": 3.4,
+          "tech": 55.8,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 68.7,
+        "change_pct": 7.31,
+        "foreign_lots": 744,
+        "trust_lots": -6,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "隨大盤",
+        "margin_chg": 0.2,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-07-13",
+      "code": "5434",
+      "name": "崇越",
+      "entry_price": 559.0,
+      "score": 37.2,
+      "signals": {
+        "composite": 37.2,
+        "breakdown": {
+          "chips": 3.5,
+          "tech": 54.6,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 67.7,
+        "change_pct": 9.82,
+        "foreign_lots": -147,
+        "trust_lots": 21,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "強勢族群",
+        "margin_chg": 1.5,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-07-13",
+      "code": "6202",
+      "name": "盛群",
+      "entry_price": 70.2,
+      "score": 37.0,
+      "signals": {
+        "composite": 37.0,
+        "breakdown": {
+          "chips": 5.3,
+          "tech": 51.4,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 56.4,
+        "change_pct": -4.23,
+        "foreign_lots": 8460,
+        "trust_lots": 0,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "弱勢族群",
+        "margin_chg": 26.6,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-07-13",
+      "code": "2351",
+      "name": "順德",
+      "entry_price": 210.5,
+      "score": 36.6,
+      "signals": {
+        "composite": 36.6,
+        "breakdown": {
+          "chips": 3.1,
+          "tech": 52.8,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 54.0,
+        "change_pct": 5.25,
+        "foreign_lots": -438,
+        "trust_lots": -2,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "弱勢族群",
+        "margin_chg": -0.8,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-07-13",
+      "code": "2886",
+      "name": "兆豐金",
+      "entry_price": 47.0,
+      "score": 36.6,
+      "signals": {
+        "composite": 36.6,
+        "breakdown": {
+          "chips": 8.8,
+          "tech": 45.9,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 69.7,
+        "change_pct": 0.64,
+        "foreign_lots": 3521,
+        "trust_lots": 403,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "強勢族群",
+        "margin_chg": -3.1,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-07-13",
+      "code": "1434",
+      "name": "福懋",
+      "entry_price": 18.5,
+      "score": 36.4,
+      "signals": {
+        "composite": 36.4,
+        "breakdown": {
+          "chips": 3.3,
+          "tech": 51.7,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 63.8,
+        "change_pct": 4.52,
+        "foreign_lots": 407,
+        "trust_lots": -2,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "強勢族群",
+        "margin_chg": -3.7,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-07-13",
+      "code": "3004",
+      "name": "豐達科",
+      "entry_price": 154.5,
+      "score": 36.2,
+      "signals": {
+        "composite": 36.2,
+        "breakdown": {
+          "chips": 3.3,
+          "tech": 51.0,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 63.6,
+        "change_pct": 0.65,
+        "foreign_lots": 172,
+        "trust_lots": 0,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "強勢族群",
+        "margin_chg": 4.2,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-07-13",
+      "code": "3706",
+      "name": "神達",
+      "entry_price": 90.8,
+      "score": 36.1,
+      "signals": {
+        "composite": 36.1,
+        "breakdown": {
+          "chips": 2.5,
+          "tech": 51.6,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 56.0,
+        "change_pct": 2.37,
+        "foreign_lots": -3031,
+        "trust_lots": -2,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "隨大盤",
+        "margin_chg": 1.1,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-07-13",
+      "code": "2330",
+      "name": "台積電",
+      "entry_price": 2440.0,
+      "score": 35.2,
+      "signals": {
+        "composite": 35.2,
+        "breakdown": {
+          "chips": 0.6,
+          "tech": 50.2,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 55.1,
+        "change_pct": 1.04,
+        "foreign_lots": -12749,
+        "trust_lots": 43,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "弱勢族群",
+        "margin_chg": 2.4,
         "attn_mom": null,
         "attn_trend": null
       }
