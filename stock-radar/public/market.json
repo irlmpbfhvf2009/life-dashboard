@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-07-14 17:28",
+  "updated_at": "2026-07-15 17:32",
   "indices": [
     {
       "code": "^DJI",
@@ -36,9 +36,9 @@
     {
       "code": "^VIX",
       "name": "VIX 恐慌指數",
-      "value": 17.25,
-      "change_pct": 0.52,
-      "date": "2026-07-14",
+      "value": 16.22,
+      "change_pct": -5.48,
+      "date": "2026-07-15",
       "tw_proxy": false
     },
     {
@@ -52,9 +52,9 @@
     {
       "code": "^TWII",
       "name": "台股加權(前日)",
-      "value": 44737.95,
-      "change_pct": -1.42,
-      "date": "2026-07-14",
+      "value": 45631.59,
+      "change_pct": 0.55,
+      "date": "2026-07-15",
       "tw_proxy": false
     }
   ]
