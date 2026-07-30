@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-07-29 18:17",
+  "updated_at": "2026-07-30 18:03",
   "picks": [
     {
       "date": "2026-06-16",
@@ -16224,6 +16224,130 @@
         "inst20d": null,
         "industry": "強勢族群",
         "margin_chg": -1.6,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-07-30",
+      "code": "2027",
+      "name": "大成鋼",
+      "entry_price": 43.7,
+      "score": 66.7,
+      "signals": {
+        "composite": 66.7,
+        "breakdown": {
+          "chips": 100.0,
+          "tech": 57.0,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 58.1,
+        "change_pct": 1.04,
+        "foreign_lots": 3551,
+        "trust_lots": 6250,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "強勢族群",
+        "margin_chg": -4.5,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-07-30",
+      "code": "1907",
+      "name": "永豐餘",
+      "entry_price": 29.0,
+      "score": 54.1,
+      "signals": {
+        "composite": 54.1,
+        "breakdown": {
+          "chips": 23.3,
+          "tech": 98.2,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 62.8,
+        "change_pct": 1.93,
+        "foreign_lots": 1587,
+        "trust_lots": 0,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "強勢族群",
+        "margin_chg": -0.0,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-07-30",
+      "code": "2006",
+      "name": "東和鋼鐵",
+      "entry_price": 73.4,
+      "score": 42.1,
+      "signals": {
+        "composite": 42.1,
+        "breakdown": {
+          "chips": 7.7,
+          "tech": 69.0,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 65.4,
+        "change_pct": 1.38,
+        "foreign_lots": 378,
+        "trust_lots": 100,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "強勢族群",
+        "margin_chg": -5.8,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-07-30",
+      "code": "2845",
+      "name": "遠東銀",
+      "entry_price": 13.45,
+      "score": 37.6,
+      "signals": {
+        "composite": 37.6,
+        "breakdown": {
+          "chips": 3.9,
+          "tech": 55.8,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 59.3,
+        "change_pct": 1.13,
+        "foreign_lots": -129,
+        "trust_lots": 490,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "強勢族群",
+        "margin_chg": 1.3,
         "attn_mom": null,
         "attn_trend": null
       }
