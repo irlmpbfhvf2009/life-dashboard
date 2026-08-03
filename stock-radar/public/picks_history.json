@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-07-31 18:13",
+  "updated_at": "2026-08-03 18:57",
   "picks": [
     {
       "date": "2026-06-16",
@@ -16844,6 +16844,161 @@
         "inst20d": null,
         "industry": "強勢族群",
         "margin_chg": -2.0,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-08-03",
+      "code": "3231",
+      "name": "緯創",
+      "entry_price": 186.0,
+      "score": 66.8,
+      "signals": {
+        "composite": 66.8,
+        "breakdown": {
+          "chips": 94.0,
+          "tech": 64.6,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 65.9,
+        "change_pct": 5.68,
+        "foreign_lots": 18281,
+        "trust_lots": 3194,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "強勢族群",
+        "margin_chg": 16.3,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-08-03",
+      "code": "2834",
+      "name": "臺企銀",
+      "entry_price": 18.2,
+      "score": 52.9,
+      "signals": {
+        "composite": 52.9,
+        "breakdown": {
+          "chips": 50.7,
+          "tech": 60.8,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 59.4,
+        "change_pct": 0.0,
+        "foreign_lots": 20791,
+        "trust_lots": 47,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "弱勢族群",
+        "margin_chg": 12.4,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-08-03",
+      "code": "2425",
+      "name": "承啟",
+      "entry_price": 48.3,
+      "score": 48.7,
+      "signals": {
+        "composite": 48.7,
+        "breakdown": {
+          "chips": 6.0,
+          "tech": 97.8,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 63.5,
+        "change_pct": 2.88,
+        "foreign_lots": 2283,
+        "trust_lots": 5,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "強勢族群",
+        "margin_chg": -1.8,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-08-03",
+      "code": "6669",
+      "name": "緯穎",
+      "entry_price": 5925.0,
+      "score": 42.3,
+      "signals": {
+        "composite": 42.3,
+        "breakdown": {
+          "chips": 7.3,
+          "tech": 70.6,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 62.3,
+        "change_pct": 9.93,
+        "foreign_lots": -199,
+        "trust_lots": 466,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "強勢族群",
+        "margin_chg": -5.3,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-08-03",
+      "code": "3665",
+      "name": "貿聯-KY",
+      "entry_price": 2095.0,
+      "score": 33.9,
+      "signals": {
+        "composite": 33.9,
+        "breakdown": {
+          "chips": 5.6,
+          "tech": 38.9,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 52.3,
+        "change_pct": -0.24,
+        "foreign_lots": -225,
+        "trust_lots": 363,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "強勢族群",
+        "margin_chg": 0.7,
         "attn_mom": null,
         "attn_trend": null
       }
