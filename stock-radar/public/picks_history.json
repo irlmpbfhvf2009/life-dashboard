@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-08-03 18:57",
+  "updated_at": "2026-08-04 18:18",
   "picks": [
     {
       "date": "2026-06-16",
@@ -16999,6 +16999,161 @@
         "inst20d": null,
         "industry": "強勢族群",
         "margin_chg": 0.7,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-08-04",
+      "code": "2425",
+      "name": "承啟",
+      "entry_price": 50.2,
+      "score": 59.8,
+      "signals": {
+        "composite": 59.8,
+        "breakdown": {
+          "chips": 44.4,
+          "tech": 95.8,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 66.8,
+        "change_pct": 3.93,
+        "foreign_lots": -832,
+        "trust_lots": -1,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "強勢族群",
+        "margin_chg": 11.9,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-08-04",
+      "code": "6206",
+      "name": "飛捷",
+      "entry_price": 140.0,
+      "score": 51.4,
+      "signals": {
+        "composite": 51.4,
+        "breakdown": {
+          "chips": 50.0,
+          "tech": 55.6,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 61.4,
+        "change_pct": 4.87,
+        "foreign_lots": 2041,
+        "trust_lots": -5,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "強勢族群",
+        "margin_chg": 21.1,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-08-04",
+      "code": "2801",
+      "name": "彰銀",
+      "entry_price": 25.2,
+      "score": 51.3,
+      "signals": {
+        "composite": 51.3,
+        "breakdown": {
+          "chips": 50.0,
+          "tech": 55.1,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 68.2,
+        "change_pct": -0.79,
+        "foreign_lots": -23336,
+        "trust_lots": 4244,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "弱勢族群",
+        "margin_chg": -4.6,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-08-04",
+      "code": "3504",
+      "name": "揚明光",
+      "entry_price": 78.2,
+      "score": 50.5,
+      "signals": {
+        "composite": 50.5,
+        "breakdown": {
+          "chips": 46.4,
+          "tech": 56.3,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 57.7,
+        "change_pct": 3.85,
+        "foreign_lots": 181,
+        "trust_lots": 0,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "強勢族群",
+        "margin_chg": 5.6,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-08-04",
+      "code": "3017",
+      "name": "奇鋐",
+      "entry_price": 2600.0,
+      "score": 49.6,
+      "signals": {
+        "composite": 49.6,
+        "breakdown": {
+          "chips": 54.4,
+          "tech": 43.2,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 59.1,
+        "change_pct": 1.96,
+        "foreign_lots": 825,
+        "trust_lots": 571,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "強勢族群",
+        "margin_chg": -0.8,
         "attn_mom": null,
         "attn_trend": null
       }
