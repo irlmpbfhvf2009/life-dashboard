@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-08-04 18:18",
+  "updated_at": "2026-08-05 18:14",
   "picks": [
     {
       "date": "2026-06-16",
@@ -17154,6 +17154,37 @@
         "inst20d": null,
         "industry": "強勢族群",
         "margin_chg": -0.8,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-08-05",
+      "code": "2454",
+      "name": "聯發科",
+      "entry_price": 4000.0,
+      "score": 54.0,
+      "signals": {
+        "composite": 54.0,
+        "breakdown": {
+          "chips": 50.0,
+          "tech": 66.1,
+          "basic": 50.0,
+          "value": 50.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "profile": "balanced"
+        },
+        "rsi": 55.7,
+        "change_pct": 3.49,
+        "foreign_lots": 0,
+        "trust_lots": 0,
+        "pe": null,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": null,
+        "margin_chg": null,
         "attn_mom": null,
         "attn_trend": null
       }
