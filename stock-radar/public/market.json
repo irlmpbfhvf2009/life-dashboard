@@ -1,60 +1,60 @@
 {
-  "updated_at": "2026-08-06 22:23",
+  "updated_at": "2026-08-07 03:44",
   "indices": [
     {
       "code": "^DJI",
       "name": "道瓊",
-      "value": 54283.95,
-      "change_pct": -0.12,
+      "value": 53847.97,
+      "change_pct": -0.92,
       "date": "2026-08-06",
       "tw_proxy": false
     },
     {
       "code": "^GSPC",
       "name": "S&P 500",
-      "value": 7723.55,
-      "change_pct": -0.17,
-      "date": "2026-08-05",
+      "value": 7706.08,
+      "change_pct": -0.23,
+      "date": "2026-08-06",
       "tw_proxy": false
     },
     {
       "code": "^IXIC",
       "name": "那斯達克",
-      "value": 26484.51,
-      "change_pct": 0.46,
+      "value": 26347.13,
+      "change_pct": -0.06,
       "date": "2026-08-06",
       "tw_proxy": false
     },
     {
       "code": "^SOX",
       "name": "費城半導體",
-      "value": 12008.88,
-      "change_pct": -1.4,
-      "date": "2026-08-05",
+      "value": 12111.89,
+      "change_pct": 0.86,
+      "date": "2026-08-06",
       "tw_proxy": false
     },
     {
       "code": "^VIX",
       "name": "VIX 恐慌指數",
-      "value": 15.58,
-      "change_pct": -1.45,
+      "value": 15.3,
+      "change_pct": -3.23,
       "date": "2026-08-06",
       "tw_proxy": false
     },
     {
       "code": "TSM",
       "name": "台積電 ADR",
-      "value": 414.0,
-      "change_pct": -0.76,
-      "date": "2026-08-05",
+      "value": 419.31,
+      "change_pct": 1.28,
+      "date": "2026-08-06",
       "tw_proxy": true
     },
     {
       "code": "^TWII",
       "name": "台股加權(前日)",
-      "value": 44396.7,
-      "change_pct": -0.48,
-      "date": "2026-08-06",
+      "value": 44611.6,
+      "change_pct": 2.88,
+      "date": "2026-08-05",
       "tw_proxy": false
     }
   ]
