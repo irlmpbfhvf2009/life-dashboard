@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-08-05 18:15",
+  "updated_at": "2026-08-06 18:16",
   "windows": [
     5,
     10,
@@ -189,7 +189,7 @@
           "exit_day": 3
         }
       },
-      "last_return_pct": -12.67,
+      "last_return_pct": -12.37,
       "status_overall": "evaluated"
     },
     {
@@ -240,7 +240,7 @@
           "exit_day": 1
         }
       },
-      "last_return_pct": -19.16,
+      "last_return_pct": -18.79,
       "status_overall": "evaluated"
     },
     {
@@ -291,7 +291,7 @@
           "exit_day": 8
         }
       },
-      "last_return_pct": 3.78,
+      "last_return_pct": 5.84,
       "status_overall": "evaluated"
     },
     {
@@ -342,7 +342,7 @@
           "exit_day": 4
         }
       },
-      "last_return_pct": -20.55,
+      "last_return_pct": -19.95,
       "status_overall": "evaluated"
     },
     {
@@ -393,7 +393,7 @@
           "exit_day": 4
         }
       },
-      "last_return_pct": -31.69,
+      "last_return_pct": -25.0,
       "status_overall": "evaluated"
     },
     {
@@ -444,7 +444,7 @@
           "exit_day": 1
         }
       },
-      "last_return_pct": 53.91,
+      "last_return_pct": 55.22,
       "status_overall": "evaluated"
     }
   ]
