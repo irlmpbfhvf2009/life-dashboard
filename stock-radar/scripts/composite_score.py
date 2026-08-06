@@ -156,6 +156,34 @@ def industry_adjust(s: dict) -> tuple[float, Optional[str]]:
     return {"強勢族群": IND_STRONG, "隨大盤": 1.0, "弱勢族群": IND_WEAK}.get(strength, 1.0), strength
 
 
+# 「融資增加且族群非強勢」的懲罰係數（env 可調；設 1.0 等同關閉）
+MARGIN_CHASE_PENALTY = float(os.environ.get("MARGIN_CHASE_PENALTY", "0.85"))
+
+
+def margin_chase_adjust(s: dict) -> tuple[float, bool]:
+    """散戶追高組合懲罰：融資增加 >0% 且族群非強勢。回傳 (係數, 是否觸發)。
+
+    依據 2026-08-06 失敗檢討（n=442，20 日視窗），這是全樣本中最差的一組：
+      觸發者(n=109, 佔 24.7%)  期末收紅 19.3%／中位 -16.86%／停損模擬 -0.05%
+      其餘   (n=333)          期末收紅 36.6%／中位  -7.66%／停損模擬 +1.30%
+    單看融資也是同方向（融資減 收紅 40.7% vs 融資增 0~5% 收紅 28.5%），
+    族群強弱則把訊號放大——融資增代表散戶在追，族群又不強＝沒有基本盤撐。
+
+    回測（每日前 5 名，n=125）：收紅 34.4%→36.0%、平均 -8.36%→-7.67%、
+    中位持平。0.75 與 0.85 結果幾乎相同，代表不是卡在臨界值的假象。
+    硬排除的數字略好（收紅 37.4%／平均 -7.55%），但採用懲罰係數而非硬排除，
+    理由是保守可逆、且不改變 result.json 作為「當日雷達榜」的完整性。
+    資料缺漏 → 不判定、不懲罰。
+    """
+    sen = s.get("sentiment") if isinstance(s.get("sentiment"), dict) else {}
+    ind = s.get("industry") if isinstance(s.get("industry"), dict) else {}
+    margin = safe_float(sen.get("margin_change_pct"))
+    strength = ind.get("strength")
+    if margin is not None and margin > 0 and strength is not None and strength != "強勢族群":
+        return MARGIN_CHASE_PENALTY, True
+    return 1.0, False
+
+
 def quality_adjust(s: dict) -> tuple[float, list[str]]:
     """基本面軟門檻：對體質不佳者套用懲罰係數(<1)壓低綜合分，避免『技術漂亮、體質爛』
     的假飆股排前面。回傳 (係數, 旗標清單)。資料缺漏不罰（從寬，係數=1）。
@@ -250,6 +278,9 @@ def main() -> int:
         # 產業族群強弱：強勢加分、弱勢扣分（見 industry_adjust 的實證依據）
         ind_factor, ind_strength = industry_adjust(s)
         composite *= ind_factor
+        # 散戶追高組合：融資增加且族群非強勢（全樣本最差的一組）
+        mc_factor, _ = margin_chase_adjust(s)
+        composite *= mc_factor
         s["composite_score"] = round(composite, 1)
         s["score_breakdown"] = {
             "chips": round(p_chips * 100, 1),
@@ -260,6 +291,7 @@ def main() -> int:
             "quality_flags": flags,
             "industry_factor": ind_factor,
             "industry_strength": ind_strength,
+            "margin_chase_penalty": mc_factor,
             "profile": PROFILE,
         }
 
