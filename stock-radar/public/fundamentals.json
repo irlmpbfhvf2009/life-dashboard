@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-08-06 21:45",
+  "updated_at": "2026-08-06 22:25",
   "stocks": {
     "2408": {
       "code": "2408",
@@ -238,6 +238,10 @@
     },
     "2465": {
       "code": "2465",
+      "pe": 64.77,
+      "pb": 6.67,
+      "dividend_yield": 0.0,
+      "valuation_date": "2026-08-06",
       "eps": 1.15,
       "gross_margin": 10.65,
       "op_margin": 5.87,
@@ -250,7 +254,7 @@
         "高ROE",
         "低負債"
       ],
-      "fund_pass": true
+      "fund_pass": false
     },
     "6269": {
       "code": "6269",
