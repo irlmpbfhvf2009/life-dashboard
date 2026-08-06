@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-08-06 18:16",
+  "updated_at": "2026-08-06 21:38",
   "windows": [
     5,
     10,
@@ -141,6 +141,26 @@
     }
   },
   "detail": [
+    {
+      "date": "2026-08-06",
+      "code": "2317",
+      "name": "鴻海",
+      "total_score": 30.0,
+      "scores": {
+        "fundamental": "改善",
+        "valuation": "合理",
+        "chips": "偏多",
+        "technical": "多頭",
+        "industry": "成長",
+        "catalyst": "有利多",
+        "expectation": "符合預期",
+        "risk": "中"
+      },
+      "entry_price": 264.5,
+      "windows": {},
+      "last_return_pct": null,
+      "status_overall": "pending"
+    },
     {
       "date": "2026-07-04",
       "code": "3711",
