@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import {
-  ArrowLeft, ShieldAlert, Bot, RefreshCw, Globe, Target, History, ListChecks, Radar, Sparkles,
+  ArrowLeft, ShieldAlert, Bot, RefreshCw, Globe, Target, History, ListChecks, Sparkles,
   Activity, Zap, Gauge, Compass,
 } from 'lucide-vue-next'
 import PageHeader from '@/components/ui/PageHeader.vue'
@@ -109,9 +109,11 @@ const overviewItems = computed(() =>
     : [],
 )
 
+// 「雷達選股」分頁已隱藏（量化全榜不對外顯示，AI 精選才是主秀）。
+// 要還原＝把下面那行 radar 取消註解、並把 lucide 的 Radar 圖示加回 import；對應面板仍在 template 裡。
 const tabs = computed(() => [
   { key: 'current' as const, label: '今日 AI 精選', icon: Sparkles, count: analysis.value?.stocks.length },
-  { key: 'radar' as const, label: '雷達選股', icon: Radar, count: radar.value?.stocks.length },
+  // { key: 'radar' as const, label: '雷達選股', icon: Radar, count: radar.value?.stocks.length },
   { key: 'track' as const, label: 'AI 預判追蹤', icon: ListChecks, count: performance.value?.detail?.length },
   { key: 'archive' as const, label: '過往分析', icon: History, count: undefined },
 ])
@@ -149,6 +151,62 @@ onMounted(load)
     <ErrorState v-else-if="error && !analysis" :message="error" @retry="load" />
 
     <div v-else-if="analysis" class="space-y-8">
+      <!-- Tabs（主內容置頂：先看 AI 精選，績效/總經/總覽往下擺） -->
+      <div>
+        <div class="mb-5 flex flex-wrap gap-2">
+          <button
+            v-for="t in tabs"
+            :key="t.key"
+            class="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors"
+            :class="tab === t.key ? 'bg-brand-600 text-white' : 'border border-ink-200 bg-surface text-ink-600 hover:bg-ink-100'"
+            @click="onTab(t.key)"
+          >
+            <component :is="t.icon" class="h-4 w-4" />
+            {{ t.label }}<span v-if="t.count != null" class="opacity-70">（{{ t.count }}）</span>
+          </button>
+        </div>
+
+        <!-- Today's AI picks (merged quote + AI analysis) -->
+        <div v-if="tab === 'current'" class="space-y-4">
+          <p class="text-sm text-ink-500">綜合分最高、且已做 AI 八面向分析的標的（附 K 線、技術、籌碼、基本面與操作參考）。</p>
+          <EmptyState v-if="!aiPicks.length" title="尚無 AI 精選" description="等下次 AI 分析更新。" />
+          <AiPickCard v-for="p in aiPicks" :key="p.ai.code" :ai="p.ai" :radar="p.radar" />
+        </div>
+
+        <!-- Radar board（分頁已隱藏，保留面板以便日後一行還原）-->
+        <div v-else-if="tab === 'radar'">
+          <p class="mb-3 text-sm text-ink-500">
+            每日量化選股榜：技術面 + 籌碼面 + 相對強弱篩出的強勢標的，依多因子綜合分排序<span v-if="radar"> · 更新於 {{ radar.updated_at }}</span>。
+          </p>
+          <EmptyState v-if="!radar?.stocks.length" title="今日無符合條件的標的" />
+          <div v-else class="space-y-3">
+            <RadarStockCard v-for="(s, i) in radar.stocks" :key="s.code" :stock="s" :default-open="i === 0" />
+          </div>
+        </div>
+
+        <!-- Track record -->
+        <div v-else-if="tab === 'track'">
+          <p class="mb-3 text-sm text-ink-500">
+            AI 看好的股（八面向評分 ≥ {{ performance?.ai_pick_min }}/40）事後真實表現——每個視窗顯示實際出場結果：停利（+{{ performance?.target_pct }}%）、停損、或期末收盤報酬；未到期為「進行中」。
+          </p>
+          <StockTrackTable
+            v-if="performance?.detail?.length"
+            :rows="performance.detail"
+            :windows="performance.windows"
+          />
+          <EmptyState v-else title="尚無追蹤紀錄" />
+        </div>
+
+        <!-- Archive -->
+        <div v-else>
+          <LoadingState v-if="archiveLoading" label="正在載入過往分析…" />
+          <EmptyState v-else-if="!archiveList.length" title="尚無過往分析" />
+          <div v-else class="space-y-3">
+            <StockAnalysisCard v-for="s in archiveList" :key="s.code + s.analyzed_at" :stock="s" />
+          </div>
+        </div>
+      </div>
+
       <!-- Performance -->
       <section v-if="performance">
         <div class="mb-3 flex flex-wrap items-center gap-2">
@@ -242,62 +300,6 @@ onMounted(load)
           </div>
         </div>
       </SectionCard>
-
-      <!-- Tabs -->
-      <div>
-        <div class="mb-5 flex flex-wrap gap-2">
-          <button
-            v-for="t in tabs"
-            :key="t.key"
-            class="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors"
-            :class="tab === t.key ? 'bg-brand-600 text-white' : 'border border-ink-200 bg-surface text-ink-600 hover:bg-ink-100'"
-            @click="onTab(t.key)"
-          >
-            <component :is="t.icon" class="h-4 w-4" />
-            {{ t.label }}<span v-if="t.count != null" class="opacity-70">（{{ t.count }}）</span>
-          </button>
-        </div>
-
-        <!-- Today's AI picks (merged quote + AI analysis) -->
-        <div v-if="tab === 'current'" class="space-y-4">
-          <p class="text-sm text-ink-500">綜合分最高、且已做 AI 八面向分析的標的（附 K 線、技術、籌碼、基本面與操作參考）。</p>
-          <EmptyState v-if="!aiPicks.length" title="尚無 AI 精選" description="等下次 AI 分析更新。" />
-          <AiPickCard v-for="p in aiPicks" :key="p.ai.code" :ai="p.ai" :radar="p.radar" />
-        </div>
-
-        <!-- Radar board -->
-        <div v-else-if="tab === 'radar'">
-          <p class="mb-3 text-sm text-ink-500">
-            每日量化選股榜：技術面 + 籌碼面 + 相對強弱篩出的強勢標的，依多因子綜合分排序<span v-if="radar"> · 更新於 {{ radar.updated_at }}</span>。
-          </p>
-          <EmptyState v-if="!radar?.stocks.length" title="今日無符合條件的標的" />
-          <div v-else class="space-y-3">
-            <RadarStockCard v-for="(s, i) in radar.stocks" :key="s.code" :stock="s" :default-open="i === 0" />
-          </div>
-        </div>
-
-        <!-- Track record -->
-        <div v-else-if="tab === 'track'">
-          <p class="mb-3 text-sm text-ink-500">
-            AI 看好的股（八面向評分 ≥ {{ performance?.ai_pick_min }}/40）事後真實表現——每個視窗顯示實際出場結果：停利（+{{ performance?.target_pct }}%）、停損、或期末收盤報酬；未到期為「進行中」。
-          </p>
-          <StockTrackTable
-            v-if="performance?.detail?.length"
-            :rows="performance.detail"
-            :windows="performance.windows"
-          />
-          <EmptyState v-else title="尚無追蹤紀錄" />
-        </div>
-
-        <!-- Archive -->
-        <div v-else>
-          <LoadingState v-if="archiveLoading" label="正在載入過往分析…" />
-          <EmptyState v-else-if="!archiveList.length" title="尚無過往分析" />
-          <div v-else class="space-y-3">
-            <StockAnalysisCard v-for="s in archiveList" :key="s.code + s.analyzed_at" :stock="s" />
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </template>
