@@ -28,7 +28,7 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Optional
 
-import requests
+from twse_api import fetch_json
 
 try:
     sys.stdout.reconfigure(encoding="utf-8")
@@ -84,12 +84,8 @@ def industry_name(code: str) -> str:
 
 def fetch_industry_map() -> dict[str, str]:
     """回傳 {股票代號: 產業別(原始值，代碼或名稱)}。"""
-    try:
-        resp = requests.get(TWSE_COMPANY, timeout=30)
-        resp.raise_for_status()
-        rows = resp.json()
-    except Exception as exc:  # noqa: BLE001
-        print(f"[警告] 取得上市公司基本資料失敗：{exc}")
+    rows = fetch_json(TWSE_COMPANY, "上市公司基本資料")
+    if not isinstance(rows, list):
         return {}
     out: dict[str, str] = {}
     for row in rows if isinstance(rows, list) else []:

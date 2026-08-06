@@ -32,9 +32,10 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-import requests
 import yfinance as yf
 from tqdm import tqdm
+
+from twse_api import fetch_json
 
 try:
     sys.stdout.reconfigure(encoding="utf-8")
@@ -122,12 +123,8 @@ def compute_rsi(close: pd.Series, period: int = RSI_PERIOD) -> pd.Series:
 # --------------------------------------------------------------------------- #
 def fetch_universe_and_date() -> tuple[dict[str, str], Optional[str]]:
     """回傳 ({代號:名稱}, 交易日期yyyymmdd)。失敗回 ({}, None)。"""
-    try:
-        resp = requests.get(TWSE_STOCK_DAY_ALL, timeout=30)
-        resp.raise_for_status()
-        rows = resp.json()
-    except Exception as exc:  # noqa: BLE001
-        print(f"[警告] 取得證交所清單失敗：{exc}")
+    rows = fetch_json(TWSE_STOCK_DAY_ALL, "證交所每日收盤行情")
+    if not isinstance(rows, list) or not rows:
         return {}, None
 
     trade_date = None
@@ -169,16 +166,8 @@ def fetch_institutional(trade_date: Optional[str]) -> dict[str, dict]:
     """回傳 {代號: {foreign_lots, trust_lots}}（張）。失敗回 {}。"""
     if not trade_date:
         return {}
-    try:
-        resp = requests.get(
-            TWSE_T86.format(date=trade_date),
-            headers={"User-Agent": "Mozilla/5.0"},
-            timeout=30,
-        )
-        resp.raise_for_status()
-        data = resp.json()
-    except Exception as exc:  # noqa: BLE001
-        print(f"[警告] 取得三大法人買賣超失敗：{exc}")
+    data = fetch_json(TWSE_T86.format(date=trade_date), "三大法人買賣超")
+    if not isinstance(data, dict):
         return {}
 
     if data.get("stat") != "OK":
@@ -448,6 +437,27 @@ def write_result(stocks: list[dict]) -> None:
     print(f"\n✅ 已寫出 {OUTPUT_FILE}（共 {len(stocks)} 檔潛力股）")
 
 
+def load_previous_universe() -> dict[str, str]:
+    """讀上一次寫出的 universe.json 當備援掃描池，回傳 {代號:名稱}。
+
+    證交所清單抓不到時，昨天的全市場清單（400~600 檔）遠比內建 20 檔合理；
+    等 TWSE 恢復，下一次掃描就會自動寫回完整清單、自我修復。
+    """
+    try:
+        with UNIVERSE_FILE.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+        stocks = data.get("stocks", {}) if isinstance(data, dict) else {}
+        out = {
+            code: str(s.get("name") or code)
+            for code, s in stocks.items()
+            if isinstance(s, dict) and re.match(r"^[1-9]\d{3}$", str(code))
+        }
+        return out
+    except Exception as exc:  # noqa: BLE001
+        print(f"[警告] 讀取前一版 universe.json 失敗：{exc}")
+        return {}
+
+
 def write_universe(stocks: list[dict]) -> None:
     """寫出全市場資料（供「我的追蹤」查詢任何股票）。"""
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -469,8 +479,12 @@ def main() -> int:
 
     universe, trade_date = fetch_universe_and_date()
     if not universe:
-        universe = dict(FALLBACK_STOCKS)
-        print(f"⚠️ 使用內建備援清單 {len(universe)} 檔")
+        universe = load_previous_universe()
+        if universe:
+            print(f"⚠️ 證交所清單抓不到，改用前一版 universe.json {len(universe)} 檔")
+        else:
+            universe = dict(FALLBACK_STOCKS)
+            print(f"⚠️ 前一版 universe.json 也不可用，退回內建備援清單 {len(universe)} 檔")
 
     inst_map = fetch_institutional(trade_date)
     index_ret = fetch_index_returns()

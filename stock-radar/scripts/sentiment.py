@@ -26,7 +26,7 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Optional
 
-import requests
+from twse_api import fetch_json
 
 try:
     sys.stdout.reconfigure(encoding="utf-8")
@@ -63,12 +63,8 @@ def safe_float(value) -> Optional[float]:
 
 def fetch_margin() -> dict[str, dict]:
     """回傳 {代號: {margin_balance, margin_change_pct, short_balance, short_margin_ratio}}。"""
-    try:
-        resp = requests.get(MI_MARGN, timeout=30)
-        resp.raise_for_status()
-        rows = resp.json()
-    except Exception as exc:  # noqa: BLE001
-        print(f"[警告] 取得融資融券失敗：{exc}")
+    rows = fetch_json(MI_MARGN, "融資融券")
+    if not isinstance(rows, list):
         return {}
 
     pat = re.compile(r"^[1-9]\d{3}$")
