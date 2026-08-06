@@ -44,14 +44,17 @@ jobs:
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
         run: python scripts/fundamentals.py
 
-      - name: 多因子綜合評分
-        run: python scripts/composite_score.py
-
       - name: 情緒/資金面
         run: python scripts/sentiment.py
 
       - name: 產業前景
         run: python scripts/industry.py
+
+      # 評分必須排在 fundamentals + industry 之後：綜合分要吃基本面/估值支柱，
+      # 也要吃 industry.py 產出的族群強弱係數（2026-08-06 失敗檢討後新增）。
+      # 同時必須排在 deepdata 之前——deepdata 依綜合分取前 10 檔。
+      - name: 多因子綜合評分
+        run: python scripts/composite_score.py
 
       - name: 深度數據（供 AI 分析）
         env:

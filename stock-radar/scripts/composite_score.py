@@ -24,7 +24,9 @@
 設計原則：
 - 基本面/估值資料缺漏 → 該分項給中性 0.5（沒 FinMind 時自動退化成籌碼+技術排序）。
 - 讀寫 result.json；保留原 score(技術+籌碼)，新增 composite_score 與 score_breakdown。
-- 在 fundamentals.py 之後、analyze_ai.py 之前執行，讓 AI 分析綜合分最高的前幾檔。
+- **執行順序**：必須在 fundamentals.py（基本面/估值）與 industry.py（族群強弱係數）
+  之後，且在 deepdata.py（依綜合分取前 10 檔）之前。順序錯了不會報錯，只會安靜地
+  少吃訊號——2026-06~07 那批樣本的基本面/估值支柱就是這樣整批變成常數 50 分的。
 """
 
 from __future__ import annotations
@@ -127,6 +129,33 @@ def pe_value_metric(s: dict) -> Optional[float]:
     return -pe          # 越低越好 → 取負
 
 
+# 產業族群強弱係數（可用環境變數覆寫；設成 1/1/1 即等同關閉這項調節）
+IND_STRONG = float(os.environ.get("IND_STRONG", "1.08"))
+IND_WEAK = float(os.environ.get("IND_WEAK", "0.90"))
+
+
+def industry_adjust(s: dict) -> tuple[float, Optional[str]]:
+    """產業族群強弱調節：強勢族群加分、弱勢族群扣分。回傳 (係數, 族群強弱)。
+
+    依據 2026-08-06 失敗檢討（n=442，20 日視窗）全樣本統計：
+      強勢族群 期末收紅 40.3%／中位 -6.73%（n=233）
+      隨大盤   期末收紅 25.2%／中位 -12.16%（n=115）
+      弱勢族群 期末收紅 22.5%／中位 -13.01%（n=89）
+    族群強弱在全樣本有明顯鑑別力，但過去完全沒有進評分（industry.py 只把標籤寫進
+    result.json 給前端與 AI 看）。
+
+    ⚠ 證據強度的實話：把這個係數套回歷史、只看「每日前 5 名」時（n=140，樣本小），
+    收紅率 36.4%→37.9%、平均 -8.85%→-8.41%、停損模擬 +0.63%→+1.01% 都改善，
+    但中位數 -6.25%→-7.57% 反而變差——也就是說在排名層級的效果落在雜訊範圍內。
+    這裡的 1.08/0.90 是先驗選的保守值，**不是**回測挑出來的最佳參數
+    （試過 1.15/0.85 在前 5 名的表現更好，但那是我在同一批資料上搜出來的，
+    採用等於過度配適）。維持保守值、靠後續樣本前向驗證。
+    """
+    ind = s.get("industry") if isinstance(s.get("industry"), dict) else {}
+    strength = ind.get("strength")
+    return {"強勢族群": IND_STRONG, "隨大盤": 1.0, "弱勢族群": IND_WEAK}.get(strength, 1.0), strength
+
+
 def quality_adjust(s: dict) -> tuple[float, list[str]]:
     """基本面軟門檻：對體質不佳者套用懲罰係數(<1)壓低綜合分，避免『技術漂亮、體質爛』
     的假飆股排前面。回傳 (係數, 旗標清單)。資料缺漏不罰（從寬，係數=1）。
@@ -218,6 +247,9 @@ def main() -> int:
         # 基本面軟門檻：體質不佳者乘上懲罰係數，壓低排名
         penalty, flags = quality_adjust(s)
         composite *= penalty
+        # 產業族群強弱：強勢加分、弱勢扣分（見 industry_adjust 的實證依據）
+        ind_factor, ind_strength = industry_adjust(s)
+        composite *= ind_factor
         s["composite_score"] = round(composite, 1)
         s["score_breakdown"] = {
             "chips": round(p_chips * 100, 1),
@@ -226,6 +258,8 @@ def main() -> int:
             "value": round(p_value * 100, 1),
             "quality_penalty": penalty,
             "quality_flags": flags,
+            "industry_factor": ind_factor,
+            "industry_strength": ind_strength,
             "profile": PROFILE,
         }
 

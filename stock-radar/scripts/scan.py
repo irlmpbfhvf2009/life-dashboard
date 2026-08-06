@@ -72,6 +72,12 @@ MAX_BIAS_MA20 = 18.0                    # 收盤距月線乖離上限%（避免�
 MIN_VOLUME_RATIO = 1.2                  # 量增
 MIN_VOLUME_LOTS = 1000                  # 成交量 > 1000 張
 
+# 進場日當天漲幅上限%——2026-08-06 失敗檢討（n=442，20 日視窗）發現這是鑑別力最強的
+# 單一訊號：當日漲 0~3% 期末收紅 55.0%／中位 +2.01%（唯一正中位數的分組），
+# 而當日漲 >=6% 收紅率只有 25.4%／中位 -14.43%。選在當天已經噴出的股票＝接最後一棒。
+# 既有的 MAX_BIAS_MA20 只擋「距月線乖離」，擋不掉「當天單日噴出」，兩者互補。
+MAX_ENTRY_CHG = float(os.environ.get("MAX_ENTRY_CHG", "6"))
+
 RS_PERIODS = (20, 60)                   # 相對強弱比較天數（近20/60日 vs 大盤）
 
 # 潛力分數權重（外資買超權重最高，再納入相對強弱 RS；總和=1.0）
@@ -337,6 +343,7 @@ def build_stock(code: str, name: str, df: pd.DataFrame, inst: dict,
             and last_close > last_ma60 and last_ma5 > last_ma20
             and RSI_LOWER <= last_rsi <= RSI_UPPER and bias_ma20 <= MAX_BIAS_MA20
             and volume_ratio > MIN_VOLUME_RATIO and last_volume > MIN_VOLUME_LOTS * 1000
+            and change_pct < MAX_ENTRY_CHG   # 當天已噴出者不選（見 MAX_ENTRY_CHG 註解）
         )
 
     # 趨勢分數（多頭排列程度）
