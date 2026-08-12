@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-08-11 16:37",
+  "updated_at": "2026-08-12 16:53",
   "windows": [
     5,
     10,
@@ -159,28 +159,28 @@
       "entry_price": 264.5,
       "windows": {
         "5": {
-          "max_return_pct": 0.95,
-          "end_return_pct": -0.57,
+          "max_return_pct": 2.27,
+          "end_return_pct": 2.08,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         },
         "10": {
-          "max_return_pct": 0.95,
-          "end_return_pct": -0.57,
+          "max_return_pct": 2.27,
+          "end_return_pct": 2.08,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         },
         "20": {
-          "max_return_pct": 0.95,
-          "end_return_pct": -0.57,
+          "max_return_pct": 2.27,
+          "end_return_pct": 2.08,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         }
       },
-      "last_return_pct": -0.57,
+      "last_return_pct": 2.08,
       "status_overall": "evaluated"
     },
     {
@@ -231,7 +231,7 @@
           "exit_day": 3
         }
       },
-      "last_return_pct": -7.36,
+      "last_return_pct": -8.54,
       "status_overall": "evaluated"
     },
     {
@@ -282,7 +282,7 @@
           "exit_day": 1
         }
       },
-      "last_return_pct": -7.48,
+      "last_return_pct": -13.83,
       "status_overall": "evaluated"
     },
     {
@@ -333,7 +333,7 @@
           "exit_day": 8
         }
       },
-      "last_return_pct": 5.84,
+      "last_return_pct": 16.15,
       "status_overall": "evaluated"
     },
     {
@@ -384,7 +384,7 @@
           "exit_day": 4
         }
       },
-      "last_return_pct": -19.47,
+      "last_return_pct": -11.42,
       "status_overall": "evaluated"
     },
     {
@@ -435,7 +435,7 @@
           "exit_day": 4
         }
       },
-      "last_return_pct": -22.97,
+      "last_return_pct": -20.64,
       "status_overall": "evaluated"
     },
     {
@@ -486,7 +486,7 @@
           "exit_day": 1
         }
       },
-      "last_return_pct": 65.22,
+      "last_return_pct": 64.35,
       "status_overall": "evaluated"
     }
   ]
