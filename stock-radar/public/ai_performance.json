@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-08-12 16:53",
+  "updated_at": "2026-08-13 16:56",
   "windows": [
     5,
     10,
@@ -13,21 +13,21 @@
   "summary": {
     "5": {
       "window_days": 5,
-      "matured": 6,
+      "matured": 7,
       "hits": 2,
-      "misses": 4,
-      "hit_rate_pct": 33.3,
+      "misses": 5,
+      "hit_rate_pct": 28.6,
       "avg_days_to_target": 1.0,
-      "in_progress": 1,
+      "in_progress": 0,
       "avg_win_pct": 5.0,
-      "avg_loss_pct": -5.63,
-      "avg_max_return_pct": 11.8,
-      "expectancy_pct": -2.09,
-      "end_expectancy_pct": 2.11,
-      "end_expectancy_ex_outlier_pct": -4.6,
-      "median_end_pct": -0.47,
-      "win_rate_end_pct": 16.7,
-      "realized_expectancy_pct": -2.73,
+      "avg_loss_pct": -4.69,
+      "avg_max_return_pct": 10.65,
+      "expectancy_pct": -1.92,
+      "end_expectancy_pct": 1.67,
+      "end_expectancy_ex_outlier_pct": -3.99,
+      "median_end_pct": -0.95,
+      "win_rate_end_pct": 14.3,
+      "realized_expectancy_pct": -2.48,
       "stop_pct": 8.0,
       "exit_target_n": 2,
       "exit_stop_n": 3
@@ -159,28 +159,31 @@
       "entry_price": 264.5,
       "windows": {
         "5": {
-          "max_return_pct": 2.27,
-          "end_return_pct": 2.08,
+          "max_return_pct": 3.78,
+          "end_return_pct": -0.95,
           "hit": false,
           "days_to_hit": null,
-          "status": "open"
+          "status": "miss",
+          "realized_pct": -0.95,
+          "exit_reason": "timeout",
+          "exit_day": null
         },
         "10": {
-          "max_return_pct": 2.27,
-          "end_return_pct": 2.08,
+          "max_return_pct": 3.78,
+          "end_return_pct": -0.95,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         },
         "20": {
-          "max_return_pct": 2.27,
-          "end_return_pct": 2.08,
+          "max_return_pct": 3.78,
+          "end_return_pct": -0.95,
           "hit": false,
           "days_to_hit": null,
           "status": "open"
         }
       },
-      "last_return_pct": 2.08,
+      "last_return_pct": -0.95,
       "status_overall": "evaluated"
     },
     {
@@ -231,7 +234,7 @@
           "exit_day": 3
         }
       },
-      "last_return_pct": -8.54,
+      "last_return_pct": -7.81,
       "status_overall": "evaluated"
     },
     {
@@ -282,7 +285,7 @@
           "exit_day": 1
         }
       },
-      "last_return_pct": -13.83,
+      "last_return_pct": -13.18,
       "status_overall": "evaluated"
     },
     {
@@ -333,7 +336,7 @@
           "exit_day": 8
         }
       },
-      "last_return_pct": 16.15,
+      "last_return_pct": 15.46,
       "status_overall": "evaluated"
     },
     {
@@ -384,7 +387,7 @@
           "exit_day": 4
         }
       },
-      "last_return_pct": -11.42,
+      "last_return_pct": -9.98,
       "status_overall": "evaluated"
     },
     {
