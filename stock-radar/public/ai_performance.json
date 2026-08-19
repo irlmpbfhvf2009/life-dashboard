@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-08-18 16:07",
+  "updated_at": "2026-08-19 16:09",
   "windows": [
     5,
     10,
@@ -170,20 +170,26 @@
         },
         "10": {
           "max_return_pct": 3.78,
-          "end_return_pct": -5.86,
+          "end_return_pct": -7.37,
           "hit": false,
           "days_to_hit": null,
-          "status": "open"
+          "status": "open",
+          "realized_pct": -8.0,
+          "exit_reason": "stop",
+          "exit_day": 9
         },
         "20": {
           "max_return_pct": 3.78,
-          "end_return_pct": -5.86,
+          "end_return_pct": -7.37,
           "hit": false,
           "days_to_hit": null,
-          "status": "open"
+          "status": "open",
+          "realized_pct": -8.0,
+          "exit_reason": "stop",
+          "exit_day": 9
         }
       },
-      "last_return_pct": -5.86,
+      "last_return_pct": -7.37,
       "status_overall": "evaluated"
     },
     {
@@ -234,7 +240,7 @@
           "exit_day": 3
         }
       },
-      "last_return_pct": -11.78,
+      "last_return_pct": -13.4,
       "status_overall": "evaluated"
     },
     {
@@ -285,7 +291,7 @@
           "exit_day": 1
         }
       },
-      "last_return_pct": -16.73,
+      "last_return_pct": -18.41,
       "status_overall": "evaluated"
     },
     {
@@ -336,7 +342,7 @@
           "exit_day": 8
         }
       },
-      "last_return_pct": 1.72,
+      "last_return_pct": 0.69,
       "status_overall": "evaluated"
     },
     {
@@ -387,7 +393,7 @@
           "exit_day": 4
         }
       },
-      "last_return_pct": -16.23,
+      "last_return_pct": -19.95,
       "status_overall": "evaluated"
     },
     {
@@ -438,7 +444,7 @@
           "exit_day": 4
         }
       },
-      "last_return_pct": -29.07,
+      "last_return_pct": -30.81,
       "status_overall": "evaluated"
     },
     {
@@ -489,7 +495,7 @@
           "exit_day": 1
         }
       },
-      "last_return_pct": 73.91,
+      "last_return_pct": 63.04,
       "status_overall": "evaluated"
     }
   ]
