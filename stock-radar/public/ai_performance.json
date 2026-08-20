@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-08-19 16:09",
+  "updated_at": "2026-08-20 16:19",
   "windows": [
     5,
     10,
@@ -34,24 +34,24 @@
     },
     "10": {
       "window_days": 10,
-      "matured": 6,
+      "matured": 7,
       "hits": 3,
-      "misses": 3,
-      "hit_rate_pct": 50.0,
+      "misses": 4,
+      "hit_rate_pct": 42.9,
       "avg_days_to_target": 3.3,
-      "in_progress": 1,
+      "in_progress": 0,
       "avg_win_pct": 5.0,
-      "avg_loss_pct": -14.43,
-      "avg_max_return_pct": 15.14,
-      "expectancy_pct": -4.72,
-      "end_expectancy_pct": 4.07,
-      "end_expectancy_ex_outlier_pct": -6.94,
-      "median_end_pct": 2.06,
-      "win_rate_end_pct": 50.0,
-      "realized_expectancy_pct": -1.5,
+      "avg_loss_pct": -12.53,
+      "avg_max_return_pct": 13.52,
+      "expectancy_pct": -5.02,
+      "end_expectancy_pct": 2.52,
+      "end_expectancy_ex_outlier_pct": -6.92,
+      "median_end_pct": -6.81,
+      "win_rate_end_pct": 42.9,
+      "realized_expectancy_pct": -2.43,
       "stop_pct": 8.0,
       "exit_target_n": 3,
-      "exit_stop_n": 3
+      "exit_stop_n": 4
     },
     "20": {
       "window_days": 20,
@@ -170,17 +170,17 @@
         },
         "10": {
           "max_return_pct": 3.78,
-          "end_return_pct": -7.37,
+          "end_return_pct": -6.81,
           "hit": false,
           "days_to_hit": null,
-          "status": "open",
+          "status": "miss",
           "realized_pct": -8.0,
           "exit_reason": "stop",
           "exit_day": 9
         },
         "20": {
           "max_return_pct": 3.78,
-          "end_return_pct": -7.37,
+          "end_return_pct": -6.81,
           "hit": false,
           "days_to_hit": null,
           "status": "open",
@@ -189,7 +189,7 @@
           "exit_day": 9
         }
       },
-      "last_return_pct": -7.37,
+      "last_return_pct": -6.81,
       "status_overall": "evaluated"
     },
     {
@@ -240,7 +240,7 @@
           "exit_day": 3
         }
       },
-      "last_return_pct": -13.4,
+      "last_return_pct": -13.11,
       "status_overall": "evaluated"
     },
     {
@@ -291,7 +291,7 @@
           "exit_day": 1
         }
       },
-      "last_return_pct": -18.41,
+      "last_return_pct": -17.85,
       "status_overall": "evaluated"
     },
     {
@@ -342,7 +342,7 @@
           "exit_day": 8
         }
       },
-      "last_return_pct": 0.69,
+      "last_return_pct": -3.78,
       "status_overall": "evaluated"
     },
     {
@@ -393,7 +393,7 @@
           "exit_day": 4
         }
       },
-      "last_return_pct": -19.95,
+      "last_return_pct": -19.11,
       "status_overall": "evaluated"
     },
     {
@@ -444,7 +444,7 @@
           "exit_day": 4
         }
       },
-      "last_return_pct": -30.81,
+      "last_return_pct": -29.07,
       "status_overall": "evaluated"
     },
     {
@@ -495,7 +495,7 @@
           "exit_day": 1
         }
       },
-      "last_return_pct": 63.04,
+      "last_return_pct": 61.74,
       "status_overall": "evaluated"
     }
   ]
