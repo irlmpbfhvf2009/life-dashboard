@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-08-20 16:19",
+  "updated_at": "2026-08-21 16:20",
   "windows": [
     5,
     10,
@@ -99,21 +99,21 @@
     },
     "10": {
       "window_days": 10,
-      "matured": 4,
+      "matured": 5,
       "hits": 1,
-      "misses": 3,
-      "hit_rate_pct": 25.0,
+      "misses": 4,
+      "hit_rate_pct": 20.0,
       "avg_days_to_target": 3.0,
-      "in_progress": 1,
+      "in_progress": 0,
       "avg_win_pct": 5.0,
-      "avg_loss_pct": -2.55,
-      "avg_max_return_pct": 2.18,
-      "expectancy_pct": -0.66,
-      "end_expectancy_pct": -1.1,
-      "end_expectancy_ex_outlier_pct": -1.1,
+      "avg_loss_pct": -1.58,
+      "avg_max_return_pct": 2.55,
+      "expectancy_pct": -0.27,
+      "end_expectancy_pct": -0.61,
+      "end_expectancy_ex_outlier_pct": -0.61,
       "median_end_pct": -1.31,
-      "win_rate_end_pct": 25.0,
-      "realized_expectancy_pct": -0.66,
+      "win_rate_end_pct": 40.0,
+      "realized_expectancy_pct": -0.27,
       "stop_pct": 8.0,
       "exit_target_n": 1,
       "exit_stop_n": 0
@@ -180,7 +180,7 @@
         },
         "20": {
           "max_return_pct": 3.78,
-          "end_return_pct": -6.81,
+          "end_return_pct": -7.18,
           "hit": false,
           "days_to_hit": null,
           "status": "open",
@@ -189,7 +189,7 @@
           "exit_day": 9
         }
       },
-      "last_return_pct": -6.81,
+      "last_return_pct": -7.18,
       "status_overall": "evaluated"
     },
     {
@@ -240,7 +240,7 @@
           "exit_day": 3
         }
       },
-      "last_return_pct": -13.11,
+      "last_return_pct": -13.55,
       "status_overall": "evaluated"
     },
     {
@@ -291,7 +291,7 @@
           "exit_day": 1
         }
       },
-      "last_return_pct": -17.85,
+      "last_return_pct": -18.97,
       "status_overall": "evaluated"
     },
     {
@@ -342,7 +342,7 @@
           "exit_day": 8
         }
       },
-      "last_return_pct": -3.78,
+      "last_return_pct": -2.75,
       "status_overall": "evaluated"
     },
     {
@@ -393,7 +393,7 @@
           "exit_day": 4
         }
       },
-      "last_return_pct": -19.11,
+      "last_return_pct": -17.79,
       "status_overall": "evaluated"
     },
     {
@@ -444,7 +444,7 @@
           "exit_day": 4
         }
       },
-      "last_return_pct": -29.07,
+      "last_return_pct": -28.78,
       "status_overall": "evaluated"
     },
     {
@@ -495,7 +495,7 @@
           "exit_day": 1
         }
       },
-      "last_return_pct": 61.74,
+      "last_return_pct": 66.96,
       "status_overall": "evaluated"
     }
   ]
