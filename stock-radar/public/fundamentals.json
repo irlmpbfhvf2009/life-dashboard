@@ -1,12 +1,68 @@
 {
-  "updated_at": "2026-10-02 22:08",
+  "updated_at": "2026-10-06 00:23",
   "stocks": {
+    "6770": {
+      "code": "6770",
+      "pe": 25.27,
+      "pb": 2.77,
+      "dividend_yield": 0.0,
+      "valuation_date": "2026-10-05",
+      "eps": 0.76,
+      "gross_margin": 28.28,
+      "op_margin": 21.31,
+      "net_margin": 19.03,
+      "report_date": "2026-06-30",
+      "debt_ratio": 34.6,
+      "roe_approx": 2.55,
+      "tags": [
+        "獲利",
+        "低負債"
+      ],
+      "fund_pass": true
+    },
+    "2883": {
+      "code": "2883",
+      "pe": 13.04,
+      "pb": 1.48,
+      "dividend_yield": 2.68,
+      "valuation_date": "2026-10-05",
+      "eps": null,
+      "gross_margin": null,
+      "op_margin": null,
+      "net_margin": 43.57,
+      "report_date": "2026-06-30",
+      "debt_ratio": 89.78,
+      "roe_approx": 3.57,
+      "tags": [
+        "本益比偏低"
+      ],
+      "fund_pass": false
+    },
+    "3714": {
+      "code": "3714",
+      "pe": 0.0,
+      "pb": 1.16,
+      "dividend_yield": 1.32,
+      "valuation_date": "2026-10-05",
+      "eps": 1.69,
+      "gross_margin": 10.85,
+      "op_margin": -5.99,
+      "net_margin": 19.85,
+      "report_date": "2026-06-30",
+      "debt_ratio": 18.44,
+      "roe_approx": 2.83,
+      "tags": [
+        "獲利",
+        "低負債"
+      ],
+      "fund_pass": true
+    },
     "5285": {
       "code": "5285",
-      "pe": 32.04,
-      "pb": 3.28,
-      "dividend_yield": 1.52,
-      "valuation_date": "2026-10-02",
+      "pe": 32.36,
+      "pb": 3.31,
+      "dividend_yield": 1.5,
+      "valuation_date": "2026-10-05",
       "eps": 1.01,
       "gross_margin": 17.64,
       "op_margin": 9.68,
@@ -19,30 +75,12 @@
       ],
       "fund_pass": true
     },
-    "6239": {
-      "code": "6239",
-      "pe": 30.5,
-      "pb": 3.98,
-      "dividend_yield": 1.46,
-      "valuation_date": "2026-10-02",
-      "eps": 3.0,
-      "gross_margin": 21.76,
-      "op_margin": 15.27,
-      "net_margin": 12.33,
-      "report_date": "2026-06-30",
-      "debt_ratio": 44.87,
-      "roe_approx": 3.95,
-      "tags": [
-        "獲利"
-      ],
-      "fund_pass": true
-    },
     "2103": {
       "code": "2103",
-      "pe": 11.31,
-      "pb": 1.05,
-      "dividend_yield": 0.96,
-      "valuation_date": "2026-10-02",
+      "pe": 11.49,
+      "pb": 1.07,
+      "dividend_yield": 0.94,
+      "valuation_date": "2026-10-05",
       "eps": 1.73,
       "gross_margin": 21.15,
       "op_margin": 15.25,
@@ -57,12 +95,48 @@
       ],
       "fund_pass": true
     },
+    "6239": {
+      "code": "6239",
+      "pe": 29.46,
+      "pb": 3.85,
+      "dividend_yield": 1.51,
+      "valuation_date": "2026-10-05",
+      "eps": 3.0,
+      "gross_margin": 21.76,
+      "op_margin": 15.27,
+      "net_margin": 12.33,
+      "report_date": "2026-06-30",
+      "debt_ratio": 44.87,
+      "roe_approx": 3.95,
+      "tags": [
+        "獲利"
+      ],
+      "fund_pass": true
+    },
+    "1313": {
+      "code": "1313",
+      "pe": 0.0,
+      "pb": 0.55,
+      "dividend_yield": 0.8,
+      "valuation_date": "2026-10-05",
+      "eps": 0.23,
+      "gross_margin": 6.78,
+      "op_margin": 2.6,
+      "net_margin": 1.88,
+      "report_date": "2026-06-30",
+      "debt_ratio": 44.91,
+      "roe_approx": 1.04,
+      "tags": [
+        "獲利"
+      ],
+      "fund_pass": true
+    },
     "6152": {
       "code": "6152",
       "pe": 0.0,
-      "pb": 1.98,
+      "pb": 2.18,
       "dividend_yield": 0.0,
-      "valuation_date": "2026-10-02",
+      "valuation_date": "2026-10-05",
       "eps": 0.49,
       "gross_margin": 30.35,
       "op_margin": 9.48,
@@ -77,49 +151,12 @@
       ],
       "fund_pass": true
     },
-    "1313": {
-      "code": "1313",
-      "pe": 0.0,
-      "pb": 0.56,
-      "dividend_yield": 0.79,
-      "valuation_date": "2026-10-02",
-      "eps": 0.23,
-      "gross_margin": 6.78,
-      "op_margin": 2.6,
-      "net_margin": 1.88,
-      "report_date": "2026-06-30",
-      "debt_ratio": 44.91,
-      "roe_approx": 1.04,
-      "tags": [
-        "獲利"
-      ],
-      "fund_pass": true
-    },
-    "3714": {
-      "code": "3714",
-      "pe": 0.0,
-      "pb": 1.2,
-      "dividend_yield": 1.27,
-      "valuation_date": "2026-10-02",
-      "eps": 1.69,
-      "gross_margin": 10.85,
-      "op_margin": -5.99,
-      "net_margin": 19.85,
-      "report_date": "2026-06-30",
-      "debt_ratio": 18.44,
-      "roe_approx": 2.83,
-      "tags": [
-        "獲利",
-        "低負債"
-      ],
-      "fund_pass": true
-    },
     "2376": {
       "code": "2376",
-      "pe": 13.98,
-      "pb": 3.76,
-      "dividend_yield": 3.21,
-      "valuation_date": "2026-10-02",
+      "pe": 14.54,
+      "pb": 3.91,
+      "dividend_yield": 3.09,
+      "valuation_date": "2026-10-05",
       "eps": 9.86,
       "gross_margin": 9.62,
       "op_margin": 5.63,
@@ -134,32 +171,12 @@
       ],
       "fund_pass": false
     },
-    "2327": {
-      "code": "2327",
-      "pe": 42.15,
-      "pb": 7.28,
-      "dividend_yield": 0.96,
-      "valuation_date": "2026-10-02",
-      "eps": 4.59,
-      "gross_margin": 38.5,
-      "op_margin": 26.43,
-      "net_margin": 21.27,
-      "report_date": "2026-06-30",
-      "debt_ratio": 64.73,
-      "roe_approx": 5.28,
-      "tags": [
-        "獲利",
-        "高ROE",
-        "高毛利"
-      ],
-      "fund_pass": false
-    },
     "1714": {
       "code": "1714",
-      "pe": 14.28,
-      "pb": 1.25,
-      "dividend_yield": 1.07,
-      "valuation_date": "2026-10-02",
+      "pe": 15.68,
+      "pb": 1.37,
+      "dividend_yield": 0.97,
+      "valuation_date": "2026-10-05",
       "eps": 0.66,
       "gross_margin": 18.72,
       "op_margin": 14.83,
@@ -170,6 +187,45 @@
       "tags": [
         "獲利",
         "高ROE",
+        "低負債"
+      ],
+      "fund_pass": true
+    },
+    "1455": {
+      "code": "1455",
+      "pe": 18.62,
+      "pb": 0.85,
+      "dividend_yield": 1.62,
+      "valuation_date": "2026-10-05",
+      "eps": 0.96,
+      "gross_margin": 13.93,
+      "op_margin": 7.71,
+      "net_margin": 31.91,
+      "report_date": "2026-06-30",
+      "debt_ratio": 37.85,
+      "roe_approx": 8.25,
+      "tags": [
+        "獲利",
+        "高ROE",
+        "低負債"
+      ],
+      "fund_pass": true
+    },
+    "1605": {
+      "code": "1605",
+      "pe": 11.64,
+      "pb": 0.83,
+      "dividend_yield": 1.3,
+      "valuation_date": "2026-10-05",
+      "eps": 2.04,
+      "gross_margin": 7.56,
+      "op_margin": 1.46,
+      "net_margin": 18.13,
+      "report_date": "2026-06-30",
+      "debt_ratio": 38.79,
+      "roe_approx": 4.2,
+      "tags": [
+        "獲利",
         "低負債",
         "本益比偏低"
       ],
@@ -178,9 +234,9 @@
     "1710": {
       "code": "1710",
       "pe": 0.0,
-      "pb": 1.36,
+      "pb": 1.38,
       "dividend_yield": 0.0,
-      "valuation_date": "2026-10-02",
+      "valuation_date": "2026-10-05",
       "eps": 0.02,
       "gross_margin": 5.8,
       "op_margin": 0.14,
@@ -193,12 +249,51 @@
       ],
       "fund_pass": true
     },
+    "6257": {
+      "code": "6257",
+      "pe": 30.41,
+      "pb": 4.93,
+      "dividend_yield": 1.63,
+      "valuation_date": "2026-10-05",
+      "eps": 2.55,
+      "gross_margin": 34.24,
+      "op_margin": 25.64,
+      "net_margin": 23.1,
+      "report_date": "2026-06-30",
+      "debt_ratio": 43.78,
+      "roe_approx": 4.81,
+      "tags": [
+        "獲利",
+        "高毛利"
+      ],
+      "fund_pass": true
+    },
+    "8070": {
+      "code": "8070",
+      "pe": 30.59,
+      "pb": 1.37,
+      "dividend_yield": 5.24,
+      "valuation_date": "2026-10-05",
+      "eps": 0.78,
+      "gross_margin": 19.13,
+      "op_margin": 11.9,
+      "net_margin": 13.63,
+      "report_date": "2026-06-30",
+      "debt_ratio": 39.01,
+      "roe_approx": 2.62,
+      "tags": [
+        "獲利",
+        "低負債",
+        "殖利率>4%"
+      ],
+      "fund_pass": true
+    },
     "6271": {
       "code": "6271",
-      "pe": 26.38,
-      "pb": 1.8,
-      "dividend_yield": 1.28,
-      "valuation_date": "2026-10-02",
+      "pe": 26.83,
+      "pb": 1.83,
+      "dividend_yield": 1.26,
+      "valuation_date": "2026-10-05",
       "eps": 2.49,
       "gross_margin": 31.09,
       "op_margin": 18.14,
@@ -215,10 +310,10 @@
     },
     "6197": {
       "code": "6197",
-      "pe": 28.7,
-      "pb": 7.38,
-      "dividend_yield": 2.04,
-      "valuation_date": "2026-10-02",
+      "pe": 29.16,
+      "pb": 7.5,
+      "dividend_yield": 2.01,
+      "valuation_date": "2026-10-05",
       "eps": 3.79,
       "gross_margin": 35.98,
       "op_margin": 22.88,
@@ -235,10 +330,10 @@
     },
     "7795": {
       "code": "7795",
-      "pe": 242.48,
-      "pb": 15.2,
-      "dividend_yield": 0.39,
-      "valuation_date": "2026-10-02",
+      "pe": 247.35,
+      "pb": 15.51,
+      "dividend_yield": 0.38,
+      "valuation_date": "2026-10-05",
       "eps": 0.67,
       "gross_margin": 43.42,
       "op_margin": 19.74,
@@ -253,90 +348,12 @@
       ],
       "fund_pass": false
     },
-    "2883": {
-      "code": "2883",
-      "pe": 13.06,
-      "pb": 1.48,
-      "dividend_yield": 2.68,
-      "valuation_date": "2026-10-02",
-      "eps": null,
-      "gross_margin": null,
-      "op_margin": null,
-      "net_margin": 43.57,
-      "report_date": "2026-06-30",
-      "debt_ratio": 89.78,
-      "roe_approx": 3.57,
-      "tags": [
-        "本益比偏低"
-      ],
-      "fund_pass": false
-    },
-    "6257": {
-      "code": "6257",
-      "pe": 30.12,
-      "pb": 4.88,
-      "dividend_yield": 1.65,
-      "valuation_date": "2026-10-02",
-      "eps": 2.55,
-      "gross_margin": 34.24,
-      "op_margin": 25.64,
-      "net_margin": 23.1,
-      "report_date": "2026-06-30",
-      "debt_ratio": 43.78,
-      "roe_approx": 4.81,
-      "tags": [
-        "獲利",
-        "高毛利"
-      ],
-      "fund_pass": true
-    },
-    "3030": {
-      "code": "3030",
-      "pe": 22.73,
-      "pb": 7.28,
-      "dividend_yield": 2.33,
-      "valuation_date": "2026-10-02",
-      "eps": 3.86,
-      "gross_margin": 58.7,
-      "op_margin": 38.95,
-      "net_margin": 30.95,
-      "report_date": "2026-06-30",
-      "debt_ratio": 34.3,
-      "roe_approx": 9.37,
-      "tags": [
-        "獲利",
-        "高ROE",
-        "高毛利",
-        "低負債"
-      ],
-      "fund_pass": true
-    },
-    "1605": {
-      "code": "1605",
-      "pe": 11.74,
-      "pb": 0.84,
-      "dividend_yield": 1.29,
-      "valuation_date": "2026-10-02",
-      "eps": 2.04,
-      "gross_margin": 7.56,
-      "op_margin": 1.46,
-      "net_margin": 18.13,
-      "report_date": "2026-06-30",
-      "debt_ratio": 38.79,
-      "roe_approx": 4.2,
-      "tags": [
-        "獲利",
-        "低負債",
-        "本益比偏低"
-      ],
-      "fund_pass": true
-    },
     "1717": {
       "code": "1717",
-      "pe": 39.05,
-      "pb": 2.79,
-      "dividend_yield": 1.35,
-      "valuation_date": "2026-10-02",
+      "pe": 39.26,
+      "pb": 2.81,
+      "dividend_yield": 1.34,
+      "valuation_date": "2026-10-05",
       "eps": 0.72,
       "gross_margin": 24.81,
       "op_margin": 8.59,
@@ -349,41 +366,24 @@
       ],
       "fund_pass": true
     },
-    "2428": {
-      "code": "2428",
-      "pe": 18.69,
-      "pb": 2.85,
-      "dividend_yield": 2.24,
-      "valuation_date": "2026-10-02",
-      "eps": 5.34,
-      "gross_margin": 37.52,
-      "op_margin": 24.73,
-      "net_margin": 25.38,
+    "3588": {
+      "code": "3588",
+      "pe": 47.9,
+      "pb": 1.95,
+      "dividend_yield": 0.88,
+      "valuation_date": "2026-10-05",
+      "eps": 0.62,
+      "gross_margin": 36.63,
+      "op_margin": 10.01,
+      "net_margin": 8.78,
       "report_date": "2026-06-30",
-      "debt_ratio": 36.2,
-      "roe_approx": 5.75,
+      "debt_ratio": 16.66,
+      "roe_approx": 2.1,
       "tags": [
         "獲利",
-        "高ROE",
         "高毛利",
         "低負債"
       ],
-      "fund_pass": true
-    },
-    "6141": {
-      "code": "6141",
-      "pe": 0.0,
-      "pb": 9.64,
-      "dividend_yield": 0.0,
-      "valuation_date": "2026-10-02",
-      "eps": -0.65,
-      "gross_margin": 13.33,
-      "op_margin": -5.39,
-      "net_margin": -17.57,
-      "report_date": "2026-06-30",
-      "debt_ratio": 89.8,
-      "roe_approx": -19.14,
-      "tags": [],
       "fund_pass": false
     }
   }
