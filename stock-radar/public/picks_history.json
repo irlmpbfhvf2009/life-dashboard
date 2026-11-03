@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-03 01:27",
+  "updated_at": "2026-11-03 23:30",
   "picks": [
     {
       "date": "2026-06-16",
@@ -53881,6 +53881,357 @@
         "inst20d": null,
         "industry": "弱勢族群",
         "margin_chg": 17.0,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-11-03",
+      "code": "1416",
+      "name": "廣豐",
+      "entry_price": 13.6,
+      "score": 66.2,
+      "signals": {
+        "composite": 66.2,
+        "breakdown": {
+          "chips": 35.1,
+          "tech": 60.2,
+          "basic": 72.2,
+          "value": 88.1,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "industry_factor": 1.08,
+          "industry_strength": "強勢族群",
+          "margin_chase_penalty": 1.0,
+          "profile": "balanced"
+        },
+        "rsi": 69.8,
+        "change_pct": 0.37,
+        "foreign_lots": -106,
+        "trust_lots": 0,
+        "pe": 11.53,
+        "fin_trend": "改善",
+        "val5y": "偏低",
+        "inst20d": "混亂",
+        "industry": "強勢族群",
+        "margin_chg": -0.3,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-11-03",
+      "code": "2468",
+      "name": "華經",
+      "entry_price": 55.3,
+      "score": 60.9,
+      "signals": {
+        "composite": 60.9,
+        "breakdown": {
+          "chips": 49.2,
+          "tech": 94.0,
+          "basic": 39.8,
+          "value": 40.6,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "industry_factor": 1.08,
+          "industry_strength": "強勢族群",
+          "margin_chase_penalty": 1.0,
+          "profile": "balanced"
+        },
+        "rsi": 62.6,
+        "change_pct": -5.47,
+        "foreign_lots": 2953,
+        "trust_lots": 0,
+        "pe": 40.66,
+        "fin_trend": "改善",
+        "val5y": "合理",
+        "inst20d": "混亂",
+        "industry": "強勢族群",
+        "margin_chg": 6.7,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-11-03",
+      "code": "1102",
+      "name": "亞泥",
+      "entry_price": 37.75,
+      "score": 60.8,
+      "signals": {
+        "composite": 60.8,
+        "breakdown": {
+          "chips": 42.1,
+          "tech": 50.5,
+          "basic": 46.9,
+          "value": 96.6,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "industry_factor": 1.08,
+          "industry_strength": "強勢族群",
+          "margin_chase_penalty": 1.0,
+          "profile": "balanced"
+        },
+        "rsi": 58.5,
+        "change_pct": -0.92,
+        "foreign_lots": 1363,
+        "trust_lots": 24,
+        "pe": 10.43,
+        "fin_trend": "改善",
+        "val5y": "偏低",
+        "inst20d": "混亂",
+        "industry": "強勢族群",
+        "margin_chg": 13.1,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-11-03",
+      "code": "2801",
+      "name": "彰銀",
+      "entry_price": 29.7,
+      "score": 59.8,
+      "signals": {
+        "composite": 59.8,
+        "breakdown": {
+          "chips": 74.2,
+          "tech": 54.8,
+          "basic": 39.1,
+          "value": 72.3,
+          "quality_penalty": 0.92,
+          "quality_flags": [
+            "負債偏高"
+          ],
+          "industry_factor": 1.08,
+          "industry_strength": "強勢族群",
+          "margin_chase_penalty": 1.0,
+          "profile": "balanced"
+        },
+        "rsi": 57.4,
+        "change_pct": -3.73,
+        "foreign_lots": 1703,
+        "trust_lots": 4074,
+        "pe": 17.47,
+        "fin_trend": "改善",
+        "val5y": "合理",
+        "inst20d": "偏多",
+        "industry": "強勢族群",
+        "margin_chg": -1.9,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-11-03",
+      "code": "3005",
+      "name": "神基",
+      "entry_price": 122.0,
+      "score": 55.8,
+      "signals": {
+        "composite": 55.8,
+        "breakdown": {
+          "chips": 37.1,
+          "tech": 49.2,
+          "basic": 59.6,
+          "value": 66.5,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "industry_factor": 1.08,
+          "industry_strength": "強勢族群",
+          "margin_chase_penalty": 1.0,
+          "profile": "balanced"
+        },
+        "rsi": 52.7,
+        "change_pct": -1.61,
+        "foreign_lots": 299,
+        "trust_lots": 20,
+        "pe": 14.49,
+        "fin_trend": "改善",
+        "val5y": "合理",
+        "inst20d": "混亂",
+        "industry": "強勢族群",
+        "margin_chg": -1.4,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-11-03",
+      "code": "5876",
+      "name": "上海商銀",
+      "entry_price": 52.6,
+      "score": 52.0,
+      "signals": {
+        "composite": 52.0,
+        "breakdown": {
+          "chips": 46.8,
+          "tech": 51.9,
+          "basic": 40.5,
+          "value": 75.9,
+          "quality_penalty": 0.92,
+          "quality_flags": [
+            "負債偏高"
+          ],
+          "industry_factor": 1.08,
+          "industry_strength": "強勢族群",
+          "margin_chase_penalty": 1.0,
+          "profile": "balanced"
+        },
+        "rsi": 53.3,
+        "change_pct": -3.13,
+        "foreign_lots": -1476,
+        "trust_lots": 2379,
+        "pe": 14.86,
+        "fin_trend": "惡化",
+        "val5y": "合理",
+        "inst20d": "偏多",
+        "industry": "強勢族群",
+        "margin_chg": -3.3,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-11-03",
+      "code": "1809",
+      "name": "中釉",
+      "entry_price": 44.65,
+      "score": 48.7,
+      "signals": {
+        "composite": 48.7,
+        "breakdown": {
+          "chips": 38.6,
+          "tech": 68.7,
+          "basic": 54.8,
+          "value": 12.9,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "industry_factor": 1.08,
+          "industry_strength": "強勢族群",
+          "margin_chase_penalty": 1.0,
+          "profile": "balanced"
+        },
+        "rsi": 50.7,
+        "change_pct": -3.77,
+        "foreign_lots": 652,
+        "trust_lots": 0,
+        "pe": 223.25,
+        "fin_trend": "持平",
+        "val5y": "合理",
+        "inst20d": "偏多",
+        "industry": "強勢族群",
+        "margin_chg": 2.3,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-11-03",
+      "code": "2886",
+      "name": "兆豐金",
+      "entry_price": 53.2,
+      "score": 48.7,
+      "signals": {
+        "composite": 48.7,
+        "breakdown": {
+          "chips": 47.5,
+          "tech": 47.1,
+          "basic": 39.7,
+          "value": 65.2,
+          "quality_penalty": 0.92,
+          "quality_flags": [
+            "負債偏高"
+          ],
+          "industry_factor": 1.08,
+          "industry_strength": "強勢族群",
+          "margin_chase_penalty": 1.0,
+          "profile": "balanced"
+        },
+        "rsi": 54.4,
+        "change_pct": -1.66,
+        "foreign_lots": 4667,
+        "trust_lots": -1273,
+        "pe": 20.7,
+        "fin_trend": "改善",
+        "val5y": "合理",
+        "inst20d": "混亂",
+        "industry": "強勢族群",
+        "margin_chg": -1.9,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-11-03",
+      "code": "2884",
+      "name": "玉山金",
+      "entry_price": 47.4,
+      "score": 47.6,
+      "signals": {
+        "composite": 47.6,
+        "breakdown": {
+          "chips": 50.0,
+          "tech": 48.5,
+          "basic": 39.5,
+          "value": 54.5,
+          "quality_penalty": 0.92,
+          "quality_flags": [
+            "負債偏高"
+          ],
+          "industry_factor": 1.08,
+          "industry_strength": "強勢族群",
+          "margin_chase_penalty": 1.0,
+          "profile": "balanced"
+        },
+        "rsi": 50.9,
+        "change_pct": -2.67,
+        "foreign_lots": -5647,
+        "trust_lots": 5343,
+        "pe": 19.67,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "強勢族群",
+        "margin_chg": -1.7,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-11-03",
+      "code": "4720",
+      "name": "德淵",
+      "entry_price": 31.15,
+      "score": 30.0,
+      "signals": {
+        "composite": 30.0,
+        "breakdown": {
+          "chips": 33.0,
+          "tech": 78.9,
+          "basic": 19.1,
+          "value": 46.2,
+          "quality_penalty": 0.637,
+          "quality_flags": [
+            "EPS為負",
+            "淨利率為負"
+          ],
+          "industry_factor": 1.08,
+          "industry_strength": "強勢族群",
+          "margin_chase_penalty": 1.0,
+          "profile": "balanced"
+        },
+        "rsi": 62.6,
+        "change_pct": 4.88,
+        "foreign_lots": -566,
+        "trust_lots": 0,
+        "pe": 55.63,
+        "fin_trend": null,
+        "val5y": null,
+        "inst20d": null,
+        "industry": "強勢族群",
+        "margin_chg": -4.6,
         "attn_mom": null,
         "attn_trend": null
       }
