@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-04 23:46",
+  "updated_at": "2026-11-05 23:48",
   "picks": [
     {
       "date": "2026-06-16",
@@ -54443,6 +54443,108 @@
         "inst20d": "混亂",
         "industry": "隨大盤",
         "margin_chg": 6.9,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-11-05",
+      "code": "2610",
+      "name": "華航",
+      "entry_price": 21.65,
+      "score": 78.5,
+      "signals": {
+        "composite": 78.5,
+        "breakdown": {
+          "chips": 100.0,
+          "tech": 70.3,
+          "basic": 27.6,
+          "value": 91.1,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "industry_factor": 1.08,
+          "industry_strength": "強勢族群",
+          "margin_chase_penalty": 1.0,
+          "profile": "balanced"
+        },
+        "rsi": 67.5,
+        "change_pct": 5.61,
+        "foreign_lots": 9262,
+        "trust_lots": 38,
+        "pe": 10.02,
+        "fin_trend": "惡化",
+        "val5y": "偏低",
+        "inst20d": "混亂",
+        "industry": "強勢族群",
+        "margin_chg": -0.5,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-11-05",
+      "code": "2618",
+      "name": "長榮航",
+      "entry_price": 45.1,
+      "score": 69.8,
+      "signals": {
+        "composite": 69.8,
+        "breakdown": {
+          "chips": 23.8,
+          "tech": 68.2,
+          "basic": 87.5,
+          "value": 92.9,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "industry_factor": 1.08,
+          "industry_strength": "強勢族群",
+          "margin_chase_penalty": 1.0,
+          "profile": "balanced"
+        },
+        "rsi": 68.1,
+        "change_pct": 3.09,
+        "foreign_lots": 4105,
+        "trust_lots": -110,
+        "pe": 9.49,
+        "fin_trend": "惡化",
+        "val5y": "偏低",
+        "inst20d": "混亂",
+        "industry": "強勢族群",
+        "margin_chg": -0.8,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-11-05",
+      "code": "2468",
+      "name": "華經",
+      "entry_price": 59.0,
+      "score": 44.9,
+      "signals": {
+        "composite": 44.9,
+        "breakdown": {
+          "chips": 37.2,
+          "tech": 71.8,
+          "basic": 50.0,
+          "value": 0.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "industry_factor": 1.08,
+          "industry_strength": "強勢族群",
+          "margin_chase_penalty": 1.0,
+          "profile": "balanced"
+        },
+        "rsi": 65.2,
+        "change_pct": -2.96,
+        "foreign_lots": -563,
+        "trust_lots": 0,
+        "pe": 43.38,
+        "fin_trend": "改善",
+        "val5y": "合理",
+        "inst20d": "混亂",
+        "industry": "強勢族群",
+        "margin_chg": -7.3,
         "attn_mom": null,
         "attn_trend": null
       }
