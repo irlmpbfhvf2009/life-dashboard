@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-10 01:48",
+  "updated_at": "2026-11-10 23:46",
   "picks": [
     {
       "date": "2026-06-16",
@@ -54999,6 +54999,74 @@
         "inst20d": "偏多",
         "industry": "隨大盤",
         "margin_chg": 21.5,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-11-10",
+      "code": "2618",
+      "name": "長榮航",
+      "entry_price": 46.15,
+      "score": 58.9,
+      "signals": {
+        "composite": 58.9,
+        "breakdown": {
+          "chips": 50.0,
+          "tech": 70.4,
+          "basic": 25.0,
+          "value": 100.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "industry_factor": 1.0,
+          "industry_strength": "隨大盤",
+          "margin_chase_penalty": 1.0,
+          "profile": "balanced"
+        },
+        "rsi": 67.3,
+        "change_pct": 5.13,
+        "foreign_lots": 9105,
+        "trust_lots": -496,
+        "pe": 9.72,
+        "fin_trend": "惡化",
+        "val5y": "偏低",
+        "inst20d": "混亂",
+        "industry": "隨大盤",
+        "margin_chg": -1.3,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-11-10",
+      "code": "6446",
+      "name": "藥華藥",
+      "entry_price": 1280.0,
+      "score": 43.1,
+      "signals": {
+        "composite": 43.1,
+        "breakdown": {
+          "chips": 50.0,
+          "tech": 65.6,
+          "basic": 100.0,
+          "value": 0.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "industry_factor": 0.9,
+          "industry_strength": "弱勢族群",
+          "margin_chase_penalty": 0.85,
+          "profile": "balanced"
+        },
+        "rsi": 54.9,
+        "change_pct": -6.57,
+        "foreign_lots": 325,
+        "trust_lots": 132,
+        "pe": 58.42,
+        "fin_trend": "改善",
+        "val5y": "偏低",
+        "inst20d": "偏多",
+        "industry": "弱勢族群",
+        "margin_chg": 1.5,
         "attn_mom": null,
         "attn_trend": null
       }
