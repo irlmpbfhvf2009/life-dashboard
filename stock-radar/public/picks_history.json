@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-17 01:26",
+  "updated_at": "2026-11-18 01:04",
   "picks": [
     {
       "date": "2026-06-16",
@@ -55420,6 +55420,317 @@
         "inst20d": "偏多",
         "industry": "強勢族群",
         "margin_chg": 6.3,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-11-18",
+      "code": "4155",
+      "name": "訊映",
+      "entry_price": 17.55,
+      "score": 74.0,
+      "signals": {
+        "composite": 74.0,
+        "breakdown": {
+          "chips": 81.4,
+          "tech": 52.0,
+          "basic": 67.2,
+          "value": 71.6,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "industry_factor": 1.08,
+          "industry_strength": "強勢族群",
+          "margin_chase_penalty": 1.0,
+          "profile": "balanced"
+        },
+        "rsi": 56.1,
+        "change_pct": 1.15,
+        "foreign_lots": 21,
+        "trust_lots": 0,
+        "pe": 9.23,
+        "fin_trend": "改善",
+        "val5y": "偏低",
+        "inst20d": "混亂",
+        "industry": "強勢族群",
+        "margin_chg": 4.9,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-11-18",
+      "code": "6689",
+      "name": "伊雲谷",
+      "entry_price": 81.1,
+      "score": 66.2,
+      "signals": {
+        "composite": 66.2,
+        "breakdown": {
+          "chips": 67.9,
+          "tech": 91.9,
+          "basic": 37.4,
+          "value": 42.9,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "industry_factor": 1.08,
+          "industry_strength": "強勢族群",
+          "margin_chase_penalty": 1.0,
+          "profile": "balanced"
+        },
+        "rsi": 62.1,
+        "change_pct": -1.1,
+        "foreign_lots": -1713,
+        "trust_lots": 0,
+        "pe": 38.55,
+        "fin_trend": "惡化",
+        "val5y": "偏低",
+        "inst20d": "混亂",
+        "industry": "強勢族群",
+        "margin_chg": 19.8,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-11-18",
+      "code": "2355",
+      "name": "敬鵬",
+      "entry_price": 60.3,
+      "score": 65.1,
+      "signals": {
+        "composite": 65.1,
+        "breakdown": {
+          "chips": 93.7,
+          "tech": 72.8,
+          "basic": 55.8,
+          "value": 60.6,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "industry_factor": 0.9,
+          "industry_strength": "弱勢族群",
+          "margin_chase_penalty": 1.0,
+          "profile": "balanced"
+        },
+        "rsi": 63.8,
+        "change_pct": -8.5,
+        "foreign_lots": 2405,
+        "trust_lots": -490,
+        "pe": 18.46,
+        "fin_trend": "改善",
+        "val5y": "偏低",
+        "inst20d": "偏多",
+        "industry": "弱勢族群",
+        "margin_chg": -0.9,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-11-18",
+      "code": "3049",
+      "name": "精金",
+      "entry_price": 12.65,
+      "score": 59.4,
+      "signals": {
+        "composite": 59.4,
+        "breakdown": {
+          "chips": 76.4,
+          "tech": 69.9,
+          "basic": 95.4,
+          "value": 66.7,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "industry_factor": 0.9,
+          "industry_strength": "弱勢族群",
+          "margin_chase_penalty": 0.85,
+          "profile": "balanced"
+        },
+        "rsi": 59.3,
+        "change_pct": 2.43,
+        "foreign_lots": -621,
+        "trust_lots": 0,
+        "pe": 2.41,
+        "fin_trend": "改善",
+        "val5y": "偏低",
+        "inst20d": "混亂",
+        "industry": "弱勢族群",
+        "margin_chg": 15.2,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-11-18",
+      "code": "3029",
+      "name": "零壹",
+      "entry_price": 130.0,
+      "score": 58.9,
+      "signals": {
+        "composite": 58.9,
+        "breakdown": {
+          "chips": 68.5,
+          "tech": 52.0,
+          "basic": 41.1,
+          "value": 53.7,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "industry_factor": 1.08,
+          "industry_strength": "強勢族群",
+          "margin_chase_penalty": 1.0,
+          "profile": "balanced"
+        },
+        "rsi": 57.1,
+        "change_pct": -5.8,
+        "foreign_lots": -1646,
+        "trust_lots": 7,
+        "pe": 16.44,
+        "fin_trend": "改善",
+        "val5y": "偏低",
+        "inst20d": "偏多",
+        "industry": "強勢族群",
+        "margin_chg": 12.0,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-11-18",
+      "code": "4916",
+      "name": "事欣科",
+      "entry_price": 104.5,
+      "score": 54.4,
+      "signals": {
+        "composite": 54.4,
+        "breakdown": {
+          "chips": 90.0,
+          "tech": 52.1,
+          "basic": 56.6,
+          "value": 31.1,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "industry_factor": 0.9,
+          "industry_strength": "弱勢族群",
+          "margin_chase_penalty": 1.0,
+          "profile": "balanced"
+        },
+        "rsi": 53.9,
+        "change_pct": -7.11,
+        "foreign_lots": 1126,
+        "trust_lots": 0,
+        "pe": 13.29,
+        "fin_trend": "改善",
+        "val5y": "偏低",
+        "inst20d": "混亂",
+        "industry": "弱勢族群",
+        "margin_chg": -10.6,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-11-18",
+      "code": "2412",
+      "name": "中華電",
+      "entry_price": 163.5,
+      "score": 48.9,
+      "signals": {
+        "composite": 48.9,
+        "breakdown": {
+          "chips": 83.8,
+          "tech": 54.6,
+          "basic": 73.1,
+          "value": 34.5,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "industry_factor": 0.9,
+          "industry_strength": "弱勢族群",
+          "margin_chase_penalty": 0.85,
+          "profile": "balanced"
+        },
+        "rsi": 68.1,
+        "change_pct": -0.91,
+        "foreign_lots": 1585,
+        "trust_lots": -766,
+        "pe": 30.18,
+        "fin_trend": "改善",
+        "val5y": "偏高",
+        "inst20d": "偏多",
+        "industry": "弱勢族群",
+        "margin_chg": 47.5,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-11-18",
+      "code": "2880",
+      "name": "華南金",
+      "entry_price": 50.7,
+      "score": 39.5,
+      "signals": {
+        "composite": 39.5,
+        "breakdown": {
+          "chips": 15.3,
+          "tech": 63.7,
+          "basic": 41.0,
+          "value": 45.2,
+          "quality_penalty": 0.92,
+          "quality_flags": [
+            "負債偏高"
+          ],
+          "industry_factor": 1.08,
+          "industry_strength": "強勢族群",
+          "margin_chase_penalty": 1.0,
+          "profile": "balanced"
+        },
+        "rsi": 59.0,
+        "change_pct": -2.31,
+        "foreign_lots": -2064,
+        "trust_lots": -3924,
+        "pe": 21.99,
+        "fin_trend": "改善",
+        "val5y": "偏高",
+        "inst20d": "混亂",
+        "industry": "強勢族群",
+        "margin_chg": 0.2,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-11-18",
+      "code": "6112",
+      "name": "邁達特",
+      "entry_price": 57.3,
+      "score": 31.6,
+      "signals": {
+        "composite": 31.6,
+        "breakdown": {
+          "chips": 49.9,
+          "tech": 68.8,
+          "basic": 11.2,
+          "value": 54.5,
+          "quality_penalty": 0.637,
+          "quality_flags": [
+            "EPS為負",
+            "淨利率為負"
+          ],
+          "industry_factor": 1.08,
+          "industry_strength": "強勢族群",
+          "margin_chase_penalty": 1.0,
+          "profile": "balanced"
+        },
+        "rsi": 63.9,
+        "change_pct": -1.88,
+        "foreign_lots": -4030,
+        "trust_lots": 0,
+        "pe": 22.08,
+        "fin_trend": "惡化",
+        "val5y": "偏低",
+        "inst20d": "混亂",
+        "industry": "強勢族群",
+        "margin_chg": 20.3,
         "attn_mom": null,
         "attn_trend": null
       }
