@@ -1,60 +1,45 @@
 {
-  "updated_at": "2026-11-21 00:21",
+  "updated_at": "2026-11-24 03:28",
   "stocks": {
-    "2468": {
-      "code": "2468",
-      "pe": 50.81,
-      "pb": 3.82,
-      "dividend_yield": 1.45,
-      "valuation_date": "2026-11-20",
-      "eps": 0.27,
-      "gross_margin": 9.8,
-      "op_margin": 3.08,
-      "net_margin": 2.75,
+    "6782": {
+      "code": "6782",
+      "pe": 15.09,
+      "pb": 3.68,
+      "dividend_yield": 2.97,
+      "valuation_date": "2026-11-23",
+      "eps": 6.32,
+      "gross_margin": 46.67,
+      "op_margin": 27.57,
+      "net_margin": 27.38,
       "report_date": "2026-09-30",
-      "debt_ratio": 50.04,
-      "roe_approx": 1.48,
-      "tags": [
-        "獲利"
-      ],
-      "fund_pass": false
-    },
-    "5876": {
-      "code": "5876",
-      "pe": 13.78,
-      "pb": 1.13,
-      "dividend_yield": 3.63,
-      "valuation_date": "2026-11-20",
-      "eps": 1.03,
-      "gross_margin": null,
-      "op_margin": null,
-      "net_margin": null,
-      "report_date": "2026-09-30",
-      "debt_ratio": 88.77,
-      "roe_approx": 2.1,
+      "debt_ratio": 40.57,
+      "roe_approx": 8.18,
       "tags": [
         "獲利",
-        "本益比偏低"
+        "高ROE",
+        "高毛利"
       ],
-      "fund_pass": false
+      "fund_pass": true
     },
-    "2886": {
-      "code": "2886",
-      "pe": 19.4,
-      "pb": 1.88,
-      "dividend_yield": 3.38,
-      "valuation_date": "2026-11-20",
-      "eps": 0.78,
-      "gross_margin": null,
-      "op_margin": null,
-      "net_margin": 46.57,
+    "2412": {
+      "code": "2412",
+      "pe": 30.18,
+      "pb": 3.37,
+      "dividend_yield": 3.16,
+      "valuation_date": "2026-11-23",
+      "eps": 1.57,
+      "gross_margin": 38.29,
+      "op_margin": 22.75,
+      "net_margin": 19.06,
       "report_date": "2026-09-30",
-      "debt_ratio": 92.72,
-      "roe_approx": 2.83,
+      "debt_ratio": 25.14,
+      "roe_approx": 3.27,
       "tags": [
-        "獲利"
+        "獲利",
+        "高毛利",
+        "低負債"
       ],
-      "fund_pass": false
+      "fund_pass": true
     }
   }
 }
