@@ -1,23 +1,26 @@
 {
-  "updated_at": "2026-11-24 03:28",
+  "updated_at": "2026-11-25 03:05",
   "stocks": {
-    "6782": {
-      "code": "6782",
-      "pe": 15.09,
-      "pb": 3.68,
-      "dividend_yield": 2.97,
-      "valuation_date": "2026-11-23",
-      "eps": 6.32,
-      "gross_margin": 46.67,
-      "op_margin": 27.57,
-      "net_margin": 27.38,
+    "2471": {
+      "code": "2471",
+      "pe": 12.12,
+      "pb": 3.06,
+      "dividend_yield": 5.46,
+      "valuation_date": "2026-11-24",
+      "eps": 1.47,
+      "gross_margin": 55.88,
+      "op_margin": 28.46,
+      "net_margin": 26.99,
       "report_date": "2026-09-30",
-      "debt_ratio": 40.57,
-      "roe_approx": 8.18,
+      "debt_ratio": 39.85,
+      "roe_approx": 7.42,
       "tags": [
         "獲利",
         "高ROE",
-        "高毛利"
+        "高毛利",
+        "低負債",
+        "殖利率>4%",
+        "本益比偏低"
       ],
       "fund_pass": true
     },
@@ -26,7 +29,7 @@
       "pe": 30.18,
       "pb": 3.37,
       "dividend_yield": 3.16,
-      "valuation_date": "2026-11-23",
+      "valuation_date": "2026-11-24",
       "eps": 1.57,
       "gross_margin": 38.29,
       "op_margin": 22.75,

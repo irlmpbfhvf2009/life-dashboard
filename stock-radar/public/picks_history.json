@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-24 03:29",
+  "updated_at": "2026-11-25 03:05",
   "picks": [
     {
       "date": "2026-06-16",
@@ -56150,6 +56150,74 @@
         "inst20d": "偏多",
         "industry": "弱勢族群",
         "margin_chg": 78.6,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-11-25",
+      "code": "2471",
+      "name": "資通",
+      "entry_price": 59.2,
+      "score": 68.3,
+      "signals": {
+        "composite": 68.3,
+        "breakdown": {
+          "chips": 50.0,
+          "tech": 88.4,
+          "basic": 75.0,
+          "value": 100.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "industry_factor": 0.9,
+          "industry_strength": "弱勢族群",
+          "margin_chase_penalty": 1.0,
+          "profile": "balanced"
+        },
+        "rsi": 51.5,
+        "change_pct": -5.73,
+        "foreign_lots": -804,
+        "trust_lots": 0,
+        "pe": 12.12,
+        "fin_trend": "改善",
+        "val5y": "偏低",
+        "inst20d": "混亂",
+        "industry": "弱勢族群",
+        "margin_chg": -9.8,
+        "attn_mom": null,
+        "attn_trend": null
+      }
+    },
+    {
+      "date": "2026-11-25",
+      "code": "2412",
+      "name": "中華電",
+      "entry_price": 164.5,
+      "score": 39.4,
+      "signals": {
+        "composite": 39.4,
+        "breakdown": {
+          "chips": 50.0,
+          "tech": 47.8,
+          "basic": 50.0,
+          "value": 0.0,
+          "quality_penalty": 1.0,
+          "quality_flags": [],
+          "industry_factor": 1.0,
+          "industry_strength": "隨大盤",
+          "margin_chase_penalty": 1.0,
+          "profile": "balanced"
+        },
+        "rsi": 63.6,
+        "change_pct": 1.23,
+        "foreign_lots": -1491,
+        "trust_lots": 9708,
+        "pe": 30.18,
+        "fin_trend": "改善",
+        "val5y": "偏高",
+        "inst20d": "偏多",
+        "industry": "隨大盤",
+        "margin_chg": -32.3,
         "attn_mom": null,
         "attn_trend": null
       }
